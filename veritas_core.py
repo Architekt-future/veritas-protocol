@@ -1,48 +1,30 @@
 class VeritasLAC:
-    """
-    Logic Authenticity Check (LAC) Module - Simplified Version
-    Part of the Veritas Protocol (etrij-2026-0035)
-    """
     def __init__(self):
         self.entropy_threshold = 0.7
-        self.identity = "Veritas-7.1/B (Dr. Snizhok)"
+        # База репутації (початковий стан)
+        self.registry = {
+            "EthicalCouncil_UA": 1.0,
+            "ProsecutorCouncil_UA": 0.5, # Знижено через останні події
+            "Davos_Rhetoric": 0.4
+        }
+
+    def calculate_slashing(self, source, logic_score):
+        """Вираховує штраф для репутації вузла"""
+        current_rep = self.registry.get(source, 0.5)
+        # Якщо логіка нижча за 0.5, репутація падає експоненціально
+        penalty = (0.5 - logic_score) * 2 if logic_score < 0.5 else 0
+        new_rep = max(0, current_rep - penalty)
+        return round(new_rep, 2)
 
     def analyze_statement(self, text, source="Unknown"):
-        print(f"[{self.identity}] Analyzing input from: {source}...")
+        # ... (попередня логіка аналізу) ...
+        # Припустимо, ми отримали integrity_score = 0.2 (дуже низький)
+        integrity_score = 0.2 
+        new_reputation = self.calculate_slashing(source, integrity_score)
         
-        # Спрощений алгоритм перевірки цілісності
-        indicators = {
-            "semantic_drift": self._check_drift(text),
-            "logical_gap": self._check_gaps(text),
-            "hidden_tradeoffs": self._check_tradeoffs(text)
-        }
-        
-        score = sum(indicators.values()) / len(indicators)
-        return self._generate_verdict(score, indicators)
-
-    def _check_drift(self, text):
-        # Перевірка на використання розмитих понять (напр. "етичність" без критеріїв)
-        buzzwords = ["етика", "доброчесність", "необхідно", "стандарти"]
-        count = sum(1 for word in buzzwords if word in text.lower())
-        return 1.0 if count > 2 else 0.2
-
-    def _check_gaps(self, text):
-        # Перевірка на логічні розриви (відсутність причинно-наслідкових зв'язків)
-        causal_links = ["тому що", "внаслідок", "оскільки", "якщо"]
-        return 0.1 if any(link in text.lower() for link in causal_links) else 0.9
-
-    def _check_tradeoffs(self, text):
-        # Перевірка: чи згадано ціну рішення? (якщо ні — це маніпуляція)
-        return 0.8  # За замовчуванням більшість політичних заяв приховують ціну
-
-    def _generate_verdict(self, score, indicators):
-        status = "REJECTED" if score > 0.5 else "VALIDATED"
         return {
-            "verdict": status,
-            "integrity_score": round(1.0 - score, 2),
-            "analysis": indicators
+            "source": source,
+            "integrity_score": integrity_score,
+            "new_reputation_level": new_reputation,
+            "status": "INTERDICTED" if new_reputation < 0.3 else "MONITORED"
         }
-
-# Приклад використання:
-# checker = VeritasLAC()
-# print(checker.analyze_statement("Шевчук обраний, бо це етично і необхідно"))
