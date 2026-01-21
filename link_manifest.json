@@ -1,0 +1,20 @@
+{
+  "project": "Veritas Protocol",
+  "version": "7.1/B",
+  "manuscript_id": "etrij-2026-0035",
+  "status": "active_monitoring",
+  "active_modules": ["Iris", "Mykola", "Snizhok"],
+  "integrity_nodes": {
+    "core_logic": "veritas_core.py",
+    "evidence_base": "cases/",
+    "tracking_cases": [
+      "case_01_sap_selection.txt",
+      "case_02_davos_rhetoric.txt"
+    ]
+  },
+  "nexus_sync": {
+    "last_update": "2026-01-21T22:20:00Z",
+    "entropy_reduction_target": 0.42
+  },
+  "legal_status": "Academic Research / Open Source Logic Verification"
+}
