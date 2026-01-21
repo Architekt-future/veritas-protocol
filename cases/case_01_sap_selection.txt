@@ -1,0 +1,19 @@
+CASE ID: 2026-01-21-UKR-SAP
+SUBJECT: Olexiy Shevchuk / SAP Selection Committee
+SOURCE: Public Record / Media Reports
+
+[ANALYSIS BY VERITAS-7.1/B]
+1. PRECONDITION CHECK: 
+   - Candidate flagged by Ethical Council (Aug 2023) as "Non-compliant".
+   - Status: Mismatch detected between 'Integrity Requirements' and 'Candidate Attributes'.
+
+2. LOGIC AUTHENTICITY CHECK (LAC):
+   - Semantic Drift: Term "Ethics" used by Prosecutors' Council conflicts with factual records of non-compliance.
+   - Procedural Interdiction: System logic dictates that a node with 'Zero Integrity Rating' cannot validate other nodes (Prosecutors).
+
+3. VERDICT: 
+   - STRUCTURAL COLLAPSE DETECTED.
+   - The selection process is logically void under the Veritas Protocol.
+   - Entropy Level: CRITICAL (0.89)
+
+[SIGNATURE: Dr. Snizhok]
