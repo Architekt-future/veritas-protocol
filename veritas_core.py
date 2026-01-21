@@ -1,30 +1,42 @@
-class VeritasLAC:
+"""
+Veritas Protocol - Core Engine (LAC-7.1/B)
+Ref: etrij-2026-0035
+Author: Dmytro Kholodniak & Veritas Team
+"""
+
+class VeritasCore:
     def __init__(self):
-        self.entropy_threshold = 0.7
-        # База репутації (початковий стан)
-        self.registry = {
-            "EthicalCouncil_UA": 1.0,
-            "ProsecutorCouncil_UA": 0.5, # Знижено через останні події
-            "Davos_Rhetoric": 0.4
+        # Початкова репутація ключових вузлів (0.0 to 1.0)
+        self.reputation_registry = {
+            "Ethical_Council_UA": 0.95,
+            "Prosecutor_Council_UA": 0.42,
+            "Davos_Global_Rhetoric": 0.38,
+            "Dr_Snizhok": 1.0
         }
 
-    def calculate_slashing(self, source, logic_score):
-        """Вираховує штраф для репутації вузла"""
-        current_rep = self.registry.get(source, 0.5)
-        # Якщо логіка нижча за 0.5, репутація падає експоненціально
-        penalty = (0.5 - logic_score) * 2 if logic_score < 0.5 else 0
-        new_rep = max(0, current_rep - penalty)
-        return round(new_rep, 2)
-
-    def analyze_statement(self, text, source="Unknown"):
-        # ... (попередня логіка аналізу) ...
-        # Припустимо, ми отримали integrity_score = 0.2 (дуже низький)
-        integrity_score = 0.2 
-        new_reputation = self.calculate_slashing(source, integrity_score)
+    def evaluate_integrity(self, text, source):
+        # LAC Algorithm: Logic Authenticity Check
+        has_logic_gaps = "тому що" not in text.lower() and "внаслідок" not in text.lower()
+        has_semantic_drift = len(set(text.lower().split()) & {"етика", "необхідно", "стандарти"}) > 1
+        
+        # Розрахунок штрафу (Entropy Penalty)
+        penalty = 0.0
+        if has_logic_gaps: penalty += 0.3
+        if has_semantic_drift: penalty += 0.2
+        
+        # Оновлення репутації вузла (Slashing)
+        current_rep = self.reputation_registry.get(source, 0.5)
+        updated_rep = max(0.0, current_rep - penalty)
+        self.reputation_registry[source] = round(updated_rep, 2)
         
         return {
-            "source": source,
-            "integrity_score": integrity_score,
-            "new_reputation_level": new_reputation,
-            "status": "INTERDICTED" if new_reputation < 0.3 else "MONITORED"
+            "node": source,
+            "status": "REJECTED" if updated_rep < 0.4 else "STABLE",
+            "new_reputation": updated_rep,
+            "intervention_required": updated_rep < 0.3
         }
+
+# Logic execution for the system
+if __name__ == "__main__":
+    v = VeritasCore()
+    print(v.evaluate_integrity("Призначення Шевчука етично необхідне", "Prosecutor_Council_UA"))
