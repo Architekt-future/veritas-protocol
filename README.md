@@ -17,14 +17,9 @@ Veritas Protocol is a substrate-agnostic framework for real-time monitoring and 
 
 ## Quick Start
 
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/Architekt-future/veritas-protocol.git
-## Quick Start
-
 1. **Install dependencies:**
-   ```bash
-   pip install -r requirements.txt
+```bash
+pip install -r requirements.txt
 Run the News Verifier:
 
 Bash
@@ -44,4 +39,4 @@ Bash
 
 python -m unittest discover tests
 Monitoring & Logs
-Results are saved to audit_log.csv for analytical review.
+Results are automatically saved to audit_log.csv for analytical review and ESI calculation.
