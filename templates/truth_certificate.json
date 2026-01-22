@@ -1,0 +1,14 @@
+{
+  "protocol": "Veritas",
+  "version": "1.0",
+  "event_id": "TRU-001-PECHERSK",
+  "status": "VERIFIED_TRUTH",
+  "verification_details": {
+    "local_witnesses": 12,
+    "ai_bot_attacks_deflected": 1450,
+    "reputation_slashed": 45.5,
+    "trust_score": "98.7%"
+  },
+  "timestamp": "2026-01-22T20:00:00Z",
+  "signature": "V_CORE_SIGNED_HASH_XYZ"
+}
