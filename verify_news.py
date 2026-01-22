@@ -1,51 +1,75 @@
-import csv
-from datetime import datetime
-from veritas_core import VeritasCore
-from veritas_economy_proto import VeritasSecureEconomy
+import re
 
-def log_to_csv(entity, score, result):
-    # Функція запису результату в файл audit_log.csv
-    file_exists = False
-    try:
-        with open('audit_log.csv', 'r') as f:
-            file_exists = True
-    except FileNotFoundError:
-        file_exists = False
+def verify_news(text):
+    # Початковий бал стабільності (Entropy Stability Index)
+    esi_score = 1.0  
+    warnings = []
 
-    with open('audit_log.csv', 'a', newline='', encoding='utf-8') as f:
-        writer = csv.writer(f)
-        # Якщо файл новий - додаємо заголовки
-        if not file_exists:
-            writer.writerow(['Timestamp', 'Source', 'Entropy_Score', 'Economic_Verdict'])
-        
-        writer.writerow([
-            datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            entity,
-            f"{score:.2f}",
-            result
-        ])
-
-def run_verification():
-    v_core = VeritasCore()
-    v_econ = VeritasSecureEconomy()
-    
-    print("\n--- VERITAS PROTOCOL: VERIFIER MODE ---")
-    entity_name = input("Enter Source Name (e.g., Lachen, FT, Reuters): ")
-    news_text = input("Paste the news text to analyze: ")
-    
-    # 1. Аналіз
-    entropy_score = v_core.analyze_entropy(news_text)
-    result = v_econ.process_cycle(entity_name if entity_name in v_econ.registry else "Bot_Net_001", news_text)
-    
-    # 2. Логування в CSV
-    log_to_csv(entity_name, entropy_score, result)
-    
     print("\n" + "="*40)
-    print(f"ANALYSIS REPORT FOR: {entity_name}")
-    print(f"Entropy Score: {entropy_score:.2f} (0=Logic, 1=Chaos)")
-    print(f"Economic Impact: {result}")
-    print(f"Status: Result saved to audit_log.csv")
+    print("   VERITAS PROTOCOL: LOGIC CHECK")
     print("="*40)
 
+    # 1. SMART INSTITUTIONAL FILTER (Твоє залізне правило)
+    # Шукаємо абревіатури (2+ великі літери) або слова з великої літери (власні назви)
+    org_pattern = r'\b[А-ЯA-Z]{2,}\b'
+    mentions_org = re.findall(org_pattern, text)
+    
+    # Якщо є організації, але немає жодного посилання (http/https)
+    has_link = re.search(r'https?://', text)
+    if mentions_org and not has_link:
+        penalty = 0.4
+        esi_score -= penalty
+        unique_orgs = ", ".join(set(mentions_org[:5])) # показуємо перші 5 для звіту
+        warnings.append(f"БАМ! Згадуються структури ({unique_orgs}) без лінку на джерело (-{penalty} ESI)")
+
+    # 2. CAPS LOCK FILTER (Детектор ентропії та емоційного тиску)
+    # Якщо більше 20% тексту написано капсом (крім коротких абревіатур)
+    caps_words = re.findall(r'\b[А-ЯA-Z]{4,}\b', text)
+    if len(caps_words) > 3: # Якщо більше 3 довгих слів капсом
+        penalty = 0.2
+        esi_score -= penalty
+        warnings.append(f"Виявлено надлишковий CAPS LOCK. Ознака маніпуляції (-{penalty} ESI)")
+
+    # 3. HYPE KEYWORDS (Словник маніпулятора)
+    hype_words = [
+        "історичний", "визначний", "вперше", "похвалилася", 
+        "вдалий крок", "шок", "терміново", "сенсація"
+    ]
+    found_hype = [w for w in hype_words if w.lower() in text.lower()]
+    if found_hype:
+        penalty = 0.1 * len(found_hype)
+        esi_score -= penalty
+        warnings.append(f"Емоційні маркери: {', '.join(found_hype)} (-{round(penalty, 1)} ESI)")
+
+    # 4. ПЕРЕВІРКА НА ПОРОЖНІЙ ТЕКСТ АБО ОДИН ПРЯМИЙ ЛІНК
+    if len(text.strip()) < 10:
+        return "Помилка: Недостатньо даних для аналізу."
+
+    # Фінальний розрахунок (не нижче 0)
+    esi_score = max(0.0, round(esi_score, 2))
+    
+    # ВИВІД РЕЗУЛЬТАТІВ
+    print(f"АНАЛІЗ: {text[:100]}...")
+    print(f"\nESI INDEX: {esi_score} / 1.0")
+    
+    if esi_score >= 0.8:
+        status = "✅ STABLE (Висока довіра)"
+    elif 0.5 <= esi_score < 0.8:
+        status = "⚠️ SUSPICIOUS (Середня ентропія / Потребує верифікації)"
+    else:
+        status = "❌ UNSTABLE (Висока ентропія / Ознаки фейку)"
+    
+    print(f"СТАТУС: {status}")
+
+    if warnings:
+        print("\nВИЯВЛЕНІ АНОМАЛІЇ:")
+        for w in warnings:
+            print(f"  [!] {w}")
+    
+    print("="*40)
+
+# Запуск
 if __name__ == "__main__":
-    run_verification()
+    print("Veritas Protocol v1.2-alpha завантажено.")
+    user_input = input("Вставте текст для перевірки: ")
+    verify_news(user_input)
