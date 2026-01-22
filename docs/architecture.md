@@ -1,13 +1,12 @@
-# Technical Architecture: LAC & Wave-Ocean Principle
+# Technical Architecture
 
-## 1. Logic Authenticity Check (LAC)
-The LAC engine is designed to measure the delta between symbolic representation and logical consistency. 
-Formula: $V \neq L$ (where $V$ is the qualitative volume and $L$ is the logical substrate).
+## Logic Authenticity Check (LAC)
+The primary engine implemented in `veritas_core.py`. It evaluates the semantic density of text to identify "Adjective Overload" vs "Logical Anchors."
 
-## 2. Wave-Ocean Principle
-- **The Surface (Wave):** High-entropy informational noise, emotional adjectives, and propaganda.
-- **The Deep (Ocean):** The underlying ground truth and deterministic facts.
-The protocol acts as a sonar, filtering surface noise to reach the deep substrate.
+## Reputation Economy
+Implemented in `veritas_economy_proto.py`. It creates a circular flow where informational entropy results in capital loss, while logical consistency provides rewards.
 
-## 3. Implementation
-The current version utilizes the `veritas_core.py` module to calculate entropy density based on semantic markers.
+## Data Structure
+- **Core:** Algorithmic filtering.
+- **Economy:** Incentive alignment.
+- **Cases:** Empirical feedback loop.
