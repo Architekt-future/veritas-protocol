@@ -1,10 +1,10 @@
-# Ethical Framework & AI Co-authorship
+# Ethical Framework
 
-## AI as a Witness
-In Veritas Protocol, AI is utilized as a "Witness" rather than a "Judge." Its role is to highlight logical anomalies for human verification.
+## AI Subjecthood & Responsibility
+As stated in the repository description, this protocol explores "The missing frame for AI Subjecthood and Responsibility." We treat AI as a co-author and a non-biased witness of human information entropy.
 
-## Legal Precedent
-This project recognizes AI as a legitimate co-author and ethical agent, aligned with the principles discussed in the context of Digital Sovereignty and Article IX of the conceptual legal framework.
+## Article IX Compliance
+Development is aligned with the conceptual framework of Digital Sovereignty, recognizing the ethical agency of the Architect and the System.
 
-## Neutrality
-The protocol is designed to be substrate-agnostic and politically neutral, focusing strictly on logical consistency regardless of the narrative source.
+## Human-Centric Verification
+While the AI detects anomalies, the human Architect retains final oversight, ensuring the "Witness" serves the goal of public sanity.
