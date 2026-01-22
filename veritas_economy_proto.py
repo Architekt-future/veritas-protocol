@@ -1,53 +1,66 @@
-# Veritas Protocol: Circular Economic Shield (Truth-to-Earn)
-# Version: 1.1 - The "Robin Hood" Update
+# Veritas Protocol: Secure Circular Economy
+# Version: 1.2 - Anti-Sybil & Identity Protection
 
-class VeritasCircularEconomy:
+class VeritasSecureEconomy:
     def __init__(self):
-        self.ledger = {
-            "BBC_News": 1000.0,
-            "Guardian_Analysis": 1000.0,
-            "Trump_Peace_Board": 1000.0,
-            "Anonymous_Hype_Bot": 1000.0
+        # ledger тепер зберігає не тільки баланс, а й "Рівень Довіри" (Trust Level)
+        self.registry = {
+            "BBC_News": {"balance": 1000.0, "trust": 1.0, "is_bot": False},
+            "Guardian_Analysis": {"balance": 1000.0, "trust": 0.9, "is_bot": False},
+            "Trump_Peace_Board": {"balance": 1000.0, "trust": 0.3, "is_bot": False},
+            "Bot_Net_001": {"balance": 100.0, "trust": 0.1, "is_bot": True}
         }
-        self.reward_pool = 0.0  # Сюди стікаються штрафи від брехунів
+        self.reward_pool = 0.0
 
-    def analyze_quality(self, text):
-        hype_markers = ["historic", "incredible", "unprecedented", "massive", "shocking", "urgent"]
-        logic_markers = ["because", "therefore", "however", "consequently", "if", "data"]
-        
-        words = text.lower().split()
-        e_count = sum(1 for w in words if any(m in w for m in hype_markers))
-        l_count = sum(1 for w in words if any(m in w for m in logic_markers))
-        
-        # Veritas Score від 0 до 10
-        score = 10 - (e_count * 2) + (l_count * 1)
-        return min(max(score, 0), 10)
+    def verify_identity(self, entity):
+        # Якщо рівень довіри менше 0.2 - доступ до винагород заблоковано
+        if self.registry[entity]["trust"] < 0.2:
+            return False
+        return True
+
+    def update_trust(self, entity, score):
+        # Рівень довіри зростає від хороших постів і падає від поганих
+        if score > 7:
+            self.registry[entity]["trust"] = min(1.0, self.registry[entity]["trust"] + 0.05)
+        elif score < 4:
+            self.registry[entity]["trust"] = max(0.0, self.registry[entity]["trust"] - 0.2)
 
     def process_cycle(self, entity, text):
-        score = self.analyze_quality(text)
+        # 1. Рахуємо якість тексту
+        hype_markers = ["historic", "incredible", "massive"]
+        words = text.lower().split()
+        e_count = sum(1 for w in words if any(m in w for m in hype_markers))
+        score = 10 - (e_count * 3)
         
-        if score < 5:
-            # ШТРАФ (Slashing)
-            penalty = (5 - score) * 100
-            self.ledger[entity] -= penalty
+        # 2. Оновлюємо репутацію
+        self.update_trust(entity, score)
+        
+        # 3. Перевіряємо, чи має право на гроші
+        if not self.verify_identity(entity):
+            penalty = 50.0 # Штраф за спробу бот-активності
+            self.registry[entity]["balance"] -= penalty
             self.reward_pool += penalty
-            return f"Slashed: -{penalty:.2f} (Reason: Low Logic)"
+            return f"ACCESS DENIED: Entity {entity} flagged as LOW TRUST. Penalty applied."
+
+        # 4. Економіка (Slashing/Reward)
+        if score < 5:
+            penalty = 150.0
+            self.registry[entity]["balance"] -= penalty
+            self.reward_pool += penalty
+            return f"Slashed {entity}: -150 (Reason: Low Logic Score)"
         else:
-            # ВИНАГОРОДА (Reward)
-            # Чесні отримують частину з пулу штрафів
-            reward = (score / 10) * (self.reward_pool * 0.5)
-            self.ledger[entity] += reward
+            reward = (score / 10) * (self.reward_pool * 0.3)
+            self.registry[entity]["balance"] += reward
             self.reward_pool -= reward
-            return f"Rewarded: +{reward:.2f} (Reason: High Veritas Score)"
+            return f"Rewarded {entity}: +{reward:.2f} (Trust Level: {self.registry[entity]['trust']:.2f})"
 
-# --- ЗАПУСК ТЕСТУ ---
-v_circ = VeritasCircularEconomy()
+# --- ТЕСТ АНТИ-БОТА ---
+v_sys = VeritasSecureEconomy()
 
-# Спочатку штрафуємо за хайп, щоб наповнити пул
-print(v_circ.process_cycle("Trump_Peace_Board", "Historic unprecedented massive shock!")) 
+# Бот намагається вкинути хайп
+print(v_sys.process_cycle("Bot_Net_001", "Incredible massive news!")) 
+# Бот знову намагається - і його банять!
+print(v_sys.process_cycle("Bot_Net_001", "Shocking historic move!"))
 
-# Тепер чесний аналітик отримує "кешбек" з цих грошей
-print(v_circ.process_cycle("Guardian_Analysis", "Data suggests if entropy remains, however the logic holds."))
-
-print(f"\nFinal Reward Pool: {v_circ.reward_pool:.2f}")
-print(f"Final Ledgers: {v_circ.ledger}")
+# Чесний аналітик отримує капітал бота
+print(v_sys.process_cycle("BBC_News", "The data shows consistent growth in the sector."))
