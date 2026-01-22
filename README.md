@@ -16,6 +16,7 @@ Veritas Protocol is a substrate-agnostic framework for real-time monitoring and 
 - **ESI (Entropy Stability Index):** A metric for measuring reality fragmentation in news streams.
 
 ## Quick Start
-1. Clone the repository:
+
+1. **Clone the repository:**
    ```bash
-   git clone [https://github.com/Architekt-future/veritas-protocol.git](https://github.com/Architekt-future/veritas-protocol.git)
+   git clone https://github.com/Architekt-future/veritas-protocol.git
