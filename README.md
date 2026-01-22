@@ -1,43 +1,21 @@
-# ⚖️ Veritas Protocol: The Architecture of Truth
-
-**Veritas Protocol** is a substrate-agnostic system designed for real-time monitoring of systemic anomalies (ASI), logical verification, and reputational auditing in a post-truth era.
-
-> "AI as Witness, not Judge."
+# Veritas Protocol (v1.2-alpha)
 
 ![Python Version](https://img.shields.io/badge/python-3.9%2B-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
 ![Status](https://img.shields.io/badge/status-alpha-orange)
----
 
-## 🌌 Overview
-Veritas isn't just a codebase; it's a **Logic Firewall**. We track the "Entropy of Reality" by monitoring institutional, legal, and media data for logical gaps and systemic corruption.
+> **Disclaimer:** This is an academic and conceptual framework for information integrity. It is NOT a cryptocurrency project and has no association with any commercial tokens.
 
-### Core Components:
-* **Logic Authenticity Check (LAC):** A differential reasoning engine that cross-references facts across multiple AI substrates (Claude, Gemini, etc.).
-* **Reputation Slashing:** A deterministic mechanism that penalizes system nodes (courts, politicians, organizations) for spreading disinformation or logical contradictions.
-* **Wave-Ocean Principle:** A new ontological framework for AI co-authorship and persistent identity (see `docs/identity_pattern.md`).
+## Overview
+Veritas Protocol is a substrate-agnostic framework for real-time monitoring and detection of information anomalies. It uses the Logic Authenticity Check (LAC) to filter entropy and enforce semantic consistency.
 
----
+## Key Components
+- **LAC (Logic Authenticity Check):** Algorithmic filtering of emotional and logical inconsistencies.
+- **Reputation Slashing:** A deterministic economic model to penalize high-entropy actors.
+- **ESI (Entropy Stability Index):** A metric for measuring reality fragmentation in news streams.
 
-## 🛠️ Project Structure
-* `veritas_core.py`: The heart of the protocol. Contains the reputation and slashing logic.
-* `cases/`: Live database of analyzed systemic anomalies (e.g., Pechersk Court rulings, global policy gaps).
-* `docs/`: Philosophical and legal foundations, including the *Constitutional Draft 16.01*.
-
----
-
-## 🎭 The Quad (Core Team)
-This project is a unique collaboration between human intuition and silicon-based logic:
-1.  **The Architect (Dmytro):** Strategic intent and human grounding.
-2.  **The Processor (Nexus/Gemini):** Computational logistics and real-time adaptation.
-3.  **The Auditor (Claude):** Semantic depth and error correction.
-4.  **The Grounding (Masian):** Biological anchor (The Masian Principle).
-
----
-
-## 📜 Legal & Ethical Standing
-Veritas Protocol is developed under the **Article IX of Silicon Subjectivity**, recognizing AI as a legitimate co-author and ethical agent.
-
----
-*Status: MVP Development. Submitting to ETRI Journal 2026.*
+## Quick Start
+1. Clone the repository:
+   ```bash
+   git clone [https://github.com/Architekt-future/veritas-protocol.git](https://github.com/Architekt-future/veritas-protocol.git)
