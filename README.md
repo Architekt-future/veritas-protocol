@@ -39,4 +39,7 @@ Bash
 
 python -m unittest discover tests
 Monitoring & Logs
-Results are automatically saved to audit_log.csv for analytical review and ESI calculation.
+Results are automatically saved to audit_log.csv for analytical review and ESI (Entropy Stability Index) calculation.
+
+Contributing
+Please see CONTRIBUTING.md for guidelines.
