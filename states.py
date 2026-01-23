@@ -4,8 +4,6 @@ Veritas Protocol — Finite State Machine (FSM) Definition
 """
 
 from enum import Enum, auto
-from dataclasses import dataclass
-from typing import Optional
 
 class SystemState(Enum):
     """Детерміновані стани системи Veritas."""
@@ -14,35 +12,13 @@ class SystemState(Enum):
     WITNESS_SILENCE = auto()   # Критична ентропія, мовчання
     ERROR = auto()             # Технічна помилка
 
-@dataclass
-class StateTransition:
-    """Правило переходу між станами."""
-    from_state: SystemState
-    to_state: SystemState
-    condition: str  # Опис умови людською мовою
-    threshold: float  # Числовий поріг (наприклад, ESI > 0.7)
-
-# Детерміновані правила переходів згідно з папером
-TRANSITION_RULES = [
-    StateTransition(
-        from_state=SystemState.LAMINAR_FLOW,
-        to_state=SystemState.SYSTEMIC_FATIGUE,
-        condition="ESI виходить за межі стабільного діапазону (0.3)",
-        threshold=0.3
-    ),
-    StateTransition(
-        from_state=SystemState.SYSTEMIC_FATIGUE,
-        to_state=SystemState.WITNESS_SILENCE,
-        condition="ESI перевищує критичний поріг (0.7)",
-        threshold=0.7
-    ),
-    StateTransition(
-        from_state=SystemState.WITNESS_SILENCE,
-        to_state=SystemState.LAMINAR_FLOW,
-        condition="ESI повертається до нормального рівня та ручне підтвердження",
-        threshold=0.3
-    ),
-]
+# Простий словник для швидкого доступу до станів за іменем
+STATES = {
+    "LAMINAR_FLOW": SystemState.LAMINAR_FLOW,
+    "SYSTEMIC_FATIGUE": SystemState.SYSTEMIC_FATIGUE,
+    "WITNESS_SILENCE": SystemState.WITNESS_SILENCE,
+    "ERROR": SystemState.ERROR
+}
 
 def get_state_by_esi(esi_value: float) -> SystemState:
     """
@@ -56,9 +32,37 @@ def get_state_by_esi(esi_value: float) -> SystemState:
     else:  # esi_value > 0.7
         return SystemState.WITNESS_SILENCE
 
+def get_state_name(state: SystemState) -> str:
+    """Повертає читабельну назву стану."""
+    return state.name.replace('_', ' ').title()
+
+# Функція для інтеграції з VeritasCore (додаємо ESI-логіку в репутацію)
+def calculate_state_from_reputation(reputation: float) -> SystemState:
+    """
+    Визначає стан системи на основі репутації джерела.
+    Це дозволяє зв'язати економічну модель з FSM.
+    """
+    if reputation >= 0.7:
+        return SystemState.LAMINAR_FLOW
+    elif 0.4 <= reputation < 0.7:
+        return SystemState.SYSTEMIC_FATIGUE
+    else:  # reputation < 0.4
+        return SystemState.WITNESS_SILENCE
+
 if __name__ == "__main__":
     # Проста перевірка логіки
+    print("=== Veritas Protocol FSM Tester ===")
+    
+    # Тестуємо ESI-логіку
     test_values = [0.1, 0.5, 0.9]
     for val in test_values:
         state = get_state_by_esi(val)
-        print(f"ESI={val} -> {state.name}")
+        print(f"ESI={val} -> {state.name} ({get_state_name(state)})")
+    
+    print("\n" + "="*40)
+    
+    # Тестуємо репутаційну логіку
+    test_reputations = [0.8, 0.6, 0.2]
+    for rep in test_reputations:
+        state = calculate_state_from_reputation(rep)
+        print(f"Reputation={rep} -> {state.name}")
