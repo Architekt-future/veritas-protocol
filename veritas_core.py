@@ -4,6 +4,11 @@ Ref: etrij-2026-0035
 Author: Dmytro Kholodniak & Veritas Team
 """
 
+"""
+Central engine of the Veritas Protocol.
+Orchestrates the Logic Authenticity Check (LAC) and state management.
+"""
+
 class VeritasCore:
     def __init__(self):
         # Початкова репутація ключових вузлів (0.0 to 1.0)
