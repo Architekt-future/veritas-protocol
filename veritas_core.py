@@ -10,6 +10,14 @@ Orchestrates the Logic Authenticity Check (LAC) and state management.
 """
 
 class VeritasCore:
+
+    def __init__(self, initial_state="INITIALIZING"):
+    """
+    Initialize the Veritas Core.
+    Args:
+        initial_state (str): The starting state of the system.
+    """
+    
     def __init__(self):
         # Початкова репутація ключових вузлів (0.0 to 1.0)
         self.reputation_registry = {
@@ -19,6 +27,15 @@ class VeritasCore:
             "Dr_Snizhok": 1.0
         }
 
+    def evaluate_integrity(self, data_frame):
+    """
+    Main public method to evaluate data integrity using LAC.
+    Args:
+        data_frame (pandas.DataFrame): Input data to be analyzed.
+    Returns:
+        dict: Results containing integrity score and flags.
+    """
+    
     def evaluate_integrity(self, text, source):
         # LAC Algorithm: Logic Authenticity Check
         has_logic_gaps = "тому що" not in text.lower() and "внаслідок" not in text.lower()
