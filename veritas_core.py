@@ -54,8 +54,44 @@ class VeritasCore:
             "intervention_required": updated_rep < 0.3
         }
 
+    def get_system_state(self, node_name: str):
+        """
+        Визначає стан системи на основі репутації вузла.
+        Використовує логіку з states.py.
+        
+        Args:
+            node_name (str): Назва вузла з реєстру репутацій.
+            
+        Returns:
+            SystemState: Об'єкт стану системи (LAMINAR_FLOW, SYSTEMIC_FATIGUE, etc.)
+        """
+        # Імпорт тут, щоб уникнути проблем
+        from states import calculate_state_from_reputation
+        
+        # Отримуємо репутацію вузла (0.5 за замовчуванням, якщо не знайдено)
+        reputation = self.reputation_registry.get(node_name, 0.5)
+        
+        # Визначаємо стан на основі репутації
+        return calculate_state_from_reputation(reputation)
+
 
 # Logic execution for the system
 if __name__ == "__main__":
+    # Тестуємо основний функціонал
     v = VeritasCore()
-    print(v.evaluate_integrity("Призначення Шевчука етично необхідне", "Prosecutor_Council_UA"))
+    print("=== Тест основного методу evaluate_integrity ===")
+    result = v.evaluate_integrity("Призначення Шевчука етично необхідне", "Prosecutor_Council_UA")
+    print(f"Результат перевірки: {result}")
+    
+    print("\n=== Тест нового методу get_system_state ===")
+    
+    # Перевіряємо стани для різних вузлів
+    test_nodes = ["Ethical_Council_UA", "Prosecutor_Council_UA", "Davos_Global_Rhetoric", "Unknown_Node"]
+    
+    for node in test_nodes:
+        state = v.get_system_state(node)
+        print(f"Вузол '{node}': репутація = {v.reputation_registry.get(node, 0.5):.2f}, стан системи = {state.name}")
+    
+    print("\n=== Фінальний реєстр репутацій ===")
+    for node, rep in v.reputation_registry.items():
+        print(f"{node}: {rep}")
