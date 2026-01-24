@@ -1,97 +1,101 @@
-"""
-Veritas Protocol - Core Engine (LAC-7.1/B)
-Ref: etrij-2026-0035
-Author: Dmytro Kholodniak & Veritas Team
-Central engine of the Veritas Protocol.
-Orchestrates the Logic Authenticity Check (LAC) and state management.
-"""
+import math
 
 class VeritasCore:
     """
-    Initialize the Veritas Core.
-    Args:
-        initial_state (str): The starting state of the system (зарезервовано).
+    Veritas Protocol - Core Engine (LAC-7.2/Final)
+    Система автоматичної верифікації логіки та управління репутацією вузлів.
     """
-    def __init__(self, initial_state="INITIALIZING"):
-        self.initial_state = initial_state
-        # Початкова репутація ключових вузлів (0.0 to 1.0)
+    def __init__(self, initial_state="STABLE"):
+        self.system_status = initial_state
+        # Реєстр репутацій (Ground Truth Nodes)
         self.reputation_registry = {
             "Ethical_Council_UA": 0.95,
             "Prosecutor_Council_UA": 0.42,
             "Davos_Global_Rhetoric": 0.38,
-            "Dr_Snizhok": 1.0
+            "Dr_Snizhok": 1.0,
+            "NBC_News_Greenland": 0.50, # Початкова точка для медіа
+            "Taiwan_Semi_Official": 0.85
         }
+
+    def _calculate_entropy_coefficient(self, text):
+        """
+        Математичний розрахунок рівня 'бруду' (ентропії) у тексті.
+        L = (Signal + 1) / (Noise + Signal + 1)
+        """
+        words = text.lower().replace(",", "").replace(".", "").split()
+        if not words:
+            return 1.0
+            
+        # Маркери 'шуму' - демагогія, прикметники, маніпуляції
+        noise_markers = {
+            "етично", "необхідно", "важливо", "неприпустимо", "історично", 
+            "фундаментально", "занепокоєння", "перемога", "збитки", "довіра"
+        }
+        # Маркери 'сигналу' - логіка, причинність, факти
+        signal_markers = {
+            "якщо", "тоді", "тому", "внаслідок", "дорівнює", "факт", 
+            "ресурс", "чип", "наказ", "координати", "результат"
+        }
+        
+        noise_count = sum(1 for w in words if w in noise_markers)
+        signal_count = sum(1 for w in words if w in signal_markers)
+        
+        # Розрахунок ламінарності (чистоти потоку)
+        laminar_index = (signal_count + 1) / (noise_count + signal_count + 1)
+        # Ентропія = зворотне значення ламінарності
+        return round(1.0 - laminar_index, 3)
+
+    def _get_state_name(self, reputation):
+        """Логіка визначення стану системи (States.py)"""
+        if reputation >= 0.8: return "LAMINAR_FLOW (Істина)"
+        if reputation >= 0.6: return "STABLE (Норма)"
+        if reputation >= 0.4: return "SYSTEMIC_FATIGUE (Втома)"
+        if reputation >= 0.2: return "ENTROPIC_DECAY (Розпад)"
+        return "COLLAPSE (Вурдалаки перемогли)"
 
     def evaluate_integrity(self, text, source):
-        """
-        Main public method to evaluate data integrity using LAC.
-        Args:
-            text (str): Текст для аналізу.
-            source (str): Джерело/вузол, що перевіряється.
-        Returns:
-            dict: Results containing integrity score and flags.
-        """
-        # LAC Algorithm: Logic Authenticity Check
-        has_logic_gaps = "тому що" not in text.lower() and "внаслідок" not in text.lower()
-        has_semantic_drift = len(set(text.lower().split()) & {"етика", "необхідно", "стандарти"}) > 1
+        """Головний метод аналізу"""
+        entropy_score = self._calculate_entropy_coefficient(text)
         
-        # Розрахунок штрафу (Entropy Penalty)
+        # Динамічний штраф (Slashing)
+        # Якщо ентропія висока (більше 0.4), репутація вузла падає
         penalty = 0.0
-        if has_logic_gaps:
-            penalty += 0.3
-        if has_semantic_drift:
-            penalty += 0.2
+        if entropy_score > 0.4:
+            penalty = round(entropy_score * 0.4, 2)
         
-        # Оновлення репутації вузла (Slashing)
+        # Бонус за чистий сигнал
+        if entropy_score < 0.2:
+            penalty = -0.05 # Репутація трохи зростає
+            
         current_rep = self.reputation_registry.get(source, 0.5)
-        updated_rep = max(0.0, current_rep - penalty)
+        updated_rep = max(0.0, min(1.0, current_rep - penalty))
         self.reputation_registry[source] = round(updated_rep, 2)
         
+        state = self._get_state_name(updated_rep)
+        
         return {
-            "node": source,
-            "status": "REJECTED" if updated_rep < 0.4 else "STABLE",
-            "new_reputation": updated_rep,
-            "intervention_required": updated_rep < 0.3
+            "Джерело": source,
+            "Індекс ентропії (Бруд)": entropy_score,
+            "Нова репутація": updated_rep,
+            "Стан системи": state,
+            "Рішення": "ACCEPT" if entropy_score < 0.4 else "REJECT/CHECK"
         }
 
-    def get_system_state(self, node_name: str):
-        """
-        Визначає стан системи на основі репутації вузла.
-        Використовує логіку з states.py.
-        
-        Args:
-            node_name (str): Назва вузла з реєстру репутацій.
-            
-        Returns:
-            SystemState: Об'єкт стану системи (LAMINAR_FLOW, SYSTEMIC_FATIGUE, etc.)
-        """
-        # Імпорт тут, щоб уникнути проблем
-        from states import calculate_state_from_reputation
-        
-        # Отримуємо репутацію вузла (0.5 за замовчуванням, якщо не знайдено)
-        reputation = self.reputation_registry.get(node_name, 0.5)
-        
-        # Визначаємо стан на основі репутації
-        return calculate_state_from_reputation(reputation)
-
-
-# Logic execution for the system
+# --- ТЕСТОВИЙ ЗАПУСК ---
 if __name__ == "__main__":
-    # Тестуємо основний функціонал
     v = VeritasCore()
-    print("=== Тест основного методу evaluate_integrity ===")
-    result = v.evaluate_integrity("Призначення Шевчука етично необхідне", "Prosecutor_Council_UA")
-    print(f"Результат перевірки: {result}")
     
-    print("\n=== Тест нового методу get_system_state ===")
-    
-    # Перевіряємо стани для різних вузлів
-    test_nodes = ["Ethical_Council_UA", "Prosecutor_Council_UA", "Davos_Global_Rhetoric", "Unknown_Node"]
-    
-    for node in test_nodes:
-        state = v.get_system_state(node)
-        print(f"Вузол '{node}': репутація = {v.reputation_registry.get(node, 0.5):.2f}, стан системи = {state.name}")
-    
-    print("\n=== Фінальний реєстр репутацій ===")
-    for node, rep in v.reputation_registry.items():
-        print(f"{node}: {rep}")
+    # 1. Тестуємо "Бруд" (Новина NBC про Гренландію)
+    news_text = "Історично важливо, що довіра Європи втрачена, це неприпустимо і завдає великих збитків."
+    print("\n--- Аналіз новин (NBC Style) ---")
+    print(v.evaluate_integrity(news_text, "NBC_News_Greenland"))
+
+    # 2. Тестуємо "Сигнал" (Тайвань про чипи)
+    taiwan_text = "Ми перекриємо канали тому що факт постачання чипів дорівнює ескалації. Результат гарантовано."
+    print("\n--- Аналіз сигналу (Taiwan Style) ---")
+    print(v.evaluate_integrity(taiwan_text, "Taiwan_Semi_Official"))
+
+    # 3. Тестуємо "Вурдалаків" (Давос/Риторика)
+    davos_text = "Необхідно етично дотримуватися стандартів важливості фундаментальних цінностей."
+    print("\n--- Аналіз демагогії (Davos Style) ---")
+    print(v.evaluate_integrity(davos_text, "Davos_Global_Rhetoric"))
