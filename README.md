@@ -69,3 +69,26 @@ Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 ## Licensing 
 Licensed under the [Veritas Ethical License v1.0](LICENSE.md)
 ```
+
+## 🛠️ Tools & Implementations
+
+### Temporal Navigation Engine
+
+An interactive probabilistic simulation tool demonstrating Veritas principles in practice.
+
+**Location:** `tools/temporal-navigation-engine/`
+
+**Purpose:** Model how arguments and decisions shape possible futures through probability navigation rather than deterministic control.
+
+**Key Features:**
+- Interactive future scenario modeling
+- Adjustable resonance strength (argument influence power)
+- Stochastic timeline collapse simulation
+- Feedback loop visualization
+- Strategic decision-making support
+
+**Use Cases:** Strategic planning, research analysis, education, risk assessment
+
+[→ Full Documentation](tools/temporal-navigation-engine/README.md)
+
+---
