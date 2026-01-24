@@ -65,3 +65,7 @@ Results are automatically saved to `audit_log.csv` for analytical review and ESI
 ## Contributing
 Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 ```
+
+## Licensing 
+Licensed under the [Veritas Ethical License v1.0](LICENSE.md)
+```
