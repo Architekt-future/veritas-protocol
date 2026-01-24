@@ -36,6 +36,15 @@ pip install -r requirements.txt
 python verify_news.py
 ```
 
+The Veritas Protocol is equipped with a minimalist CLI interface for real-time Logic Authenticity Checks (LAC).
+
+4. Running the Monitor
+To start the integrity monitor, navigate to the root directory and run:
+
+```bash
+python interface.py
+```
+
 ## Documentation
 Detailed technical and ethical specifications:
 
