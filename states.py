@@ -1,68 +1,41 @@
-"""
-Veritas Protocol — Finite State Machine (FSM) Definition
-Цей файл визначає детерміновані стани системи згідно з принципами Witness Silence.
-"""
-
-from enum import Enum, auto
+from enum import Enum
 
 class SystemState(Enum):
-    """Детерміновані стани системи Veritas."""
-    LAMINAR_FLOW = auto()      # Стабільний стан, ентропія низька
-    SYSTEMIC_FATIGUE = auto()  # Підвищена ентропія, попередження
-    WITNESS_SILENCE = auto()   # Критична ентропія, мовчання
-    ERROR = auto()             # Технічна помилка
-
-# Простий словник для швидкого доступу до станів за іменем
-STATES = {
-    "LAMINAR_FLOW": SystemState.LAMINAR_FLOW,
-    "SYSTEMIC_FATIGUE": SystemState.SYSTEMIC_FATIGUE,
-    "WITNESS_SILENCE": SystemState.WITNESS_SILENCE,
-    "ERROR": SystemState.ERROR
-}
-
-def get_state_by_esi(esi_value: float) -> SystemState:
     """
-    Детермінована функція для отримання стану системи на основі ESI.
-    Відповідає таблиці 1 з оригінального паперу.
+    Визначає фазові стани системи Veritas.
+    Кожен стан відповідає рівню ентропії та репутації вузла.
     """
-    if esi_value < 0.3:
-        return SystemState.LAMINAR_FLOW
-    elif 0.3 <= esi_value <= 0.7:
-        return SystemState.SYSTEMIC_FATIGUE
-    else:  # esi_value > 0.7
-        return SystemState.WITNESS_SILENCE
+    LAMINAR_FLOW = (0.8, 1.0, "Потік чистий. Логіка домінує. Втручання не потрібне.")
+    STABLE = (0.6, 0.79, "Система стабільна. Є незначний шум, але сигнал чіткий.")
+    SYSTEMIC_FATIGUE = (0.4, 0.59, "Системна втома. Висока ентропія. Потрібна верифікація.")
+    ENTROPIC_DECAY = (0.2, 0.39, "Ентропійний розпад. Критичний рівень маніпуляцій. Slashing увімкнено.")
+    COLLAPSE = (0.0, 0.19, "Колапс. Вузол захоплений вурдалаками. Повна ізоляція.")
 
-def get_state_name(state: SystemState) -> str:
-    """Повертає читабельну назву стану."""
-    return state.name.replace('_', ' ').title()
+    def __init__(self, min_rep, max_rep, description):
+        self.min_rep = min_rep
+        self.max_rep = max_rep
+        self.description = description
 
-# Функція для інтеграції з VeritasCore (додаємо ESI-логіку в репутацію)
 def calculate_state_from_reputation(reputation: float) -> SystemState:
     """
-    Визначає стан системи на основі репутації джерела.
-    Це дозволяє зв'язати економічну модель з FSM.
+    Мапує числове значення репутації на конкретний стан системи.
     """
-    if reputation >= 0.7:
-        return SystemState.LAMINAR_FLOW
-    elif 0.4 <= reputation < 0.7:
-        return SystemState.SYSTEMIC_FATIGUE
-    else:  # reputation < 0.4
-        return SystemState.WITNESS_SILENCE
+    for state in SystemState:
+        if state.min_rep <= reputation <= state.max_rep:
+            return state
+    return SystemState.COLLAPSE
 
-if __name__ == "__main__":
-    # Проста перевірка логіки
-    print("=== Veritas Protocol FSM Tester ===")
-    
-    # Тестуємо ESI-логіку
-    test_values = [0.1, 0.5, 0.9]
-    for val in test_values:
-        state = get_state_by_esi(val)
-        print(f"ESI={val} -> {state.name} ({get_state_name(state)})")
-    
-    print("\n" + "="*40)
-    
-    # Тестуємо репутаційну логіку
-    test_reputations = [0.8, 0.6, 0.2]
-    for rep in test_reputations:
-        state = calculate_state_from_reputation(rep)
-        print(f"Reputation={rep} -> {state.name}")
+def get_action_protocol(state: SystemState):
+    """
+    Повертає необхідну дію для поточного стану.
+    Економічний аспект: на рівні DECAY та COLLAPSE система автоматично 
+    блокує транзакції або інформаційні потоки.
+    """
+    protocols = {
+        SystemState.LAMINAR_FLOW: "PASS: Пріоритетне проходження сигналу.",
+        SystemState.STABLE: "MONITOR: Стандартний нагляд.",
+        SystemState.SYSTEMIC_FATIGUE: "WARN: Посилена перевірка джерел.",
+        SystemState.ENTROPIC_DECAY: "INTERDICT: Тимчасове блокування вузла.",
+        SystemState.COLLAPSE: "TERMINATE: Повне видалення з репутаційного реєстру."
+    }
+    return protocols.get(state, "UNKNOWN: Manual check required.")
