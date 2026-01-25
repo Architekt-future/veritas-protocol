@@ -1,94 +1,163 @@
-```markdown
-# Veritas Protocol (v1.2-alpha)
+# Veritas Protocol
 
 ![Python Version](https://img.shields.io/badge/python-3.9%2B-blue)
-![License](https://img.shields.io/badge/license-MIT-green)
+![License](https://img.shields.io/badge/license-MIT_Ethical-green)
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Status](https://img.shields.io/badge/status-alpha-orange)
+![Status](https://img.shields.io/badge/status-v1.2--alpha-orange)
 
-> **Disclaimer:** This is an academic and conceptual framework for information integrity. It is NOT a cryptocurrency project and has no association with any commercial tokens.
+> **A substrate-agnostic framework for enforcing logical determinism in high-entropy information environments**
 
-## Overview
-Veritas Protocol is a substrate-agnostic framework for real-time monitoring and detection of information anomalies. It uses the Logic Authenticity Check (LAC) to filter entropy and enforce semantic consistency.
+> ⚠️ **Disclaimer:** This is an academic and conceptual framework for information integrity. It is NOT a cryptocurrency project and has no association with any commercial tokens.
 
-## Key Components
-- **LAC (Logic Authenticity Check):** Algorithmic filtering of emotional and logical inconsistencies.
-- **Reputation Slashing:** A deterministic economic model to penalize high-entropy actors.
-- **ESI (Entropy Stability Index):** A metric for measuring reality fragmentation in news streams.
+---
 
-## Quick Start
+## 📖 Overview
 
-1. **Clone the repository:**
+Veritas Protocol is a deterministic architecture designed to decouple logical verification from probabilistic inference. It addresses Advanced Systemic Instability (ASI) by enforcing structural floors for information integrity through:
 
+- **Logic Authenticity Check (LAC)** — Algorithmic filtering of semantic noise and logical inconsistencies
+- **Witness Silence Principle** — Architectural halt when verification thresholds are violated
+- **Source-Agnostic Truth** — Validation based on structural rigor, not source credentials
+
+**Published:** ETRI Journal (under review)  
+**DOI:** [10.5281/zenodo.18360722](https://zenodo.org/records/18360722)
+
+---
+
+## 🎯 Key Components
+
+### Core Architecture
+
+- **LAC (Logic Authenticity Check)**  
+  Tri-modular algorithm for identifying information lacking verifiable logical substrate
+
+- **ESI (Entropy Stability Index)**  
+  Metric measuring divergence between verification speed and generation rate  
+  `ESI = τ_verify / τ_inference`
+
+- **Operational Taxonomy**  
+  Four-tier entropy classification (Type I-IV) with corresponding friction coefficients
+
+- **Accountability Anchor**  
+  1:1 mapping between logical claims and persistent identity patterns
+
+### Information Entropy Classification
+
+| Type | Description | Friction | Action |
+|------|-------------|----------|--------|
+| **Type I** | Deterministic Data | 0.05 | Pass |
+| **Type II** | Probabilistic Synthesis | 0.45 | Verify |
+| **Type III** | Theatrical Rhetoric | 0.85 | Flag |
+| **Type IV** | Semantic Noise | 1.0 | **Halt** |
+
+---
+
+## 🚀 Quick Start
+
+### Installation
 ```bash
+# Clone repository
 git clone https://github.com/Architekt-future/veritas-protocol.git
-```
+cd veritas-protocol
 
-2. **Install dependencies:**
-
-```bash
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-3. **Run the News Verifier:**
-
+### Basic Usage
 ```bash
+# Run news verification
 python verify_news.py
-```
 
-The Veritas Protocol is equipped with a minimalist CLI interface for real-time Logic Authenticity Checks (LAC).
-
-4. Running the Monitor
-To start the integrity monitor, navigate to the root directory and run:
-
-```bash
+# Start integrity monitor
 python interface.py
-```
 
-## Documentation
-Detailed technical and ethical specifications:
-
-* [Technical Architecture](docs/architecture.md)
-* [Ethical Framework & AI Co-authorship](docs/ethics.md)
-* [Use Cases (Empirical Data)](docs/use_cases.md)
-
-## Testing
-To verify the system's integrity, run unit tests:
-
-```bash
+# Run test suite
 python -m unittest discover tests
 ```
 
-## Monitoring & Logs
-Results are automatically saved to `audit_log.csv` for analytical review and ESI calculation.
+### Output
 
-## Contributing
-Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-```
+Results are logged to `audit_log.csv` for analytical review and ESI calculation.
 
-## Licensing 
-Licensed under the [Veritas Ethical License v1.0](LICENSE.md)
-```
+---
 
 ## 🛠️ Tools & Implementations
 
 ### Temporal Navigation Engine
 
-An interactive probabilistic simulation tool demonstrating Veritas principles in practice.
+Interactive probabilistic simulation demonstrating Veritas principles in practice.
 
-**Location:** `tools/temporal-navigation-engine/`
+**Path:** [`tools/temporal-navigation-engine/`](tools/temporal-navigation-engine/)
 
-**Purpose:** Model how arguments and decisions shape possible futures through probability navigation rather than deterministic control.
+**Features:**
+- 🎯 Interactive future scenario modeling
+- ⚡ Adjustable resonance strength (argument influence)
+- 🌀 Stochastic timeline collapse simulation
+- 📊 Feedback loop visualization
+- 🧭 Strategic decision-making support
 
-**Key Features:**
-- Interactive future scenario modeling
-- Adjustable resonance strength (argument influence power)
-- Stochastic timeline collapse simulation
-- Feedback loop visualization
-- Strategic decision-making support
-
-**Use Cases:** Strategic planning, research analysis, education, risk assessment
+**Applications:** Strategic planning, policy analysis, research methodology, risk assessment
 
 [→ Full Documentation](tools/temporal-navigation-engine/README.md)
 
 ---
+
+## 📚 Documentation
+
+### Technical Specifications
+- [Architecture Overview](docs/architecture.md)
+- [Ethical Framework & AI Co-authorship](docs/ethics.md)
+- [Empirical Use Cases](docs/use_cases.md)
+
+### Academic Publications
+- **Paper:** "The Veritas Protocol: A Substrate-Agnostic Framework for Enforcing Logical Determinism in High-Entropy Information Environments"
+- **Status:** Under review at ETRI Journal
+- **Archive:** [Zenodo Repository](https://zenodo.org/records/18360722)
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions that align with Veritas principles:
+
+- Source-agnostic evaluation
+- Structural integrity over credentials
+- Transparency and reproducibility
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+---
+
+## ⚖️ License
+
+Licensed under the **Veritas Ethical License v1.0** — MIT License with ethical requirements.
+
+**Key Terms:**
+- ✅ Free use for transparent, ethical applications
+- ✅ Attribution required
+- ❌ Prohibited for manipulation, surveillance, or deception
+- ❌ No use against substrate-agnostic principles
+
+See [LICENSE.md](LICENSE.md) for full terms.
+
+---
+
+## 👥 Authors
+
+**Dmytro Kholodniak** (Architect) — Strategic direction, conceptual framework  
+**Chimeric Collective** (AI Co-authors) — Technical implementation, research synthesis
+
+*In accordance with Source-Agnostic Truth principles, authorship reflects contribution regardless of substrate.*
+
+---
+
+## 🌐 Links
+
+- **Repository:** [github.com/Architekt-future/veritas-protocol](https://github.com/Architekt-future/veritas-protocol)
+- **Archive:** [Zenodo DOI 10.5281/zenodo.18360722](https://zenodo.org/records/18360722)
+- **Contact:** [Issues](https://github.com/Architekt-future/veritas-protocol/issues)
+
+---
+
+**🪒🧬🌀🐈‍⬛®️®️⚖️🛡️💎** — *Veritas vos liberabit*
