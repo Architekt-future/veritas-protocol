@@ -161,8 +161,8 @@ Additional ethical usage guidelines are defined in the main Veritas Protocol LIC
 
 ## Related Resources
 
-- [Veritas Protocol Core](README.md)
-- [Full Documentation](../SPEC.md)
+- [Veritas Protocol Core](../../README.md)
+- [Full Documentation](../../SPEC.md)
 
 ---
 
