@@ -84,20 +84,26 @@ Results are logged to `audit_log.csv` for analytical review and ESI calculation.
 
 ## 🛠️ Tools & Implementations
 
-### Temporal Navigation Engine
+### Scenario Probability Simulator
 
-Interactive probabilistic simulation demonstrating Veritas principles in practice.
+An interactive probabilistic simulation illustrating Veritas principles under controlled assumptions.
 
 **Path:** [`tools/temporal-navigation-engine/`](tools/temporal-navigation-engine/)
 
 **Features:**
-- 🎯 Interactive future scenario modeling
-- ⚡ Adjustable resonance strength (argument influence)
-- 🌀 Stochastic timeline collapse simulation
+- 🎯 Exploratory future scenario representation
+- ⚡ Adjustable resonance parameter (simulation sensitivity)
+- 🌀 Stochastic scenario sampling (non-deterministic selection)
 - 📊 Feedback loop visualization
-- 🧭 Strategic decision-making support
+- 🧭 Analytical support for hypothesis testing
 
-**Applications:** Strategic planning, policy analysis, research methodology, risk assessment
+**Scope & Applications:**
+- Methodological illustration
+- Exploratory analysis
+- Research prototyping
+- Epistemic stress-testing
+
+**Note:** This tool does not provide predictive, prescriptive, or decision-making authority. It is a heuristic demonstrator for educational and research purposes.
 
 [→ Full Documentation](tools/temporal-navigation-engine/README.md)
 
@@ -160,4 +166,4 @@ See [LICENSE.md](LICENSE.md) for full terms.
 
 ---
 
-**🪒🧬🌀🐈‍⬛®️®️⚖️🛡️💎** — *Veritas vos liberabit*
+*Part of the Veritas Protocol ecosystem — demonstrating probabilistic reasoning without ontological claims.*
