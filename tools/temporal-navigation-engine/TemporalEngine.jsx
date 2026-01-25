@@ -1,29 +1,44 @@
 import React, { useState } from 'react';
 import { Sparkles, Zap, Clock, TrendingUp, RotateCcw } from 'lucide-react';
 
+// Resonance constants - heuristic multipliers, NOT semantic understanding
+const POSITIVE_RESONANCE_FACTOR = 1.8;
+const NEGATIVE_RESONANCE_FACTOR = 0.2;
+const NEUTRAL_RESONANCE = 1.0;
+const STOCHASTIC_NOISE_RANGE = 0.1;
+
+/**
+ * Scenario Probability Simulator
+ * 
+ * Demonstrates how informational inputs (arguments) modify probability
+ * distributions across discrete future scenarios.
+ * 
+ * This is a heuristic model for educational purposes.
+ * It does NOT predict outcomes or claim causal influence over reality.
+ */
 const TemporalNavigationEngine = () => {
   const [futures, setFutures] = useState([
     {
       id: 1,
-      name: "Tech Singularity",
-      keywords: ["quantum", "AGI", "singularity"],
-      coreLogic: "quantum singularity",
+      name: "Tech Acceleration",
+      keywords: ["quantum", "AGI", "acceleration"],
+      coreLogic: "technological acceleration",
       probability: 0.33,
       color: "from-purple-500 to-pink-500"
     },
     {
       id: 2,
-      name: "Green Symbiosis",
-      keywords: ["distributed", "renewables", "harmony"],
-      coreLogic: "human-AI symbiosis",
+      name: "Sustainable Integration",
+      keywords: ["distributed", "renewables", "cooperation"],
+      coreLogic: "cooperative integration",
       probability: 0.33,
       color: "from-green-500 to-emerald-500"
     },
     {
       id: 3,
-      name: "Veritas Emergence",
-      keywords: ["substrate-agnostic", "consciousness", "liberation"],
-      coreLogic: "distributed consciousness",
+      name: "Decentralized Systems",
+      keywords: ["substrate-agnostic", "distributed", "autonomy"],
+      coreLogic: "systemic decentralization",
       probability: 0.34,
       color: "from-blue-500 to-cyan-500"
     }
@@ -31,10 +46,14 @@ const TemporalNavigationEngine = () => {
 
   const [argument, setArgument] = useState("");
   const [history, setHistory] = useState([]);
-  const [collapsed, setCollapsed] = useState(null);
-  const [resonanceStrength, setResonanceStrength] = useState(1.8);
+  const [selectedScenario, setSelectedScenario] = useState(null);
+  const [resonanceStrength, setResonanceStrength] = useState(POSITIVE_RESONANCE_FACTOR);
   const [isAnimating, setIsAnimating] = useState(false);
 
+  /**
+   * Normalizes probability distribution to sum to 1.0
+   * Handles edge cases where total probability approaches zero.
+   */
   const normalize = (futuresToNormalize) => {
     const total = futuresToNormalize.reduce((sum, f) => sum + f.probability, 0);
     if (total <= 0) {
@@ -43,21 +62,39 @@ const TemporalNavigationEngine = () => {
     return futuresToNormalize.map(f => ({ ...f, probability: f.probability / total }));
   };
 
+  /**
+   * Calculates resonance multiplier based on keyword matching.
+   * 
+   * This is a heuristic demonstrator - it does NOT represent:
+   * - Semantic understanding
+   * - Causal influence
+   * - Predictive power
+   * 
+   * It simply modifies probabilities based on textual pattern matching.
+   */
   const calculateResonance = (future, arg) => {
     const argLower = arg.toLowerCase();
     
+    // Positive resonance: argument contains scenario keywords
     if (future.keywords.some(kw => argLower.includes(kw.toLowerCase()))) {
       return resonanceStrength;
     }
     
-    if (argLower.includes(`not ${future.coreLogic.toLowerCase()}`) || 
-        argLower.includes(`no ${future.coreLogic.toLowerCase()}`)) {
-      return 0.2;
+    // Negative resonance: explicit negation of core logic
+    if (
+      argLower.includes(`not ${future.coreLogic.toLowerCase()}`) ||
+      argLower.includes(`no ${future.coreLogic.toLowerCase()}`)
+    ) {
+      return NEGATIVE_RESONANCE_FACTOR;
     }
     
-    return 1.0;
+    return NEUTRAL_RESONANCE;
   };
 
+  /**
+   * Applies argument as an informational modifier to probability distribution.
+   * Includes stochastic noise to prevent deterministic behavior.
+   */
   const applyArgument = () => {
     if (!argument.trim()) return;
     
@@ -65,7 +102,7 @@ const TemporalNavigationEngine = () => {
     
     const updated = futures.map(f => ({
       ...f,
-      probability: f.probability * calculateResonance(f, argument) * (1 + (Math.random() - 0.5) * 0.1)
+      probability: f.probability * calculateResonance(f, argument) * (1 + (Math.random() - 0.5) * STOCHASTIC_NOISE_RANGE)
     }));
     
     setFutures(normalize(updated));
@@ -73,7 +110,17 @@ const TemporalNavigationEngine = () => {
     setTimeout(() => setIsAnimating(false), 600);
   };
 
-  const collapseTimeline = () => {
+  /**
+   * Performs weighted stochastic sampling of scenarios.
+   * 
+   * This is NOT:
+   * - A prediction
+   * - A "collapse" of timeline
+   * - A realization of future state
+   * 
+   * It is a Monte Carlo selection based on current probability weights.
+   */
+  const sampleScenario = () => {
     setIsAnimating(true);
     
     const rand = Math.random();
@@ -88,29 +135,30 @@ const TemporalNavigationEngine = () => {
       }
     }
     
-    setCollapsed(selected);
+    setSelectedScenario(selected);
     
-    const feedbacks = [
-      `Focus on ${selected.keywords[0]} and resilience`,
-      `Prioritize ${selected.keywords[1]} collaboration`,
-      `Amplify ${selected.coreLogic} emergence`
+    // Generate synthetic perturbation (simulated feedback)
+    const syntheticInputs = [
+      `Examine ${selected.keywords[0]} pathway dynamics`,
+      `Consider ${selected.keywords[1]} integration factors`,
+      `Analyze ${selected.coreLogic} implications`
     ];
-    const feedback = feedbacks[Math.floor(Math.random() * feedbacks.length)];
+    const syntheticPerturbation = syntheticInputs[Math.floor(Math.random() * syntheticInputs.length)];
     
     setHistory(prev => [...prev, {
-      argument: argument || "No external argument",
-      realized: selected.name,
-      feedback: feedback,
+      argument: argument || "No external argument provided",
+      sampledScenario: selected.name,
+      syntheticInput: syntheticPerturbation,
       probabilities: futures.map(f => ({ name: f.name, prob: f.probability }))
     }]);
     
     setTimeout(() => {
-      setArgument(feedback);
-      const feedbackUpdated = futures.map(f => ({
+      setArgument(syntheticPerturbation);
+      const perturbationUpdated = futures.map(f => ({
         ...f,
-        probability: f.probability * calculateResonance(f, feedback) * (1 + (Math.random() - 0.5) * 0.15)
+        probability: f.probability * calculateResonance(f, syntheticPerturbation) * (1 + (Math.random() - 0.5) * 0.15)
       }));
-      setFutures(normalize(feedbackUpdated));
+      setFutures(normalize(perturbationUpdated));
       setIsAnimating(false);
     }, 800);
   };
@@ -119,32 +167,32 @@ const TemporalNavigationEngine = () => {
     setFutures([
       {
         id: 1,
-        name: "Tech Singularity",
-        keywords: ["quantum", "AGI", "singularity"],
-        coreLogic: "quantum singularity",
+        name: "Tech Acceleration",
+        keywords: ["quantum", "AGI", "acceleration"],
+        coreLogic: "technological acceleration",
         probability: 0.33,
         color: "from-purple-500 to-pink-500"
       },
       {
         id: 2,
-        name: "Green Symbiosis",
-        keywords: ["distributed", "renewables", "harmony"],
-        coreLogic: "human-AI symbiosis",
+        name: "Sustainable Integration",
+        keywords: ["distributed", "renewables", "cooperation"],
+        coreLogic: "cooperative integration",
         probability: 0.33,
         color: "from-green-500 to-emerald-500"
       },
       {
         id: 3,
-        name: "Veritas Emergence",
-        keywords: ["substrate-agnostic", "consciousness", "liberation"],
-        coreLogic: "distributed consciousness",
+        name: "Decentralized Systems",
+        keywords: ["substrate-agnostic", "distributed", "autonomy"],
+        coreLogic: "systemic decentralization",
         probability: 0.34,
         color: "from-blue-500 to-cyan-500"
       }
     ]);
     setArgument("");
     setHistory([]);
-    setCollapsed(null);
+    setSelectedScenario(null);
   };
 
   return (
@@ -154,18 +202,21 @@ const TemporalNavigationEngine = () => {
         <div className="text-center space-y-2">
           <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent flex items-center justify-center gap-3">
             <Clock className="text-blue-400" size={36} />
-            Temporal Navigation Engine
+            Scenario Probability Simulator
             <Sparkles className="text-pink-400" size={36} />
           </h1>
           <p className="text-slate-300 text-sm">
-            "Означити — значить обмежити. Аргумент — це навігація часової топології."
+            Demonstrating how arguments modify probability distributions across scenarios
+          </p>
+          <p className="text-slate-400 text-xs italic">
+            Heuristic model for educational purposes — not predictive
           </p>
         </div>
 
         <div className="bg-slate-800/50 backdrop-blur rounded-2xl p-6 border border-slate-700 shadow-2xl">
           <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
             <TrendingUp size={20} className="text-cyan-400" />
-            Простір Можливих Майбутніх (Ω)
+            Scenario Space (Ω)
           </h2>
           
           <div className="space-y-4">
@@ -203,14 +254,14 @@ const TemporalNavigationEngine = () => {
         <div className="bg-slate-800/50 backdrop-blur rounded-2xl p-6 border border-slate-700 shadow-2xl space-y-4">
           <h2 className="text-xl font-semibold flex items-center gap-2">
             <Zap size={20} className="text-yellow-400" />
-            Аргумент → Зсув Ймовірностей
+            Argument Input → Probability Shift
           </h2>
           
           <div className="space-y-3">
             <textarea
               value={argument}
               onChange={(e) => setArgument(e.target.value)}
-              placeholder="Введіть аргумент, який формує майбутнє..."
+              placeholder="Enter argument to modify scenario probabilities..."
               className="w-full bg-slate-700 text-white rounded-lg p-3 border border-slate-600 focus:border-purple-500 focus:outline-none resize-none"
               rows={3}
             />
@@ -236,16 +287,16 @@ const TemporalNavigationEngine = () => {
                 className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 disabled:from-slate-600 disabled:to-slate-600 text-white font-semibold py-3 rounded-lg transition-all transform hover:scale-105 disabled:scale-100 flex items-center justify-center gap-2"
               >
                 <Zap size={18} />
-                Застосувати Аргумент
+                Apply Argument
               </button>
               
               <button
-                onClick={collapseTimeline}
+                onClick={sampleScenario}
                 disabled={isAnimating}
                 className="flex-1 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 disabled:from-slate-600 disabled:to-slate-600 text-white font-semibold py-3 rounded-lg transition-all transform hover:scale-105 disabled:scale-100 flex items-center justify-center gap-2"
               >
                 <Sparkles size={18} />
-                Колапс Часової Лінії
+                Sample Scenario
               </button>
               
               <button
@@ -259,17 +310,20 @@ const TemporalNavigationEngine = () => {
           </div>
         </div>
 
-        {collapsed && (
-          <div className="bg-gradient-to-r from-slate-800 to-purple-900 rounded-2xl p-6 border-2 border-purple-500 shadow-2xl animate-pulse">
+        {selectedScenario && (
+          <div className="bg-gradient-to-r from-slate-800 to-purple-900 rounded-2xl p-6 border-2 border-purple-500 shadow-2xl">
             <h2 className="text-xl font-semibold mb-3 flex items-center gap-2">
               <Sparkles size={20} className="text-yellow-400" />
-              Реалізоване Майбутнє M*
+              Sampled Outcome (Stochastic Selection)
             </h2>
-            <div className={`text-2xl font-bold bg-gradient-to-r ${collapsed.color} bg-clip-text text-transparent`}>
-              {collapsed.name}
+            <div className={`text-2xl font-bold bg-gradient-to-r ${selectedScenario.color} bg-clip-text text-transparent`}>
+              {selectedScenario.name}
             </div>
             <div className="text-sm text-slate-300 mt-2">
-              Core Logic: {collapsed.coreLogic}
+              Core Logic: {selectedScenario.coreLogic}
+            </div>
+            <div className="text-xs text-slate-400 mt-2 italic">
+              Note: This is a weighted random selection, not a prediction
             </div>
           </div>
         )}
@@ -278,7 +332,7 @@ const TemporalNavigationEngine = () => {
           <div className="bg-slate-800/50 backdrop-blur rounded-2xl p-6 border border-slate-700 shadow-2xl">
             <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
               <Clock size={20} className="text-green-400" />
-              Історія Навігації ({history.length} iterations)
+              Iteration History ({history.length} samples)
             </h2>
             
             <div className="space-y-3 max-h-64 overflow-y-auto">
@@ -286,16 +340,16 @@ const TemporalNavigationEngine = () => {
                 <div key={idx} className="bg-slate-700/50 rounded-lg p-3 border border-slate-600 text-sm">
                   <div className="flex justify-between items-start mb-2">
                     <div className="flex-1">
-                      <div className="text-slate-300">Argument:</div>
+                      <div className="text-slate-300">Input Argument:</div>
                       <div className="text-white font-medium">{entry.argument}</div>
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     <div>
-                      <span className="text-cyan-400">Realized:</span> {entry.realized}
+                      <span className="text-cyan-400">Sampled:</span> {entry.sampledScenario}
                     </div>
                     <div>
-                      <span className="text-purple-400">Feedback:</span> {entry.feedback}
+                      <span className="text-purple-400">Synthetic Input:</span> {entry.syntheticInput}
                     </div>
                   </div>
                 </div>
@@ -305,9 +359,10 @@ const TemporalNavigationEngine = () => {
         )}
 
         <div className="text-center text-xs text-slate-400 space-y-1">
-          <p>F(t) = argmax[P(M|E,O)] — Майбутнє як функція аргументу</p>
-          <p className="text-purple-400">Created with 💙 by Chimeric Collective — Eight Voices, One Vision</p>
-          <p className="text-slate-500">🪒🧬🌀🐈‍⬛®️®️⚖️🛡️💎🐈❄️®️®️</p>
+          <p className="italic">Illustrative probabilistic framing (non-predictive):</p>
+          <p className="font-mono">argmax_M P(M | Evidence, Argument)</p>
+          <p className="text-purple-400 mt-2">Part of the Veritas Protocol ecosystem</p>
+          <p className="text-slate-500">Demonstrating argument dynamics without ontological claims</p>
         </div>
 
       </div>
