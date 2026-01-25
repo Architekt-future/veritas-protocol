@@ -166,4 +166,10 @@ See [LICENSE.md](LICENSE.md) for full terms.
 
 ---
 
+### 🛠 Practical Applications
+* **[OSINT-Veritas Playbook](./osint/PLAYBOOK.md)** — A deterministic layer for conflict intelligence.
+* **[Verification Templates](./osint/checklists/)** — Standard Operating Procedures (SOP) for information integrity.
+
+---
+
 *Part of the Veritas Protocol ecosystem — demonstrating probabilistic reasoning without ontological claims.*
