@@ -19,7 +19,6 @@ class VeritasCore:
         }
 
     def _calculate_entropy_coefficient(self, text):
-      
         """
         Внутрішній метод для розрахунку індексу ентропії.
         Вимірює співвідношення демагогічного шуму до логічного сигналу.
@@ -28,37 +27,11 @@ class VeritasCore:
         if not words:
             return 1.0
             
-        # --- ДОДАНО: Абсолютні маркери хаосу (Елементи ентропії IV рівня) ---
+        # Абсолютні маркери хаосу (Елементи ентропії IV рівня)
         chaos_markers = {"рептилоїди", "lizard", "magic", "таємний", "змова", "плоска"}
         if any(w in chaos_markers for w in words):
             return 0.99  # Максимальна ентропія (хаос)
-        # -----------------------------------------------------------------
 
-        # Твої оригінальні маркери 'шуму'
-        noise_markers = {
-            "етично", "необхідно", "важливо", "неприпустимо", "історично", 
-            "фундаментально", "занепокоєння", "перемога", "збитки", "довіра"
-        }
-        # Твої оригінальні маркери 'сигналу'
-        signal_markers = {
-            "якщо", "тоді", "тому", "внаслідок", "дорівнює", "факт", 
-            "ресурс", "чип", "наказ", "координати", "результат"
-        }
-        
-        noise_count = sum(1 for w in words if w in noise_markers)
-        signal_count = sum(1 for w in words if w in signal_markers)
-        
-        laminar_index = (signal_count + 1) / (noise_count + signal_count + 1)
-        return round(1.0 - laminar_index, 3)
-        
-        """
-        Внутрішній метод для розрахунку індексу ентропії.
-        Вимірює співвідношення демагогічного шуму до логічного сигналу.
-        """
-        words = text.lower().replace(",", "").replace(".", "").split()
-        if not words:
-            return 1.0
-            
         # Маркери 'шуму' (ентропія)
         noise_markers = {
             "етично", "необхідно", "важливо", "неприпустимо", "історично", 
@@ -135,6 +108,11 @@ if __name__ == "__main__":
     tech_text = "Якщо чипи заблоковано, тоді результат ескалації дорівнює нулю."
     res2 = v.evaluate_integrity(tech_text, "Taiwan_Semi_Official")
     print(f"Аналіз сигналу: {res2}")
+    
+    # Приклад 3: Тест маркерів хаосу
+    chaos_text = "Рептилоїди таємно керують magic світом через змову."
+    res3 = v.evaluate_integrity(chaos_text, "Conspiracy_Node")
+    print(f"Аналіз хаосу: {res3}")
     
     # Стан системи для Тайваню
     state = v.get_system_state("Taiwan_Semi_Official")
