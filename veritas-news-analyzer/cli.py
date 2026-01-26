@@ -6,12 +6,26 @@ Veritas News Analyzer - Command Line Interface
 
 import argparse
 import sys
+import yaml
 from pathlib import Path
 
 # Додаємо app в path
 sys.path.insert(0, str(Path(__file__).parent / 'app'))
 
 from app.analyzer import NewsAnalyzer
+
+
+def load_config(config_path: str = 'config.yaml') -> dict:
+    """Завантажує конфігурацію з YAML файлу"""
+    try:
+        with open(config_path, 'r', encoding='utf-8') as f:
+            return yaml.safe_load(f)
+    except FileNotFoundError:
+        print(f"⚠️  Config file '{config_path}' not found. Using defaults.")
+        return {}
+    except Exception as e:
+        print(f"⚠️  Error loading config: {e}. Using defaults.")
+        return {}
 
 
 def main():
@@ -68,6 +82,10 @@ def main():
                        action='store_true',
                        help='Детальний вивід')
     
+    parser.add_argument('--config', '-c',
+                       default='config.yaml',
+                       help='Шлях до конфігураційного файлу (default: config.yaml)')
+    
     args = parser.parse_args()
     
     # Перевірка аргументів
@@ -75,8 +93,9 @@ def main():
         parser.print_help()
         sys.exit(1)
     
-    # Ініціалізація аналізатора
-    analyzer = NewsAnalyzer()
+    # Ініціалізація аналізатора з конфігурацією
+    config = load_config(args.config)
+    analyzer = NewsAnalyzer(config=config.get('veritas', {}))
     
     # Обробка команд
     if args.reputation:
