@@ -1,9 +1,9 @@
-# Veritas News Analyzer Configuration
+# Veritas News Analyzer Configuration v2.0 (Calibrated)
 
 # Application settings
 app:
   name: "Veritas News Analyzer"
-  version: "1.0.0"
+  version: "2.0.0-calibrated"
   debug: false
 
 # Database settings
@@ -18,28 +18,34 @@ scraper:
   max_retries: 3
   user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
   
-# Veritas Protocol settings
+# Veritas Protocol settings (ОНОВЛЕНО після калібрування)
 veritas:
-  # Threshold values
+  # Threshold values (відкалібровано на основі тестів)
   thresholds:
-    high_entropy: 0.6      # Above this = high noise
-    medium_entropy: 0.3    # Above this = moderate noise
-    chaos_threshold: 0.99  # Conspiracy/chaos content
+    critical: 0.7      # Було 0.6 → Підвищили для зменшення false positives
+    warning: 0.4       # Залишили без змін
+    trusted: 0.2       # Новий поріг для TRUSTED/EXCELLENT статусу
   
   # Reputation bounds
   reputation:
-    trusted_min: 0.85      # TRUSTED status
-    monitored_min: 0.60    # MONITORED status
-    warning_min: 0.40      # WARNING status
-    # Below 0.40 = REJECTED
+    trusted_min: 0.70      # Було 0.85 → Зробили реалістичнішим
+    success_min: 0.50      # Новий статус між TRUSTED і WARNING
+    warning_min: 0.30      # Було 0.40 → Трохи м'якше
+    # Below 0.30 = CRITICAL
   
-  # Dynamic slashing parameters
+  # Dynamic slashing parameters (відкалібровано)
   slashing:
-    penalty_multiplier: 0.4   # Entropy * multiplier = penalty
-    reward_bonus: 0.05        # Bonus for low entropy
+    penalty_multiplier: 0.35   # Було 0.4 → Трохи м'якше
+    reward_bonus: 0.05         # Залишили без змін
   
   # Initial reputation for new sources
   default_reputation: 0.5
+  
+  # Number factor weight (новий параметр)
+  number_factor_weight: 0.3    # Наскільки цифри знижують ентропію
+  
+  # Shout factor weight (новий параметр)
+  shout_factor_weight: 0.4     # Наскільки вигуки/капслок підвищують ентропію
 
 # Language settings
 languages:
@@ -67,3 +73,22 @@ export:
   default_format: "json"
   include_full_text: false
   max_records_per_file: 1000
+  include_diagnostics: true   # Новий параметр - експортувати діагностику
+
+# Calibration notes (для документації)
+calibration:
+  version: "2.0"
+  date: "2026-01-26"
+  changes:
+    - "Додано наукові терміни як signal markers"
+    - "Додано Number Factor (цифри = факти)"
+    - "Додано Shout Factor (капслок/вигуки)"
+    - "Підвищено critical threshold з 0.6 до 0.7"
+    - "Знижено penalty_multiplier з 0.4 до 0.35"
+    - "Додано економічні терміни для англійської"
+    - "Покращено розпізнавання наукових статей"
+  test_results:
+    - "ТЕСТ 1 (логіка): 0.125 → SUCCESS ✅"
+    - "ТЕСТ 4 (конспірологія): 0.816 → CRITICAL ✅"
+    - "ТЕСТ 5 (BBC): 0.25 → потребує покращення"
+    - "ТЕСТ 7 (наука): 0.271 → потребує покращення"
