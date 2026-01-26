@@ -28,10 +28,11 @@ class NewsAnalyzer:
     Головний аналізатор новин за Veritas Protocol
     """
     
-    def __init__(self):
+    def __init__(self, config: Dict = None):
         self.extractor = NewsExtractor()
-        self.veritas = MultilingualVeritasCore()
+        self.veritas = MultilingualVeritasCore(config=config)
         self.analysis_history: List[Dict] = []
+        self.config = config or {}
     
     def analyze_url(self, url: str, save_history: bool = True) -> Dict:
         """
