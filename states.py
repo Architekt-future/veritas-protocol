@@ -1,41 +1,90 @@
-from enum import Enum
+"""
+Veritas Protocol - State Management Module
+Визначає стани системи на основі репутації вузлів.
+"""
 
-class SystemState(Enum):
+def calculate_state_from_reputation(reputation: float) -> str:
     """
-    Визначає фазові стани системи Veritas.
-    Кожен стан відповідає рівню ентропії та репутації вузла.
+    Визначає стан системи на основі репутації вузла.
+    
+    Args:
+        reputation: float from 0.0 to 1.0
+        
+    Returns:
+        str: System state descriptor
+        
+    States:
+        - STABLE_TRUST (≥0.85): Вузол має високу довіру
+        - MONITORED (0.60-0.84): Вузол під спостереженням
+        - WARNING (0.40-0.59): Попередження про зниження якості
+        - CRITICAL (0.20-0.39): Критичний стан, потрібне втручання
+        - QUARANTINE (<0.20): Вузол ізольовано
+        
+    Example:
+        >>> calculate_state_from_reputation(0.95)
+        'STABLE_TRUST'
+        >>> calculate_state_from_reputation(0.15)
+        'QUARANTINE'
     """
-    LAMINAR_FLOW = (0.8, 1.0, "Потік чистий. Логіка домінує. Втручання не потрібне.")
-    STABLE = (0.6, 0.79, "Система стабільна. Є незначний шум, але сигнал чіткий.")
-    SYSTEMIC_FATIGUE = (0.4, 0.59, "Системна втома. Висока ентропія. Потрібна верифікація.")
-    ENTROPIC_DECAY = (0.2, 0.39, "Ентропійний розпад. Критичний рівень маніпуляцій. Slashing увімкнено.")
-    COLLAPSE = (0.0, 0.19, "Колапс. Вузол захоплений вурдалаками. Повна ізоляція.")
+    if reputation >= 0.85:
+        return "STABLE_TRUST"
+    elif reputation >= 0.60:
+        return "MONITORED"
+    elif reputation >= 0.40:
+        return "WARNING"
+    elif reputation >= 0.20:
+        return "CRITICAL"
+    else:
+        return "QUARANTINE"
 
-    def __init__(self, min_rep, max_rep, description):
-        self.min_rep = min_rep
-        self.max_rep = max_rep
-        self.description = description
 
-def calculate_state_from_reputation(reputation: float) -> SystemState:
+def get_state_description(state: str) -> str:
     """
-    Мапує числове значення репутації на конкретний стан системи.
+    Повертає детальний опис стану.
+    
+    Args:
+        state: State name from calculate_state_from_reputation
+        
+    Returns:
+        str: Human-readable description
     """
-    for state in SystemState:
-        if state.min_rep <= reputation <= state.max_rep:
-            return state
-    return SystemState.COLLAPSE
-
-def get_action_protocol(state: SystemState):
-    """
-    Повертає необхідну дію для поточного стану.
-    Економічний аспект: на рівні DECAY та COLLAPSE система автоматично 
-    блокує транзакції або інформаційні потоки.
-    """
-    protocols = {
-        SystemState.LAMINAR_FLOW: "PASS: Пріоритетне проходження сигналу.",
-        SystemState.STABLE: "MONITOR: Стандартний нагляд.",
-        SystemState.SYSTEMIC_FATIGUE: "WARN: Посилена перевірка джерел.",
-        SystemState.ENTROPIC_DECAY: "INTERDICT: Тимчасове блокування вузла.",
-        SystemState.COLLAPSE: "TERMINATE: Повне видалення з репутаційного реєстру."
+    descriptions = {
+        "STABLE_TRUST": "Вузол демонструє стабільно високу якість логічного сигналу",
+        "MONITORED": "Вузол функціонує нормально, але під постійним моніторингом",
+        "WARNING": "Виявлено підвищену ентропію. Рекомендована перевірка",
+        "CRITICAL": "Критичне зниження якості. Необхідне термінове втручання",
+        "QUARANTINE": "Вузол ізольовано через систематичні порушення логічної цілісності"
     }
-    return protocols.get(state, "UNKNOWN: Manual check required.")
+    return descriptions.get(state, "Unknown state")
+
+
+if __name__ == "__main__":
+    # Тестування модуля
+    test_reputations = [0.95, 0.75, 0.50, 0.25, 0.10]
+    
+    print("=== State Mapping Tests ===")
+    for rep in test_reputations:
+        state = calculate_state_from_reputation(rep)
+        desc = get_state_description(state)
+        print(f"Reputation: {rep:.2f} → {state}")
+        print(f"  Description: {desc}\n")
+```
+
+---
+
+## 📝 Частина 3: Про `requirements.txt`
+
+**❌ НІ, НЕ ТРЕБА переносити в папку `tests/`!**
+
+`requirements.txt` **повинен залишатися в корені** репозиторію! Це стандарт для Python проектів.
+
+Структура має бути така:
+```
+veritas-protocol/
+├── requirements.txt        ← ТУТ (в корені)
+├── veritas_core.py
+├── states.py              ← Новий файл
+├── tests/
+│   ├── __init__.py
+│   └── test_core.py
+└── ...
