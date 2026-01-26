@@ -56,7 +56,42 @@ def get_state_description(state: str) -> str:
         "QUARANTINE": "Вузол ізольовано через систематичні порушення логічної цілісності"
     }
     return descriptions.get(state, "Unknown state")
-
+def get_action_protocol(reputation: float) -> dict:
+    """
+    Повертає рекомендовані дії на основі репутації вузла.
+    
+    Args:
+        reputation: float from 0.0 to 1.0
+        
+    Returns:
+        dict: Містить стан, опис та рекомендовані дії
+        
+    Example:
+        >>> get_action_protocol(0.15)
+        {
+            'state': 'QUARANTINE',
+            'description': 'Вузол ізольовано...',
+            'actions': ['BLOCK_OUTPUT', 'REQUIRE_MANUAL_REVIEW', 'LOG_INCIDENT']
+        }
+    """
+    state = calculate_state_from_reputation(reputation)
+    description = get_state_description(state)
+    
+    # Визначаємо дії на основі стану
+    action_map = {
+        "STABLE_TRUST": ["ALLOW_AUTONOMOUS", "PERIODIC_AUDIT"],
+        "MONITORED": ["ALLOW_WITH_LOGGING", "INCREASE_SAMPLING"],
+        "WARNING": ["REQUIRE_VERIFICATION", "ESCALATE_TO_HUMAN"],
+        "CRITICAL": ["RESTRICT_OUTPUT", "MANDATORY_REVIEW"],
+        "QUARANTINE": ["BLOCK_OUTPUT", "REQUIRE_MANUAL_REVIEW", "LOG_INCIDENT"]
+    }
+    
+    return {
+        "state": state,
+        "description": description,
+        "actions": action_map.get(state, ["UNKNOWN_STATE"]),
+        "reputation": reputation
+    }
 
 if __name__ == "__main__":
     # Тестування модуля
@@ -68,4 +103,3 @@ if __name__ == "__main__":
         desc = get_state_description(state)
         print(f"Reputation: {rep:.2f} → {state}")
         print(f"  Description: {desc}\n")
-```
