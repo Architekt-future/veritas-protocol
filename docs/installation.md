@@ -161,18 +161,20 @@ Veritas works out-of-the-box with default settings.
 
 ### Custom Configuration (Optional)
 
-Create `config.yaml` in project root:
+Veritas uses `config.yaml` for configuration. The file already exists in project root with default settings.
+
+To customize, edit `config.yaml`:
 
 ```yaml
 veritas:
   thresholds:
-    critical: 0.7
-    warning: 0.4
-    trusted: 0.2
+    critical: 0.7    # Entropy above = CRITICAL
+    warning: 0.4     # Entropy above = WARNING
+    trusted: 0.2     # Entropy below = TRUSTED
   
   slashing:
-    penalty_multiplier: 0.35
-    reward_bonus: 0.05
+    penalty_multiplier: 0.35  # Reputation penalty
+    reward_bonus: 0.05        # Reputation bonus
 
 web:
   host: "0.0.0.0"
@@ -182,7 +184,7 @@ database:
   path: "veritas_analysis.db"
 ```
 
-See [Configuration Guide](configuration.md) for full options.
+See `config.yaml` for all available options.
 
 ---
 
@@ -242,8 +244,8 @@ After successful installation:
    python cli.py --text "Your text here"
    python cli.py --url https://news-site.com/article
    ```
-3. **Explore [Configuration Options](configuration.md)**
-4. **Check out [API Reference](api.md)**
+3. **Customize settings in `config.yaml`**
+4. **Check out the [main README](../README.md) for more examples**
 
 ---
 
