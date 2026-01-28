@@ -1,18 +1,16 @@
 {
   "name": "veritas-protocol",
   "version": "1.0.0",
-  "description": "Substrate-Agnostic Framework for Enforcing Logical Determinism",
+  "description": "Entropy Analysis API",
   "main": "api/index.js",
-  "scripts": {
-    "start": "node api/index.js",
-    "dev": "node api/index.js"
-  },
   "dependencies": {
     "axios": "^1.6.0",
     "cheerio": "^1.0.0-rc.12"
   },
   "engines": {
-    "node": "24.x"
+    "node": "20.x"
   },
-  "license": "MIT"
+  "scripts": {
+    "start": "node api/index.js"
+  }
 }
