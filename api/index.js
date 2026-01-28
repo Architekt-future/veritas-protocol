@@ -36,7 +36,9 @@ module.exports = async (req, res) => {
         const $ = cheerio.load(response.data);
         
         // 5. Очищення: витягуємо текст з body, прибираємо зайві пробіли
-        const rawText = $('body').text() || "";
+        // Шукаємо основний контент (для Вікіпедії та новинних сайтів)
+        const mainContent = $('#mw-content-text, article, main, .article-body, .post-content').first();
+        const rawText = mainContent.length ? mainContent.text() : $('body').text();
         const cleanText = rawText
             .replace(/\s+/g, ' ')
             .trim()
