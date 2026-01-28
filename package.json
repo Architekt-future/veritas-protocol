@@ -1,0 +1,12 @@
+{
+  "name": "veritas-scraper",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Serverless scraper for Veritas Protocol",
+  "main": "api/scrape.js",
+  "scripts": {
+    "build": "echo 'No build needed'"
+  },
+  "dependencies": {}
+}
+```
