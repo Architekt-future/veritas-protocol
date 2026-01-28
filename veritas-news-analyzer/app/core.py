@@ -1,58 +1,57 @@
-"""
-Veritas Protocol - Core Engine
-Базовий movement engine для standalone використання
-"""
-
-from typing import Dict, Set
-
+import math
+import re
+from typing import Dict
 
 class VeritasEngine:
-    """
-    Базовий Veritas engine для обчислення ентропії
-    Використовується як fallback якщо translator недоступний
-    """
-    
-    def __init__(self):
-        self.noise_markers = {
-            "етично", "необхідно", "важливо", "неприпустимо", "історично",
-            "ethically", "necessarily", "important", "unacceptable", "historically"
-        }
-        
-        self.signal_markers = {
-            "якщо", "тоді", "тому", "внаслідок", "дорівнює", "факт",
-            "if", "then", "therefore", "consequently", "equals", "fact"
-        }
-        
-        self.chaos_markers = {
-            "рептилоїди", "lizard", "magic", "таємний", "змова", "плоска",
-            "conspiracy", "secret", "freemasons"
-        }
-    
-    def calculate_entropy(self, text: str) -> float:
-        """
-        Базовий розрахунок ентропії
-        
-        Args:
-            text: Текст для аналізу
-            
-        Returns:
-            float: Індекс ентропії (0.0-1.0)
-        """
-        words = text.lower().replace(",", "").replace(".", "").split()
-        if not words:
-            return 1.0
-        
-        # Перевірка на хаос
-        if any(w in self.chaos_markers for w in words):
-            return 0.99
-        
-        # Підрахунок
-        noise_count = sum(1 for w in words if w in self.noise_markers)
-        signal_count = sum(1 for w in words if w in self.signal_markers)
-        
-        laminar_index = (signal_count + 1) / (noise_count + signal_count + 1)
-        return round(1.0 - laminar_index, 3)
+    def __init__(self, config: Dict):
+        self.config = config
+        # Базові константи для коригування
+        self.entropy_threshold = 0.5
+        # Список стоп-комбінацій (можна розширювати через config.yaml)
+        self.incompatible_clusters = [
+            {"квантовий", "борщ", "зажарка", "5G"}, # Борщовий колапс
+            {"магія", "сметана", "криптовалюта"}    # Майбутні аномалії
+        ]
 
+    def calculate_veritas_score(self, text: str, sanity_index: float = 1.0) -> float:
+        """
+         sanity_index передається з analyzer.py після семантичного аналізу
+        """
+        if not text: return 1.0
 
-# Експорт для backward compatibility
-__all__ = ['VeritasEngine']
+        raw_entropy = self._shannon_entropy(text)
+        complexity = self._calculate_complexity(text)
+        
+        # Основна формула: поєднуємо ентропію та складність
+        # Veritas Score = (Entropy * 0.7) + (Complexity * 0.3)
+        base_score = (raw_entropy * 0.7) + (complexity * 0.3)
+
+        # НОВЕ: Вплив здорового глузду (Sanity Penalty)
+        # Якщо sanity_index низький, ми експоненціально підвищуємо ентропію
+        if sanity_index < 1.0:
+            penalty = (1.0 - sanity_index) * 0.8
+            base_score = min(0.999, base_score + penalty)
+
+        return base_score
+
+    def _shannon_entropy(self, data: str) -> float:
+        """Розрахунок ентропії Шеннона для тексту"""
+        if not data: return 0
+        
+        prob = [float(data.count(c)) / len(data) for c in dict.fromkeys(list(data))]
+        entropy = - sum([p * math.log(p) / math.log(2.0) for p in prob])
+        
+        # Нормалізація до діапазону 0-1 (8 - макс для ASCII)
+        return min(1.0, entropy / 8.0)
+
+    def _calculate_complexity(self, text: str) -> float:
+        """Оцінка складності структури (Linguistic Density)"""
+        words = re.findall(r'\w+', text)
+        if not words: return 1.0
+        
+        unique_words = len(set(words))
+        # Чим більше унікальних слів на одиницю тексту, тим нижча ентропія (сигнал чистіший)
+        density = unique_words / len(words)
+        return 1.0 - density
+
+                                
