@@ -3,55 +3,50 @@ import re
 from typing import Dict
 
 class VeritasEngine:
-    def __init__(self, config: Dict):
-        self.config = config
-        # Базові константи для коригування
-        self.entropy_threshold = 0.5
-        # Список стоп-комбінацій (можна розширювати через config.yaml)
-        self.incompatible_clusters = [
-            {"квантовий", "борщ", "зажарка", "5G"}, # Борщовий колапс
-            {"магія", "сметана", "криптовалюта"}    # Майбутні аномалії
-        ]
+    def __init__(self, config: Dict = None):
+        self.config = config or {}
+        # Пороги для статусів
+        self.thresholds = {
+            "trusted": 0.3,
+            "warning": 0.6,
+            "critical": 0.85
+        }
 
-    def calculate_veritas_score(self, text: str, sanity_index: float = 1.0) -> float:
+    def calculate_veritas_score(self, metrics: Dict) -> float:
         """
-         sanity_index передається з analyzer.py після семантичного аналізу
+        Головна формула Veritas Protocol v3.5
+        Приймає метрики з analyzer.py та вираховує фінальний індекс ентропії.
         """
-        if not text: return 1.0
-
-        raw_entropy = self._shannon_entropy(text)
-        complexity = self._calculate_complexity(text)
+        # Отримуємо дані з аналізатора
+        shout = metrics.get('shout_factor', 0)
+        sanity = metrics.get('sanity_index', 1.0)
+        complexity = metrics.get('complexity', 0.5)
         
-        # Основна формула: поєднуємо ентропію та складність
-        # Veritas Score = (Entropy * 0.7) + (Complexity * 0.3)
-        base_score = (raw_entropy * 0.7) + (complexity * 0.3)
-
-        # НОВЕ: Вплив здорового глузду (Sanity Penalty)
-        # Якщо sanity_index низький, ми експоненціально підвищуємо ентропію
-        if sanity_index < 1.0:
-            penalty = (1.0 - sanity_index) * 0.8
-            base_score = min(0.999, base_score + penalty)
-
-        return base_score
-
-    def _shannon_entropy(self, data: str) -> float:
-        """Розрахунок ентропії Шеннона для тексту"""
-        if not data: return 0
+        # 1. Розрахунок базової ентропії на основі лінгвістичної складності
+        # Чим вища складність (unique words), тим нижча базова ентропія
+        base_score = 1.0 - complexity
         
-        prob = [float(data.count(c)) / len(data) for c in dict.fromkeys(list(data))]
-        entropy = - sum([p * math.log(p) / math.log(2.0) for p in prob])
+        # 2. Вплив Shout Factor (тепер він м'який, бо відфільтрований в analyzer.py)
+        # Додає максимум 0.3 до ентропії
+        shout_impact = shout * 0.3
         
-        # Нормалізація до діапазону 0-1 (8 - макс для ASCII)
-        return min(1.0, entropy / 8.0)
-
-    def _calculate_complexity(self, text: str) -> float:
-        """Оцінка складності структури (Linguistic Density)"""
-        words = re.findall(r'\w+', text)
-        if not words: return 1.0
+        # 3. Фінальна збірка
+        final_score = (base_score * 0.7) + shout_impact
         
-        unique_words = len(set(words))
-        # Чим більше унікальних слів на одиницю тексту, тим нижча ентропія (сигнал чистіший)
-        density = unique_words / len(words)
-        return 1.0 - density
+        # 4. СЕМАНТИЧНИЙ ШТРАФ (Захист від "Квантового борщу")
+        # Якщо sanity_index низький, ми примусово виводимо результат у червону зону
+        if sanity < 0.5:
+            # Експоненціальне зростання ентропії при порушенні логіки
+            final_score = max(final_score, 0.92)
+            
+        return round(min(0.999, final_score), 4)
 
-                                
+    def get_status(self, score: float) -> str:
+        """Повертає статус на основі фінального результату"""
+        if score < self.thresholds["trusted"]:
+            return "STABLE LOGICAL SIGNAL (TRUSTED)"
+        if score < self.thresholds["warning"]:
+            return "ACCEPTABLE QUALITY (SUCCESS)"
+        if score < self.thresholds["critical"]:
+            return "RHETORICAL NOISE (WARNING)"
+        return "LOGICAL MIRAGE (CRITICAL)"
