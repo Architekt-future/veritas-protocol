@@ -33,16 +33,27 @@ module.exports = async (req, res) => {
             }
         });
 
+        try {
+        const response = await axios.get(url, { 
+            timeout: 10000,
+            headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' }
+        });
+
         const $ = cheerio.load(response.data);
         
-        // 5. Очищення: витягуємо текст з body, прибираємо зайві пробіли
-        // Шукаємо основний контент (для Вікіпедії та новинних сайтів)
-        const mainContent = $('#mw-content-text, article, main, .article-body, .post-content').first();
-        const rawText = mainContent.length ? mainContent.text() : $('body').text();
-        const cleanText = rawText
-            .replace(/\s+/g, ' ')
+        // --- КРОК 1: ВИДАЛЯЄМО СМІТТЯ ---
+        $('script, style, .mw-empty-elt, .infobox, .navbox, .reference, .hatnote').remove();
+
+        // --- КРОК 2: ШУКАЄМО КОНТЕНТ ---
+        const mainContent = $('#mw-content-text, article, main, .article-body').first();
+        let cleanText = mainContent.length ? mainContent.text() : $('body').text();
+
+        // --- КРОК 3: ФІНАЛЬНА ЧИСТКА ---
+        cleanText = cleanText
+            .replace(/\s+/g, ' ') // прибираємо зайві пробіли та переноси
+            .replace(/\{[^}]+\}/g, '') // видаляємо залишки CSS-коду в дужках
             .trim()
-            .substring(0, 5000); // Беремо перші 5000 символів
+            .substring(0, 5000);
 
         return res.status(200).json({
             url: url,
