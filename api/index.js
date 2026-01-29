@@ -2,114 +2,76 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 
 module.exports = async (req, res) => {
-  // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
-  // Handle POST (manual text input)
-  if (req.method === 'POST') {
-    try {
-      const { text, source } = req.body;
-      
-      if (!text) {
-        return res.status(400).json({ error: "No text provided" });
-      }
-
-      return res.status(200).json({
-        url: source || "manual-input",
-        content: text.substring(0, 10000), // Allow more text
-        length: text.length,
-        mode: "manual"
-      });
-    } catch (error) {
-      return res.status(500).json({ error: "POST failed: " + error.message });
-    }
-  }
-
-  // Handle GET (URL scraping)
-  const { url } = req.query;
-
-  if (!url) {
-    return res.status(200).json({ 
-      status: "online", 
-      message: "Veritas Protocol API is active. Use ?url= or POST with text" 
-    });
-  }
-
   try {
-    // Improved scraping with better timeout and headers
-    const response = await axios.get(url, { 
-      timeout: 15000, // Increased to 15 seconds
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        'Accept-Language': 'uk-UA,uk;q=0.9,en-US;q=0.8,en;q=0.7',
-      }
-    });
+    const { url, text } = req.method === 'POST' ? req.body : req.query;
+    let content = text || '';
 
-    const $ = cheerio.load(response.data);
-    
-    // Remove unwanted elements before extraction
-    $('script').remove();
-    $('style').remove();
-    $('nav').remove();
-    $('header').remove();
-    $('footer').remove();
-    $('iframe').remove();
-    $('.advertisement').remove();
-    $('.ads').remove();
-    
-    // Try multiple selectors for better content extraction
-    let text = '';
-    
-    // Priority 1: Article content
-    const article = $('article').text().trim();
-    if (article && article.length > 100) {
-      text = article;
+    // 1. Скрапінг, якщо передано URL
+    if (url) {
+      const response = await axios.get(url, { 
+        headers: { 'User-Agent': 'Mozilla/5.0' },
+        timeout: 5000 
+      });
+      const $ = cheerio.load(response.data);
+      $('script, style, nav, footer, header').remove();
+      content = $('article, main, body').text();
     }
-    
-    // Priority 2: Main content
-    if (!text) {
-      const main = $('main').text().trim();
-      if (main && main.length > 100) {
-        text = main;
-      }
+
+    if (!content || content.length < 10) {
+      return res.status(400).json({ error: 'Контент занадто короткий для аналізу' });
     }
-    
-    // Priority 3: Content div
-    if (!text) {
-      const content = $('.content, .post-content, .entry-content, .article-content').text().trim();
-      if (content && content.length > 100) {
-        text = content;
-      }
+
+    // 2. Очищення тексту для аналізу
+    const cleanText = content
+      .replace(/[0-9]/g, '')
+      .replace(/[^а-яіїєґa-z\s]/gi, ' ')
+      .toLowerCase();
+
+    const words = cleanText.split(/\s+/).filter(w => w.length > 3);
+
+    // 3. СУВОРА МАТЕМАТИЧНА ЕНТРОПІЯ (Алгоритм Veritas Core)
+    const wordCounts = {};
+    words.forEach(w => wordCounts[w] = (wordCounts[w] || 0) + 1);
+
+    let entropy = 0;
+    const totalWords = words.length;
+
+    for (const word in wordCounts) {
+      const p = wordCounts[word] / totalWords;
+      entropy -= p * Math.log2(p);
     }
+
+    // НОРМАЛІЗАЦІЯ (Корекція під живу мову)
+    // Наукові тексти (Вікі) мають бути 0.5-0.7
+    // Рандомний шум (Борщ) - 0.9-1.0
+    const idealLog = Math.log2(totalWords);
+    // Використовуємо логарифмічне згладжування, щоб великі тексти не "злітали"
+    let score = entropy / (idealLog * 0.88); 
     
-    // Fallback: Body text
-    if (!text) {
-      text = $('body').text().trim();
-    }
-    
-    // Clean up whitespace
-    text = text.replace(/\s+/g, ' ').trim();
-    
-    // Allow more text (10000 chars instead of 2000)
-    const finalText = text.substring(0, 10000);
+    // Фінальне калібрування
+    const finalScore = Math.min(Math.max(score, 0.3), 1.0).toFixed(3);
 
     return res.status(200).json({
-      url: url,
-      content: finalText,
-      length: finalText.length,
-      mode: "scraped"
+      status: 'online',
+      content: content.substring(0, 1000) + '...', // для прев'ю
+      entropy: parseFloat(finalScore),
+      stats: {
+        words: totalWords,
+        unique: Object.keys(wordCounts).length,
+        chars: content.length
+      }
     });
+
   } catch (error) {
-    return res.status(500).json({ 
-      error: "Failed to scrape: " + error.message,
-      url: url
-    });
+    console.error('API Error:', error);
+    return res.status(500).json({ error: 'Помилка сервера при аналізі' });
   }
 };
