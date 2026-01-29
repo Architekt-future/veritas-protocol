@@ -12,10 +12,11 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
 try:
-    from veritas_calibrated_core import VeritasCalibratedEngine
-except ImportError:
-    # Fallback if import fails
-    VeritasCalibratedEngine = None
+    from veritas_calibrated_core import VeritasCalibratedCore
+    engine = VeritasCalibratedCore()
+except Exception as e:
+    print(f"Engine Load Error: {e}")
+    engine = None
 
 
 class handler(BaseHTTPRequestHandler):
