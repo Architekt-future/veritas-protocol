@@ -50,19 +50,38 @@
             margin-top: 15px;
         }
 
-        .api-status.online {
-            background: #00ff88;
-            color: #000;
+        .api-status.online { background: #00ff88; color: #000; }
+        .api-status.offline { background: #ff4444; color: #fff; }
+        .api-status.checking { background: #ffaa00; color: #000; }
+
+        .mode-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
         }
 
-        .api-status.offline {
-            background: #ff4444;
-            color: #fff;
+        .mode-tab {
+            flex: 1;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: #888;
+            cursor: pointer;
+            text-align: center;
+            font-weight: bold;
+            transition: all 0.3s;
         }
 
-        .api-status.checking {
-            background: #ffaa00;
-            color: #000;
+        .mode-tab:hover {
+            border-color: rgba(0, 212, 255, 0.5);
+            color: #00d4ff;
+        }
+
+        .mode-tab.active {
+            background: rgba(0, 212, 255, 0.2);
+            border-color: #00d4ff;
+            color: #00d4ff;
         }
 
         .panel {
@@ -86,6 +105,16 @@
             font-size: 0.95em;
         }
 
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid rgba(0, 212, 255, 0.3);
+            border-radius: 10px;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+        }
+
         .input-group textarea {
             width: 100%;
             min-height: 200px;
@@ -99,20 +128,19 @@
             resize: vertical;
         }
 
+        .input-group input:focus,
         .input-group textarea:focus {
             outline: none;
             border-color: #00d4ff;
             box-shadow: 0 0 15px rgba(0, 212, 255, 0.5);
         }
 
-        .input-group input {
-            width: 100%;
-            padding: 12px;
-            background: rgba(0, 0, 0, 0.7);
-            border: 2px solid rgba(0, 212, 255, 0.3);
-            border-radius: 10px;
-            color: #fff;
-            font-family: 'Courier New', monospace;
+        .input-mode {
+            display: none;
+        }
+
+        .input-mode.active {
+            display: block;
         }
 
         .btn-container {
@@ -175,7 +203,6 @@
             border-radius: 25px;
             overflow: hidden;
             border: 3px solid rgba(255, 255, 255, 0.3);
-            position: relative;
         }
 
         .entropy-bar {
@@ -317,17 +344,45 @@
 
         <!-- INPUT PANEL -->
         <div class="panel">
-            <div class="input-group">
-                <label for="sourceInput">📌 Source (optional):</label>
-                <input type="text" id="sourceInput" placeholder="e.g., BBC News, Scientific Paper..." />
+            <!-- MODE TABS -->
+            <div class="mode-tabs">
+                <div class="mode-tab active" onclick="switchMode('url')">
+                    🌐 URL Analysis
+                </div>
+                <div class="mode-tab" onclick="switchMode('text')">
+                    📝 Text Analysis
+                </div>
             </div>
 
-            <div class="input-group">
-                <label for="textInput">📝 Text to Analyze:</label>
-                <textarea 
-                    id="textInput" 
-                    placeholder="Paste your text here for entropy analysis..."
-                ></textarea>
+            <!-- URL MODE -->
+            <div class="input-mode active" id="urlMode">
+                <div class="input-group">
+                    <label for="urlInput">🔗 Enter URL:</label>
+                    <input 
+                        type="text" 
+                        id="urlInput" 
+                        placeholder="https://www.bbc.com/news/article..."
+                    />
+                </div>
+            </div>
+
+            <!-- TEXT MODE -->
+            <div class="input-mode" id="textMode">
+                <div class="input-group">
+                    <label for="textInput">📝 Paste Text:</label>
+                    <textarea 
+                        id="textInput" 
+                        placeholder="Вставте текст для аналізу..."
+                    ></textarea>
+                </div>
+                <div class="input-group">
+                    <label for="sourceInput">📌 Source (optional):</label>
+                    <input 
+                        type="text" 
+                        id="sourceInput" 
+                        placeholder="e.g., Scientific Paper, News Article..."
+                    />
+                </div>
             </div>
 
             <div class="btn-container">
@@ -360,7 +415,7 @@
             <div class="diagnostics">
                 <h3>📊 DIAGNOSTICS</h3>
                 <div class="diag-grid" id="diagGrid">
-                    <!-- Will be populated dynamically -->
+                    <!-- Will be populated -->
                 </div>
             </div>
         </div>
@@ -368,30 +423,22 @@
         <!-- FOOTER -->
         <div class="footer">
             <p>💠 Veritas Protocol Terminal v3.0 - Calibrated Engine</p>
+            <p>Backend: Python (Shannon Entropy + Sanity Checks)</p>
             <p>Co-authored by Dmytro Kholodniak & Chimeric Collective</p>
-            <p style="margin-top: 10px; font-size: 0.85em;">
-                <a href="https://github.com/Architekt-future/veritas-protocol" 
-                   style="color: #00d4ff; text-decoration: none;"
-                   target="_blank">GitHub</a> | 
-                <a href="https://osf.io/preprints/socarxiv/9pbaj"
-                   style="color: #00d4ff; text-decoration: none;"
-                   target="_blank">Paper</a>
-            </p>
         </div>
     </div>
 
     <script>
         // API endpoint
         const API_URL = '/api/analyze';
+        let currentMode = 'url';
 
-        // Check API status on load
+        // Check API on load
         window.addEventListener('load', checkAPI);
 
         async function checkAPI() {
             const statusEl = document.getElementById('apiStatus');
-            statusEl.textContent = '⚙️ Connecting...';
-            statusEl.className = 'api-status checking';
-
+            
             try {
                 const response = await fetch(API_URL, { method: 'GET' });
                 const data = await response.json();
@@ -400,42 +447,71 @@
                     statusEl.textContent = '✅ API Online';
                     statusEl.className = 'api-status online';
                 } else {
-                    throw new Error('API unhealthy');
+                    throw new Error('Unhealthy');
                 }
             } catch (error) {
                 statusEl.textContent = '❌ API Offline';
                 statusEl.className = 'api-status offline';
-                console.error('API check failed:', error);
+            }
+        }
+
+        function switchMode(mode) {
+            currentMode = mode;
+            
+            // Update tabs
+            document.querySelectorAll('.mode-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Update input areas
+            document.getElementById('urlMode').classList.remove('active');
+            document.getElementById('textMode').classList.remove('active');
+            
+            if (mode === 'url') {
+                document.getElementById('urlMode').classList.add('active');
+            } else {
+                document.getElementById('textMode').classList.add('active');
             }
         }
 
         async function analyze() {
-            const textInput = document.getElementById('textInput').value.trim();
-            const sourceInput = document.getElementById('sourceInput').value.trim();
             const analyzeBtn = document.getElementById('analyzeBtn');
             const resultsPanel = document.getElementById('resultsPanel');
 
-            if (!textInput) {
-                alert('❌ Please enter text to analyze');
-                return;
+            // Get input based on mode
+            let payload = {};
+            
+            if (currentMode === 'url') {
+                const url = document.getElementById('urlInput').value.trim();
+                if (!url) {
+                    alert('❌ Please enter a URL');
+                    return;
+                }
+                payload = { url };
+            } else {
+                const text = document.getElementById('textInput').value.trim();
+                const source = document.getElementById('sourceInput').value.trim();
+                if (!text) {
+                    alert('❌ Please enter text');
+                    return;
+                }
+                payload = { text, source: source || 'Manual Input' };
             }
 
-            // Disable button and show loading
+            // Disable button
             analyzeBtn.disabled = true;
             analyzeBtn.textContent = '⏳ ANALYZING...';
             
             resultsPanel.classList.add('show');
-            resultsPanel.innerHTML = '<div class="loading">⚙️ Processing with calibrated engine...</div>';
+            resultsPanel.innerHTML = '<div class="loading">⚙️ Processing...</div>';
 
             try {
-                // Send to API
+                // Send to API (ALL LOGIC IS IN BACKEND!)
                 const response = await fetch(API_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        text: textInput,
-                        source: sourceInput || 'Unknown'
-                    })
+                    body: JSON.stringify(payload)
                 });
 
                 const result = await response.json();
@@ -444,7 +520,7 @@
                     throw new Error(result.error);
                 }
 
-                // Display results
+                // Display results (NO CALCULATIONS HERE!)
                 displayResults(result);
 
             } catch (error) {
@@ -463,12 +539,12 @@
             // Build results HTML
             let html = `
                 <div class="entropy-display">
-                    <div class="entropy-value" id="entropyValue" style="color: ${getEntropyColor(entropy)}">
+                    <div class="entropy-value" style="color: ${getEntropyColor(entropy)}">
                         ${entropy.toFixed(3)}
                     </div>
                     
                     <div class="entropy-bar-container">
-                        <div class="entropy-bar" id="entropyBar" 
+                        <div class="entropy-bar" 
                              style="width: ${Math.round(entropy * 100)}%; background: ${getEntropyGradient(entropy)};">
                             ${Math.round(entropy * 100)}%
                         </div>
@@ -484,59 +560,52 @@
                     <div class="diag-grid">
             `;
 
-            // Add diagnostic items
+            // Add diagnostics
             if (result.diagnostics) {
                 const diag = result.diagnostics;
-                html += `
-                    <div class="diag-item">
-                        <div class="diag-label">Shannon Entropy</div>
-                        <div class="diag-value">${diag.shannon_entropy}</div>
-                    </div>
-                    <div class="diag-item">
-                        <div class="diag-label">Complexity</div>
-                        <div class="diag-value">${diag.complexity}</div>
-                    </div>
-                    <div class="diag-item">
-                        <div class="diag-label">Signal Markers</div>
-                        <div class="diag-value">${diag.signal_markers}</div>
-                    </div>
-                    <div class="diag-item">
-                        <div class="diag-label">Noise Markers</div>
-                        <div class="diag-value">${diag.noise_markers}</div>
-                    </div>
-                    <div class="diag-item">
-                        <div class="diag-label">Number Density</div>
-                        <div class="diag-value">${diag.number_density}</div>
-                    </div>
-                    <div class="diag-item">
-                        <div class="diag-label">Shout Factor</div>
-                        <div class="diag-value">${diag.shout_factor}</div>
-                    </div>
-                    <div class="diag-item">
-                        <div class="diag-label">Word Count</div>
-                        <div class="diag-value">${diag.word_count}</div>
-                    </div>
-                    <div class="diag-item">
-                        <div class="diag-label">Language</div>
-                        <div class="diag-value">${result.language}</div>
-                    </div>
-                `;
                 
+                const items = [
+                    ['Shannon Entropy', diag.shannon_entropy],
+                    ['Complexity', diag.complexity],
+                    ['Signal Markers', diag.signal_markers],
+                    ['Noise Markers', diag.noise_markers],
+                    ['Number Density', diag.number_density],
+                    ['Shout Factor', diag.shout_factor],
+                    ['Sanity Penalty', diag.sanity_penalty],
+                    ['Word Count', diag.word_count],
+                    ['Language', result.language],
+                    ['Source', result.source || 'Unknown']
+                ];
+
+                items.forEach(([label, value]) => {
+                    html += `
+                        <div class="diag-item">
+                            <div class="diag-label">${label}</div>
+                            <div class="diag-value">${value}</div>
+                        </div>
+                    `;
+                });
+
+                if (diag.sanity_violations) {
+                    html += `
+                        <div class="diag-item" style="border-left-color: #ff0000;">
+                            <div class="diag-label">⚠️ Sanity Status</div>
+                            <div class="diag-value" style="color: #ff0000;">VIOLATED</div>
+                        </div>
+                    `;
+                }
+
                 if (diag.chaos_markers > 0) {
                     html += `
                         <div class="diag-item" style="border-left-color: #ff0000;">
-                            <div class="diag-label">⚠️ Chaos Markers</div>
+                            <div class="diag-label">☠️ Chaos Detected</div>
                             <div class="diag-value" style="color: #ff0000;">${diag.chaos_markers}</div>
                         </div>
                     `;
                 }
             }
 
-            html += `
-                    </div>
-                </div>
-            `;
-
+            html += `</div></div>`;
             resultsPanel.innerHTML = html;
         }
 
@@ -557,6 +626,7 @@
         }
 
         function clearAll() {
+            document.getElementById('urlInput').value = '';
             document.getElementById('textInput').value = '';
             document.getElementById('sourceInput').value = '';
             document.getElementById('resultsPanel').classList.remove('show');
