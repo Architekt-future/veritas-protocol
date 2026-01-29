@@ -6,157 +6,321 @@
     <title>VERITAS TERMINAL</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=JetBrains+Mono:wght@300;500&display=swap" rel="stylesheet">
     <style>
-        :root { --blue: #00d4ff; --red: #ff2a6d; --green: #05ffa1; --bg: #0a0b10; }
-        body { background: var(--bg); color: #e0e0e0; font-family: 'JetBrains+Mono', monospace; display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; }
-        .header { padding: 40px; text-align: center; width: 100%; }
-        h1 { font-family: 'Orbitron', sans-serif; color: var(--blue); letter-spacing: 5px; margin: 0; text-shadow: 0 0 15px var(--blue); }
-        .api-status { margin-top: 10px; font-size: 0.8em; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .dot { width: 8px; height: 8px; border-radius: 50%; background: #444; }
-        .container { max-width: 1000px; width: 95%; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 20px; }
-        .card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 20px; backdrop-filter: blur(10px); }
-        textarea, input { width: 100%; background: #000; border: 1px solid #333; color: #fff; padding: 12px; margin-bottom: 10px; border-radius: 6px; box-sizing: border-box; }
-        button { width: 100%; padding: 15px; border: none; border-radius: 6px; font-family: 'Orbitron'; cursor: pointer; background: #9d44ff; color: #fff; text-transform: uppercase; transition: 0.3s; }
-        button:hover { background: #b066ff; transform: scale(1.02); }
-        .entropy-val { font-size: 4em; font-family: 'Orbitron'; text-align: center; margin: 20px 0; color: #fff; }
-        .progress { width: 100%; height: 20px; background: #1a1a1a; border-radius: 10px; overflow: hidden; border: 1px solid #333; }
-        .fill { width: 0%; height: 100%; background: var(--blue); transition: 1s ease-out; }
-        .verdict { margin-top: 20px; padding: 10px; text-align: center; border-radius: 6px; font-weight: bold; display: none; }
-        .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 20px; font-size: 0.8em; }
-        .m-box { background: #111; padding: 10px; border-radius: 4px; text-align: center; border: 1px solid #222; }
+        :root {
+            --blue: #00d4ff;
+            --red: #ff2a6d;
+            --green: #05ffa1;
+            --bg: #0a0b10;
+            --glass: rgba(255, 255, 255, 0.05);
+        }
+
+        body {
+            background: var(--bg);
+            color: #e0e0e0;
+            font-family: 'JetBrains+Mono', monospace;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .header {
+            padding: 40px;
+            text-align: center;
+            width: 100%;
+            border-bottom: 1px solid rgba(0, 212, 255, 0.1);
+        }
+
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--blue);
+            letter-spacing: 5px;
+            margin: 0;
+            text-shadow: 0 0 15px var(--blue);
+        }
+
+        .api-status {
+            margin-top: 10px;
+            font-size: 0.8em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #444;
+            transition: 0.3s;
+        }
+
+        .container {
+            max-width: 1100px;
+            width: 95%;
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 25px;
+            padding: 30px 0;
+        }
+
+        .card {
+            background: var(--glass);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+            backdrop-filter: blur(10px);
+        }
+
+        h3 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.9em;
+            color: var(--blue);
+            margin-top: 0;
+            margin-bottom: 20px;
+            border-left: 3px solid var(--blue);
+            padding-left: 10px;
+        }
+
+        input, textarea {
+            width: 100%;
+            background: rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #fff;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+
+        button {
+            width: 100%;
+            padding: 18px;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Orbitron', sans-serif;
+            background: #7e3ff2;
+            color: white;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: 0.3s;
+        }
+
+        button:hover:not(:disabled) {
+            background: #9d44ff;
+            box-shadow: 0 0 20px rgba(157, 68, 255, 0.4);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: wait;
+        }
+
+        .entropy-display {
+            font-size: 4.5em;
+            font-family: 'Orbitron', sans-serif;
+            text-align: center;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 12px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 6px;
+            overflow: hidden;
+            margin-bottom: 30px;
+        }
+
+        .progress-fill {
+            width: 0%;
+            height: 100%;
+            background: var(--blue);
+            transition: 1.5s cubic-bezier(0.1, 0.8, 0.2, 1);
+        }
+
+        .verdict-box {
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+            display: none;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.9em;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .metric-item {
+            background: rgba(0,0,0,0.3);
+            padding: 12px;
+            border-radius: 6px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .metric-label { font-size: 0.6em; color: #777; margin-bottom: 5px; }
+        .metric-val { color: var(--blue); font-size: 1.1em; }
+
+        @media (max-width: 850px) {
+            .container { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
+
     <div class="header">
-        <h1>VERITAS TERMINAL</h1>
+        <h1>VERITAS PROTOCOL</h1>
         <div class="api-status">
             <div id="statusDot" class="dot"></div>
-            <span id="statusText">CHECKING CONNECTION...</span>
+            <span id="statusText" style="color: #666;">CONNECTING TO CORE...</span>
         </div>
     </div>
 
     <div class="container">
         <div class="card">
-            <h3>📥 DATA INPUT</h3>
-            <input type="text" id="urlInput" placeholder="Enter URL...">
-            <textarea id="textInput" rows="10" placeholder="Paste your text here..."></textarea>
-            <button id="analyzeBtn" onclick="analyze()">🔍 ANALYZE</button>
+            <h3>📥 SOURCE SELECTION</h3>
+            <input type="text" id="urlInput" placeholder="URL-адреса для сканування (напр. Wikipedia)...">
+            <textarea id="textInput" rows="12" placeholder="Або вставте текст для аналізу вручну..."></textarea>
+            <button id="analyzeBtn" onclick="runAnalysis()">🚀 ЗАПУСТИТИ АНАЛІЗ</button>
         </div>
 
         <div class="card">
             <h3>👁️ THE WITNESS</h3>
-            <div id="entropyDisplay" class="entropy-val">---</div>
-            <div class="progress"><div id="fill" class="fill"></div></div>
-            <div id="verdict" class="verdict"></div>
-            <div class="metrics">
-                <div class="m-box">CHARS<br><span id="mChars" style="color:var(--blue)">0</span></div>
-                <div class="m-box">WORDS<br><span id="mWords" style="color:var(--blue)">0</span></div>
-                <div class="m-box">UNIQUE<br><span id="mUnique" style="color:var(--blue)">0</span></div>
+            <div id="entropyDisplay" class="entropy-display" style="color: #333;">0.000</div>
+            <div class="progress-container">
+                <div id="progressFill" class="progress-fill"></div>
+            </div>
+            
+            <div id="verdictBox" class="verdict-box"></div>
+
+            <div class="metrics-grid">
+                <div class="metric-item">
+                    <div class="metric-label">WORDS</div>
+                    <div id="mWords" class="metric-val">0</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">UNIQUE</div>
+                    <div id="mUnique" class="metric-val">0</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">CHARS</div>
+                    <div id="mChars" class="metric-val">0</div>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        const API = '/api';
+        const API_URL = '/api';
 
-        // 1. Статус без помилок
-        async function checkStatus() {
-            const d = document.getElementById('statusDot');
-            const t = document.getElementById('statusText');
+        // 1. Початковий статус системи
+        async function checkAPI() {
+            const dot = document.getElementById('statusDot');
+            const txt = document.getElementById('statusText');
             try {
-                const r = await fetch(API);
-                const data = await r.json();
+                const res = await fetch(API_URL);
+                const data = await res.json();
                 if(data.status === 'online') {
-                    d.style.background = '#05ffa1';
-                    d.style.boxShadow = '0 0 10px #05ffa1';
-                    t.textContent = 'SYSTEM ONLINE';
-                    t.style.color = '#05ffa1';
+                    dot.style.background = '#05ffa1';
+                    dot.style.boxShadow = '0 0 10px #05ffa1';
+                    txt.textContent = 'SYSTEM READY';
+                    txt.style.color = '#05ffa1';
                 }
-            } catch(e) {
-                t.textContent = 'SYSTEM OFFLINE';
-                t.style.color = '#ff2a6d';
+            } catch (e) {
+                txt.textContent = 'CORE DISCONNECTED';
+                txt.style.color = '#ff2a6d';
             }
         }
 
-        // 2. Розумна формула (Вікіпедія більше не хаос)
-        function calculateEntropy(text) {
-            const words = text.toLowerCase()
-                .replace(/[0-9]/g, '') 
-                .replace(/[^а-яіїєґa-z\s]/g, ' ')
-                .split(/\s+/)
-                .filter(w => w.length > 3);
-
-            if (words.length < 10) return 0.45;
-
-            const counts = {};
-            words.forEach(w => counts[w] = (counts[w] || 0) + 1);
-
-            let ent = 0;
-            for (let w in counts) {
-                let p = counts[w] / words.length;
-                ent -= p * Math.log2(p);
-            }
-
-            // Корекція Шукача: нормалізація під структуру мови
-            const ideal = Math.log2(words.length) * 0.85; 
-            return Math.min(ent / ideal, 1).toFixed(3);
-        }
-
-        // 3. Головна функція
-        async function analyze() {
+        // 2. Основний процес аналізу (Все рахує бекенд!)
+        async function runAnalysis() {
             const btn = document.getElementById('analyzeBtn');
-            const txt = document.getElementById('textInput').value;
-            const url = document.getElementById('urlInput').value;
+            const urlIn = document.getElementById('urlInput').value.trim();
+            const textIn = document.getElementById('textInput').value.trim();
             
+            if(!urlIn && !textIn) {
+                alert("Введіть URL або текст!");
+                return;
+            }
+
             btn.disabled = true;
-            btn.textContent = 'PROCESSING...';
+            btn.textContent = '⚡ АНАЛІЗУЮ...';
 
             try {
-                let content = txt;
-                if(url) {
-                    const res = await fetch(`${API}?url=${encodeURIComponent(url)}`);
-                    const data = await res.json();
-                    content = data.content || txt;
-                }
+                // Відправляємо запит на наш /api/index.js
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: urlIn, text: textIn })
+                });
 
-                if(!content || content.length < 20) throw new Error("Need more data");
+                if(!response.ok) throw new Error("Помилка сервера");
+                
+                const result = await response.json();
+                
+                // Оновлюємо інтерфейс даними з сервера
+                updateUI(result);
 
-                const score = calculateEntropy(content);
-                updateUI(Number(score), content);
-            } catch(e) {
-                alert("ERR: " + e.message);
+            } catch (err) {
+                console.error(err);
+                alert("Помилка: " + err.message);
             } finally {
                 btn.disabled = false;
-                btn.textContent = '🔍 ANALYZE';
+                btn.textContent = '🚀 ЗАПУСТИТИ АНАЛІЗ';
             }
         }
 
-        function updateUI(val, text) {
+        function updateUI(data) {
             const display = document.getElementById('entropyDisplay');
-            const fill = document.getElementById('fill');
-            const verd = document.getElementById('verdict');
+            const fill = document.getElementById('progressFill');
+            const verd = document.getElementById('verdictBox');
+            const entropy = data.entropy || 0;
+
+            // Число ентропії
+            display.textContent = entropy.toFixed(3);
             
-            display.textContent = val.toFixed(3);
-            fill.style.width = (val * 100) + '%';
+            // Прогрес-бар
+            const pct = entropy * 100;
+            fill.style.width = pct + '%';
+
+            // Кольори та Вердикт
+            let color, label;
+            if(entropy < 0.62) {
+                color = '#05ffa1'; 
+                label = '🟢 СИСТЕМНИЙ ПОРЯДОК (STRUCTURED)';
+            } else if(entropy < 0.78) {
+                color = '#ffcc00';
+                label = '🟡 СКЛАДНА ІНФОРМАЦІЯ (COMPLEX)';
+            } else {
+                color = '#ff2a6d';
+                label = '🔴 КРИТИЧНИЙ ХАОС (CHAOS)';
+            }
+
+            display.style.color = color;
+            fill.style.background = color;
+            verd.style.display = 'block';
+            verd.style.color = color;
+            verd.style.border = `1px solid ${color}`;
+            verd.textContent = label;
 
             // Метрики
-            document.getElementById('mChars').textContent = text.length;
-            document.getElementById('mWords').textContent = text.split(/\s+/).length;
-            document.getElementById('mUnique').textContent = new Set(text.toLowerCase().match(/[а-яіїєґa-z]{4,}/g)).size;
-
-            let c, l;
-            if(val < 0.6) { c = '#05ffa1'; l = '🟢 СИСТЕМНИЙ ПОРЯДОК'; }
-            else if(val < 0.8) { c = '#ffcc00'; l = '🟡 СКЛАДНА ІНФОРМАЦІЯ'; }
-            else { c = '#ff2a6d'; l = '🔴 КРИТИЧНИЙ ХАОС'; }
-
-            display.style.color = c;
-            fill.style.background = c;
-            verd.textContent = l;
-            verd.style.color = c;
-            verd.style.border = `1px solid ${c}`;
-            verd.style.display = 'block';
+            document.getElementById('mWords').textContent = data.stats?.words || 0;
+            document.getElementById('mUnique').textContent = data.stats?.unique || 0;
+            document.getElementById('mChars').textContent = data.stats?.chars || 0;
         }
 
-        window.onload = checkStatus;
+        window.onload = checkAPI;
     </script>
 </body>
 </html>
