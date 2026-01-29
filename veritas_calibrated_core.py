@@ -9,7 +9,7 @@ import re
 from typing import Dict, Optional
 
 
-class VeritasCalibratedEngine:
+class VeritasCalibratedCore:
     """
     Комбінований движок аналізу інформаційної ентропії
     Синтез Shannon entropy + markers + sanity checks
@@ -321,7 +321,7 @@ class VeritasCalibratedEngine:
 
 # Standalone testing
 if __name__ == "__main__":
-    engine = VeritasCalibratedEngine()
+    engine = VeritasCalibratedCore()
     
     # Test 1: Academic text
     academic = """
