@@ -397,8 +397,10 @@
         <div class="header">
             <h1>💠 VERITAS TERMINAL</h1>
             <div class="subtitle">Information Entropy Analyzer • Shannon Engine • The Witness</div>
-            <div class="api-status checking" id="apiStatus">⚙️ Checking API...</div>
-        </div>
+            <div class="api-status">
+                <span id="statusDot" class="status-dot"></span>
+                  <span id="statusText">Checking API...</span>
+                  </div>
 
         <!-- MAIN GRID -->
         <div class="main-grid">
@@ -521,19 +523,29 @@
     </div>
 
    <script>
-        const API_BASE = '/api';
-        let currentMode = 'url';
+    const API_BASE = '/api';
+    let currentMode = 'url';
 
-        // INITIAL API CHECK
-       async function checkAPI() {
-            const statusDot = document.getElementById('statusDot');
-            const statusText = document.getElementById('statusText');
-            
-            // Якщо DOM ще не готовий, не ламаємо скрипт
-            if (!statusDot || !statusText) {
-                console.warn("API status elements not found yet...");
-                return;
+    // Невбивна перевірка API
+    async function checkAPI() {
+        const dot = document.getElementById('statusDot');
+        const text = document.getElementById('statusText');
+        if (!dot || !text) return;
+
+        try {
+            const response = await fetch(API_BASE);
+            const data = await response.json();
+            if (data.status === 'online') {
+                dot.style.background = '#00ff88';
+                text.textContent = 'API ONLINE';
+                text.style.color = '#00ff88';
             }
+        } catch (e) {
+            dot.style.background = '#ff4444';
+            text.textContent = 'API OFFLINE';
+            text.style.color = '#ff4444';
+        }
+    }
 
             try {
                 const response = await fetch(API_BASE);
@@ -578,28 +590,23 @@
         }
 
         function calculateEntropy(text) {
-            // 1. Глибока чистка: тільки літери. Цифри (дати) та пунктуація не повинні створювати "шум"
-            const words = text.toLowerCase()
-                .replace(/[0-9]/g, '') 
-                .replace(/[^а-яіїєґa-z\s]/g, ' ')
-                .split(/\s+/)
-                .filter(word => word.length > 3); // Ігноруємо короткі сполучники
+        // Очищаємо від цифр і сміття, лишаємо тільки слова > 3 літер
+        const words = text.toLowerCase()
+            .replace(/[0-9]/g, '')
+            .replace(/[^а-яіїєґa-z\s]/g, ' ')
+            .split(/\s+/)
+            .filter(w => w.length > 3);
 
-            if (words.length < 5) return 0.5;
+        if (words.length < 10) return 0.5;
 
-            const totalWords = words.length;
-            const wordCounts = {};
+        const wordCounts = {};
+        words.forEach(w => wordCounts[w] = (wordCounts[w] || 0) + 1);
 
-            words.forEach(word => {
-                wordCounts[word] = (wordCounts[word] || 0) + 1;
-            });
-
-            // 2. Рахуємо базову ентропію
-            let entropy = 0;
-            for (const word in wordCounts) {
-                const p = wordCounts[word] / totalWords;
-                entropy -= p * Math.log2(p);
-            }
+        let entropy = 0;
+        for (const w in wordCounts) {
+            const p = wordCounts[w] / words.length;
+            entropy -= p * Math.log2(p);
+        }
 
             // 3. НОВА ЛОГІКА НОРМАЛІЗАЦІЇ
             // Замість лінійної шкали використовуємо логарифмічну корекцію довжини
