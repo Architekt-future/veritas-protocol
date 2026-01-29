@@ -81,19 +81,18 @@ class VeritasCore:
             "intervention_required": updated_rep < 0.3
         }
 
-    def get_system_state(self, node_name: str):
+        def get_system_state(self, node_name: str):
         """
         Визначає стан системи на основі репутації вузла.
-        Зв'язок з модулем states.py.
         """
-        try:
-            from states import calculate_state_from_reputation
-        except ImportError:
-            return "Error: states.py not found"
-            
         reputation = self.reputation_registry.get(node_name, 0.5)
-        return calculate_state_from_reputation(reputation)
-
+        
+        if reputation >= 0.7:
+            return "LAMINAR_FLOW"
+        elif reputation >= 0.4:
+            return "SYSTEMIC_FATIGUE"
+        else:
+            return "WITNESS_SILENCE"
 
 # Тестування системи
 if __name__ == "__main__":
