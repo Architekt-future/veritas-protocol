@@ -1,2 +1,1 @@
-# No external dependencies needed
-# Using only Python standard library (math, re, json)
+# No dependencies needed
