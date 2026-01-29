@@ -69,6 +69,36 @@
             color: #000;
         }
 
+        .mode-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .mode-tab {
+            flex: 1;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: #888;
+            cursor: pointer;
+            text-align: center;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .mode-tab:hover {
+            border-color: rgba(0, 212, 255, 0.5);
+            color: #00d4ff;
+        }
+
+        .mode-tab.active {
+            background: rgba(0, 212, 255, 0.2);
+            border-color: #00d4ff;
+            color: #00d4ff;
+        }
+
         .main-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -109,7 +139,8 @@
             font-size: 0.9em;
         }
 
-        .input-group input {
+        .input-group input,
+        .input-group textarea {
             width: 100%;
             padding: 12px;
             background: rgba(0, 0, 0, 0.5);
@@ -120,10 +151,24 @@
             font-size: 0.95em;
         }
 
-        .input-group input:focus {
+        .input-group textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
+
+        .input-group input:focus,
+        .input-group textarea:focus {
             outline: none;
             border-color: #00d4ff;
             box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+        }
+
+        .input-mode {
+            display: none;
+        }
+
+        .input-mode.active {
+            display: block;
         }
 
         .btn {
@@ -361,27 +406,48 @@
             <div class="panel">
                 <div class="panel-title">🔗 DATA INPUT</div>
                 
-                <div class="input-group">
-                    <label for="urlInput">Target URL:</label>
-                    <input 
-                        type="text" 
-                        id="urlInput" 
-                        placeholder="https://example.com/news-article"
-                        value=""
-                    />
+                <!-- MODE TABS -->
+                <div class="mode-tabs">
+                    <div class="mode-tab active" onclick="switchMode('url')">
+                        🌐 URL Scraping
+                    </div>
+                    <div class="mode-tab" onclick="switchMode('text')">
+                        📝 Manual Text
+                    </div>
                 </div>
 
-                <div class="input-group">
-                    <label for="apiUrl">API Endpoint:</label>
-                    <input 
-                        type="text" 
-                        id="apiUrl" 
-                        value="https://veritas-protocol-git-main-architekt-futures-projects.vercel.app"
-                        readonly
-                    />
+                <!-- URL MODE -->
+                <div class="input-mode active" id="urlMode">
+                    <div class="input-group">
+                        <label for="urlInput">Target URL:</label>
+                        <input 
+                            type="text" 
+                            id="urlInput" 
+                            placeholder="https://example.com/news-article"
+                        />
+                    </div>
                 </div>
 
-                <button class="btn" id="analyzeBtn" onclick="analyzeURL()">
+                <!-- TEXT MODE -->
+                <div class="input-mode" id="textMode">
+                    <div class="input-group">
+                        <label for="textInput">Paste Text:</label>
+                        <textarea 
+                            id="textInput" 
+                            placeholder="Вставте текст для аналізу..."
+                        ></textarea>
+                    </div>
+                    <div class="input-group">
+                        <label for="sourceInput">Source (optional):</label>
+                        <input 
+                            type="text" 
+                            id="sourceInput" 
+                            placeholder="Назва джерела"
+                        />
+                    </div>
+                </div>
+
+                <button class="btn" id="analyzeBtn" onclick="analyze()">
                     🔍 ANALYZE
                 </button>
 
@@ -448,8 +514,8 @@
 
         <!-- FOOTER -->
         <div class="footer">
-            <p>💠 Veritas Protocol Terminal v1.0</p>
-            <p>Shannon Entropy Engine • Data Cleaner • Witness Visualizer</p>
+            <p>💠 Veritas Protocol Terminal v1.1</p>
+            <p>Shannon Entropy Engine • Data Cleaner • Witness Visualizer • Dual Mode Analysis</p>
             <p>Co-authored by Dmytro Kholodniak & Chimeric Collective (Claude, ChatGPT, Gemini)</p>
         </div>
     </div>
@@ -457,7 +523,8 @@
     <script>
         // API Configuration
         const API_BASE = '/api';
-      
+        let currentMode = 'url'; // 'url' or 'text'
+
         // Check API status on load
         window.addEventListener('load', checkAPIStatus);
 
@@ -480,6 +547,27 @@
                 statusEl.textContent = '❌ API Offline';
                 statusEl.className = 'api-status offline';
                 console.error('API check failed:', error);
+            }
+        }
+
+        // SWITCH MODE
+        function switchMode(mode) {
+            currentMode = mode;
+            
+            // Update tabs
+            document.querySelectorAll('.mode-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Update input areas
+            document.getElementById('urlMode').classList.remove('active');
+            document.getElementById('textMode').classList.remove('active');
+            
+            if (mode === 'url') {
+                document.getElementById('urlMode').classList.add('active');
+            } else {
+                document.getElementById('textMode').classList.add('active');
             }
         }
 
@@ -541,35 +629,66 @@
         }
 
         // ANALYZE FUNCTION
-        async function analyzeURL() {
-            const urlInput = document.getElementById('urlInput').value.trim();
+        async function analyze() {
             const analyzeBtn = document.getElementById('analyzeBtn');
             const textDisplay = document.getElementById('textDisplay');
             const metricsPanel = document.getElementById('metricsPanel');
-
-            if (!urlInput) {
-                alert('❌ Please enter a URL');
-                return;
-            }
 
             // Disable button
             analyzeBtn.disabled = true;
             analyzeBtn.textContent = '⏳ ANALYZING...';
 
             // Show loading
-            textDisplay.innerHTML = '<div class="loading">⚙️ Scraping content...</div>';
+            textDisplay.innerHTML = '<div class="loading">⚙️ Processing...</div>';
 
             try {
-                // Fetch from API
-                const response = await fetch(`${API_BASE}?url=${encodeURIComponent(urlInput)}`);
-                const data = await response.json();
+                let rawContent = '';
 
-                if (data.error) {
-                    throw new Error(data.error);
+                if (currentMode === 'url') {
+                    // URL SCRAPING MODE
+                    const urlInput = document.getElementById('urlInput').value.trim();
+                    
+                    if (!urlInput) {
+                        throw new Error('Please enter a URL');
+                    }
+
+                    // Fetch from API
+                    const response = await fetch(`${API_BASE}?url=${encodeURIComponent(urlInput)}`);
+                    const data = await response.json();
+
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
+
+                    rawContent = data.content || '';
+
+                } else {
+                    // MANUAL TEXT MODE
+                    const textInput = document.getElementById('textInput').value.trim();
+                    const sourceInput = document.getElementById('sourceInput').value.trim();
+                    
+                    if (!textInput) {
+                        throw new Error('Please enter text to analyze');
+                    }
+
+                    // Send POST request
+                    const response = await fetch(API_BASE, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            text: textInput,
+                            source: sourceInput || 'Manual Input'
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
+
+                    rawContent = data.content || textInput;
                 }
-
-                // Extract raw content
-                const rawContent = data.content || '';
 
                 // CLEAN THE TEXT
                 const cleanedText = cleanText(rawContent);
@@ -664,6 +783,8 @@
         // CLEAR ALL
         function clearAll() {
             document.getElementById('urlInput').value = '';
+            document.getElementById('textInput').value = '';
+            document.getElementById('sourceInput').value = '';
             document.getElementById('textDisplay').textContent = 'Waiting for analysis...';
             document.getElementById('entropyValue').textContent = '---';
             document.getElementById('entropyValue').style.color = '#e0e0e0';
@@ -688,7 +809,7 @@
         // Allow Enter key to trigger analysis
         document.getElementById('urlInput').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
-                analyzeURL();
+                analyze();
             }
         });
     </script>
