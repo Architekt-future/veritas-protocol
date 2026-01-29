@@ -397,10 +397,8 @@
         <div class="header">
             <h1>💠 VERITAS TERMINAL</h1>
             <div class="subtitle">Information Entropy Analyzer • Shannon Engine • The Witness</div>
-            <div class="api-status">
-                <span id="statusDot" class="status-dot"></span>
-                  <span id="statusText">Checking API...</span>
-                  </div>
+            <div class="api-status checking" id="apiStatus">⚙️ Checking API...</div>
+        </div>
 
         <!-- MAIN GRID -->
         <div class="main-grid">
@@ -522,73 +520,90 @@
         </div>
     </div>
 
-   <script>
-    const API_BASE = '/api';
-    let currentMode = 'url';
+    <script>
+        // API Configuration
+        const API_BASE = '/api';
+        let currentMode = 'url'; // 'url' or 'text'
 
-    // Невбивна перевірка API
-    async function checkAPI() {
-        const dot = document.getElementById('statusDot');
-        const text = document.getElementById('statusText');
-        if (!dot || !text) return;
+        // Check API status on load
+        window.addEventListener('load', checkAPIStatus);
 
-        try {
-            const response = await fetch(API_BASE);
-            const data = await response.json();
-            if (data.status === 'online') {
-                dot.style.background = '#00ff88';
-                text.textContent = 'API ONLINE';
-                text.style.color = '#00ff88';
-            }
-        } catch (e) {
-            dot.style.background = '#ff4444';
-            text.textContent = 'API OFFLINE';
-            text.style.color = '#ff4444';
-        }
-    }
+        async function checkAPIStatus() {
+            const statusEl = document.getElementById('apiStatus');
+            statusEl.textContent = '⚙️ Checking API...';
+            statusEl.className = 'api-status checking';
 
             try {
-                const response = await fetch(API_BASE);
+                const response = await fetch(API_BASE, { method: 'GET' });
                 const data = await response.json();
+                
                 if (data.status === 'online') {
-                    statusDot.classList.add('online');
-                    statusText.textContent = 'API ONLINE';
-                    statusText.style.color = '#00ff88';
+                    statusEl.textContent = '✅ API Online';
+                    statusEl.className = 'api-status online';
+                } else {
+                    throw new Error('API unhealthy');
                 }
-            } catch (e) {
-                statusDot.classList.remove('online');
-                statusText.textContent = 'API OFFLINE';
-                statusText.style.color = '#ff4444';
+            } catch (error) {
+                statusEl.textContent = '❌ API Offline';
+                statusEl.className = 'api-status offline';
+                console.error('API check failed:', error);
             }
         }
 
+        // SWITCH MODE
         function switchMode(mode) {
             currentMode = mode;
-            const urlMode = document.getElementById('urlMode');
-            const textMode = document.getElementById('textMode');
-            const urlSection = document.getElementById('urlSection');
-            const textSection = document.getElementById('textSection');
-
+            
+            // Update tabs
+            document.querySelectorAll('.mode-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Update input areas
+            document.getElementById('urlMode').classList.remove('active');
+            document.getElementById('textMode').classList.remove('active');
+            
             if (mode === 'url') {
-                urlMode.classList.add('active');
-                textMode.classList.remove('active');
-                urlSection.classList.remove('hidden');
-                textSection.classList.add('hidden');
+                document.getElementById('urlMode').classList.add('active');
             } else {
-                textMode.classList.add('active');
-                urlMode.classList.remove('active');
-                textSection.classList.remove('hidden');
-                urlSection.classList.add('hidden');
+                document.getElementById('textMode').classList.add('active');
             }
         }
 
-        function cleanText(text) {
-            return text
-                .replace(/\\n/g, ' ')
-                .replace(/\\s+/g, ' ')
-                .trim();
+        // DATA CLEANER MODULE
+        function cleanText(rawText) {
+            let cleaned = rawText;
+
+            // Remove script tags and content
+            cleaned = cleaned.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
+            
+            // Remove style tags and content
+            cleaned = cleaned.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
+            
+            // Remove template engine constructs (<% %>, <%= %>, <%- %>)
+            cleaned = cleaned.replace(/<%[\s\S]*?%>/g, '');
+            
+            // Remove HTML comments
+            cleaned = cleaned.replace(/<!--[\s\S]*?-->/g, '');
+            
+            // Remove remaining HTML tags
+            cleaned = cleaned.replace(/<[^>]+>/g, ' ');
+            
+            // Remove JavaScript disabled messages
+            cleaned = cleaned.replace(/У вас відключено JavaScript/gi, '');
+            cleaned = cleaned.replace(/JavaScript is disabled/gi, '');
+            
+            // Normalize whitespace
+            cleaned = cleaned.replace(/\s+/g, ' ');
+            
+            // Trim
+            cleaned = cleaned.trim();
+
+            return cleaned;
         }
 
+        // SHANNON ENTROPY ENGINE
         function calculateEntropy(text) {
         // Очищаємо від цифр і сміття, лишаємо тільки слова > 3 літер
         const words = text.toLowerCase()
@@ -607,121 +622,192 @@
             const p = wordCounts[w] / words.length;
             entropy -= p * Math.log2(p);
         }
-
-            // 3. НОВА ЛОГІКА НОРМАЛІЗАЦІЇ
-            // Замість лінійної шкали використовуємо логарифмічну корекцію довжини
-            const idealEntropy = Math.log2(totalWords) * 0.7; 
-            let score = entropy / (idealEntropy || 1);
-
-            // 4. Штрафи за "Крик" (Капс та знаки) тепер менш агресивні
-            const exclamationCount = (text.match(/!/g) || []).length;
-            const capsWords = (text.match(/[А-ЯІЇЄҐA-Z]{4,}/g) || []).length;
-            
-            // Штрафуємо тільки якщо їх реально багато (аномалія)
-            const cryFactor = (exclamationCount / totalWords > 0.05) ? 0.1 : 0;
-            const capsFactor = (capsWords / totalWords > 0.1) ? 0.1 : 0;
-
-            let finalResult = score + cryFactor + capsFactor;
-
-            // Калібрування під реальність:
-            // Науковий текст зазвичай лягає в 0.5 - 0.7
-            // Маячня - 0.85+
-            return Math.min(finalResult, 1).toFixed(3);
-        }
-
+            }
+        
+        // ANALYZE FUNCTION
         async function analyze() {
             const analyzeBtn = document.getElementById('analyzeBtn');
             const textDisplay = document.getElementById('textDisplay');
             const metricsPanel = document.getElementById('metricsPanel');
 
+            // Disable button
             analyzeBtn.disabled = true;
             analyzeBtn.textContent = '⏳ ANALYZING...';
+
+            // Show loading
             textDisplay.innerHTML = '<div class="loading">⚙️ Processing...</div>';
 
             try {
                 let rawContent = '';
+
                 if (currentMode === 'url') {
+                    // URL SCRAPING MODE
                     const urlInput = document.getElementById('urlInput').value.trim();
-                    if (!urlInput) throw new Error('Please enter a URL');
+                    
+                    if (!urlInput) {
+                        throw new Error('Please enter a URL');
+                    }
+
+                    // Fetch from API
                     const response = await fetch(`${API_BASE}?url=${encodeURIComponent(urlInput)}`);
                     const data = await response.json();
-                    if (data.error) throw new Error(data.error);
+
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
+
                     rawContent = data.content || '';
+
                 } else {
+                    // MANUAL TEXT MODE
                     const textInput = document.getElementById('textInput').value.trim();
                     const sourceInput = document.getElementById('sourceInput').value.trim();
-                    if (!textInput) throw new Error('Please enter text to analyze');
+                    
+                    if (!textInput) {
+                        throw new Error('Please enter text to analyze');
+                    }
+
+                    // Send POST request
                     const response = await fetch(API_BASE, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ text: textInput, source: sourceInput || 'Manual Input' })
+                        body: JSON.stringify({ 
+                            text: textInput,
+                            source: sourceInput || 'Manual Input'
+                        })
                     });
+
                     const data = await response.json();
-                    if (data.error) throw new Error(data.error);
+
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
+
                     rawContent = data.content || textInput;
                 }
 
+                // CLEAN THE TEXT
                 const cleanedText = cleanText(rawContent);
-                if (!cleanedText || cleanedText.length < 10) throw new Error('Text too short');
 
+                if (!cleanedText || cleanedText.length < 10) {
+                    throw new Error('Extracted text too short or empty');
+                }
+
+                // Display cleaned text
                 textDisplay.textContent = cleanedText;
-                document.getElementById('charCount').textContent = cleanedText.length;
-                document.getElementById('wordCount').textContent = cleanedText.split(/\s+/).filter(w => w.length > 0).length;
-                document.getElementById('uniqueChars').textContent = new Set(cleanedText).size;
+
+                // Calculate metrics
+                const charCount = cleanedText.length;
+                const wordCount = cleanedText.split(/\s+/).filter(w => w.length > 0).length;
+                const uniqueChars = new Set(cleanedText).size;
+
+                // Update metrics display
+                document.getElementById('charCount').textContent = charCount;
+                document.getElementById('wordCount').textContent = wordCount;
+                document.getElementById('uniqueChars').textContent = uniqueChars;
                 metricsPanel.style.display = 'grid';
 
-                const entropy = calculateEntropy(cleanedText);
-                updateWitness(Number(entropy));
+                // CALCULATE SHANNON ENTROPY
+                const entropy = calculateShannonEntropy(cleanedText);
+
+                // Update Witness Visualizer
+                updateWitness(entropy);
 
             } catch (error) {
                 textDisplay.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+                console.error('Analysis failed:', error);
             } finally {
+                // Re-enable button
                 analyzeBtn.disabled = false;
                 analyzeBtn.textContent = '🔍 ANALYZE';
             }
         }
 
+        // UPDATE WITNESS VISUALIZER
         function updateWitness(entropy) {
             const entropyValue = document.getElementById('entropyValue');
             const entropyFill = document.getElementById('entropyFill');
             const verdict = document.getElementById('verdict');
 
+            // Display entropy value
             entropyValue.textContent = entropy.toFixed(3);
+
+            // Calculate percentage
             const percentage = Math.round(entropy * 100);
             entropyFill.style.width = percentage + '%';
             entropyFill.textContent = percentage + '%';
 
-            let color, text, cls;
-            if (entropy < 0.55) { color = '#00ff88'; text = '🟢 ВИСОКА ВПОРЯДКОВАНІСТЬ'; cls = 'trusted'; }
-            else if (entropy < 0.72) { color = '#ffaa00'; text = '🟡 СКЛАДНА МОВА'; cls = 'acceptable'; }
-            else if (entropy < 0.85) { color = '#ff6644'; text = '🟠 ПІДОЗРІЛИЙ ШУМ'; cls = 'suspicious'; }
-            else { color = '#ff0000'; text = '🔴 КРИТИЧНИЙ ХАОС'; cls = 'chaos'; }
+            // Determine color and verdict
+            let color, bgColor, verdictText, verdictClass;
 
-            entropyValue.style.color = color;
-            entropyFill.style.background = color;
-            verdict.textContent = text;
-            verdict.className = 'verdict ' + cls;
+            if (entropy < 0.4) {
+                // GREEN: Ordered, factual
+                color = '#00ff88';
+                bgColor = 'linear-gradient(90deg, #00ff88 0%, #00cc66 100%)';
+                verdictText = '🟢 ВИСОКА ВПОРЯДКОВАНІСТЬ';
+                verdictClass = 'trusted';
+                entropyValue.style.color = '#00ff88';
+            } else if (entropy < 0.7) {
+                // YELLOW: Complex, literary
+                color = '#ffaa00';
+                bgColor = 'linear-gradient(90deg, #ffaa00 0%, #ff8800 100%)';
+                verdictText = '🟡 СКЛАДНА МОВА';
+                verdictClass = 'acceptable';
+                entropyValue.style.color = '#ffaa00';
+            } else if (entropy < 0.85) {
+                // ORANGE-RED: Suspicious
+                color = '#ff6644';
+                bgColor = 'linear-gradient(90deg, #ff6644 0%, #ff4422 100%)';
+                verdictText = '🟠 ПІДОЗРІЛИЙ ШУМ';
+                verdictClass = 'suspicious';
+                entropyValue.style.color = '#ff6644';
+            } else {
+                // RED: Chaos, manipulation
+                color = '#ff0000';
+                bgColor = 'linear-gradient(90deg, #ff0000 0%, #cc0000 100%)';
+                verdictText = '🔴 КРИТИЧНИЙ ХАОС';
+                verdictClass = 'chaos';
+                entropyValue.style.color = '#ff0000';
+            }
+
+            entropyFill.style.background = bgColor;
+            verdict.textContent = verdictText;
+            verdict.className = 'verdict ' + verdictClass;
             verdict.style.display = 'block';
         }
 
+        // CLEAR ALL
         function clearAll() {
             document.getElementById('urlInput').value = '';
             document.getElementById('textInput').value = '';
             document.getElementById('sourceInput').value = '';
             document.getElementById('textDisplay').textContent = 'Waiting for analysis...';
             document.getElementById('entropyValue').textContent = '---';
+            document.getElementById('entropyValue').style.color = '#e0e0e0';
             document.getElementById('entropyFill').style.width = '0%';
+            document.getElementById('entropyFill').textContent = '0%';
             document.getElementById('verdict').style.display = 'none';
             document.getElementById('metricsPanel').style.display = 'none';
         }
 
+        // TOGGLE TEXT DISPLAY
         function toggleTextDisplay() {
-            document.getElementById('textDisplayContainer').classList.toggle('visible');
-            document.getElementById('textDisplayContainer').classList.toggle('hidden');
+            const container = document.getElementById('textDisplayContainer');
+            if (container.classList.contains('visible')) {
+                container.classList.remove('visible');
+                container.classList.add('hidden');
+            } else {
+                container.classList.remove('hidden');
+                container.classList.add('visible');
+            }
         }
 
-        document.getElementById('urlInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') analyze(); });
-        window.addEventListener('DOMContentLoaded', checkAPI);
+        // Allow Enter key to trigger analysis
+        document.getElementById('urlInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                analyze();
+            }
+        });
     </script>
 </body>
 </html>
