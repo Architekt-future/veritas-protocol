@@ -1,10 +1,4 @@
 {
   "name": "veritas-protocol",
-  "version": "1.0.0",
-  "scripts": {
-    "dev": "python api/analyze.py"
-  },
-  "engines": {
-    "node": "20.x"
-  }
+  "version": "1.0.0"
 }
