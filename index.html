@@ -525,12 +525,15 @@
         let currentMode = 'url';
 
         // INITIAL API CHECK
-        async function checkAPI() {
+       async function checkAPI() {
             const statusDot = document.getElementById('statusDot');
             const statusText = document.getElementById('statusText');
             
-            // Якщо елементів немає на сторінці — просто виходимо, щоб не було помилки
-            if (!statusDot || !statusText) return; 
+            // Якщо DOM ще не готовий, не ламаємо скрипт
+            if (!statusDot || !statusText) {
+                console.warn("API status elements not found yet...");
+                return;
+            }
 
             try {
                 const response = await fetch(API_BASE);
