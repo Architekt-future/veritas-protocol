@@ -1,9 +1,2 @@
-flask>=2.3.0
-flask-cors>=4.0.0
-pandas>=1.5.0
-numpy>=1.23.0
-requests>=2.28.0
-python-json-logger>=2.0.0
-pyyaml>=6.0
-pytest>=7.0.0
-gunicorn>=21.0.0
+# No external dependencies needed
+# Using only Python standard library (math, re, json)
