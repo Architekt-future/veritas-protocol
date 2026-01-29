@@ -629,7 +629,6 @@
             }
 
             // 4. Нормалізація (від 0 до 1)
-            // Порівнюємо реальну ентропію з максимально можливою для такої кількості слів
             const maxPossibleEntropy = Math.log2(totalWords);
             let normalized = entropy / (maxPossibleEntropy || 1);
 
@@ -637,16 +636,9 @@
             const exclamationPenalty = (text.match(/!/g) || []).length * 0.01;
             const capsPenalty = (text.match(/[А-ЯІЇЄҐA-Z]{4,}/g) || []).length * 0.005;
             
-            // Фінальний результат з урахуванням штрафів за маніпулятивність
-            let finalEntropy = normalized + exclamationPenalty + capsPenalty;
+            let finalEntropy = Number(normalized) + exclamationPenalty + capsPenalty;
 
-            return Math.min(finalEntropy, 1).toFixed(3);
-        }
-
-            // Normalize to 0-1 range (max entropy for ASCII ≈ 8 bits)
-            const normalized = Math.min(1.0, entropy / 8.0);
-
-            return normalized;
+            return Math.min(finalEntropy, 1);
         }
 
         // ANALYZE FUNCTION
@@ -655,44 +647,26 @@
             const textDisplay = document.getElementById('textDisplay');
             const metricsPanel = document.getElementById('metricsPanel');
 
-            // Disable button
             analyzeBtn.disabled = true;
             analyzeBtn.textContent = '⏳ ANALYZING...';
-
-            // Show loading
             textDisplay.innerHTML = '<div class="loading">⚙️ Processing...</div>';
 
             try {
                 let rawContent = '';
 
                 if (currentMode === 'url') {
-                    // URL SCRAPING MODE
                     const urlInput = document.getElementById('urlInput').value.trim();
-                    
-                    if (!urlInput) {
-                        throw new Error('Please enter a URL');
-                    }
+                    if (!urlInput) throw new Error('Please enter a URL');
 
-                    // Fetch from API
                     const response = await fetch(`${API_BASE}?url=${encodeURIComponent(urlInput)}`);
                     const data = await response.json();
-
-                    if (data.error) {
-                        throw new Error(data.error);
-                    }
-
+                    if (data.error) throw new Error(data.error);
                     rawContent = data.content || '';
-
                 } else {
-                    // MANUAL TEXT MODE
                     const textInput = document.getElementById('textInput').value.trim();
                     const sourceInput = document.getElementById('sourceInput').value.trim();
-                    
-                    if (!textInput) {
-                        throw new Error('Please enter text to analyze');
-                    }
+                    if (!textInput) throw new Error('Please enter text to analyze');
 
-                    // Send POST request
                     const response = await fetch(API_BASE, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -701,107 +675,75 @@
                             source: sourceInput || 'Manual Input'
                         })
                     });
-
                     const data = await response.json();
-
-                    if (data.error) {
-                        throw new Error(data.error);
-                    }
-
+                    if (data.error) throw new Error(data.error);
                     rawContent = data.content || textInput;
                 }
 
-                // CLEAN THE TEXT
                 const cleanedText = cleanText(rawContent);
+                if (!cleanedText || cleanedText.length < 10) throw new Error('Extracted text too short');
 
-                if (!cleanedText || cleanedText.length < 10) {
-                    throw new Error('Extracted text too short or empty');
-                }
-
-                // Display cleaned text
                 textDisplay.textContent = cleanedText;
 
-                // Calculate metrics
+                // Metrics
                 const charCount = cleanedText.length;
                 const wordCount = cleanedText.split(/\s+/).filter(w => w.length > 0).length;
                 const uniqueChars = new Set(cleanedText).size;
 
-                // Update metrics display
                 document.getElementById('charCount').textContent = charCount;
                 document.getElementById('wordCount').textContent = wordCount;
                 document.getElementById('uniqueChars').textContent = uniqueChars;
                 metricsPanel.style.display = 'grid';
 
-                // CALCULATE SHANNON ENTROPY
-                const entropy = calculateShannonEntropy(cleanedText);
-
-                // Update Witness Visualizer
+                // Справжній розрахунок ентропії (тепер через слова!)
+                const entropy = calculateEntropy(cleanedText);
                 updateWitness(entropy);
 
             } catch (error) {
                 textDisplay.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
-                console.error('Analysis failed:', error);
             } finally {
-                // Re-enable button
                 analyzeBtn.disabled = false;
                 analyzeBtn.textContent = '🔍 ANALYZE';
             }
         }
 
-        // UPDATE WITNESS VISUALIZER
         function updateWitness(entropy) {
             const entropyValue = document.getElementById('entropyValue');
             const entropyFill = document.getElementById('entropyFill');
             const verdict = document.getElementById('verdict');
 
-            // Display entropy value
-            entropyValue.textContent = entropy.toFixed(3);
-
-            // Calculate percentage
+            entropyValue.textContent = Number(entropy).toFixed(3);
             const percentage = Math.round(entropy * 100);
             entropyFill.style.width = percentage + '%';
             entropyFill.textContent = percentage + '%';
 
-            // Determine color and verdict
-            let color, bgColor, verdictText, verdictClass;
+            let color, verdictText, verdictClass;
 
-            if (entropy < 0.4) {
-                // GREEN: Ordered, factual
+            if (entropy < 0.55) {
                 color = '#00ff88';
-                bgColor = 'linear-gradient(90deg, #00ff88 0%, #00cc66 100%)';
                 verdictText = '🟢 ВИСОКА ВПОРЯДКОВАНІСТЬ';
                 verdictClass = 'trusted';
-                entropyValue.style.color = '#00ff88';
-            } else if (entropy < 0.7) {
-                // YELLOW: Complex, literary
+            } else if (entropy < 0.72) {
                 color = '#ffaa00';
-                bgColor = 'linear-gradient(90deg, #ffaa00 0%, #ff8800 100%)';
                 verdictText = '🟡 СКЛАДНА МОВА';
                 verdictClass = 'acceptable';
-                entropyValue.style.color = '#ffaa00';
             } else if (entropy < 0.85) {
-                // ORANGE-RED: Suspicious
                 color = '#ff6644';
-                bgColor = 'linear-gradient(90deg, #ff6644 0%, #ff4422 100%)';
                 verdictText = '🟠 ПІДОЗРІЛИЙ ШУМ';
                 verdictClass = 'suspicious';
-                entropyValue.style.color = '#ff6644';
             } else {
-                // RED: Chaos, manipulation
                 color = '#ff0000';
-                bgColor = 'linear-gradient(90deg, #ff0000 0%, #cc0000 100%)';
                 verdictText = '🔴 КРИТИЧНИЙ ХАОС';
                 verdictClass = 'chaos';
-                entropyValue.style.color = '#ff0000';
             }
 
-            entropyFill.style.background = bgColor;
+            entropyValue.style.color = color;
+            entropyFill.style.background = color;
             verdict.textContent = verdictText;
             verdict.className = 'verdict ' + verdictClass;
             verdict.style.display = 'block';
         }
 
-        // CLEAR ALL
         function clearAll() {
             document.getElementById('urlInput').value = '';
             document.getElementById('textInput').value = '';
@@ -815,24 +757,18 @@
             document.getElementById('metricsPanel').style.display = 'none';
         }
 
-        // TOGGLE TEXT DISPLAY
         function toggleTextDisplay() {
             const container = document.getElementById('textDisplayContainer');
-            if (container.classList.contains('visible')) {
-                container.classList.remove('visible');
-                container.classList.add('hidden');
-            } else {
-                container.classList.remove('hidden');
-                container.classList.add('visible');
-            }
+            container.classList.toggle('visible');
+            container.classList.toggle('hidden');
         }
 
-        // Allow Enter key to trigger analysis
-        document.getElementById('urlInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                analyze();
-            }
+        document.getElementById('urlInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') analyze();
         });
+
+        // Запуск перевірки при завантаженні
+        window.addEventListener('DOMContentLoaded', checkAPI);
     </script>
 </body>
 </html>
