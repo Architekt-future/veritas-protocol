@@ -604,23 +604,44 @@
         }
 
         // SHANNON ENTROPY ENGINE
-        function calculateShannonEntropy(text) {
-            if (!text || text.length === 0) return 0;
+       function calculateEntropy(text) {
+            // 1. Розбиваємо на слова (ігноруємо пунктуацію та короткі сполучники)
+            const words = text.toLowerCase()
+                .replace(/[^а-яіїєґa-z0-9\s]/g, ' ')
+                .split(/\s+/)
+                .filter(word => word.length > 2);
 
-            // Count character frequencies
-            const freq = {};
-            for (let char of text) {
-                freq[char] = (freq[char] || 0) + 1;
-            }
+            if (words.length === 0) return 0;
 
-            // Calculate entropy: H = -Σ(p_i * log2(p_i))
+            const totalWords = words.length;
+            const wordCounts = {};
+
+            // 2. Рахуємо унікальність кожного слова
+            words.forEach(word => {
+                wordCounts[word] = (wordCounts[word] || 0) + 1;
+            });
+
+            // 3. Формула Шеннона для слів
             let entropy = 0;
-            const len = text.length;
-
-            for (let char in freq) {
-                const p = freq[char] / len;
+            for (const word in wordCounts) {
+                const p = wordCounts[word] / totalWords;
                 entropy -= p * Math.log2(p);
             }
+
+            // 4. Нормалізація (від 0 до 1)
+            // Порівнюємо реальну ентропію з максимально можливою для такої кількості слів
+            const maxPossibleEntropy = Math.log2(totalWords);
+            let normalized = entropy / (maxPossibleEntropy || 1);
+
+            // 5. Детектор "Крику" (Капслок та знаки оклику)
+            const exclamationPenalty = (text.match(/!/g) || []).length * 0.01;
+            const capsPenalty = (text.match(/[А-ЯІЇЄҐA-Z]{4,}/g) || []).length * 0.005;
+            
+            // Фінальний результат з урахуванням штрафів за маніпулятивність
+            let finalEntropy = normalized + exclamationPenalty + capsPenalty;
+
+            return Math.min(finalEntropy, 1).toFixed(3);
+        }
 
             // Normalize to 0-1 range (max entropy for ASCII ≈ 8 bits)
             const normalized = Math.min(1.0, entropy / 8.0);
