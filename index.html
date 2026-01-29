@@ -1,314 +1,162 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="uk">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VERITAS TERMINAL - Neon Edition</title>
+    <title>VERITAS TERMINAL</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=JetBrains+Mono:wght@300;500&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --bg-dark: #0a0b10;
-            --neon-blue: #00d4ff;
-            --neon-purple: #9d44ff;
-            --neon-red: #ff2a6d;
-            --neon-green: #05ffa1;
-            --glass: rgba(255, 255, 255, 0.03);
-        }
-
-        body {
-            background: var(--bg-dark);
-            color: #e0e0e0;
-            font-family: 'JetBrains+Mono', monospace;
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
-
-        .header {
-            text-align: center;
-            padding: 40px 20px;
-            width: 100%;
-            background: linear-gradient(to bottom, rgba(0, 212, 255, 0.05), transparent);
-        }
-
-        h1 {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 2.5em;
-            letter-spacing: 5px;
-            color: var(--neon-blue);
-            text-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
-            margin: 0;
-        }
-
-        .api-status {
-            margin-top: 15px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            font-size: 0.8em;
-            background: rgba(0,0,0,0.3);
-            padding: 5px 15px;
-            border-radius: 20px;
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #555;
-            box-shadow: 0 0 10px rgba(0,0,0,0.5);
-        }
-
-        .status-dot.online { background: var(--neon-green); box-shadow: 0 0 10px var(--neon-green); }
-
-        .container {
-            max-width: 1200px;
-            width: 95%;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 30px;
-            margin-bottom: 50px;
-        }
-
-        .card {
-            background: var(--glass);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            padding: 25px;
-            backdrop-filter: blur(10px);
-        }
-
-        h2 { font-family: 'Orbitron', sans-serif; font-size: 1em; color: var(--neon-blue); margin-top: 0; display: flex; align-items: center; gap: 10px; }
-
-        textarea, input {
-            width: 100%;
-            background: rgba(0,0,0,0.5);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 8px;
-            color: #fff;
-            padding: 12px;
-            box-sizing: border-box;
-            font-family: inherit;
-            margin-bottom: 15px;
-        }
-
-        button {
-            width: 100%;
-            padding: 15px;
-            border: none;
-            border-radius: 8px;
-            font-family: 'Orbitron', sans-serif;
-            font-weight: bold;
-            cursor: pointer;
-            transition: 0.3s;
-            text-transform: uppercase;
-        }
-
-        .btn-analyze { background: var(--neon-purple); color: white; box-shadow: 0 0 15px rgba(157, 68, 255, 0.3); }
-        .btn-analyze:hover { background: #b066ff; transform: translateY(-2px); }
-
-        .entropy-display { text-align: center; }
-        .entropy-value { font-size: 4em; font-weight: bold; font-family: 'Orbitron', sans-serif; margin: 20px 0; color: #fff; }
-
-        .progress-bar {
-            width: 100%;
-            height: 25px;
-            background: rgba(255,255,255,0.05);
-            border-radius: 20px;
-            overflow: hidden;
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .progress-fill {
-            width: 0%;
-            height: 100%;
-            background: var(--neon-blue);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.7em;
-            font-weight: bold;
-            transition: 1s ease-out;
-        }
-
-        .verdict {
-            margin-top: 25px;
-            padding: 15px;
-            border-radius: 8px;
-            text-align: center;
-            font-weight: bold;
-            display: none;
-        }
-
-        .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 20px; display: none; }
-        .metric-box { background: rgba(0,0,0,0.3); padding: 10px; border-radius: 5px; text-align: center; border: 1px solid rgba(255,255,255,0.05); }
-        .metric-label { font-size: 0.6em; color: #888; text-transform: uppercase; }
-        .metric-value { font-size: 1.1em; color: var(--neon-blue); display: block; }
-
-        @media (max-width: 900px) { .container { grid-template-columns: 1fr; } }
+        :root { --blue: #00d4ff; --red: #ff2a6d; --green: #05ffa1; --bg: #0a0b10; }
+        body { background: var(--bg); color: #e0e0e0; font-family: 'JetBrains+Mono', monospace; display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; }
+        .header { padding: 40px; text-align: center; width: 100%; }
+        h1 { font-family: 'Orbitron', sans-serif; color: var(--blue); letter-spacing: 5px; margin: 0; text-shadow: 0 0 15px var(--blue); }
+        .api-status { margin-top: 10px; font-size: 0.8em; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; background: #444; }
+        .container { max-width: 1000px; width: 95%; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 20px; }
+        .card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 20px; backdrop-filter: blur(10px); }
+        textarea, input { width: 100%; background: #000; border: 1px solid #333; color: #fff; padding: 12px; margin-bottom: 10px; border-radius: 6px; box-sizing: border-box; }
+        button { width: 100%; padding: 15px; border: none; border-radius: 6px; font-family: 'Orbitron'; cursor: pointer; background: #9d44ff; color: #fff; text-transform: uppercase; transition: 0.3s; }
+        button:hover { background: #b066ff; transform: scale(1.02); }
+        .entropy-val { font-size: 4em; font-family: 'Orbitron'; text-align: center; margin: 20px 0; color: #fff; }
+        .progress { width: 100%; height: 20px; background: #1a1a1a; border-radius: 10px; overflow: hidden; border: 1px solid #333; }
+        .fill { width: 0%; height: 100%; background: var(--blue); transition: 1s ease-out; }
+        .verdict { margin-top: 20px; padding: 10px; text-align: center; border-radius: 6px; font-weight: bold; display: none; }
+        .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 20px; font-size: 0.8em; }
+        .m-box { background: #111; padding: 10px; border-radius: 4px; text-align: center; border: 1px solid #222; }
     </style>
 </head>
 <body>
-
     <div class="header">
         <h1>VERITAS TERMINAL</h1>
         <div class="api-status">
-            <span id="statusDot" class="status-dot"></span>
-            <span id="statusText">Checking API...</span>
+            <div id="statusDot" class="dot"></div>
+            <span id="statusText">CHECKING CONNECTION...</span>
         </div>
     </div>
 
     <div class="container">
         <div class="card">
-            <h2>🔗 DATA INPUT</h2>
-            <input type="text" id="urlInput" placeholder="https://example.com/article">
-            <textarea id="textInput" rows="8" placeholder="Or paste text manually..."></textarea>
-            <button class="btn-analyze" id="analyzeBtn" onclick="analyze()">🔍 ANALYZE</button>
+            <h3>📥 DATA INPUT</h3>
+            <input type="text" id="urlInput" placeholder="Enter URL...">
+            <textarea id="textInput" rows="10" placeholder="Paste your text here..."></textarea>
+            <button id="analyzeBtn" onclick="analyze()">🔍 ANALYZE</button>
         </div>
 
-        <div class="card entropy-display">
-            <h2>🕯️ THE WITNESS</h2>
-            <div id="entropyValue" class="entropy-value">---</div>
-            <div class="progress-bar">
-                <div id="entropyFill" class="progress-fill">0%</div>
-            </div>
+        <div class="card">
+            <h3>👁️ THE WITNESS</h3>
+            <div id="entropyDisplay" class="entropy-val">---</div>
+            <div class="progress"><div id="fill" class="fill"></div></div>
             <div id="verdict" class="verdict"></div>
-            
-            <div id="metricsPanel" class="metrics">
-                <div class="metric-box">
-                    <span class="metric-label">Chars</span>
-                    <span id="charCount" class="metric-value">0</span>
-                </div>
-                <div class="metric-box">
-                    <span class="metric-label">Words</span>
-                    <span id="wordCount" class="metric-value">0</span>
-                </div>
-                <div class="metric-box">
-                    <span class="metric-label">Unique</span>
-                    <span id="uniqueCount" class="metric-value">0</span>
-                </div>
+            <div class="metrics">
+                <div class="m-box">CHARS<br><span id="mChars" style="color:var(--blue)">0</span></div>
+                <div class="m-box">WORDS<br><span id="mWords" style="color:var(--blue)">0</span></div>
+                <div class="m-box">UNIQUE<br><span id="mUnique" style="color:var(--blue)">0</span></div>
             </div>
         </div>
     </div>
 
     <script>
-        const API_BASE = '/api';
+        const API = '/api';
 
-        // 1. ПЕРЕВІРКА API (без помилок)
-        async function checkAPI() {
-            const dot = document.getElementById('statusDot');
-            const txt = document.getElementById('statusText');
-            if(!dot || !txt) return;
-
+        // 1. Статус без помилок
+        async function checkStatus() {
+            const d = document.getElementById('statusDot');
+            const t = document.getElementById('statusText');
             try {
-                const res = await fetch(API_BASE);
-                const data = await res.json();
-                if (data.status === 'online') {
-                    dot.classList.add('online');
-                    txt.textContent = 'API ONLINE';
-                    txt.style.color = '#05ffa1';
+                const r = await fetch(API);
+                const data = await r.json();
+                if(data.status === 'online') {
+                    d.style.background = '#05ffa1';
+                    d.style.boxShadow = '0 0 10px #05ffa1';
+                    t.textContent = 'SYSTEM ONLINE';
+                    t.style.color = '#05ffa1';
                 }
-            } catch (e) {
-                txt.textContent = 'API OFFLINE';
-                txt.style.color = '#ff2a6d';
+            } catch(e) {
+                t.textContent = 'SYSTEM OFFLINE';
+                t.style.color = '#ff2a6d';
             }
         }
 
-        // 2. РОЗУМНА ЕНТРОПІЯ (Словникова)
+        // 2. Розумна формула (Вікіпедія більше не хаос)
         function calculateEntropy(text) {
-            // Фільтрація: тільки слова > 3 літер, без цифр і сміття
             const words = text.toLowerCase()
-                .replace(/[0-9]/g, '')
+                .replace(/[0-9]/g, '') 
                 .replace(/[^а-яіїєґa-z\s]/g, ' ')
                 .split(/\s+/)
                 .filter(w => w.length > 3);
 
-            if (words.length < 5) return 0.3;
+            if (words.length < 10) return 0.45;
 
             const counts = {};
             words.forEach(w => counts[w] = (counts[w] || 0) + 1);
 
-            let entropy = 0;
-            for (const w in counts) {
-                const p = counts[w] / words.length;
-                entropy -= p * Math.log2(p);
+            let ent = 0;
+            for (let w in counts) {
+                let p = counts[w] / words.length;
+                ent -= p * Math.log2(p);
             }
 
-            // Нормалізація: Вікіпедія буде ~0.5-0.6, Борщ ~0.9
-            const ideal = Math.log2(words.length) * 0.82;
-            let result = entropy / ideal;
-
-            return Math.min(result, 1).toFixed(3);
+            // Корекція Шукача: нормалізація під структуру мови
+            const ideal = Math.log2(words.length) * 0.85; 
+            return Math.min(ent / ideal, 1).toFixed(3);
         }
 
-        // 3. ФУНКЦІЯ АНАЛІЗУ (Main)
+        // 3. Головна функція
         async function analyze() {
             const btn = document.getElementById('analyzeBtn');
-            const urlIn = document.getElementById('urlInput').value.trim();
-            const textIn = document.getElementById('textInput').value.trim();
+            const txt = document.getElementById('textInput').value;
+            const url = document.getElementById('urlInput').value;
             
             btn.disabled = true;
-            btn.textContent = '⏳ ANALYZING...';
+            btn.textContent = 'PROCESSING...';
 
             try {
-                let content = textIn;
-                
-                // Якщо є URL - пробуємо скрейпити через API
-                if (urlIn) {
-                    const res = await fetch(`${API_BASE}?url=${encodeURIComponent(urlIn)}`);
+                let content = txt;
+                if(url) {
+                    const res = await fetch(`${API}?url=${encodeURIComponent(url)}`);
                     const data = await res.json();
-                    if (data.content) content = data.content;
+                    content = data.content || txt;
                 }
 
-                if (!content || content.length < 10) throw new Error("Text too short");
+                if(!content || content.length < 20) throw new Error("Need more data");
 
-                const entropy = calculateEntropy(content);
-                updateWitness(Number(entropy), content);
-
-            } catch (e) {
-                alert("Error: " + e.message);
+                const score = calculateEntropy(content);
+                updateUI(Number(score), content);
+            } catch(e) {
+                alert("ERR: " + e.message);
             } finally {
                 btn.disabled = false;
                 btn.textContent = '🔍 ANALYZE';
             }
         }
 
-        // 4. ОНОВЛЕННЯ ІНТЕРФЕЙСУ
-        function updateWitness(entropy, text) {
-            const val = document.getElementById('entropyValue');
-            const fill = document.getElementById('entropyFill');
+        function updateUI(val, text) {
+            const display = document.getElementById('entropyDisplay');
+            const fill = document.getElementById('fill');
             const verd = document.getElementById('verdict');
             
-            val.textContent = entropy.toFixed(3);
-            const pct = Math.round(entropy * 100);
-            fill.style.width = pct + '%';
-            fill.textContent = pct + '%';
+            display.textContent = val.toFixed(3);
+            fill.style.width = (val * 100) + '%';
 
             // Метрики
-            document.getElementById('metricsPanel').style.display = 'grid';
-            document.getElementById('charCount').textContent = text.length;
-            document.getElementById('wordCount').textContent = text.split(/\s+/).length;
-            document.getElementById('uniqueCount').textContent = new Set(text.toLowerCase().match(/[а-яіїєґa-z]{4,}/g)).size;
+            document.getElementById('mChars').textContent = text.length;
+            document.getElementById('mWords').textContent = text.split(/\s+/).length;
+            document.getElementById('mUnique').textContent = new Set(text.toLowerCase().match(/[а-яіїєґa-z]{4,}/g)).size;
 
-            let color, label;
-            if (entropy < 0.58) { color = '#05ffa1'; label = '🟢 ORDERED SYSTEM'; }
-            else if (entropy < 0.75) { color = '#ffcc00'; label = '🟡 COMPLEX DATA'; }
-            else { color = '#ff2a6d'; label = '🔴 CRITICAL CHAOS'; }
+            let c, l;
+            if(val < 0.6) { c = '#05ffa1'; l = '🟢 СИСТЕМНИЙ ПОРЯДОК'; }
+            else if(val < 0.8) { c = '#ffcc00'; l = '🟡 СКЛАДНА ІНФОРМАЦІЯ'; }
+            else { c = '#ff2a6d'; l = '🔴 КРИТИЧНИЙ ХАОС'; }
 
-            val.style.color = color;
-            fill.style.background = color;
-            verd.textContent = label;
-            verd.style.color = color;
-            verd.style.border = `1px solid ${color}`;
+            display.style.color = c;
+            fill.style.background = c;
+            verd.textContent = l;
+            verd.style.color = c;
+            verd.style.border = `1px solid ${c}`;
             verd.style.display = 'block';
         }
 
-        window.onload = checkAPI;
+        window.onload = checkStatus;
     </script>
 </body>
 </html>
