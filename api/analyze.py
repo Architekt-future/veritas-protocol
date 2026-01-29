@@ -5,62 +5,64 @@ Endpoint: /api/analyze
 
 from http.server import BaseHTTPRequestHandler
 import json
-import sys
+import http.server
 import os
+import sys
 
-# Add parent directory to path to import our core
-sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+# 1. ТИЦЯЄМО НОСОМ У КОРІНЬ (Path Fix)
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+if parent_dir not in sys.path:
+    sys.path.insert(0, parent_dir)
 
+# 2. ІМПОРТ (Синхронізація назв)
 try:
-    from veritas_calibrated_core import VeritasCalibratedEngine
-except ImportError:
-    # Fallback if import fails
-    VeritasCalibratedEngine = None
+    from veritas_calibrated_core import VeritasCalibratedCore
+    # Створюємо об'єкт з ПРАВИЛЬНОЮ назвою
+    engine = VeritasCalibratedCore()
+except Exception as e:
+    engine = None
+    print(f"Import Error: {e}")
 
-
-class handler(BaseHTTPRequestHandler):
-    
-    def _set_cors_headers(self):
-        """Set CORS headers to allow frontend access"""
+class handler(http.server.BaseHTTPRequestHandler):
+    def do_OPTIONS(self):
+        self.send_response(200)
         self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
         self.send_header('Access-Control-Allow-Headers', 'Content-Type')
-    
-    def do_OPTIONS(self):
-        """Handle preflight CORS requests"""
-        self.send_response(200)
-        self._set_cors_headers()
         self.end_headers()
-    
+
     def do_GET(self):
-        """Health check endpoint"""
         self.send_response(200)
-        self._set_cors_headers()
-        self.send_header('Content-Type', 'application/json')
+        self.send_header('Content-type', 'application/json')
+        self.send_header('Access-Control-Allow-Origin', '*')
         self.end_headers()
-        
-        response = {
-            'status': 'online',
-            'service': 'Veritas Protocol Analysis API',
-            'version': '3.0-calibrated',
-            'endpoint': '/api/analyze (POST)'
-        }
-        
-        self.wfile.write(json.dumps(response, ensure_ascii=False).encode('utf-8'))
-    
+        self.wfile.write(json.dumps({"status": "online", "engine_ready": engine is not None}).encode())
+
     def do_POST(self):
-        """Main analysis endpoint"""
+        content_length = int(self.headers.get('Content-Length', 0))
         try:
-            # Read request body
-            content_length = int(self.headers.get('Content-Length', 0))
-            body = self.rfile.read(content_length).decode('utf-8')
+            post_data = self.rfile.read(content_length)
+            data = json.loads(post_data)
+            text = data.get('text', '')
             
-            # Parse JSON
-            try:
-                data = json.loads(body)
-            except json.JSONDecodeError:
-                self._send_error(400, 'Invalid JSON')
-                return
+            # ВИПРАВЛЕНО: викликаємо engine (об'єкт), а не Engine (клас)
+            if engine:
+                result = engine.evaluate_integrity(text)
+            else:
+                raise Exception("Engine not initialized")
+            
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(json.dumps(result).encode())
+        except Exception as e:
+            self.send_response(500)
+            self.send_header('Content-type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(json.dumps({"error": str(e)}).encode())
             
             # Extract text
             text = data.get('text', '').strip()
@@ -71,7 +73,7 @@ class handler(BaseHTTPRequestHandler):
                 return
             
             # Check if engine is available
-            if VeritasCalibratedEngine is None:
+            if VeritasCalibratedCore is None:
                 self._send_error(500, 'Analysis engine not available')
                 return
             
