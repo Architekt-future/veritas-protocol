@@ -1,21 +1,22 @@
-"""
-Vercel Python Serverless Function
-Endpoint: /api/analyze
-"""
-
-from http.server import BaseHTTPRequestHandler
 import json
+import http.server
+import urllib.parse
 import sys
 import os
 
-# Add parent directory to path to import our core
-sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+# Спроба знайти ядро в усіх можливих місцях
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+sys.path.insert(0, current_dir)
+sys.path.insert(0, parent_dir)
 
 try:
-    from veritas_calibrated_core import VeritasCalibratedEngine
-except ImportError:
-    # Fallback if import fails
-    VeritasCalibratedEngine = None
+    from veritas_calibrated_core import VeritasCalibratedCore
+    engine = VeritasCalibratedCore()
+except ImportError as e:
+    # Це допоможе нам побачити помилку прямо в браузері, якщо не завантажиться
+    engine = None
+    print(f"IMPORT ERROR: {e}")
 
 
 class handler(BaseHTTPRequestHandler):
