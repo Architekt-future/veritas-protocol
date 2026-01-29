@@ -108,7 +108,7 @@ class VeritasCalibratedCore:
             if p > 0:
                 entropy -= p * math.log2(p)
         
-        # Нормалізація до 0-1 (max entropy для ASCII ≈ 8 bits)
+        # Нормалізацію до 0-1 (max entropy для ASCII ≈ 8 bits)
         normalized = min(1.0, entropy / 8.0)
         
         return normalized
@@ -316,6 +316,47 @@ class VeritasCalibratedCore:
                 'word_count': word_count,
                 'char_count': len(text)
             }
+        }
+
+    def evaluate_integrity(self, text: str, source: Optional[str] = None):
+        """
+        Адаптер для сумісності з API.
+        Викликає основний метод analyze() та форматує відповідь.
+        """
+        # Виконуємо основний аналіз
+        result = self.analyze(text)
+        
+        # Якщо це конспірологія (entropy 0.99) - повертаємо як є
+        if result.get('entropy') == 0.99:
+            return {
+                'node': source or 'Unknown',
+                'status': 'CRITICAL',
+                'new_reputation': 0.1,  # Резко штрафуємо репутацію
+                'intervention_required': True,
+                'verdict': result['verdict'],
+                'entropy': result['entropy']
+            }
+        
+        # Мапуємо наш статус на статуси старого ядра
+        status_map = {
+            'TRUSTED': 'STABLE',
+            'ACCEPTABLE': 'STABLE',
+            'SUSPICIOUS': 'REJECTED',
+            'WARNING': 'REJECTED',
+            'CRITICAL': 'REJECTED'
+        }
+        
+        # Розраховуємо репутацію на основі ентропії (1 - entropy)
+        base_reputation = 1.0 - result['entropy']
+        
+        return {
+            'node': source or 'Unknown',
+            'status': status_map.get(result['status'], 'STABLE'),
+            'new_reputation': round(base_reputation, 2),
+            'intervention_required': result['status'] in ['WARNING', 'CRITICAL'],
+            'verdict': result['verdict'],
+            'entropy': result['entropy'],
+            'diagnostics': result.get('diagnostics', {})
         }
 
 
