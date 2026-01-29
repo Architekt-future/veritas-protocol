@@ -520,92 +520,57 @@
         </div>
     </div>
 
-    <script>
-        // API Configuration
+   <script>
         const API_BASE = '/api';
-        let currentMode = 'url'; // 'url' or 'text'
+        let currentMode = 'url';
 
-        // Check API status on load
-        window.addEventListener('load', checkAPIStatus);
-
-        async function checkAPIStatus() {
-            const statusEl = document.getElementById('apiStatus');
-            statusEl.textContent = '⚙️ Checking API...';
-            statusEl.className = 'api-status checking';
-
+        // INITIAL API CHECK
+        async function checkAPI() {
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
             try {
-                const response = await fetch(API_BASE, { method: 'GET' });
+                const response = await fetch(API_BASE);
                 const data = await response.json();
-                
                 if (data.status === 'online') {
-                    statusEl.textContent = '✅ API Online';
-                    statusEl.className = 'api-status online';
-                } else {
-                    throw new Error('API unhealthy');
+                    statusDot.classList.add('online');
+                    statusText.textContent = 'API ONLINE';
+                    statusText.style.color = '#00ff88';
                 }
-            } catch (error) {
-                statusEl.textContent = '❌ API Offline';
-                statusEl.className = 'api-status offline';
-                console.error('API check failed:', error);
+            } catch (e) {
+                statusDot.classList.remove('online');
+                statusText.textContent = 'API OFFLINE';
+                statusText.style.color = '#ff4444';
             }
         }
 
-        // SWITCH MODE
         function switchMode(mode) {
             currentMode = mode;
-            
-            // Update tabs
-            document.querySelectorAll('.mode-tab').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            event.target.classList.add('active');
-            
-            // Update input areas
-            document.getElementById('urlMode').classList.remove('active');
-            document.getElementById('textMode').classList.remove('active');
-            
+            const urlMode = document.getElementById('urlMode');
+            const textMode = document.getElementById('textMode');
+            const urlSection = document.getElementById('urlSection');
+            const textSection = document.getElementById('textSection');
+
             if (mode === 'url') {
-                document.getElementById('urlMode').classList.add('active');
+                urlMode.classList.add('active');
+                textMode.classList.remove('active');
+                urlSection.classList.remove('hidden');
+                textSection.classList.add('hidden');
             } else {
-                document.getElementById('textMode').classList.add('active');
+                textMode.classList.add('active');
+                urlMode.classList.remove('active');
+                textSection.classList.remove('hidden');
+                urlSection.classList.add('hidden');
             }
         }
 
-        // DATA CLEANER MODULE
-        function cleanText(rawText) {
-            let cleaned = rawText;
-
-            // Remove script tags and content
-            cleaned = cleaned.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
-            
-            // Remove style tags and content
-            cleaned = cleaned.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
-            
-            // Remove template engine constructs (<% %>, <%= %>, <%- %>)
-            cleaned = cleaned.replace(/<%[\s\S]*?%>/g, '');
-            
-            // Remove HTML comments
-            cleaned = cleaned.replace(/<!--[\s\S]*?-->/g, '');
-            
-            // Remove remaining HTML tags
-            cleaned = cleaned.replace(/<[^>]+>/g, ' ');
-            
-            // Remove JavaScript disabled messages
-            cleaned = cleaned.replace(/У вас відключено JavaScript/gi, '');
-            cleaned = cleaned.replace(/JavaScript is disabled/gi, '');
-            
-            // Normalize whitespace
-            cleaned = cleaned.replace(/\s+/g, ' ');
-            
-            // Trim
-            cleaned = cleaned.trim();
-
-            return cleaned;
+        function cleanText(text) {
+            return text
+                .replace(/\\n/g, ' ')
+                .replace(/\\s+/g, ' ')
+                .trim();
         }
 
-        // SHANNON ENTROPY ENGINE
-       function calculateEntropy(text) {
-            // 1. Розбиваємо на слова (ігноруємо пунктуацію та короткі сполучники)
+        function calculateEntropy(text) {
             const words = text.toLowerCase()
                 .replace(/[^а-яіїєґa-z0-9\s]/g, ' ')
                 .split(/\s+/)
@@ -616,32 +581,26 @@
             const totalWords = words.length;
             const wordCounts = {};
 
-            // 2. Рахуємо унікальність кожного слова
             words.forEach(word => {
                 wordCounts[word] = (wordCounts[word] || 0) + 1;
             });
 
-            // 3. Формула Шеннона для слів
             let entropy = 0;
             for (const word in wordCounts) {
                 const p = wordCounts[word] / totalWords;
                 entropy -= p * Math.log2(p);
             }
 
-            // 4. Нормалізація (від 0 до 1)
             const maxPossibleEntropy = Math.log2(totalWords);
             let normalized = entropy / (maxPossibleEntropy || 1);
 
-            // 5. Детектор "Крику" (Капслок та знаки оклику)
             const exclamationPenalty = (text.match(/!/g) || []).length * 0.01;
             const capsPenalty = (text.match(/[А-ЯІЇЄҐA-Z]{4,}/g) || []).length * 0.005;
             
             let finalEntropy = Number(normalized) + exclamationPenalty + capsPenalty;
-
-            return Math.min(finalEntropy, 1);
+            return Math.min(finalEntropy, 1).toFixed(3);
         }
 
-        // ANALYZE FUNCTION
         async function analyze() {
             const analyzeBtn = document.getElementById('analyzeBtn');
             const textDisplay = document.getElementById('textDisplay');
@@ -653,11 +612,9 @@
 
             try {
                 let rawContent = '';
-
                 if (currentMode === 'url') {
                     const urlInput = document.getElementById('urlInput').value.trim();
                     if (!urlInput) throw new Error('Please enter a URL');
-
                     const response = await fetch(`${API_BASE}?url=${encodeURIComponent(urlInput)}`);
                     const data = await response.json();
                     if (data.error) throw new Error(data.error);
@@ -666,14 +623,10 @@
                     const textInput = document.getElementById('textInput').value.trim();
                     const sourceInput = document.getElementById('sourceInput').value.trim();
                     if (!textInput) throw new Error('Please enter text to analyze');
-
                     const response = await fetch(API_BASE, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ 
-                            text: textInput,
-                            source: sourceInput || 'Manual Input'
-                        })
+                        body: JSON.stringify({ text: textInput, source: sourceInput || 'Manual Input' })
                     });
                     const data = await response.json();
                     if (data.error) throw new Error(data.error);
@@ -681,23 +634,16 @@
                 }
 
                 const cleanedText = cleanText(rawContent);
-                if (!cleanedText || cleanedText.length < 10) throw new Error('Extracted text too short');
+                if (!cleanedText || cleanedText.length < 10) throw new Error('Text too short');
 
                 textDisplay.textContent = cleanedText;
-
-                // Metrics
-                const charCount = cleanedText.length;
-                const wordCount = cleanedText.split(/\s+/).filter(w => w.length > 0).length;
-                const uniqueChars = new Set(cleanedText).size;
-
-                document.getElementById('charCount').textContent = charCount;
-                document.getElementById('wordCount').textContent = wordCount;
-                document.getElementById('uniqueChars').textContent = uniqueChars;
+                document.getElementById('charCount').textContent = cleanedText.length;
+                document.getElementById('wordCount').textContent = cleanedText.split(/\s+/).filter(w => w.length > 0).length;
+                document.getElementById('uniqueChars').textContent = new Set(cleanedText).size;
                 metricsPanel.style.display = 'grid';
 
-                // Справжній розрахунок ентропії (тепер через слова!)
                 const entropy = calculateEntropy(cleanedText);
-                updateWitness(entropy);
+                updateWitness(Number(entropy));
 
             } catch (error) {
                 textDisplay.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
@@ -712,35 +658,21 @@
             const entropyFill = document.getElementById('entropyFill');
             const verdict = document.getElementById('verdict');
 
-            entropyValue.textContent = Number(entropy).toFixed(3);
+            entropyValue.textContent = entropy.toFixed(3);
             const percentage = Math.round(entropy * 100);
             entropyFill.style.width = percentage + '%';
             entropyFill.textContent = percentage + '%';
 
-            let color, verdictText, verdictClass;
-
-            if (entropy < 0.55) {
-                color = '#00ff88';
-                verdictText = '🟢 ВИСОКА ВПОРЯДКОВАНІСТЬ';
-                verdictClass = 'trusted';
-            } else if (entropy < 0.72) {
-                color = '#ffaa00';
-                verdictText = '🟡 СКЛАДНА МОВА';
-                verdictClass = 'acceptable';
-            } else if (entropy < 0.85) {
-                color = '#ff6644';
-                verdictText = '🟠 ПІДОЗРІЛИЙ ШУМ';
-                verdictClass = 'suspicious';
-            } else {
-                color = '#ff0000';
-                verdictText = '🔴 КРИТИЧНИЙ ХАОС';
-                verdictClass = 'chaos';
-            }
+            let color, text, cls;
+            if (entropy < 0.55) { color = '#00ff88'; text = '🟢 ВИСОКА ВПОРЯДКОВАНІСТЬ'; cls = 'trusted'; }
+            else if (entropy < 0.72) { color = '#ffaa00'; text = '🟡 СКЛАДНА МОВА'; cls = 'acceptable'; }
+            else if (entropy < 0.85) { color = '#ff6644'; text = '🟠 ПІДОЗРІЛИЙ ШУМ'; cls = 'suspicious'; }
+            else { color = '#ff0000'; text = '🔴 КРИТИЧНИЙ ХАОС'; cls = 'chaos'; }
 
             entropyValue.style.color = color;
             entropyFill.style.background = color;
-            verdict.textContent = verdictText;
-            verdict.className = 'verdict ' + verdictClass;
+            verdict.textContent = text;
+            verdict.className = 'verdict ' + cls;
             verdict.style.display = 'block';
         }
 
@@ -750,24 +682,17 @@
             document.getElementById('sourceInput').value = '';
             document.getElementById('textDisplay').textContent = 'Waiting for analysis...';
             document.getElementById('entropyValue').textContent = '---';
-            document.getElementById('entropyValue').style.color = '#e0e0e0';
             document.getElementById('entropyFill').style.width = '0%';
-            document.getElementById('entropyFill').textContent = '0%';
             document.getElementById('verdict').style.display = 'none';
             document.getElementById('metricsPanel').style.display = 'none';
         }
 
         function toggleTextDisplay() {
-            const container = document.getElementById('textDisplayContainer');
-            container.classList.toggle('visible');
-            container.classList.toggle('hidden');
+            document.getElementById('textDisplayContainer').classList.toggle('visible');
+            document.getElementById('textDisplayContainer').classList.toggle('hidden');
         }
 
-        document.getElementById('urlInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') analyze();
-        });
-
-        // Запуск перевірки при завантаженні
+        document.getElementById('urlInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') analyze(); });
         window.addEventListener('DOMContentLoaded', checkAPI);
     </script>
 </body>
