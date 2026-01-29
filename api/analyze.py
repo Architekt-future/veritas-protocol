@@ -1,71 +1,108 @@
+"""
+Vercel Python Serverless Function
+Endpoint: /api/analyze
+"""
+
+from http.server import BaseHTTPRequestHandler
 import json
-import math
-import re
-from collections import Counter
+import sys
+import os
 
-# --- ЯДРО ВБУДОВАНЕ ---
-class VeritasCalibratedCore:
-    def __init__(self):
-        self.chaos_markers = ['рептилоїд', 'масон', 'змова', 'чипування', 'таємний світовий уряд', 'терміново репост', 'шок контент', 'влада приховує', 'паніка']
-        self.semantic_categories = {
-            'science': ['квантовий', 'синхрофазотрон', 'вакуумний', 'парадигма', 'ентропія', 'транзакція', 'резонанс', 'дискретний'],
-            'domestic': ['борщ', 'огірок', 'каструля', 'ложка', 'суп', 'кріп', 'хата', 'вечеря'],
-            'esoteric': ['астральний', 'метафізика', 'енергетика', 'всесвіт', 'вібрації', 'карма', 'потік']
+# Add parent directory to path to import our core
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+
+try:
+    from veritas_calibrated_core import VeritasCalibratedEngine
+except ImportError:
+    # Fallback if import fails
+    VeritasCalibratedEngine = None
+
+
+class handler(BaseHTTPRequestHandler):
+    
+    def _set_cors_headers(self):
+        """Set CORS headers to allow frontend access"""
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+    
+    def do_OPTIONS(self):
+        """Handle preflight CORS requests"""
+        self.send_response(200)
+        self._set_cors_headers()
+        self.end_headers()
+    
+    def do_GET(self):
+        """Health check endpoint"""
+        self.send_response(200)
+        self._set_cors_headers()
+        self.send_header('Content-Type', 'application/json')
+        self.end_headers()
+        
+        response = {
+            'status': 'online',
+            'service': 'Veritas Protocol Analysis API',
+            'version': '3.0-calibrated',
+            'endpoint': '/api/analyze (POST)'
         }
-
-    def evaluate_integrity(self, text):
-        if not text or len(text) < 10:
-            return {"entropy_score": 0.5, "status": "NEED_MORE_DATA"}
         
-        # 1. Шеннон
-        words = re.findall(r'[а-яіїєґa-z]{3,}', text.lower())
-        if not words: return {"entropy_score": 0.5, "status": "NO_WORDS"}
-        total_words = len(words)
-        counts = Counter(words)
-        entropy = -sum((c/total_words)*math.log2(c/total_words) for c in counts.values())
-        shannon = min(entropy / (math.log2(total_words + 1) * 0.90), 1.0)
+        self.wfile.write(json.dumps(response, ensure_ascii=False).encode('utf-8'))
+    
+    def do_POST(self):
+        """Main analysis endpoint"""
+        try:
+            # Read request body
+            content_length = int(self.headers.get('Content-Length', 0))
+            body = self.rfile.read(content_length).decode('utf-8')
+            
+            # Parse JSON
+            try:
+                data = json.loads(body)
+            except json.JSONDecodeError:
+                self._send_error(400, 'Invalid JSON')
+                return
+            
+            # Extract text
+            text = data.get('text', '').strip()
+            source = data.get('source', 'Unknown')
+            
+            if not text:
+                self._send_error(400, 'No text provided')
+                return
+            
+            # Check if engine is available
+            if VeritasCalibratedEngine is None:
+                self._send_error(500, 'Analysis engine not available')
+                return
+            
+            # Initialize engine and analyze
+            engine = VeritasCalibratedEngine()
+            result = engine.analyze(text)
+            
+            # Add source to result
+            result['source'] = source
+            
+            # Send successful response
+            self.send_response(200)
+            self._set_cors_headers()
+            self.send_header('Content-Type', 'application/json; charset=utf-8')
+            self.end_headers()
+            
+            self.wfile.write(json.dumps(result, ensure_ascii=False).encode('utf-8'))
+            
+        except Exception as e:
+            self._send_error(500, f'Analysis failed: {str(e)}')
+    
+    def _send_error(self, code: int, message: str):
+        """Send error response"""
+        self.send_response(code)
+        self._set_cors_headers()
+        self.send_header('Content-Type', 'application/json')
+        self.end_headers()
         
-        # 2. Дрейф (Борщ)
-        found_cats = {cat for cat, kws in self.semantic_categories.items() if any(w in text.lower() for w in kws)}
-        drift = 0.4 * (len(found_cats) - 1) if len(found_cats) > 1 else 0
-        
-        # 3. Штрафи
-        chaos_hits = sum(1 for m in self.chaos_markers if m in text.lower())
-        shout_factor = len(re.findall(r'[А-ЯІЇЄҐ]{4,}', text)) / (len(text.split()) + 1)
-        
-        final_score = round(min(max((shannon * 0.4) + (drift * 0.4) + (chaos_hits * 0.2) + (shout_factor * 0.3), 0.2), 1.0), 3)
-        return {
-            "entropy_score": final_score,
-            "status": "TRUSTED" if final_score < 0.45 else "NEUTRAL" if final_score < 0.75 else "CRITICAL",
-            "verdict": "АНАЛІЗ ЗАВЕРШЕНО",
-            "stats": {"words": total_words, "drift": drift}
+        response = {
+            'error': message,
+            'status': 'error'
         }
-
-# --- ГОЛОВНА ФУНКЦІЯ ДЛЯ VERCEL ---
-engine = VeritasCalibratedCore()
-
-def handler(request):
-    # Дозволяємо CORS вручну
-    headers = {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
-        'Content-type': 'application/json'
-    }
-
-    if request.method == 'OPTIONS':
-        return 200, headers, ""
-
-    try:
-        # Для GET запитів (статус)
-        if request.method == 'GET':
-            return 200, headers, json.dumps({"status": "online", "engine": "ready"})
-
-        # Для POST (аналіз)
-        payload = json.loads(request.body)
-        text = payload.get('text', '')
-        result = engine.evaluate_integrity(text)
-        return 200, headers, json.dumps(result)
-
-    except Exception as e:
-        return 500, headers, json.dumps({"error": str(e)})
+        
+        self.wfile.write(json.dumps(response).encode('utf-8'))
