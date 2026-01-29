@@ -8,15 +8,21 @@ from http.server import BaseHTTPRequestHandler
 import json
 import re
 
-# Import from same directory (api/)
+# 1. Примусово додаємо поточну папку api/ у шлях пошуку Python
+import sys
+import os
+path_to_api = os.path.dirname(os.path.abspath(__file__))
+if path_to_api not in sys.path:
+    sys.path.insert(0, path_to_api)
+
+# 2. Імпортуємо ядро
 try:
     from veritas_calibrated_core import VeritasCalibratedCore
-    print("✅ Core loaded")
-except ImportError as e:
+    print("✅ Core loaded from api directory")
+except Exception as e:
     print(f"❌ Core import failed: {e}")
     VeritasCalibratedCore = None
-
-
+    
 # Inline NewsExtractor (no external deps on Vercel)
 class SimpleExtractor:
     """
