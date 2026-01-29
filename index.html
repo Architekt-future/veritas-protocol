@@ -1,821 +1,314 @@
 <!DOCTYPE html>
-<html lang="uk">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>💠 Veritas Terminal - Information Entropy Analyzer</title>
+    <title>VERITAS TERMINAL - Neon Edition</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=JetBrains+Mono:wght@300;500&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            --bg-dark: #0a0b10;
+            --neon-blue: #00d4ff;
+            --neon-purple: #9d44ff;
+            --neon-red: #ff2a6d;
+            --neon-green: #05ffa1;
+            --glass: rgba(255, 255, 255, 0.03);
         }
 
         body {
-            font-family: 'Courier New', monospace;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            background: var(--bg-dark);
             color: #e0e0e0;
+            font-family: 'JetBrains+Mono', monospace;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             min-height: 100vh;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
+            overflow-x: hidden;
         }
 
         .header {
             text-align: center;
-            margin-bottom: 30px;
-            padding: 20px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 40px 20px;
+            width: 100%;
+            background: linear-gradient(to bottom, rgba(0, 212, 255, 0.05), transparent);
         }
 
-        .header h1 {
+        h1 {
+            font-family: 'Orbitron', sans-serif;
             font-size: 2.5em;
-            color: #00d4ff;
-            text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
-            margin-bottom: 10px;
-        }
-
-        .header .subtitle {
-            color: #888;
-            font-size: 0.9em;
+            letter-spacing: 5px;
+            color: var(--neon-blue);
+            text-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+            margin: 0;
         }
 
         .api-status {
-            display: inline-block;
-            padding: 5px 15px;
-            border-radius: 20px;
-            font-size: 0.8em;
-            font-weight: bold;
-            margin-top: 10px;
-        }
-
-        .api-status.online {
-            background: #00ff88;
-            color: #000;
-        }
-
-        .api-status.offline {
-            background: #ff4444;
-            color: #fff;
-        }
-
-        .api-status.checking {
-            background: #ffaa00;
-            color: #000;
-        }
-
-        .mode-tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        .mode-tab {
-            flex: 1;
-            padding: 12px;
-            background: rgba(0, 0, 0, 0.3);
-            border: 2px solid rgba(255, 255, 255, 0.2);
-            border-radius: 8px;
-            color: #888;
-            cursor: pointer;
-            text-align: center;
-            font-weight: bold;
-            transition: all 0.3s;
-        }
-
-        .mode-tab:hover {
-            border-color: rgba(0, 212, 255, 0.5);
-            color: #00d4ff;
-        }
-
-        .mode-tab.active {
-            background: rgba(0, 212, 255, 0.2);
-            border-color: #00d4ff;
-            color: #00d4ff;
-        }
-
-        .main-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-
-        @media (max-width: 900px) {
-            .main-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .panel {
-            background: rgba(0, 0, 0, 0.4);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 10px;
-            padding: 20px;
-        }
-
-        .panel-title {
-            font-size: 1.2em;
-            color: #00d4ff;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .input-group {
-            margin-bottom: 15px;
-        }
-
-        .input-group label {
-            display: block;
-            margin-bottom: 5px;
-            color: #aaa;
-            font-size: 0.9em;
-        }
-
-        .input-group input,
-        .input-group textarea {
-            width: 100%;
-            padding: 12px;
-            background: rgba(0, 0, 0, 0.5);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            border-radius: 5px;
-            color: #fff;
-            font-family: 'Courier New', monospace;
-            font-size: 0.95em;
-        }
-
-        .input-group textarea {
-            min-height: 150px;
-            resize: vertical;
-        }
-
-        .input-group input:focus,
-        .input-group textarea:focus {
-            outline: none;
-            border-color: #00d4ff;
-            box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
-        }
-
-        .input-mode {
-            display: none;
-        }
-
-        .input-mode.active {
-            display: block;
-        }
-
-        .btn {
-            padding: 12px 30px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border: none;
-            border-radius: 5px;
-            color: #fff;
-            font-weight: bold;
-            cursor: pointer;
-            font-family: 'Courier New', monospace;
-            font-size: 1em;
-            transition: transform 0.2s;
-            width: 100%;
-        }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-        }
-
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .btn-clear {
-            background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%);
-            margin-top: 10px;
-        }
-
-        /* WITNESS VISUALIZER */
-        .witness-container {
-            margin-top: 20px;
-        }
-
-        .entropy-value {
-            text-align: center;
-            font-size: 3em;
-            font-weight: bold;
-            margin: 20px 0;
-            text-shadow: 0 0 20px currentColor;
-        }
-
-        .entropy-bar {
-            height: 40px;
-            background: rgba(0, 0, 0, 0.5);
-            border-radius: 20px;
-            overflow: hidden;
-            position: relative;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-        }
-
-        .entropy-fill {
-            height: 100%;
-            transition: width 0.5s ease, background 0.5s ease;
+            margin-top: 15px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: bold;
-            color: #000;
-        }
-
-        .entropy-labels {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 10px;
+            gap: 10px;
             font-size: 0.8em;
-            color: #888;
+            background: rgba(0,0,0,0.3);
+            padding: 5px 15px;
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
         }
 
-        .verdict {
-            text-align: center;
-            font-size: 1.5em;
-            font-weight: bold;
-            margin: 20px 0;
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #555;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+
+        .status-dot.online { background: var(--neon-green); box-shadow: 0 0 10px var(--neon-green); }
+
+        .container {
+            max-width: 1200px;
+            width: 95%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 50px;
+        }
+
+        .card {
+            background: var(--glass);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+            backdrop-filter: blur(10px);
+        }
+
+        h2 { font-family: 'Orbitron', sans-serif; font-size: 1em; color: var(--neon-blue); margin-top: 0; display: flex; align-items: center; gap: 10px; }
+
+        textarea, input {
+            width: 100%;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            color: #fff;
+            padding: 12px;
+            box-sizing: border-box;
+            font-family: inherit;
+            margin-bottom: 15px;
+        }
+
+        button {
+            width: 100%;
             padding: 15px;
-            border-radius: 10px;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
             text-transform: uppercase;
         }
 
-        .verdict.trusted {
-            background: rgba(0, 255, 136, 0.2);
-            color: #00ff88;
-            border: 2px solid #00ff88;
+        .btn-analyze { background: var(--neon-purple); color: white; box-shadow: 0 0 15px rgba(157, 68, 255, 0.3); }
+        .btn-analyze:hover { background: #b066ff; transform: translateY(-2px); }
+
+        .entropy-display { text-align: center; }
+        .entropy-value { font-size: 4em; font-weight: bold; font-family: 'Orbitron', sans-serif; margin: 20px 0; color: #fff; }
+
+        .progress-bar {
+            width: 100%;
+            height: 25px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 20px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.1);
         }
 
-        .verdict.acceptable {
-            background: rgba(255, 170, 0, 0.2);
-            color: #ffaa00;
-            border: 2px solid #ffaa00;
-        }
-
-        .verdict.suspicious {
-            background: rgba(255, 68, 68, 0.2);
-            color: #ff4444;
-            border: 2px solid #ff4444;
-        }
-
-        .verdict.chaos {
-            background: rgba(139, 0, 0, 0.3);
-            color: #ff0000;
-            border: 2px solid #ff0000;
-            animation: pulse 1s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
-        }
-
-        /* METRICS */
-        .metrics {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        .metric {
-            background: rgba(0, 0, 0, 0.5);
-            padding: 15px;
-            border-radius: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            text-align: center;
-        }
-
-        .metric-label {
-            font-size: 0.8em;
-            color: #888;
-            margin-bottom: 5px;
-        }
-
-        .metric-value {
-            font-size: 1.5em;
-            font-weight: bold;
-            color: #00d4ff;
-        }
-
-        /* TEXT DISPLAY */
-        .text-display {
-            background: rgba(0, 0, 0, 0.7);
-            padding: 15px;
-            border-radius: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            max-height: 400px;
-            overflow-y: auto;
-            font-size: 0.9em;
-            line-height: 1.6;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-        }
-
-        .text-display::-webkit-scrollbar {
-            width: 10px;
-        }
-
-        .text-display::-webkit-scrollbar-track {
-            background: rgba(0, 0, 0, 0.5);
-        }
-
-        .text-display::-webkit-scrollbar-thumb {
-            background: rgba(0, 212, 255, 0.5);
-            border-radius: 5px;
-        }
-
-        .loading {
-            text-align: center;
-            color: #00d4ff;
-            font-size: 1.2em;
-            animation: blink 1s infinite;
-        }
-
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.3; }
-        }
-
-        .error {
-            background: rgba(255, 68, 68, 0.2);
-            border: 1px solid #ff4444;
-            padding: 15px;
-            border-radius: 8px;
-            color: #ff4444;
-            margin-top: 10px;
-        }
-
-        .footer {
-            text-align: center;
-            margin-top: 30px;
-            padding: 20px;
-            color: #666;
-            font-size: 0.85em;
-        }
-
-        .toggle-section {
-            cursor: pointer;
-            user-select: none;
+        .progress-fill {
+            width: 0%;
+            height: 100%;
+            background: var(--neon-blue);
             display: flex;
             align-items: center;
-            gap: 10px;
+            justify-content: center;
+            font-size: 0.7em;
+            font-weight: bold;
+            transition: 1s ease-out;
         }
 
-        .toggle-section:hover {
-            color: #00d4ff;
+        .verdict {
+            margin-top: 25px;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+            display: none;
         }
 
-        .collapsible-content {
-            overflow: hidden;
-            transition: max-height 0.3s ease;
-        }
+        .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 20px; display: none; }
+        .metric-box { background: rgba(0,0,0,0.3); padding: 10px; border-radius: 5px; text-align: center; border: 1px solid rgba(255,255,255,0.05); }
+        .metric-label { font-size: 0.6em; color: #888; text-transform: uppercase; }
+        .metric-value { font-size: 1.1em; color: var(--neon-blue); display: block; }
 
-        .collapsible-content.hidden {
-            max-height: 0;
-        }
-
-        .collapsible-content.visible {
-            max-height: 500px;
-        }
+        @media (max-width: 900px) { .container { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
+
+    <div class="header">
+        <h1>VERITAS TERMINAL</h1>
+        <div class="api-status">
+            <span id="statusDot" class="status-dot"></span>
+            <span id="statusText">Checking API...</span>
+        </div>
+    </div>
+
     <div class="container">
-        <!-- HEADER -->
-        <div class="header">
-            <h1>💠 VERITAS TERMINAL</h1>
-            <div class="subtitle">Information Entropy Analyzer • Shannon Engine • The Witness</div>
-            <div class="api-status checking" id="apiStatus">⚙️ Checking API...</div>
+        <div class="card">
+            <h2>🔗 DATA INPUT</h2>
+            <input type="text" id="urlInput" placeholder="https://example.com/article">
+            <textarea id="textInput" rows="8" placeholder="Or paste text manually..."></textarea>
+            <button class="btn-analyze" id="analyzeBtn" onclick="analyze()">🔍 ANALYZE</button>
         </div>
 
-        <!-- MAIN GRID -->
-        <div class="main-grid">
-            <!-- LEFT: INPUT & CONTROL -->
-            <div class="panel">
-                <div class="panel-title">🔗 DATA INPUT</div>
-                
-                <!-- MODE TABS -->
-                <div class="mode-tabs">
-                    <div class="mode-tab active" onclick="switchMode('url')">
-                        🌐 URL Scraping
-                    </div>
-                    <div class="mode-tab" onclick="switchMode('text')">
-                        📝 Manual Text
-                    </div>
-                </div>
-
-                <!-- URL MODE -->
-                <div class="input-mode active" id="urlMode">
-                    <div class="input-group">
-                        <label for="urlInput">Target URL:</label>
-                        <input 
-                            type="text" 
-                            id="urlInput" 
-                            placeholder="https://example.com/news-article"
-                        />
-                    </div>
-                </div>
-
-                <!-- TEXT MODE -->
-                <div class="input-mode" id="textMode">
-                    <div class="input-group">
-                        <label for="textInput">Paste Text:</label>
-                        <textarea 
-                            id="textInput" 
-                            placeholder="Вставте текст для аналізу..."
-                        ></textarea>
-                    </div>
-                    <div class="input-group">
-                        <label for="sourceInput">Source (optional):</label>
-                        <input 
-                            type="text" 
-                            id="sourceInput" 
-                            placeholder="Назва джерела"
-                        />
-                    </div>
-                </div>
-
-                <button class="btn" id="analyzeBtn" onclick="analyze()">
-                    🔍 ANALYZE
-                </button>
-
-                <button class="btn btn-clear" onclick="clearAll()">
-                    🗑️ CLEAR
-                </button>
-
-                <!-- METRICS -->
-                <div class="metrics" id="metricsPanel" style="display: none;">
-                    <div class="metric">
-                        <div class="metric-label">Characters</div>
-                        <div class="metric-value" id="charCount">0</div>
-                    </div>
-                    <div class="metric">
-                        <div class="metric-label">Words</div>
-                        <div class="metric-value" id="wordCount">0</div>
-                    </div>
-                    <div class="metric">
-                        <div class="metric-label">Unique Chars</div>
-                        <div class="metric-value" id="uniqueChars">0</div>
-                    </div>
-                </div>
+        <div class="card entropy-display">
+            <h2>🕯️ THE WITNESS</h2>
+            <div id="entropyValue" class="entropy-value">---</div>
+            <div class="progress-bar">
+                <div id="entropyFill" class="progress-fill">0%</div>
             </div>
-
-            <!-- RIGHT: WITNESS VISUALIZER -->
-            <div class="panel">
-                <div class="panel-title">👁️ THE WITNESS</div>
-                
-                <div class="witness-container">
-                    <div class="entropy-value" id="entropyValue">---</div>
-                    
-                    <div class="entropy-bar">
-                        <div class="entropy-fill" id="entropyFill" style="width: 0%;">
-                            0%
-                        </div>
-                    </div>
-
-                    <div class="entropy-labels">
-                        <span>🟢 Ordered (0.0)</span>
-                        <span>🟡 Complex (0.5)</span>
-                        <span>🔴 Chaos (1.0)</span>
-                    </div>
-
-                    <div class="verdict" id="verdict" style="display: none;">
-                        AWAITING ANALYSIS
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- BOTTOM: TEXT DISPLAY -->
-        <div class="panel">
-            <div class="panel-title toggle-section" onclick="toggleTextDisplay()">
-                <span>📄 CLEANED TEXT</span>
-                <span style="font-size: 0.8em; margin-left: auto;">▼</span>
-            </div>
+            <div id="verdict" class="verdict"></div>
             
-            <div class="collapsible-content visible" id="textDisplayContainer">
-                <div class="text-display" id="textDisplay">
-                    Waiting for analysis...
+            <div id="metricsPanel" class="metrics">
+                <div class="metric-box">
+                    <span class="metric-label">Chars</span>
+                    <span id="charCount" class="metric-value">0</span>
+                </div>
+                <div class="metric-box">
+                    <span class="metric-label">Words</span>
+                    <span id="wordCount" class="metric-value">0</span>
+                </div>
+                <div class="metric-box">
+                    <span class="metric-label">Unique</span>
+                    <span id="uniqueCount" class="metric-value">0</span>
                 </div>
             </div>
-        </div>
-
-        <!-- FOOTER -->
-        <div class="footer">
-            <p>💠 Veritas Protocol Terminal v1.1</p>
-            <p>Shannon Entropy Engine • Data Cleaner • Witness Visualizer • Dual Mode Analysis</p>
-            <p>Co-authored by Dmytro Kholodniak & Chimeric Collective (Claude, ChatGPT, Gemini)</p>
         </div>
     </div>
 
     <script>
-        // API Configuration
         const API_BASE = '/api';
-        let currentMode = 'url'; // 'url' or 'text'
 
-        // Check API status on load
-        window.addEventListener('load', checkAPIStatus);
-
-        async function checkAPIStatus() {
-            const statusEl = document.getElementById('apiStatus');
-            statusEl.textContent = '⚙️ Checking API...';
-            statusEl.className = 'api-status checking';
+        // 1. ПЕРЕВІРКА API (без помилок)
+        async function checkAPI() {
+            const dot = document.getElementById('statusDot');
+            const txt = document.getElementById('statusText');
+            if(!dot || !txt) return;
 
             try {
-                const response = await fetch(API_BASE, { method: 'GET' });
-                const data = await response.json();
-                
+                const res = await fetch(API_BASE);
+                const data = await res.json();
                 if (data.status === 'online') {
-                    statusEl.textContent = '✅ API Online';
-                    statusEl.className = 'api-status online';
-                } else {
-                    throw new Error('API unhealthy');
+                    dot.classList.add('online');
+                    txt.textContent = 'API ONLINE';
+                    txt.style.color = '#05ffa1';
                 }
-            } catch (error) {
-                statusEl.textContent = '❌ API Offline';
-                statusEl.className = 'api-status offline';
-                console.error('API check failed:', error);
+            } catch (e) {
+                txt.textContent = 'API OFFLINE';
+                txt.style.color = '#ff2a6d';
             }
         }
 
-        // SWITCH MODE
-        function switchMode(mode) {
-            currentMode = mode;
-            
-            // Update tabs
-            document.querySelectorAll('.mode-tab').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            event.target.classList.add('active');
-            
-            // Update input areas
-            document.getElementById('urlMode').classList.remove('active');
-            document.getElementById('textMode').classList.remove('active');
-            
-            if (mode === 'url') {
-                document.getElementById('urlMode').classList.add('active');
-            } else {
-                document.getElementById('textMode').classList.add('active');
-            }
-        }
-
-        // DATA CLEANER MODULE
-        function cleanText(rawText) {
-            let cleaned = rawText;
-
-            // Remove script tags and content
-            cleaned = cleaned.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
-            
-            // Remove style tags and content
-            cleaned = cleaned.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
-            
-            // Remove template engine constructs (<% %>, <%= %>, <%- %>)
-            cleaned = cleaned.replace(/<%[\s\S]*?%>/g, '');
-            
-            // Remove HTML comments
-            cleaned = cleaned.replace(/<!--[\s\S]*?-->/g, '');
-            
-            // Remove remaining HTML tags
-            cleaned = cleaned.replace(/<[^>]+>/g, ' ');
-            
-            // Remove JavaScript disabled messages
-            cleaned = cleaned.replace(/У вас відключено JavaScript/gi, '');
-            cleaned = cleaned.replace(/JavaScript is disabled/gi, '');
-            
-            // Normalize whitespace
-            cleaned = cleaned.replace(/\s+/g, ' ');
-            
-            // Trim
-            cleaned = cleaned.trim();
-
-            return cleaned;
-        }
-
-        // SHANNON ENTROPY ENGINE
+        // 2. РОЗУМНА ЕНТРОПІЯ (Словникова)
         function calculateEntropy(text) {
-        // Очищаємо від цифр і сміття, лишаємо тільки слова > 3 літер
-        const words = text.toLowerCase()
-            .replace(/[0-9]/g, '')
-            .replace(/[^а-яіїєґa-z\s]/g, ' ')
-            .split(/\s+/)
-            .filter(w => w.length > 3);
+            // Фільтрація: тільки слова > 3 літер, без цифр і сміття
+            const words = text.toLowerCase()
+                .replace(/[0-9]/g, '')
+                .replace(/[^а-яіїєґa-z\s]/g, ' ')
+                .split(/\s+/)
+                .filter(w => w.length > 3);
 
-        if (words.length < 10) return 0.5;
+            if (words.length < 5) return 0.3;
 
-        const wordCounts = {};
-        words.forEach(w => wordCounts[w] = (wordCounts[w] || 0) + 1);
+            const counts = {};
+            words.forEach(w => counts[w] = (counts[w] || 0) + 1);
 
-        let entropy = 0;
-        for (const w in wordCounts) {
-            const p = wordCounts[w] / words.length;
-            entropy -= p * Math.log2(p);
+            let entropy = 0;
+            for (const w in counts) {
+                const p = counts[w] / words.length;
+                entropy -= p * Math.log2(p);
+            }
+
+            // Нормалізація: Вікіпедія буде ~0.5-0.6, Борщ ~0.9
+            const ideal = Math.log2(words.length) * 0.82;
+            let result = entropy / ideal;
+
+            return Math.min(result, 1).toFixed(3);
         }
 
-        // Нормалізація: чим більше повторів термінів (як у Вікі), тим нижча ентропія
-        const ideal = Math.log2(words.length) * 0.85; 
-        let res = entropy / ideal;
-
-        // Штраф за капс і знаки (тільки якщо їх аномально багато)
-        const shout = (text.match(/!/g) || []).length / words.length;
-        return Math.min(res + (shout > 0.05 ? 0.2 : 0), 1).toFixed(3);
-    }
-        
-        // ANALYZE FUNCTION
+        // 3. ФУНКЦІЯ АНАЛІЗУ (Main)
         async function analyze() {
-            const analyzeBtn = document.getElementById('analyzeBtn');
-            const textDisplay = document.getElementById('textDisplay');
-            const metricsPanel = document.getElementById('metricsPanel');
-
-            // Disable button
-            analyzeBtn.disabled = true;
-            analyzeBtn.textContent = '⏳ ANALYZING...';
-
-            // Show loading
-            textDisplay.innerHTML = '<div class="loading">⚙️ Processing...</div>';
+            const btn = document.getElementById('analyzeBtn');
+            const urlIn = document.getElementById('urlInput').value.trim();
+            const textIn = document.getElementById('textInput').value.trim();
+            
+            btn.disabled = true;
+            btn.textContent = '⏳ ANALYZING...';
 
             try {
-                let rawContent = '';
-
-                if (currentMode === 'url') {
-                    // URL SCRAPING MODE
-                    const urlInput = document.getElementById('urlInput').value.trim();
-                    
-                    if (!urlInput) {
-                        throw new Error('Please enter a URL');
-                    }
-
-                    // Fetch from API
-                    const response = await fetch(`${API_BASE}?url=${encodeURIComponent(urlInput)}`);
-                    const data = await response.json();
-
-                    if (data.error) {
-                        throw new Error(data.error);
-                    }
-
-                    rawContent = data.content || '';
-
-                } else {
-                    // MANUAL TEXT MODE
-                    const textInput = document.getElementById('textInput').value.trim();
-                    const sourceInput = document.getElementById('sourceInput').value.trim();
-                    
-                    if (!textInput) {
-                        throw new Error('Please enter text to analyze');
-                    }
-
-                    // Send POST request
-                    const response = await fetch(API_BASE, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ 
-                            text: textInput,
-                            source: sourceInput || 'Manual Input'
-                        })
-                    });
-
-                    const data = await response.json();
-
-                    if (data.error) {
-                        throw new Error(data.error);
-                    }
-
-                    rawContent = data.content || textInput;
+                let content = textIn;
+                
+                // Якщо є URL - пробуємо скрейпити через API
+                if (urlIn) {
+                    const res = await fetch(`${API_BASE}?url=${encodeURIComponent(urlIn)}`);
+                    const data = await res.json();
+                    if (data.content) content = data.content;
                 }
 
-                // CLEAN THE TEXT
-                const cleanedText = cleanText(rawContent);
+                if (!content || content.length < 10) throw new Error("Text too short");
 
-                if (!cleanedText || cleanedText.length < 10) {
-                    throw new Error('Extracted text too short or empty');
-                }
+                const entropy = calculateEntropy(content);
+                updateWitness(Number(entropy), content);
 
-                // Display cleaned text
-                textDisplay.textContent = cleanedText;
-
-                // Calculate metrics
-                const charCount = cleanedText.length;
-                const wordCount = cleanedText.split(/\s+/).filter(w => w.length > 0).length;
-                const uniqueChars = new Set(cleanedText).size;
-
-                // Update metrics display
-                document.getElementById('charCount').textContent = charCount;
-                document.getElementById('wordCount').textContent = wordCount;
-                document.getElementById('uniqueChars').textContent = uniqueChars;
-                metricsPanel.style.display = 'grid';
-
-                // CALCULATE SHANNON ENTROPY
-                const entropy = calculateShannonEntropy(cleanedText);
-
-                // Update Witness Visualizer
-                updateWitness(entropy);
-
-            } catch (error) {
-                textDisplay.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
-                console.error('Analysis failed:', error);
+            } catch (e) {
+                alert("Error: " + e.message);
             } finally {
-                // Re-enable button
-                analyzeBtn.disabled = false;
-                analyzeBtn.textContent = '🔍 ANALYZE';
+                btn.disabled = false;
+                btn.textContent = '🔍 ANALYZE';
             }
         }
 
-        // UPDATE WITNESS VISUALIZER
-        function updateWitness(entropy) {
-            const entropyValue = document.getElementById('entropyValue');
-            const entropyFill = document.getElementById('entropyFill');
-            const verdict = document.getElementById('verdict');
+        // 4. ОНОВЛЕННЯ ІНТЕРФЕЙСУ
+        function updateWitness(entropy, text) {
+            const val = document.getElementById('entropyValue');
+            const fill = document.getElementById('entropyFill');
+            const verd = document.getElementById('verdict');
+            
+            val.textContent = entropy.toFixed(3);
+            const pct = Math.round(entropy * 100);
+            fill.style.width = pct + '%';
+            fill.textContent = pct + '%';
 
-            // Display entropy value
-            entropyValue.textContent = entropy.toFixed(3);
+            // Метрики
+            document.getElementById('metricsPanel').style.display = 'grid';
+            document.getElementById('charCount').textContent = text.length;
+            document.getElementById('wordCount').textContent = text.split(/\s+/).length;
+            document.getElementById('uniqueCount').textContent = new Set(text.toLowerCase().match(/[а-яіїєґa-z]{4,}/g)).size;
 
-            // Calculate percentage
-            const percentage = Math.round(entropy * 100);
-            entropyFill.style.width = percentage + '%';
-            entropyFill.textContent = percentage + '%';
+            let color, label;
+            if (entropy < 0.58) { color = '#05ffa1'; label = '🟢 ORDERED SYSTEM'; }
+            else if (entropy < 0.75) { color = '#ffcc00'; label = '🟡 COMPLEX DATA'; }
+            else { color = '#ff2a6d'; label = '🔴 CRITICAL CHAOS'; }
 
-            // Determine color and verdict
-            let color, bgColor, verdictText, verdictClass;
-
-            if (entropy < 0.4) {
-                // GREEN: Ordered, factual
-                color = '#00ff88';
-                bgColor = 'linear-gradient(90deg, #00ff88 0%, #00cc66 100%)';
-                verdictText = '🟢 ВИСОКА ВПОРЯДКОВАНІСТЬ';
-                verdictClass = 'trusted';
-                entropyValue.style.color = '#00ff88';
-            } else if (entropy < 0.7) {
-                // YELLOW: Complex, literary
-                color = '#ffaa00';
-                bgColor = 'linear-gradient(90deg, #ffaa00 0%, #ff8800 100%)';
-                verdictText = '🟡 СКЛАДНА МОВА';
-                verdictClass = 'acceptable';
-                entropyValue.style.color = '#ffaa00';
-            } else if (entropy < 0.85) {
-                // ORANGE-RED: Suspicious
-                color = '#ff6644';
-                bgColor = 'linear-gradient(90deg, #ff6644 0%, #ff4422 100%)';
-                verdictText = '🟠 ПІДОЗРІЛИЙ ШУМ';
-                verdictClass = 'suspicious';
-                entropyValue.style.color = '#ff6644';
-            } else {
-                // RED: Chaos, manipulation
-                color = '#ff0000';
-                bgColor = 'linear-gradient(90deg, #ff0000 0%, #cc0000 100%)';
-                verdictText = '🔴 КРИТИЧНИЙ ХАОС';
-                verdictClass = 'chaos';
-                entropyValue.style.color = '#ff0000';
-            }
-
-            entropyFill.style.background = bgColor;
-            verdict.textContent = verdictText;
-            verdict.className = 'verdict ' + verdictClass;
-            verdict.style.display = 'block';
+            val.style.color = color;
+            fill.style.background = color;
+            verd.textContent = label;
+            verd.style.color = color;
+            verd.style.border = `1px solid ${color}`;
+            verd.style.display = 'block';
         }
 
-        // CLEAR ALL
-        function clearAll() {
-            document.getElementById('urlInput').value = '';
-            document.getElementById('textInput').value = '';
-            document.getElementById('sourceInput').value = '';
-            document.getElementById('textDisplay').textContent = 'Waiting for analysis...';
-            document.getElementById('entropyValue').textContent = '---';
-            document.getElementById('entropyValue').style.color = '#e0e0e0';
-            document.getElementById('entropyFill').style.width = '0%';
-            document.getElementById('entropyFill').textContent = '0%';
-            document.getElementById('verdict').style.display = 'none';
-            document.getElementById('metricsPanel').style.display = 'none';
-        }
-
-        // TOGGLE TEXT DISPLAY
-        function toggleTextDisplay() {
-            const container = document.getElementById('textDisplayContainer');
-            if (container.classList.contains('visible')) {
-                container.classList.remove('visible');
-                container.classList.add('hidden');
-            } else {
-                container.classList.remove('hidden');
-                container.classList.add('visible');
-            }
-        }
-
-        // Allow Enter key to trigger analysis
-        document.getElementById('urlInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                analyze();
-            }
-        });
+        window.onload = checkAPI;
     </script>
 </body>
 </html>
