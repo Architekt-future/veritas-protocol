@@ -3,324 +3,564 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VERITAS TERMINAL</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=JetBrains+Mono:wght@300;500&display=swap" rel="stylesheet">
+    <title>💠 Veritas Terminal v3.0</title>
     <style>
-        :root {
-            --blue: #00d4ff;
-            --red: #ff2a6d;
-            --green: #05ffa1;
-            --bg: #0a0b10;
-            --glass: rgba(255, 255, 255, 0.05);
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
         body {
-            background: var(--bg);
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
             color: #e0e0e0;
-            font-family: 'JetBrains+Mono', monospace;
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
             min-height: 100vh;
-        }
-
-        .header {
-            padding: 40px;
-            text-align: center;
-            width: 100%;
-            border-bottom: 1px solid rgba(0, 212, 255, 0.1);
-        }
-
-        h1 {
-            font-family: 'Orbitron', sans-serif;
-            color: var(--blue);
-            letter-spacing: 5px;
-            margin: 0;
-            text-shadow: 0 0 15px var(--blue);
-        }
-
-        .api-status {
-            margin-top: 10px;
-            font-size: 0.8em;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-
-        .dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #444;
-            transition: 0.3s;
+            padding: 20px;
         }
 
         .container {
-            max-width: 1100px;
-            width: 95%;
-            display: grid;
-            grid-template-columns: 1.2fr 0.8fr;
-            gap: 25px;
-            padding: 30px 0;
+            max-width: 900px;
+            margin: 0 auto;
         }
 
-        .card {
-            background: var(--glass);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 3em;
+            color: #00d4ff;
+            text-shadow: 0 0 20px rgba(0, 212, 255, 0.7);
+            margin-bottom: 10px;
+        }
+
+        .header .subtitle {
+            color: #888;
+            font-size: 1em;
+        }
+
+        .api-status {
+            display: inline-block;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+            margin-top: 15px;
+        }
+
+        .api-status.online {
+            background: #00ff88;
+            color: #000;
+        }
+
+        .api-status.offline {
+            background: #ff4444;
+            color: #fff;
+        }
+
+        .api-status.checking {
+            background: #ffaa00;
+            color: #000;
+        }
+
+        .panel {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 15px;
-            padding: 25px;
+            padding: 30px;
+            margin-bottom: 30px;
             backdrop-filter: blur(10px);
         }
 
-        h3 {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 0.9em;
-            color: var(--blue);
-            margin-top: 0;
+        .input-group {
             margin-bottom: 20px;
-            border-left: 3px solid var(--blue);
-            padding-left: 10px;
         }
 
-        input, textarea {
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #00d4ff;
+            font-weight: bold;
+            font-size: 0.95em;
+        }
+
+        .input-group textarea {
             width: 100%;
-            background: rgba(0,0,0,0.4);
-            border: 1px solid rgba(255,255,255,0.1);
-            color: #fff;
+            min-height: 200px;
             padding: 15px;
-            margin-bottom: 15px;
-            border-radius: 8px;
-            box-sizing: border-box;
-            font-family: inherit;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid rgba(0, 212, 255, 0.3);
+            border-radius: 10px;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            font-size: 1em;
+            resize: vertical;
         }
 
-        button {
+        .input-group textarea:focus {
+            outline: none;
+            border-color: #00d4ff;
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.5);
+        }
+
+        .input-group input {
             width: 100%;
-            padding: 18px;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid rgba(0, 212, 255, 0.3);
+            border-radius: 10px;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+        }
+
+        .btn-container {
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border: none;
-            border-radius: 8px;
-            font-family: 'Orbitron', sans-serif;
-            background: #7e3ff2;
-            color: white;
+            border-radius: 10px;
+            color: #fff;
+            font-weight: bold;
             cursor: pointer;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            transition: 0.3s;
+            font-family: 'Courier New', monospace;
+            font-size: 1.1em;
+            transition: all 0.3s;
         }
 
-        button:hover:not(:disabled) {
-            background: #9d44ff;
-            box-shadow: 0 0 20px rgba(157, 68, 255, 0.4);
+        .btn:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.6);
         }
 
-        button:disabled {
+        .btn:disabled {
             opacity: 0.5;
-            cursor: wait;
+            cursor: not-allowed;
+        }
+
+        .btn-clear {
+            background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%);
+        }
+
+        /* RESULTS */
+        .results {
+            display: none;
+        }
+
+        .results.show {
+            display: block;
         }
 
         .entropy-display {
-            font-size: 4.5em;
-            font-family: 'Orbitron', sans-serif;
             text-align: center;
-            margin: 20px 0;
-            font-weight: bold;
-        }
-
-        .progress-container {
-            width: 100%;
-            height: 12px;
-            background: rgba(255,255,255,0.05);
-            border-radius: 6px;
-            overflow: hidden;
             margin-bottom: 30px;
         }
 
-        .progress-fill {
-            width: 0%;
-            height: 100%;
-            background: var(--blue);
-            transition: 1.5s cubic-bezier(0.1, 0.8, 0.2, 1);
-        }
-
-        .verdict-box {
-            padding: 15px;
-            border-radius: 8px;
-            text-align: center;
+        .entropy-value {
+            font-size: 5em;
             font-weight: bold;
-            display: none;
-            font-family: 'Orbitron', sans-serif;
-            font-size: 0.9em;
+            margin: 20px 0;
+            text-shadow: 0 0 30px currentColor;
         }
 
-        .metrics-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
+        .entropy-bar-container {
+            height: 50px;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 25px;
+            overflow: hidden;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            position: relative;
+        }
+
+        .entropy-bar {
+            height: 100%;
+            transition: width 0.8s ease, background 0.8s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #000;
+            font-size: 1.2em;
+        }
+
+        .verdict {
+            margin-top: 30px;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            text-transform: uppercase;
+            border: 3px solid;
+        }
+
+        .verdict.trusted {
+            background: rgba(0, 255, 136, 0.2);
+            color: #00ff88;
+            border-color: #00ff88;
+        }
+
+        .verdict.acceptable {
+            background: rgba(0, 212, 255, 0.2);
+            color: #00d4ff;
+            border-color: #00d4ff;
+        }
+
+        .verdict.suspicious {
+            background: rgba(255, 170, 0, 0.2);
+            color: #ffaa00;
+            border-color: #ffaa00;
+        }
+
+        .verdict.warning {
+            background: rgba(255, 100, 100, 0.2);
+            color: #ff6464;
+            border-color: #ff6464;
+        }
+
+        .verdict.critical {
+            background: rgba(255, 0, 0, 0.3);
+            color: #ff0000;
+            border-color: #ff0000;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .diagnostics {
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 10px;
+            padding: 20px;
             margin-top: 30px;
         }
 
-        .metric-item {
-            background: rgba(0,0,0,0.3);
-            padding: 12px;
-            border-radius: 6px;
-            text-align: center;
-            border: 1px solid rgba(255,255,255,0.05);
+        .diagnostics h3 {
+            color: #00d4ff;
+            margin-bottom: 15px;
+            font-size: 1.2em;
         }
 
-        .metric-label { font-size: 0.6em; color: #777; margin-bottom: 5px; }
-        .metric-val { color: var(--blue); font-size: 1.1em; }
+        .diag-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
 
-        @media (max-width: 850px) {
-            .container { grid-template-columns: 1fr; }
+        .diag-item {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 3px solid #00d4ff;
+        }
+
+        .diag-label {
+            font-size: 0.85em;
+            color: #888;
+            margin-bottom: 5px;
+        }
+
+        .diag-value {
+            font-size: 1.3em;
+            color: #00d4ff;
+            font-weight: bold;
+        }
+
+        .loading {
+            text-align: center;
+            color: #00d4ff;
+            font-size: 1.5em;
+            padding: 50px;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .error {
+            background: rgba(255, 68, 68, 0.3);
+            border: 2px solid #ff4444;
+            padding: 20px;
+            border-radius: 10px;
+            color: #ff4444;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 50px;
+            padding: 20px;
+            color: #666;
+            font-size: 0.9em;
         }
     </style>
 </head>
 <body>
-
-    <div class="header">
-        <h1>VERITAS PROTOCOL</h1>
-        <div class="api-status">
-            <div id="statusDot" class="dot"></div>
-            <span id="statusText" style="color: #666;">CONNECTING TO CORE...</span>
-        </div>
-    </div>
-
     <div class="container">
-        <div class="card">
-            <h3>📥 SOURCE SELECTION</h3>
-            <input type="text" id="urlInput" placeholder="URL-адреса для сканування (напр. Wikipedia)...">
-            <textarea id="textInput" rows="12" placeholder="Або вставте текст для аналізу вручну..."></textarea>
-            <button id="analyzeBtn" onclick="runAnalysis()">🚀 ЗАПУСТИТИ АНАЛІЗ</button>
+        <!-- HEADER -->
+        <div class="header">
+            <h1>💠 VERITAS TERMINAL</h1>
+            <div class="subtitle">Information Entropy Analyzer v3.0 Calibrated</div>
+            <div class="api-status checking" id="apiStatus">⚙️ Connecting...</div>
         </div>
 
-        <div class="card">
-            <h3>👁️ THE WITNESS</h3>
-            <div id="entropyDisplay" class="entropy-display" style="color: #333;">0.000</div>
-            <div class="progress-container">
-                <div id="progressFill" class="progress-fill"></div>
+        <!-- INPUT PANEL -->
+        <div class="panel">
+            <div class="input-group">
+                <label for="sourceInput">📌 Source (optional):</label>
+                <input type="text" id="sourceInput" placeholder="e.g., BBC News, Scientific Paper..." />
             </div>
-            
-            <div id="verdictBox" class="verdict-box"></div>
 
-            <div class="metrics-grid">
-                <div class="metric-item">
-                    <div class="metric-label">WORDS</div>
-                    <div id="mWords" class="metric-val">0</div>
+            <div class="input-group">
+                <label for="textInput">📝 Text to Analyze:</label>
+                <textarea 
+                    id="textInput" 
+                    placeholder="Paste your text here for entropy analysis..."
+                ></textarea>
+            </div>
+
+            <div class="btn-container">
+                <button class="btn" id="analyzeBtn" onclick="analyze()">
+                    🔍 ANALYZE
+                </button>
+                <button class="btn btn-clear" onclick="clearAll()">
+                    🗑️ CLEAR
+                </button>
+            </div>
+        </div>
+
+        <!-- RESULTS PANEL -->
+        <div class="panel results" id="resultsPanel">
+            <div class="entropy-display">
+                <div class="entropy-value" id="entropyValue">---</div>
+                
+                <div class="entropy-bar-container">
+                    <div class="entropy-bar" id="entropyBar" style="width: 0%;">
+                        0%
+                    </div>
                 </div>
-                <div class="metric-item">
-                    <div class="metric-label">UNIQUE</div>
-                    <div id="mUnique" class="metric-val">0</div>
-                </div>
-                <div class="metric-item">
-                    <div class="metric-label">CHARS</div>
-                    <div id="mChars" class="metric-val">0</div>
+
+                <div class="verdict" id="verdict">
+                    AWAITING ANALYSIS
                 </div>
             </div>
+
+            <!-- DIAGNOSTICS -->
+            <div class="diagnostics">
+                <h3>📊 DIAGNOSTICS</h3>
+                <div class="diag-grid" id="diagGrid">
+                    <!-- Will be populated dynamically -->
+                </div>
+            </div>
+        </div>
+
+        <!-- FOOTER -->
+        <div class="footer">
+            <p>💠 Veritas Protocol Terminal v3.0 - Calibrated Engine</p>
+            <p>Co-authored by Dmytro Kholodniak & Chimeric Collective</p>
+            <p style="margin-top: 10px; font-size: 0.85em;">
+                <a href="https://github.com/Architekt-future/veritas-protocol" 
+                   style="color: #00d4ff; text-decoration: none;"
+                   target="_blank">GitHub</a> | 
+                <a href="https://osf.io/preprints/socarxiv/9pbaj"
+                   style="color: #00d4ff; text-decoration: none;"
+                   target="_blank">Paper</a>
+            </p>
         </div>
     </div>
 
     <script>
-        const API_URL = '/api';
+        // API endpoint
+        const API_URL = '/api/analyze';
 
-        // 1. Початковий статус системи
+        // Check API status on load
+        window.addEventListener('load', checkAPI);
+
         async function checkAPI() {
-            const dot = document.getElementById('statusDot');
-            const txt = document.getElementById('statusText');
+            const statusEl = document.getElementById('apiStatus');
+            statusEl.textContent = '⚙️ Connecting...';
+            statusEl.className = 'api-status checking';
+
             try {
-                const res = await fetch(API_URL);
-                const data = await res.json();
-                if(data.status === 'online') {
-                    dot.style.background = '#05ffa1';
-                    dot.style.boxShadow = '0 0 10px #05ffa1';
-                    txt.textContent = 'SYSTEM READY';
-                    txt.style.color = '#05ffa1';
+                const response = await fetch(API_URL, { method: 'GET' });
+                const data = await response.json();
+                
+                if (data.status === 'online') {
+                    statusEl.textContent = '✅ API Online';
+                    statusEl.className = 'api-status online';
+                } else {
+                    throw new Error('API unhealthy');
                 }
-            } catch (e) {
-                txt.textContent = 'CORE DISCONNECTED';
-                txt.style.color = '#ff2a6d';
+            } catch (error) {
+                statusEl.textContent = '❌ API Offline';
+                statusEl.className = 'api-status offline';
+                console.error('API check failed:', error);
             }
         }
 
-        // 2. Основний процес аналізу (Все рахує бекенд!)
-        async function runAnalysis() {
-            const btn = document.getElementById('analyzeBtn');
-            const urlIn = document.getElementById('urlInput').value.trim();
-            const textIn = document.getElementById('textInput').value.trim();
-            
-            if(!urlIn && !textIn) {
-                alert("Введіть URL або текст!");
+        async function analyze() {
+            const textInput = document.getElementById('textInput').value.trim();
+            const sourceInput = document.getElementById('sourceInput').value.trim();
+            const analyzeBtn = document.getElementById('analyzeBtn');
+            const resultsPanel = document.getElementById('resultsPanel');
+
+            if (!textInput) {
+                alert('❌ Please enter text to analyze');
                 return;
             }
 
-            btn.disabled = true;
-            btn.textContent = '⚡ АНАЛІЗУЮ...';
+            // Disable button and show loading
+            analyzeBtn.disabled = true;
+            analyzeBtn.textContent = '⏳ ANALYZING...';
+            
+            resultsPanel.classList.add('show');
+            resultsPanel.innerHTML = '<div class="loading">⚙️ Processing with calibrated engine...</div>';
 
             try {
-                // Відправляємо запит на наш /api/index.js
+                // Send to API
                 const response = await fetch(API_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url: urlIn, text: textIn })
+                    body: JSON.stringify({
+                        text: textInput,
+                        source: sourceInput || 'Unknown'
+                    })
                 });
 
-                if(!response.ok) throw new Error("Помилка сервера");
-                
                 const result = await response.json();
-                
-                // Оновлюємо інтерфейс даними з сервера
-                updateUI(result);
 
-            } catch (err) {
-                console.error(err);
-                alert("Помилка: " + err.message);
+                if (result.error) {
+                    throw new Error(result.error);
+                }
+
+                // Display results
+                displayResults(result);
+
+            } catch (error) {
+                resultsPanel.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
             } finally {
-                btn.disabled = false;
-                btn.textContent = '🚀 ЗАПУСТИТИ АНАЛІЗ';
+                analyzeBtn.disabled = false;
+                analyzeBtn.textContent = '🔍 ANALYZE';
             }
         }
 
-        function updateUI(data) {
-            const display = document.getElementById('entropyDisplay');
-            const fill = document.getElementById('progressFill');
-            const verd = document.getElementById('verdictBox');
-            const entropy = data.entropy || 0;
+        function displayResults(result) {
+            const resultsPanel = document.getElementById('resultsPanel');
+            const entropy = result.entropy;
+            const status = result.status.toLowerCase();
 
-            // Число ентропії
-            display.textContent = entropy.toFixed(3);
-            
-            // Прогрес-бар
-            const pct = entropy * 100;
-            fill.style.width = pct + '%';
+            // Build results HTML
+            let html = `
+                <div class="entropy-display">
+                    <div class="entropy-value" id="entropyValue" style="color: ${getEntropyColor(entropy)}">
+                        ${entropy.toFixed(3)}
+                    </div>
+                    
+                    <div class="entropy-bar-container">
+                        <div class="entropy-bar" id="entropyBar" 
+                             style="width: ${Math.round(entropy * 100)}%; background: ${getEntropyGradient(entropy)};">
+                            ${Math.round(entropy * 100)}%
+                        </div>
+                    </div>
 
-            // Кольори та Вердикт
-            let color, label;
-            if(entropy < 0.62) {
-                color = '#05ffa1'; 
-                label = '🟢 СИСТЕМНИЙ ПОРЯДОК (STRUCTURED)';
-            } else if(entropy < 0.78) {
-                color = '#ffcc00';
-                label = '🟡 СКЛАДНА ІНФОРМАЦІЯ (COMPLEX)';
-            } else {
-                color = '#ff2a6d';
-                label = '🔴 КРИТИЧНИЙ ХАОС (CHAOS)';
+                    <div class="verdict ${status}">
+                        ${result.verdict}
+                    </div>
+                </div>
+
+                <div class="diagnostics">
+                    <h3>📊 DIAGNOSTICS</h3>
+                    <div class="diag-grid">
+            `;
+
+            // Add diagnostic items
+            if (result.diagnostics) {
+                const diag = result.diagnostics;
+                html += `
+                    <div class="diag-item">
+                        <div class="diag-label">Shannon Entropy</div>
+                        <div class="diag-value">${diag.shannon_entropy}</div>
+                    </div>
+                    <div class="diag-item">
+                        <div class="diag-label">Complexity</div>
+                        <div class="diag-value">${diag.complexity}</div>
+                    </div>
+                    <div class="diag-item">
+                        <div class="diag-label">Signal Markers</div>
+                        <div class="diag-value">${diag.signal_markers}</div>
+                    </div>
+                    <div class="diag-item">
+                        <div class="diag-label">Noise Markers</div>
+                        <div class="diag-value">${diag.noise_markers}</div>
+                    </div>
+                    <div class="diag-item">
+                        <div class="diag-label">Number Density</div>
+                        <div class="diag-value">${diag.number_density}</div>
+                    </div>
+                    <div class="diag-item">
+                        <div class="diag-label">Shout Factor</div>
+                        <div class="diag-value">${diag.shout_factor}</div>
+                    </div>
+                    <div class="diag-item">
+                        <div class="diag-label">Word Count</div>
+                        <div class="diag-value">${diag.word_count}</div>
+                    </div>
+                    <div class="diag-item">
+                        <div class="diag-label">Language</div>
+                        <div class="diag-value">${result.language}</div>
+                    </div>
+                `;
+                
+                if (diag.chaos_markers > 0) {
+                    html += `
+                        <div class="diag-item" style="border-left-color: #ff0000;">
+                            <div class="diag-label">⚠️ Chaos Markers</div>
+                            <div class="diag-value" style="color: #ff0000;">${diag.chaos_markers}</div>
+                        </div>
+                    `;
+                }
             }
 
-            display.style.color = color;
-            fill.style.background = color;
-            verd.style.display = 'block';
-            verd.style.color = color;
-            verd.style.border = `1px solid ${color}`;
-            verd.textContent = label;
+            html += `
+                    </div>
+                </div>
+            `;
 
-            // Метрики
-            document.getElementById('mWords').textContent = data.stats?.words || 0;
-            document.getElementById('mUnique').textContent = data.stats?.unique || 0;
-            document.getElementById('mChars').textContent = data.stats?.chars || 0;
+            resultsPanel.innerHTML = html;
         }
 
-        window.onload = checkAPI;
+        function getEntropyColor(entropy) {
+            if (entropy < 0.35) return '#00ff88';
+            if (entropy < 0.55) return '#00d4ff';
+            if (entropy < 0.75) return '#ffaa00';
+            if (entropy < 0.85) return '#ff6464';
+            return '#ff0000';
+        }
+
+        function getEntropyGradient(entropy) {
+            if (entropy < 0.35) return 'linear-gradient(90deg, #00ff88, #00cc66)';
+            if (entropy < 0.55) return 'linear-gradient(90deg, #00d4ff, #0099ff)';
+            if (entropy < 0.75) return 'linear-gradient(90deg, #ffaa00, #ff8800)';
+            if (entropy < 0.85) return 'linear-gradient(90deg, #ff6464, #ff4444)';
+            return 'linear-gradient(90deg, #ff0000, #cc0000)';
+        }
+
+        function clearAll() {
+            document.getElementById('textInput').value = '';
+            document.getElementById('sourceInput').value = '';
+            document.getElementById('resultsPanel').classList.remove('show');
+        }
     </script>
 </body>
 </html>
