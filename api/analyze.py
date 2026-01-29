@@ -78,12 +78,12 @@ class handler(BaseHTTPRequestHandler):
                 return
             
             # Check if engine is available
-            if VeritasCalibratedEngine is None:
+            if VeritasCalibratedCore is None:
                 self._send_error(500, 'Analysis engine not available')
                 return
             
             # Initialize engine and analyze
-            engine = VeritasCalibratedEngine()
+            engine = VeritasCalibratedCore()
             result = engine.analyze(text)
             
             # Add source to result
