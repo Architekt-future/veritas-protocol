@@ -528,6 +528,10 @@
         async function checkAPI() {
             const statusDot = document.getElementById('statusDot');
             const statusText = document.getElementById('statusText');
+            
+            // Якщо елементів немає на сторінці — просто виходимо, щоб не було помилки
+            if (!statusDot || !statusText) return; 
+
             try {
                 const response = await fetch(API_BASE);
                 const data = await response.json();
