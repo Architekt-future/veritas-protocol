@@ -5,17 +5,23 @@ Endpoint: /api/analyze
 
 from http.server import BaseHTTPRequestHandler
 import json
-import sys
+import http.server
 import os
+import sys
 
-# Add parent directory to path to import our core
-sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+# 1. Чітко вказуємо шлях до кореня
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+if parent_dir not in sys.path:
+    sys.path.insert(0, parent_dir)
 
+# 2. Імпортуємо правильну назву класу
 try:
     from veritas_calibrated_core import VeritasCalibratedCore
+    # Створюємо екземпляр з правильною назвою!
     engine = VeritasCalibratedCore()
 except Exception as e:
-    print(f"Engine Load Error: {e}")
+    print(f"Критична помилка імпорту: {e}")
     engine = None
 
 
