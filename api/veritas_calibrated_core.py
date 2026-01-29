@@ -1,5 +1,5 @@
 """
-Veritas Protocol - Calibrated Core Engine
+Veritas Protocol - Veritas Calibrated Core
 Synthesized from veritas_core.py + app/core.py
 Optimized for: Academic < 0.4, Wikipedia 0.5-0.65, Propaganda 0.85+
 """
