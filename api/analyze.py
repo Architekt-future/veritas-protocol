@@ -6,22 +6,70 @@ Integrated: NewsExtractor scraper + VeritasCalibratedCore analysis
 
 from http.server import BaseHTTPRequestHandler
 import json
-import re
-
-# 1. Примусово додаємо поточну папку api/ у шлях пошуку Python
-import sys
+import http.server
 import os
-path_to_api = os.path.dirname(os.path.abspath(__file__))
-if path_to_api not in sys.path:
-    sys.path.insert(0, path_to_api)
+import sys
 
-# 2. Імпортуємо ядро
+# 1. Залізобетонний імпорт ядра
+current_dir = os.path.dirname(os.path.abspath(__file__))
+if current_dir not in sys.path:
+    sys.path.insert(0, current_dir)
+
 try:
     from veritas_calibrated_core import VeritasCalibratedCore
-    print("✅ Core loaded from api directory")
 except Exception as e:
-    print(f"❌ Core import failed: {e}")
+    print(f"Import error: {e}")
     VeritasCalibratedCore = None
+
+class handler(http.server.BaseHTTPRequestHandler):
+    def do_OPTIONS(self):
+        self.send_response(200)
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+        self.end_headers()
+
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header('Content-type', 'application/json')
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.end_headers()
+        self.wfile.write(json.dumps({
+            "status": "online",
+            "info": "Veritas API is ready"
+        }).encode())
+
+    def do_POST(self):
+        content_length = int(self.headers.get('Content-Length', 0))
+        try:
+            post_data = self.rfile.read(content_length)
+            data = json.loads(post_data)
+            text = data.get('text', '')
+
+            if not text:
+                raise Exception("No text provided for analysis")
+
+            # Перевірка наявності ядра
+            if VeritasCalibratedCore is None:
+                raise Exception("Analysis Core (veritas_calibrated_core.py) not found or failed to load")
+
+            # 2. Ініціалізація та виклик
+            engine = VeritasCalibratedCore()
+            result = engine.evaluate_integrity(text)
+
+            # 3. Відповідь
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(json.dumps(result).encode())
+
+        except Exception as e:
+            self.send_response(500)
+            self.send_header('Content-type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(json.dumps({"error": str(e), "status": "error"}).encode())
     
 # Inline NewsExtractor (no external deps on Vercel)
 class SimpleExtractor:
