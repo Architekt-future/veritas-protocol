@@ -633,18 +633,18 @@
         }
 
         function getEntropyColor(entropy) {
-            if (entropy < 0.35) return '#00ff88';
-            if (entropy < 0.55) return '#00d4ff';
-            if (entropy < 0.75) return '#ffaa00';
-            if (entropy < 0.85) return '#ff6464';
-            return '#ff0000';
+            if (entropy < 0.30) return '#00ff88'; // Чистий, спокійний текст
+            if (entropy < 0.45) return '#00d4ff'; // Нормальний робочий текст
+            if (entropy < 0.55) return '#ffaa00'; // Помірна складність / Увага
+            if (entropy < 0.60) return '#ff6464'; // Підозріло висока щільність (Твій борщ попаде сюди)
+            return '#ff0000'; // Критичний хаос (Трамп і Епштейн будуть тут)
         }
 
         function getEntropyGradient(entropy) {
-            if (entropy < 0.35) return 'linear-gradient(90deg, #00ff88, #00cc66)';
-            if (entropy < 0.55) return 'linear-gradient(90deg, #00d4ff, #0099ff)';
-            if (entropy < 0.75) return 'linear-gradient(90deg, #ffaa00, #ff8800)';
-            if (entropy < 0.85) return 'linear-gradient(90deg, #ff6464, #ff4444)';
+            if (entropy < 0.30) return 'linear-gradient(90deg, #00ff88, #00cc66)';
+            if (entropy < 0.45) return 'linear-gradient(90deg, #00d4ff, #0099ff)';
+            if (entropy < 0.55) return 'linear-gradient(90deg, #ffaa00, #ff8800)';
+            if (entropy < 0.60) return 'linear-gradient(90deg, #ff6464, #ff4444)';
             return 'linear-gradient(90deg, #ff0000, #cc0000)';
         }
 
