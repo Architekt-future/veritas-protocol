@@ -1,6 +1,5 @@
 """
 Veritas Protocol - Veritas Calibrated Core (FIXED v2)
-FIXED: Class name changed to VeritasCalibratedEngine to match api/analyze.py import
 FIXED: Substring matching for sanity check
 """
 
@@ -9,7 +8,7 @@ import re
 from typing import Dict, Optional
 
 
-class VeritasCalibratedEngine:  # ← FIXED CLASS NAME!
+class VeritasCalibratedCore:  # ← FIXED CLASS NAME!
     """
     Комбінований движок аналізу інформаційної ентропії
     FIXED: Substring matching для виявлення словоформ
