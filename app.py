@@ -101,74 +101,62 @@ def index():
 
 @app.route('/api/analyze', methods=['GET', 'POST', 'OPTIONS'])
 def analyze():
-    """Main analysis endpoint"""
-    
-    # Handle CORS preflight
     if request.method == 'OPTIONS':
         return jsonify({}), 200
     
-    # Health check (GET)
     if request.method == 'GET':
-        return jsonify({
-            'status': 'online',
-            'service': 'Veritas Protocol Analysis API',
-            'version': '3.0-render'
-        }), 200
+        return jsonify({'status': 'online', 'version': '3.1-calibrated'}), 200
     
-    # Analysis (POST)
     try:
         data = request.get_json()
-        
-        if not data:
-            return jsonify({'error': 'No data provided'}), 400
+        if not data: return jsonify({'error': 'No data'}), 400
         
         url = data.get('url', '').strip()
         text = data.get('text', '').strip()
-        source = data.get('source', 'Unknown')
+        source = data.get('source', 'Manual Input')
         
+        # 1. Отримуємо текст (з URL або напряму)
         if url:
-            # URL MODE
             try:
-                req = urllib.request.Request(
-                    url,
-                    headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
-                )
-                
+                req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
                 with urllib.request.urlopen(req, timeout=10) as response:
                     html = response.read().decode('utf-8', errors='ignore')
-                
                 extraction = extractor.extract_from_url(url, html)
-                
-                if not extraction['success']:
-                    raise Exception(extraction.get('error', 'Extraction failed'))
-                
+                if not extraction['success']: raise Exception('Extraction failed')
                 text = extraction['text']
-                source = extraction['source']
                 title = extraction['title']
-                
-                if not text or len(text) < 50:
-                    raise Exception('Extracted text too short')
-                
-                result = engine.analyze(text)
-                result['source'] = source
-                result['title'] = title
-                result['url'] = url
-                result['mode'] = 'url_scraping'
-                result['extracted_text'] = text[:500] + '...' if len(text) > 500 else text  # Preview
-                
+                source = extraction['source']
             except Exception as e:
                 return jsonify({'error': f'Scraping failed: {str(e)}'}), 500
-                
-        elif text:
-            # TEXT MODE
-            if len(text) < 10:
-                return jsonify({'error': 'Text too short'}), 400
-            
-            result = engine.analyze(text)
-            result['source'] = source
-            result['mode'] = 'text_input'
+        
+        if not text or len(text) < 10:
+            return jsonify({'error': 'Text too short'}), 400
+
+        # 2. ЗАПУСКАЄМО ЯДРО
+        result = engine.analyze(text)
+        
+        # 3. КАЛІБРУВАННЯ ТА ВЕРДИКТ (Наша нова логіка)
+        entropy = result.get('entropy_score', 0)
+        chaos = result.get('chaos_density', 0)
+        
+        # Визначаємо колір та пояснення
+        if entropy > 0.58 or chaos > 12:
+            result['status_class'] = 'danger'
+            result['verdict'] = 'КРИТИЧНА ЕНТРОПІЯ / МАНІПУЛЯЦІЯ'
+            result['explanation'] = 'Система виявила аномальну щільність хаотичних маркерів або надмірну складність, характерну для дезінформації.'
+        elif entropy > 0.45:
+            result['status_class'] = 'warning'
+            result['verdict'] = 'ПІДОЗРІЛИЙ СИГНАЛ'
+            result['explanation'] = 'Текст має ознаки емоційного навантаження або специфічного маніпулятивного структурування.'
         else:
-            return jsonify({'error': 'No URL or text provided'}), 400
+            result['status_class'] = 'success'
+            result['verdict'] = 'СТАБІЛЬНИЙ ЛОГІЧНИЙ СИГНАЛ'
+            result['explanation'] = 'Параметри тексту в межах норми. Логічна цілісність підтверджена.'
+
+        # 4. ВИВІД ТЕКСТУ (Збільшуємо до 2000 символів для скрапінгу)
+        result['source'] = source
+        result['url'] = url if url else 'Text Input'
+        result['extracted_text'] = text[:2000] + '...' if len(text) > 2000 else text
         
         return jsonify(result), 200
         
