@@ -524,11 +524,18 @@
                 displayResults(result);
 
             } catch (error) {
-                resultsPanel.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
-            } finally {
-                analyzeBtn.disabled = false;
-                analyzeBtn.textContent = '🔍 ANALYZE';
-            }
+    const debugConsole = document.getElementById('debug-console');
+    debugConsole.style.display = 'block';
+    
+    // Спробуємо витягнути текст помилки з відповіді сервера
+    let errorDetail = error.message;
+    try {
+        const errorJson = await response.json();
+        errorDetail = JSON.stringify(errorJson, null, 2);
+    } catch(e) {}
+
+    debugConsole.innerText = `🚨 SERVER ERROR:\n${errorDetail}`;
+    console.error('Full error:', error);
         }
 
         function displayResults(result) {
