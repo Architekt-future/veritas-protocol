@@ -483,34 +483,26 @@
     }
 }
 
-        async function analyze() {
+       async function analyze() {
             const analyzeBtn = document.getElementById('analyzeBtn');
             const resultsPanel = document.getElementById('resultsPanel');
 
             let payload = {};
-            
             if (currentMode === 'url') {
                 const url = document.getElementById('urlInput').value.trim();
-                if (!url) {
-                    alert('❌ Please enter a URL');
-                    return;
-                }
+                if (!url) { alert('❌ Please enter a URL'); return; }
                 payload = { url };
             } else {
                 const text = document.getElementById('textInput').value.trim();
                 const source = document.getElementById('sourceInput').value.trim();
-                if (!text) {
-                    alert('❌ Please enter text');
-                    return;
-                }
+                if (!text) { alert('❌ Please enter text'); return; }
                 payload = { text, source: source || 'Manual Input' };
             }
 
             analyzeBtn.disabled = true;
             analyzeBtn.textContent = '⏳ ANALYZING...';
-            
-            resultsPanel.classList.add('show');
             resultsPanel.innerHTML = '<div class="loading">⚙️ Processing with calibrated engine...</div>';
+            resultsPanel.classList.add('show');
 
             try {
                 const response = await fetch(API_URL, {
@@ -519,19 +511,41 @@
                     body: JSON.stringify(payload)
                 });
 
-                const result = await response.json();
+                const data = await response.json();
+                if (data.error) throw new Error(data.error);
 
-                if (result.error) {
-                    throw new Error(result.error);
-                }
+                // ФОРМУЄМО ВИВІД РЕЗУЛЬТАТІВ
+                // Тут ми малюємо вердикт, графіки і ТІЛЬКИ ЯКЩО ТРЕБА - текст
+                resultsPanel.innerHTML = `
+                    <div class="result-header ${data.status_class || 'success'}">
+                        <h3>${data.verdict || 'ANALYSIS COMPLETE'}</h3>
+                        <p>${data.explanation || ''}</p>
+                    </div>
 
-                displayResults(result);
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <span class="label">Entropy</span>
+                            <span class="value">${data.entropy_score || data.shannon_entropy}</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="label">Chaos Markers</span>
+                            <span class="value">${data.chaos_markers}</span>
+                        </div>
+                    </div>
+
+                    ${(currentMode === 'url' && data.extracted_text) ? `
+                        <div id="extractedTextContainer" class="extracted-box">
+                            <strong>Extracted Content:</strong>
+                            <div class="text-preview">${data.extracted_text}</div>
+                        </div>
+                    ` : ''}
+                `;
 
             } catch (error) {
                 resultsPanel.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
             } finally {
                 analyzeBtn.disabled = false;
-                analyzeBtn.textContent = '🔍 ANALYZE';
+                analyzeBtn.textContent = '🚀 ANALYZE SIGNAL';
             }
         }
 
