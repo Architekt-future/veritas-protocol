@@ -136,7 +136,6 @@ def analyze():
         result = engine.analyze(text)
         
         # 3. КАЛІБРУВАННЯ ТА ВЕРДИКТ (Наша нова логіка)
-       # --- ПОЧАТОК БЛОКУ КАЛІБРУВАННЯ ---
                 # Дістаємо показники
                 entropy = result.get('shannon_entropy', 0)
                 chaos = result.get('chaos_markers', 0)
