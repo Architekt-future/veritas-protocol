@@ -443,23 +443,45 @@
             }
         }
 
-        function switchMode(mode) {
-            currentMode = mode;
-            
-            document.querySelectorAll('.mode-tab').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            event.target.classList.add('active');
-            
-            document.getElementById('urlMode').classList.remove('active');
-            document.getElementById('textMode').classList.remove('active');
-            
-            if (mode === 'url') {
-                document.getElementById('urlMode').classList.add('active');
-            } else {
-                document.getElementById('textMode').classList.add('active');
-            }
-        }
+       function switchMode(mode, element) {
+    currentMode = mode;
+    
+    // 1. Оновлюємо вигляд вкладок (табів)
+    document.querySelectorAll('.mode-tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+
+    // Якщо ми передали 'this' у функцію — підсвічуємо його, 
+    // інакше шукаємо через event (для страховки)
+    if (element) {
+        element.classList.add('active');
+    } else if (window.event) {
+        window.event.target.classList.add('active');
+    }
+    
+    // 2. Перемикаємо видимість контейнерів для вводу
+    const urlModeEl = document.getElementById('urlMode');
+    const textModeEl = document.getElementById('textMode');
+    
+    if (mode === 'url') {
+        urlModeEl.classList.add('active');
+        textModeEl.classList.remove('active');
+        // Очищуємо поле тексту, якщо перейшли на URL (за бажанням)
+        document.getElementById('textContent').value = ''; 
+    } else {
+        textModeEl.classList.add('active');
+        urlModeEl.classList.remove('active');
+        // Очищуємо поле URL, якщо перейшли на текст
+        document.getElementById('urlInput').value = '';
+    }
+
+    // 3. Ховаємо блок з витягнутим текстом при зміні режиму, 
+    // щоб старі результати не муляли очі
+    const extractedContainer = document.getElementById('extractedTextContainer');
+    if (extractedContainer) {
+        extractedContainer.style.display = 'none';
+    }
+}
 
         async function analyze() {
             const analyzeBtn = document.getElementById('analyzeBtn');
