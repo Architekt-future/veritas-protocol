@@ -514,31 +514,49 @@
                 const data = await response.json();
                 if (data.error) throw new Error(data.error);
 
-                // ФОРМУЄМО ВИВІД РЕЗУЛЬТАТІВ
-                // Тут ми малюємо вердикт, графіки і ТІЛЬКИ ЯКЩО ТРЕБА - текст
+                // Дістаємо ентропію для візуалізації
+                const entropy = data.shannon_entropy || data.entropy_score || 0;
+
+                // МАЛЮЄМО ВСЕ В ОДНОМУ МІСЦІ
                 resultsPanel.innerHTML = `
-                    <div class="result-header ${data.status_class || 'success'}">
-                        <h3>${data.verdict || 'ANALYSIS COMPLETE'}</h3>
-                        <p>${data.explanation || ''}</p>
-                    </div>
+                    <div class="result-card">
+                        <div class="verdict-box ${data.status_class || 'success'}">
+                            <h3>${data.verdict || 'ANALYSIS COMPLETE'}</h3>
+                            <p>${data.explanation || ''}</p>
+                        </div>
 
-                    <div class="stats-grid">
-                        <div class="stat-item">
-                            <span class="label">Entropy</span>
-                            <span class="value">${data.entropy_score || data.shannon_entropy}</span>
+                        <div class="entropy-display">
+                            <div class="entropy-label">SHANNON ENTROPY</div>
+                            <div class="entropy-value" style="color: ${getEntropyColor(entropy)}">
+                                ${entropy.toFixed(3)}
+                            </div>
+                            
+                            <div class="entropy-bar-container">
+                                <div class="entropy-bar" 
+                                     style="width: ${Math.round(entropy * 100)}%; background: ${getEntropyGradient(entropy)};">
+                                    ${Math.round(entropy * 100)}%
+                                </div>
+                            </div>
                         </div>
-                        <div class="stat-item">
-                            <span class="label">Chaos Markers</span>
-                            <span class="value">${data.chaos_markers}</span>
-                        </div>
-                    </div>
 
-                    ${(currentMode === 'url' && data.extracted_text) ? `
-                        <div id="extractedTextContainer" class="extracted-box">
-                            <strong>Extracted Content:</strong>
-                            <div class="text-preview">${data.extracted_text}</div>
+                        <div class="stats-grid">
+                            <div class="stat-item">
+                                <span class="label">Chaos Markers</span>
+                                <span class="value">${data.chaos_markers || 0}</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="label">Source</span>
+                                <span class="value">${data.source || 'Unknown'}</span>
+                            </div>
                         </div>
-                    ` : ''}
+
+                        ${(currentMode === 'url' && data.extracted_text) ? `
+                            <div class="extracted-section">
+                                <strong>Extracted Content Preview:</strong>
+                                <div class="text-preview">${data.extracted_text}</div>
+                            </div>
+                        ` : ''}
+                    </div>
                 `;
 
             } catch (error) {
