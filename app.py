@@ -22,7 +22,7 @@ def analyze():
         text = data.get('text', '')
         
         engine = VeritasCalibratedCore()
-        result = engine.evaluate_integrity(text)
+        result = engine.analyze(text)
         return jsonify(result)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
