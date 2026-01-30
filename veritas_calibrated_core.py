@@ -9,7 +9,7 @@ import re
 from typing import Dict, Optional
 
 
-class VeritasCalibratedCore:  # ← FIXED CLASS NAME!
+class VeritasCalibratedEngine:  # ← FIXED CLASS NAME!
     """
     Комбінований движок аналізу інформаційної ентропії
     FIXED: Substring matching для виявлення словоформ
