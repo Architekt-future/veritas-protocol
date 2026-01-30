@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>💠 Veritas Terminal v3.0</title>
+    <title>💠 Veritas Terminal v3.1</title>
     <style>
         * {
             margin: 0;
@@ -176,7 +176,6 @@
             background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%);
         }
 
-        /* RESULTS */
         .results {
             display: none;
         }
@@ -301,6 +300,24 @@
             font-weight: bold;
         }
 
+        .extracted-text {
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-size: 0.9em;
+            line-height: 1.6;
+            color: #ccc;
+        }
+
+        .extracted-text h4 {
+            color: #00d4ff;
+            margin-bottom: 10px;
+        }
+
         .loading {
             text-align: center;
             color: #00d4ff;
@@ -335,16 +352,13 @@
 </head>
 <body>
     <div class="container">
-        <!-- HEADER -->
         <div class="header">
             <h1>💠 VERITAS TERMINAL</h1>
-            <div class="subtitle">Information Entropy Analyzer v3.0 Calibrated</div>
+            <div class="subtitle">Information Entropy Analyzer v3.1 Calibrated (Orpheus)</div>
             <div class="api-status checking" id="apiStatus">⚙️ Connecting...</div>
         </div>
 
-        <!-- INPUT PANEL -->
         <div class="panel">
-            <!-- MODE TABS -->
             <div class="mode-tabs">
                 <div class="mode-tab active" onclick="switchMode('url')">
                     🌐 URL Analysis
@@ -354,7 +368,6 @@
                 </div>
             </div>
 
-            <!-- URL MODE -->
             <div class="input-mode active" id="urlMode">
                 <div class="input-group">
                     <label for="urlInput">🔗 Enter URL:</label>
@@ -366,7 +379,6 @@
                 </div>
             </div>
 
-            <!-- TEXT MODE -->
             <div class="input-mode" id="textMode">
                 <div class="input-group">
                     <label for="textInput">📝 Paste Text:</label>
@@ -395,45 +407,21 @@
             </div>
         </div>
 
-        <!-- RESULTS PANEL -->
         <div class="panel results" id="resultsPanel">
-            <div class="entropy-display">
-                <div class="entropy-value" id="entropyValue">---</div>
-                
-                <div class="entropy-bar-container">
-                    <div class="entropy-bar" id="entropyBar" style="width: 0%;">
-                        0%
-                    </div>
-                </div>
-
-                <div class="verdict" id="verdict">
-                    AWAITING ANALYSIS
-                </div>
-            </div>
-
-            <!-- DIAGNOSTICS -->
-            <div class="diagnostics">
-                <h3>📊 DIAGNOSTICS</h3>
-                <div class="diag-grid" id="diagGrid">
-                    <!-- Will be populated -->
-                </div>
-            </div>
+            <!-- Results will be inserted here -->
         </div>
 
-        <!-- FOOTER -->
         <div class="footer">
-            <p>💠 Veritas Protocol Terminal v3.0 - Calibrated Engine</p>
-            <p>Backend: Python (Shannon Entropy + Sanity Checks)</p>
+            <p>💠 Veritas Protocol Terminal v3.1 - Orpheus Calibrated</p>
+            <p>Backend: Python Flask (Weighted Scoring + Academic Context)</p>
             <p>Co-authored by Dmytro Kholodniak & Chimeric Collective</p>
         </div>
     </div>
 
     <script>
-        // API endpoint
         const API_URL = '/api/analyze';
         let currentMode = 'url';
 
-        // Check API on load
         window.addEventListener('load', checkAPI);
 
         async function checkAPI() {
@@ -458,13 +446,11 @@
         function switchMode(mode) {
             currentMode = mode;
             
-            // Update tabs
             document.querySelectorAll('.mode-tab').forEach(tab => {
                 tab.classList.remove('active');
             });
             event.target.classList.add('active');
             
-            // Update input areas
             document.getElementById('urlMode').classList.remove('active');
             document.getElementById('textMode').classList.remove('active');
             
@@ -479,7 +465,6 @@
             const analyzeBtn = document.getElementById('analyzeBtn');
             const resultsPanel = document.getElementById('resultsPanel');
 
-            // Get input based on mode
             let payload = {};
             
             if (currentMode === 'url') {
@@ -499,15 +484,13 @@
                 payload = { text, source: source || 'Manual Input' };
             }
 
-            // Disable button
             analyzeBtn.disabled = true;
             analyzeBtn.textContent = '⏳ ANALYZING...';
             
             resultsPanel.classList.add('show');
-            resultsPanel.innerHTML = '<div class="loading">⚙️ Processing...</div>';
+            resultsPanel.innerHTML = '<div class="loading">⚙️ Processing with calibrated engine...</div>';
 
             try {
-                // Send to API (ALL LOGIC IS IN BACKEND!)
                 const response = await fetch(API_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -520,7 +503,6 @@
                     throw new Error(result.error);
                 }
 
-                // Display results (NO CALCULATIONS HERE!)
                 displayResults(result);
 
             } catch (error) {
@@ -536,7 +518,6 @@
             const entropy = result.entropy;
             const status = result.status.toLowerCase();
 
-            // Build results HTML
             let html = `
                 <div class="entropy-display">
                     <div class="entropy-value" style="color: ${getEntropyColor(entropy)}">
@@ -554,55 +535,61 @@
                         ${result.verdict}
                     </div>
                 </div>
+            `;
 
+            // Extracted text (for URL mode)
+            if (result.extracted_text) {
+                html += `
+                    <div class="extracted-text">
+                        <h4>📄 Extracted Text Preview:</h4>
+                        <div>${result.extracted_text}</div>
+                    </div>
+                `;
+            }
+
+            // Diagnostics
+            html += `
                 <div class="diagnostics">
                     <h3>📊 DIAGNOSTICS</h3>
                     <div class="diag-grid">
             `;
 
-            // Add diagnostics
             if (result.diagnostics) {
                 const diag = result.diagnostics;
                 
                 const items = [
-                    ['Shannon Entropy', diag.shannon_entropy],
-                    ['Complexity', diag.complexity],
-                    ['Signal Markers', diag.signal_markers],
-                    ['Noise Markers', diag.noise_markers],
-                    ['Number Density', diag.number_density],
-                    ['Shout Factor', diag.shout_factor],
-                    ['Sanity Penalty', diag.sanity_penalty],
-                    ['Word Count', diag.word_count],
-                    ['Language', result.language],
+                    ['Shannon Entropy', diag.shannon_entropy || 'N/A'],
+                    ['Complexity', diag.complexity || 'N/A'],
+                    ['Signal Markers', diag.signal_markers || 'N/A'],
+                    ['Noise Markers', diag.noise_markers || 'N/A'],
+                    ['Chaos Markers', diag.chaos_markers || 0],
+                    ['Chaos Density', diag.chaos_density ? (diag.chaos_density * 100).toFixed(2) + '%' : 'N/A'],
+                    ['Academic Markers', diag.academic_markers || 0],
+                    ['Academic Context', diag.is_academic_context ? 'YES ✅' : 'NO'],
+                    ['Number Density', diag.number_density || 'N/A'],
+                    ['Shout Factor', diag.shout_factor || 'N/A'],
+                    ['Sanity Penalty', diag.sanity_penalty || 'N/A'],
+                    ['Word Count', diag.word_count || 'N/A'],
+                    ['Language', result.language || 'N/A'],
                     ['Source', result.source || 'Unknown']
                 ];
 
                 items.forEach(([label, value]) => {
+                    let borderColor = '#00d4ff';
+                    if (label === 'Sanity Penalty' && diag.sanity_violations) {
+                        borderColor = '#ff0000';
+                    }
+                    if (label === 'Chaos Density' && diag.chaos_density > 0.05) {
+                        borderColor = '#ff0000';
+                    }
+                    
                     html += `
-                        <div class="diag-item">
+                        <div class="diag-item" style="border-left-color: ${borderColor};">
                             <div class="diag-label">${label}</div>
                             <div class="diag-value">${value}</div>
                         </div>
                     `;
                 });
-
-                if (diag.sanity_violations) {
-                    html += `
-                        <div class="diag-item" style="border-left-color: #ff0000;">
-                            <div class="diag-label">⚠️ Sanity Status</div>
-                            <div class="diag-value" style="color: #ff0000;">VIOLATED</div>
-                        </div>
-                    `;
-                }
-
-                if (diag.chaos_markers > 0) {
-                    html += `
-                        <div class="diag-item" style="border-left-color: #ff0000;">
-                            <div class="diag-label">☠️ Chaos Detected</div>
-                            <div class="diag-value" style="color: #ff0000;">${diag.chaos_markers}</div>
-                        </div>
-                    `;
-                }
             }
 
             html += `</div></div>`;
