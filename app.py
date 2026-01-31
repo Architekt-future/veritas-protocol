@@ -53,7 +53,7 @@ def analyze():
         return jsonify({}), 200
 
     if request.method == 'GET':
-        return jsonify({'status': 'online', 'version': '8.0-semantic-void'}), 200
+        return jsonify({'status': 'online', 'version': '8.2-calibrated'}), 200
 
     try:
         data = request.get_json()
@@ -91,30 +91,31 @@ def analyze():
 
         diag = result.get('diagnostics', {})
         
+        # РОЗРАХУНОК ІНДЕКСІВ (оптимізовані формули)
         total_chaos_index = (
-            diag.get('chaos_markers', 0) * 1.0 +  # ЗБІЛЬШЕНО!
-            diag.get('semantic_dissonance', 0) * 70 +
-            diag.get('semantic_void', 0) * 50 +  # НОВА МЕТРИКА!
-            diag.get('pattern_count', 0) * 25 +
-            diag.get('historical_revision_markers', 0) * 15 +
-            diag.get('alarmism_markers', 0) * 10 +
-            diag.get('economic_occult_markers', 0) * 20
+            diag.get('chaos_markers', 0) * 0.5 +
+            diag.get('semantic_void', 0) * 30 +
+            diag.get('pattern_count', 0) * 20 +
+            diag.get('sanity_penalty', 0) * 25
         )
         
         impact_score = (
-            result['entropy'] * 100 +
-            diag.get('semantic_dissonance', 0) * 90 +  # ЗБІЛЬШЕНО!
-            diag.get('sanity_penalty', 0) * 80 +
-            diag.get('semantic_void', 0) * 70 +  # НОВА МЕТРИКА!
-            diag.get('chaos_markers', 0) * 6 +
-            diag.get('pattern_count', 0) * 35 +
-            diag.get('historical_revision_markers', 0) * 25 +
-            diag.get('alarmism_markers', 0) * 20 +
-            diag.get('economic_occult_markers', 0) * 30
+            result['entropy'] * 80 +
+            diag.get('semantic_void', 0) * 60 +
+            diag.get('sanity_penalty', 0) * 50 +
+            diag.get('chaos_markers', 0) * 4 +
+            diag.get('pattern_count', 0) * 25
         )
         
-        academic_density = diag.get('academic_markers', 0) / max(1, diag.get('word_count', 1))
-        is_academic = diag.get('academic_markers', 0) >= 4 and academic_density > 0.06
+        # АКАДЕМІЧНИЙ КОЕФІЦІЄНТ (захист для наукових текстів)
+        academic_coefficient = 1.0
+        if diag.get('academic_markers', 0) >= 3 and diag.get('chaos_markers', 0) == 0:
+            academic_coefficient = 0.7  # Зменшуємо вплив для наукових текстів
+        if diag.get('academic_markers', 0) >= 5 and diag.get('signal_markers', 0) >= 3:
+            academic_coefficient = 0.5
+        
+        impact_score *= academic_coefficient
+        total_chaos_index *= academic_coefficient
         
         response = {
             'entropy': result['entropy'],
@@ -126,48 +127,48 @@ def analyze():
             'status_class': result['status'].lower(),
             'explanation': result.get('explanation', 'Немає пояснення'),
             'impact_score': round(impact_score, 2),
+            'total_chaos_index': round(total_chaos_index, 2),
             
+            # ОСНОВНІ МЕТРИКИ
             'shannon_entropy': diag.get('shannon_entropy', 0),
             'complexity': diag.get('complexity', 0),
-            'total_chaos_index': round(total_chaos_index, 2),
+            'semantic_void': diag.get('semantic_void', 0),
             'sanity_penalty': diag.get('sanity_penalty', 0),
-            'semantic_void': diag.get('semantic_void', 0),  # НОВА МЕТРИКА!
+            
+            # МАРКЕРИ
             'chaos_markers': diag.get('chaos_markers', 0),
-            'semantic_dissonance': diag.get('semantic_dissonance', 0),
             'noise_markers': diag.get('noise_markers', 0),
             'signal_markers': diag.get('signal_markers', 0),
             'academic_markers': diag.get('academic_markers', 0),
-            'academic_density': round(academic_density, 3),
-            'is_academic_context': is_academic,
+            'academic_coefficient': round(academic_coefficient, 2),
+            
+            # СТАТИСТИКА
             'shout_factor': diag.get('shout_factor', 0),
             'number_density': diag.get('number_density', 0),
             'word_count': diag.get('word_count', 0),
             'char_count': diag.get('char_count', 0),
             'signal_noise_ratio': round(diag.get('noise_markers', 0) / max(1, diag.get('signal_markers', 1)), 3),
-            'pattern_count': diag.get('pattern_count', 0),
-            'historical_revision_markers': diag.get('historical_revision_markers', 0),
-            'alarmism_markers': diag.get('alarmism_markers', 0),
-            'economic_occult_markers': diag.get('economic_occult_markers', 0)
+            'pattern_count': diag.get('pattern_count', 0)
         }
         
+        # ЕМОЦІЙНИЙ АНАЛІЗ
         emotional_pressure = (
             diag.get('chaos_markers', 0) > 5 or 
             diag.get('pattern_count', 0) > 0 or
-            diag.get('alarmism_markers', 0) > 1 or
             result['status'] == 'CRITICAL'
         )
         
         disorientation_risk = (
-            diag.get('semantic_dissonance', 0) > 0.4 or
             diag.get('semantic_void', 0) > 0.3 or
             diag.get('chaos_markers', 0) > 8 or
-            diag.get('historical_revision_markers', 0) > 0
+            diag.get('sanity_penalty', 0) > 0.4
         )
         
         response['emotional_pressure'] = emotional_pressure
         response['disorientation_risk'] = disorientation_risk
         response['emotional_analysis'] = generate_emotional_analysis(result, diag)
         
+        # ДОДАТКОВІ ДАНІ ДЛЯ URL
         if url and len(text_to_analyze) > 0:
             response['extracted_text'] = text_to_analyze[:1000] + ('...' if len(text_to_analyze) > 1000 else '')
             response['extracted_text_length'] = len(text_to_analyze)
@@ -179,29 +180,36 @@ def analyze():
         return jsonify({'error': f'Внутрішня помилка: {str(e)}'}), 500
 
 def generate_emotional_analysis(result, diag):
+    """Генерує емоційний аналіз на основі результатів"""
+    
     if result['status'] == 'CRITICAL':
-        if 'НІГІЛІЗМ' in result['verdict']:
+        verdict = result['verdict']
+        
+        if 'НІГІЛІЗМ' in verdict:
             return "НАУКОВИЙ НІГІЛІЗМ: підрив довіри до науки через абсурдне застосування термінів"
-        elif 'МАНІПУЛЯЦІЯ' in result['verdict']:
+        elif 'МАНІПУЛЯЦІЯ' in verdict:
             return "ДЗЕРКАЛЬНА МАНІПУЛЯЦІЯ: звинувачення інших у власних методах"
-        elif 'ОКУЛЬТИЗМ' in result['verdict']:
-            return "КОРПОРАТИВНИЙ ОКУЛЬТИЗМ: токсичне поєднання бізнесу та езотерики"
-        elif 'ПУСТОТА' in result['verdict']:
-            return "СЕМАНТИЧНА ПУСТОТА: текст приховує відсутність змісту за гуманітарною термінологією"
-        elif 'РЕВІЗІОНІЗМ' in result['verdict']:
-            return "ІСТОРИЧНИЙ РЕВІЗІОНІЗМ: створення альтернативної реальности з анахронічними елементами"
-        elif 'АЛАРМІЗМ' in result['verdict']:
-            return "ПРОРОЧИЙ АЛАРМІЗМ: використання апокаліптичних метафор для створення прихованої тривоги"
-        elif 'НЕКРОМАНТІЯ' in result['verdict']:
+        elif 'ПУСТОТА' in verdict:
+            return "СЕМАНТИЧНА ПУСТОТА: текст приховує відсутність змісту за складною термінологією"
+        elif 'РЕВІЗІОНІЗМ' in verdict:
+            return "ІСТОРИЧНИЙ РЕВІЗІОНІЗМ: створення альтернативної реальності з анахронічними елементами"
+        elif 'АЛАРМІЗМ' in verdict:
+            return "ПРОРОЧИЙ АЛАРМІЗМ: використання апокаліптичних метафор для створення тривоги"
+        elif 'НЕКРОМАНТІЯ' in verdict:
             return "ЕКОНОМІЧНА НЕКРОМАНТІЯ: абсурдне поєднання фінансів з езотерикою"
+        elif 'NON-SEQUITUR' in verdict:
+            return "ЛОГІЧНИЙ NON-SEQUITUR: абсурдні висновки з правильних тверджень"
         else:
             return "КРИТИЧНИЙ СЕМАНТИЧНИЙ ХАОС: текст створює когнітивне навантаження"
     
     elif diag.get('semantic_void', 0) > 0.3:
         return "СЕМАНТИЧНА ПУСТОТА: високий рівень абстракції при відсутності конкретного змісту"
     
-    elif diag.get('semantic_dissonance', 0) > 0.3:
+    elif diag.get('sanity_penalty', 0) > 0.3:
         return "СЕМАНТИЧНА НЕСТАБІЛЬНІСТЬ: несумісні концепції можуть викликати дезорієнтацію"
+    
+    elif diag.get('academic_markers', 0) >= 3 and diag.get('chaos_markers', 0) == 0:
+        return "СТАБІЛЬНИЙ АКАДЕМІЧНИЙ СИГНАЛ: текст демонструє наукову цілісність"
     
     else:
         return "МІНІМАЛЬНИЙ ЕМОЦІЙНИЙ ВПЛИВ: текст не містить явних маніпулятивних технік"
