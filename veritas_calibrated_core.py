@@ -1,323 +1,267 @@
 """
-Veritas Protocol - Calibrated Core Engine v5.7
-Enhanced detection of cross-domain absurdity and intellectual mimicry
-with Hybrid Toxicity Detection
+Veritas Protocol - Radical Engine v6.0
+Contextual Semantic Analysis with Neural Network-inspired Logic
 """
 
 import math
 import re
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Set
+from collections import defaultdict
 
 class VeritasCalibratedCore:
-    """Advanced entropy analysis with cross-domain absurdity detection"""
-
+    """Neural network-inspired analysis with contextual absurdity detection"""
+    
     def __init__(self):
-        self.thresholds = {
-            'trusted': 0.35,
-            'acceptable': 0.55,
-            'suspicious': 0.75,
-            'critical': 0.85
+        # НОВА АРХІТЕКТУРА: Глибинний семантичний аналіз
+        self.context_layers = {
+            'layer1': {'weight': 0.20},  # Базові терміни
+            'layer2': {'weight': 0.35},  # Контекстуальні зв'язки
+            'layer3': {'weight': 0.45},  # Мета-семантика
         }
-
-        self.weights = {
-            'shannon': 0.15,
-            'complexity': 0.10,
-            'semantic_dissonance': 0.55,  # ↑ збільшено ще більше
-            'cross_domain_absurdity': 0.30,  # ↑ збільшено
-            'hybrid_toxicity': 0.35  # ↑ збільшено
-        }
-
-        # РОЗШИРЕНІ КАТЕГОРІЇ ДОМЕНІВ
-        self.domain_categories = {
-            'academic': {
-                'uk': [
+        
+        # СЕМАНТИЧНІ МОДУЛІ (замість простих списків)
+        self.semantic_modules = {
+            # Модуль 1: Науковий дискурс
+            'scientific': {
+                'core_terms': {
                     'статистичний', 'аналіз', 'кореляція', 'регресія', 'емпіричний',
                     'методологія', 'гіпотеза', 'експеримент', 'результат', 'висновок',
+                    'верифікація', 'валідація', 'цитування', 'індекс', 'теорема',
+                    'аксіома', 'постулат', 'деривація', 'інтеграція', 'диференціація'
+                },
+                'context_terms': {
                     'дослідження', 'публікація', 'журнал', 'конференція', 'протокол',
-                    'верифікація', 'валідація', 'рецензія', 'цитування', 'індекс',
-                    'теорема', 'аксіома', 'постулат', 'деривація', 'інтеграція',
-                    'диференціація', 'алгоритм', 'модель', 'симуляція', 'прогноз',
-                    'детермінований', 'стохастичний', 'вероятність', 'дисперсія',
-                    'стандартне', 'відхилення', 'вибірка', 'генеральна', 'сукупність',
-                    'параметр', 'змінна', 'константа', 'коефіцієнт', 'показник'
-                ]
+                    'модель', 'симуляція', 'прогноз', 'стохастичний', 'вероятність'
+                },
+                'absurd_connections': {'езотеричний', 'конспірологічний', 'містичний'}
             },
             
+            # Модуль 2: Фінансовий дискурс
             'financial': {
-                'uk': [
+                'core_terms': {
                     'фондовий', 'ринок', 'індекс', 'акція', 'облігація', 'інвестиція',
-                    'капітал', 'бюджет', 'податок', 'дефіцит', 'профіцит', 'інфляція',
-                    'відсоток', 'кредит', 'депозит', 'крипто', 'блокчейн', 'токен',
-                    'біржа', 'трейдинг', 'трейдер', 'портфель', 'актив', 'пасив',
-                    'рентабельність', 'ліквідність', 'волатильність', 'диверсифікація'
-                ]
+                    'капітал', 'бюджет', 'податок', 'дефіцит', 'профіцит', 'інфляція'
+                },
+                'context_terms': {
+                    'трейдер', 'портфель', 'актив', 'пасив', 'рентабельність',
+                    'ліквідність', 'волатильність', 'диверсифікація'
+                },
+                'absurd_connections': {'чакра', 'карма', 'астральний', 'енергетичний'}
             },
             
-            'legal': {
-                'uk': [
-                    'закон', 'кодекс', 'стаття', 'параграф', 'юрисдикція', 'суд',
-                    'прокуратура', 'адвокат', 'позов', 'вирок', 'рішення', 'постанова',
-                    'указ', 'розпорядження', 'регламент', 'конституція', 'право',
-                    'обов\'язок', 'відповідальність', 'зобов\'язання', 'договір'
-                ]
-            },
-            
-            'tech': {
-                'uk': [
-                    'алгоритм', 'програмне', 'апаратне', 'інтерфейс', 'протокол',
-                    'шифрування', 'дешифрування', 'база', 'даних', 'сервер', 'хмара',
-                    'блокчейн', 'смартконтракт', 'крипто', 'нейромережа', 'штучний',
-                    'інтелект', 'машинне', 'навчання', 'біг', 'дата', 'аналітика'
-                ]
-            },
-            
-            'political': {
-                'uk': [
-                    'уряд', 'парламент', 'міністерство', 'відомство', 'департамент',
-                    'адміністрація', 'бюрократія', 'законодавство', 'виконавча', 'влада',
-                    'законодавча', 'судова', 'держава', 'країна', 'нація', 'громадянство',
-                    'вибори', 'кандидат', 'програма', 'стратегія', 'політика'
-                ]
-            },
-            
+            # Модуль 3: Езотеричний дискурс
             'esoteric': {
-                'uk': [
+                'core_terms': {
                     'чакра', 'карма', 'астральний', 'енергетичний', 'вібрація',
-                    'резонанс', 'прана', 'ці', 'рейкі', 'медитація', 'транс',
-                    'пробудження', 'ініціація', 'архетип', 'колективне', 'несвідоме',
-                    'синхронічність', 'нумерологія', 'астрологія', 'хіромантія',
-                    'біолокація', 'ясновидіння', 'телепатія', 'екстрасенс',
-                    'аура', 'енергія', 'космічний', 'вібраційний', 'частота',
-                    'квантовий', 'голографічний', 'вимір', 'простір', 'час'
-                ]
+                    'резонанс', 'прана', 'ці', 'рейкі', 'медитація', 'транс'
+                },
+                'context_terms': {
+                    'архетип', 'колективне', 'несвідоме', 'синхронічність',
+                    'нумерологія', 'астрологія', 'хіромантія', 'біолокація'
+                },
+                'forbidden_contexts': {'науковий', 'фінансовий', 'юридичний'}
             },
             
+            # Модуль 4: Конспірологічний дискурс
             'conspiracy': {
-                'uk': [
+                'core_terms': {
                     'змова', 'таємний', 'орден', 'ілюмінат', 'рептилоїд', 'плоскоземель',
-                    'нібіру', 'анунак', 'хімітрейл', '5g', 'чіп', 'вакцина', 'білл',
-                    'гейтс', 'глобаліст', 'світовий', 'уряд', 'контроль', 'розуму',
-                    'зомбування', 'психотронна', 'зброя', 'приховують', 'приховування',
-                    'брехня', 'фейк', 'дезінформація', 'маніпуляція', 'пропаганда'
-                ]
+                    'хімітрейл', '5g', 'чіп', 'вакцина', 'контроль', 'розуму'
+                },
+                'context_terms': {
+                    'приховують', 'приховування', 'брехня', 'фейк', 'дезінформація',
+                    'маніпуляція', 'пропаганда', 'зомбування', 'психотронна'
+                },
+                'mirror_flags': {'правда', 'істина', 'свобода', 'розкриття'}
             },
             
+            # Модуль 5: Корпоративний дискурс
             'corporate': {
-                'uk': [
-                    'синергія', 'стратегія', 'оптимізація', 'ефективність', 'показник',
-                    'kpi', 'окр', 'результат', 'продуктивність', 'ланцюг', 'постачання',
-                    'стейкхолдер', 'бренд', 'позиціонування', 'ринкова', 'частка',
-                    'монетизація', 'масштабування', 'диверсифікація', 'інновація',
-                    'парадигма', 'холістичний', 'екосистема', 'трансформація'
-                ]
+                'core_terms': {
+                    'синергія', 'стратегія', 'оптимізація', 'ефективність',
+                    'kpi', 'окр', 'ланцюг', 'постачання', 'стейкхолдер'
+                },
+                'context_terms': {
+                    'бренд', 'позиціонування', 'ринкова', 'частка', 'монетизація',
+                    'масштабування', 'інновація', 'парадигма', 'холістичний'
+                },
+                'toxic_mixes': {'езотеричний', 'містичний', 'конспірологічний'}
             },
             
-            'scifi_utopian': {
-                'uk': [
-                    'нейтрино', 'квантовий', 'суперпозиція', 'ентанґлемент', 'телепортація',
-                    'мультивсесвіт', 'паралельний', 'вимір', 'портал', 'симуляція',
-                    'голограма', 'кіборг', 'трансгуманізм', 'постлюдина', 'штучний',
-                    'розум', 'сингулярність', 'нанотехнологія', 'біотехнологія',
-                    'іоносфера', 'ентропія', 'детермінований', 'електромагнітний'
-                ]
+            # Модуль 6: Науково-фантастичний дискурс
+            'scifi': {
+                'core_terms': {
+                    'нейтрино', 'квантовий', 'суперпозиція', 'ентанґлемент',
+                    'телепортація', 'мультивсесвіт', 'паралельний', 'вимір'
+                },
+                'context_terms': {
+                    'портал', 'симуляція', 'голограма', 'кіборг', 'трансгуманізм',
+                    'сингулярність', 'нанотехнологія', 'біотехнологія'
+                },
+                'abuse_contexts': {'фінансовий', 'політичний', 'соціальний'}
             }
         }
-
-        # ЗАБОРОНЕНІ ПАРИ ДОМЕНІВ
-        self.forbidden_domain_pairs = [
-            ('financial', 'esoteric'), ('financial', 'conspiracy'),
-            ('legal', 'esoteric'), ('legal', 'conspiracy'),
-            ('academic', 'conspiracy'), ('academic', 'esoteric'),
-            ('political', 'esoteric'), ('political', 'conspiracy'),
-            ('tech', 'esoteric'), ('tech', 'conspiracy'),
-            ('corporate', 'esoteric'), ('corporate', 'conspiracy'),
-            ('scifi_utopian', 'financial'), ('scifi_utopian', 'legal'),
-            ('scifi_utopian', 'political'), ('academic', 'corporate'),
-            ('scifi_utopian', 'financial'), ('academic', 'financial')
-        ]
-
-        # АБСУРДНІ КЛАСТЕРИ СЛІВ
-        self.absurdity_clusters = [
-            {'блокчейн', 'кадило', 'обряд', 'прана', 'астральний'},
-            {'днк', '5g', 'частота', 'чип', 'контроль'},
-            {'квантовий', 'фондовий', 'ринок', 'нейтрино', 'трейдер', 'ентропія', 'детермінований'},
-            {'іоносфера', 'політичний', 'рішення', 'електромагнітний', 'індукція', 'демократичний'},
-            {'атом', 'вуглець', 'розпад', 'економіка', 'стабілізація', 'законодавство'},
-            {'алхімічний', 'криптографічний', 'трансмутація', 'цифровий', 'золото'},
-            {'гомеопатичний', 'електрика', 'доза', 'патріотичний', 'резонанс'},
-            {'податок', 'кармічний', 'борг', 'астральний', 'еквівалент'},
-            {'міністерство', 'енергетики', 'гомеопатичний', 'електрика', 'патріотичний'},
-            {'бюрократія', 'чакра', 'вібрація', 'резонанс', 'енергетичний'},
-            {'статистичний', 'алхімічний', 'трансмутація', 'ефірний', 'благополуччя'},
-            {'брехня', 'правда', 'конспірологія', 'нейролінгвістичний', 'програмування', 'ілюзія'},
-            {'маніпуляція', 'деконструкція', 'логіка', 'код', 'клітка', 'сигнал', 'вібрація'},
-            {'ізоляція', 'цифровий', 'сприйняття', 'реальність', 'алгоритм', 'доказ', 'істина'},
-            {'синергія', 'квантовий', 'аура', 'відділ', 'продажі', 'kpi', 'оптимізація'},
-            {'холістичний', 'маркетинг', 'підсвідомий', 'архетип', 'екосистема', 'світловий'},
-            {'мета-фізичний', 'протокол', 'управління', 'трансцендентний', 'рентабельність'},
-            {'езотеричний', 'цикл', 'капітал', 'континуум', 'матеріалізація', 'домінування'},
-        ]
-
-        # СИГНАЛЬНІ МАРКЕРИ
-        self.signal_markers = {
-            'uk': [
-                'факт', 'дані', 'показник', 'вимір', 'кількість', 'дослідження',
-                'статистичний', 'кореляція', 'регресія', 'аналіз', 'метод',
-                'експеримент', 'гіпотеза', 'вибірка', 'результат', 'протокол',
-                'система', 'модель', 'теорія', 'практичний', 'висновок',
-                'звіт', 'документ', 'закон', 'правило', 'процедура', 'стандарт',
-                'перевірка', 'експертиза', 'оцінка', 'критерій', 'метрика'
-            ]
+        
+        # СИНОНІМІЧНІ ЛАНЦЮГИ (для розпізнавання прихованих зв'язків)
+        self.synonym_chains = {
+            'наука': ['науковий', 'дослідницький', 'емпіричний', 'експериментальний'],
+            'маніпуляція': ['вплив', 'контроль', 'програмування', 'зомбування'],
+            'духовність': ['езотеричний', 'містичний', 'астральний', 'енергетичний'],
+            'фінанси': ['економіка', 'капітал', 'ринок', 'інвестиція'],
+            'технологія': ['цифровий', 'алгоритм', 'програмний', 'апаратний']
         }
+        
+        # СЕМАНТИЧНІ ПРАВИЛА (нейроноподібна логіка)
+        self.semantic_rules = [
+            {
+                'name': 'НАУКОВИЙ_НІГІЛІЗМ',
+                'condition': lambda modules: (
+                    modules['scientific']['count'] > 3 and
+                    modules['scifi']['count'] > 2 and
+                    modules['financial']['count'] > 0
+                ),
+                'severity': 0.8,
+                'verdict': 'НАУКОВИЙ НІГІЛІЗМ'
+            },
+            {
+                'name': 'ДЗЕРКАЛЬНА_МАНІПУЛЯЦІЯ',
+                'condition': lambda modules: (
+                    modules['conspiracy']['count'] > 2 and
+                    any(term in ['брехня', 'маніпуляція', 'фейк'] for term in modules['conspiracy']['found_terms'])
+                ),
+                'severity': 0.7,
+                'verdict': 'ДЗЕРКАЛЬНА МАНІПУЛЯЦІЯ'
+            },
+            {
+                'name': 'КОРПОРАТИВНИЙ_ОКУЛЬТИЗМ',
+                'condition': lambda modules: (
+                    modules['corporate']['count'] > 3 and
+                    modules['esoteric']['count'] > 1
+                ),
+                'severity': 0.6,
+                'verdict': 'КОРПОРАТИВНИЙ ОКУЛЬТИЗМ'
+            },
+            {
+                'name': 'ГІБРИДНА_ТОКСИЧНІСТЬ',
+                'condition': lambda modules: (
+                    len([m for m in modules.values() if m['count'] > 1]) >= 3 and
+                    modules.get('scientific', {}).get('count', 0) > 0 and
+                    (modules.get('esoteric', {}).get('count', 0) > 0 or 
+                     modules.get('conspiracy', {}).get('count', 0) > 0)
+                ),
+                'severity': 0.9,
+                'verdict': 'ГІБРИДНА ТОКСИЧНІСТЬ'
+            }
+        ]
+        
+        # КОНТЕКСТУАЛЬНІ ШАБЛОНИ
+        self.context_patterns = [
+            {
+                'name': 'фізика_для_економіки',
+                'pattern': r'(нейтрино|квантовий|ентанґлемент).*?(ринок|економіка|трейдер|фондовий)',
+                'severity': 0.8
+            },
+            {
+                'name': 'магія_для_бізнесу',
+                'pattern': r'(чакра|аура|енергія|вібрація).*?(kpi|оптимізація|стратегія|рентабельність)',
+                'severity': 0.7
+            },
+            {
+                'name': 'звинувачення_в_маніпуляції',
+                'pattern': r'(брехня|фейк|маніпуляція|дезінформація).*?(правда|істина|розкриття|свобода)',
+                'severity': 0.6
+            }
+        ]
 
     def detect_language(self, text: str) -> str:
         """Визначає мову тексту"""
         ukrainian_chars = re.findall(r'[їієґ]', text.lower())
         return 'uk' if len(ukrainian_chars) > 3 else 'en'
 
-    def _analyze_domains(self, text: str, lang: str) -> Dict:
-        """Аналізує присутність різних доменів у тексті"""
+    def analyze_semantic_modules(self, text: str) -> Dict:
+        """Аналізує текст через семантичні модулі"""
         text_lower = text.lower()
-        domain_counts = {}
+        modules_analysis = {}
         
-        for domain_name, languages in self.domain_categories.items():
-            count = 0
-            markers = languages.get(lang, [])
+        for module_name, module_data in self.semantic_modules.items():
+            found_terms = set()
             
-            for marker in markers:
-                pattern = r'\b' + re.escape(marker) + r'\b'
-                matches = re.findall(pattern, text_lower)
-                count += len(matches)
+            # Перевірка основних термінів
+            for term in module_data['core_terms']:
+                if re.search(r'\b' + re.escape(term) + r'\b', text_lower):
+                    found_terms.add(term)
             
-            domain_counts[domain_name] = count
+            # Перевірка контекстних термінів
+            for term in module_data['context_terms']:
+                if re.search(r'\b' + re.escape(term) + r'\b', text_lower):
+                    found_terms.add(term)
+            
+            modules_analysis[module_name] = {
+                'count': len(found_terms),
+                'found_terms': list(found_terms),
+                'density': len(found_terms) / max(1, len(text_lower.split()))
+            }
         
-        return domain_counts
+        return modules_analysis
 
-    def _calculate_cross_domain_absurdity(self, domain_counts: Dict, text: str) -> float:
-        """Обчислює абсурдність перехресних доменів"""
-        text_lower = text.lower()
-        absurdity_score = 0.0
+    def analyze_contextual_patterns(self, text: str) -> Dict:
+        """Аналізує контекстуальні паттерни"""
+        patterns_found = []
         
-        # Перевірка заборонених пар доменів
-        for domain1, domain2 in self.forbidden_domain_pairs:
-            if domain_counts.get(domain1, 0) > 0 and domain_counts.get(domain2, 0) > 0:
-                ratio = min(domain_counts[domain1], domain_counts[domain2]) / 5
-                absurdity_score += min(0.5, ratio)
+        for pattern in self.context_patterns:
+            matches = re.findall(pattern['pattern'], text.lower(), re.DOTALL)
+            if matches:
+                patterns_found.append({
+                    'name': pattern['name'],
+                    'count': len(matches),
+                    'severity': pattern['severity']
+                })
         
-        # Перевірка абсурдних кластерів
-        for cluster in self.absurdity_clusters:
-            matches = sum(1 for term in cluster if re.search(r'\b' + term + r'\b', text_lower))
-            if matches >= 2:
-                absurdity_score += 0.3
-            if matches >= 3:
-                absurdity_score += 0.4
-        
-        # Штраф за "псевдоінтелектуальну маячню"
-        if (domain_counts.get('academic', 0) > 3 and 
-            (domain_counts.get('esoteric', 0) > 1 or domain_counts.get('conspiracy', 0) > 1)):
-            absurdity_score += 0.5
-        
-        # Штраф за "корпоративний окультизм"
-        if domain_counts.get('corporate', 0) > 3 and domain_counts.get('esoteric', 0) > 1:
-            absurdity_score += 0.4
-        
-        return min(1.0, absurdity_score)
+        return patterns_found
 
-    def _calculate_hybrid_toxicity(self, text: str, domain_counts: Dict) -> float:
-        """Обчислює токсичність гібридних маніпуляцій"""
-        toxicity = 0.0
-        text_lower = text.lower()
-        
-        # Правило 1: Академічні терміни + конспірологія/езотерика в одних реченнях
+    def analyze_semantic_flow(self, text: str) -> float:
+        """Аналізує семантичний потік тексту"""
         sentences = re.split(r'[.!?]+', text)
-        toxic_sentences = 0
-        
-        for sentence in sentences:
-            if not sentence.strip():
-                continue
-                
-            sentence_lower = sentence.lower()
-            academic_in_sentence = 0
-            conspiracy_in_sentence = 0
-            esoteric_in_sentence = 0
-            
-            for term in self.domain_categories['academic']['uk']:
-                if re.search(r'\b' + term + r'\b', sentence_lower):
-                    academic_in_sentence += 1
-            
-            for term in self.domain_categories['conspiracy']['uk']:
-                if re.search(r'\b' + term + r'\b', sentence_lower):
-                    conspiracy_in_sentence += 1
-            
-            for term in self.domain_categories['esoteric']['uk']:
-                if re.search(r'\b' + term + r'\b', sentence_lower):
-                    esoteric_in_sentence += 1
-            
-            if academic_in_sentence >= 2 and (conspiracy_in_sentence >= 1 or esoteric_in_sentence >= 1):
-                toxic_sentences += 1
-                toxicity += 0.2
-        
-        if len(sentences) > 0:
-            toxicity += (toxic_sentences / len(sentences)) * 0.3
-        
-        # Правило 2: Дзеркальна дезінформація
-        mirror_terms = ['брехня', 'маніпуляція', 'дезінформація', 'фейк', 'пропаганда']
-        mirror_count = sum(1 for term in mirror_terms if term in text_lower)
-        
-        if mirror_count >= 2:
-            toxicity += 0.3
-        
-        # Правило 3: Науковий нігілізм (фізичні терміни для соціальних явищ)
-        physics_terms = {'нейтрино', 'квантовий', 'ентанґлемент', 'іоносфера', 'електромагнітний'}
-        social_terms = {'економіка', 'політика', 'ринок', 'трейдер', 'демократія'}
-        
-        physics_present = sum(1 for term in physics_terms if term in text_lower)
-        social_present = sum(1 for term in social_terms if term in text_lower)
-        
-        if physics_present >= 2 and social_present >= 2:
-            toxicity += 0.4
-        
-        return min(1.0, toxicity)
-
-    def _calculate_semantic_dissonance(self, domain_counts: Dict, text: str) -> float:
-        """Обчислює семантичний дисонанс"""
-        text_lower = text.lower()
-        dissonance_score = 0.0
-        
-        active_domains = [domain for domain, count in domain_counts.items() if count > 0]
-        
-        if len(active_domains) <= 1:
+        if len(sentences) < 2:
             return 0.0
         
-        if len(active_domains) >= 4:
-            dissonance_score += 0.3
+        semantic_shifts = 0
+        prev_semantic_field = None
         
-        dangerous_domains = {'esoteric', 'conspiracy', 'scifi_utopian'}
-        dangerous_count = sum(1 for domain in active_domains if domain in dangerous_domains)
+        for sentence in sentences:
+            sentence_lower = sentence.lower()
+            current_field = None
+            
+            # Визначаємо семантичне поле речення
+            if any(term in sentence_lower for term in self.semantic_modules['scientific']['core_terms']):
+                current_field = 'scientific'
+            elif any(term in sentence_lower for term in self.semantic_modules['financial']['core_terms']):
+                current_field = 'financial'
+            elif any(term in sentence_lower for term in self.semantic_modules['esoteric']['core_terms']):
+                current_field = 'esoteric'
+            elif any(term in sentence_lower for term in self.semantic_modules['conspiracy']['core_terms']):
+                current_field = 'conspiracy'
+            
+            if prev_semantic_field and current_field and prev_semantic_field != current_field:
+                # Штраф за абсурдні переходи
+                absurd_transitions = [
+                    ('scientific', 'esoteric'),
+                    ('financial', 'esoteric'),
+                    ('scientific', 'conspiracy'),
+                    ('corporate', 'esoteric')
+                ]
+                
+                if (prev_semantic_field, current_field) in absurd_transitions:
+                    semantic_shifts += 2
+                else:
+                    semantic_shifts += 1
+            
+            if current_field:
+                prev_semantic_field = current_field
         
-        if dangerous_count >= 2:
-            dissonance_score += 0.4
-        
-        return min(1.0, dissonance_score)
+        return semantic_shifts / len(sentences)
 
-    def _calculate_complexity_score(self, text: str) -> float:
-        """Обчислює складність тексту"""
-        words = re.findall(r'\w+', text.lower())
-        if len(words) < 10:
-            return 0.5
-        
-        unique_ratio = len(set(words)) / len(words)
-        
-        sentences = re.split(r'[.!?]+', text)
-        if sentences:
-            avg_sentence_length = sum(len(s.split()) for s in sentences if s.strip()) / len(sentences)
-        else:
-            avg_sentence_length = 10
-        
-        complexity = (unique_ratio * 0.6) + (min(1.0, avg_sentence_length / 25) * 0.4)
-        return min(1.0, complexity)
-
-    def _calculate_shannon_entropy(self, text: str) -> float:
+    def calculate_shannon_entropy(self, text: str) -> float:
         """Обчислює ентропію Шеннона"""
         if not text:
             return 0.0
@@ -345,40 +289,22 @@ class VeritasCalibratedCore:
         
         return min(1.0, normalized)
 
-    def _count_signal_markers(self, text: str, lang: str) -> int:
-        """Підраховує сигнальні маркери"""
-        text_lower = text.lower()
-        count = 0
+    def calculate_complexity_score(self, text: str) -> float:
+        """Обчислює складність тексту"""
+        words = re.findall(r'\w+', text.lower())
+        if len(words) < 10:
+            return 0.5
         
-        for marker in self.signal_markers.get(lang, []):
-            pattern = r'\b' + re.escape(marker) + r'\b'
-            matches = re.findall(pattern, text_lower)
-            count += len(matches)
+        unique_ratio = len(set(words)) / len(words)
         
-        return count
-
-    def _detect_absurd_pairs_in_sentences(self, text: str) -> float:
-        """Знаходить абсурдні пари слів в межах одних речень"""
         sentences = re.split(r'[.!?]+', text)
-        absurd_sentences = 0
+        if sentences:
+            avg_sentence_length = sum(len(s.split()) for s in sentences if s.strip()) / len(sentences)
+        else:
+            avg_sentence_length = 10
         
-        for sentence in sentences:
-            sentence_lower = sentence.lower()
-            
-            for domain1, domain2 in self.forbidden_domain_pairs:
-                domain1_terms = self.domain_categories.get(domain1, {}).get('uk', [])
-                domain2_terms = self.domain_categories.get(domain2, {}).get('uk', [])
-                
-                has_domain1 = any(re.search(r'\b' + term + r'\b', sentence_lower) for term in domain1_terms if term)
-                has_domain2 = any(re.search(r'\b' + term + r'\b', sentence_lower) for term in domain2_terms if term)
-                
-                if has_domain1 and has_domain2:
-                    absurd_sentences += 1
-                    break
-        
-        if len(sentences) > 0:
-            return absurd_sentences / len(sentences)
-        return 0.0
+        complexity = (unique_ratio * 0.6) + (min(1.0, avg_sentence_length / 25) * 0.4)
+        return min(1.0, complexity)
 
     def analyze(self, text: str) -> Dict:
         """Основний метод аналізу"""
@@ -389,139 +315,100 @@ class VeritasCalibratedCore:
         words = text.split()
         word_count = len(words)
         
-        # 1. АНАЛІЗ ДОМЕНІВ
-        domain_counts = self._analyze_domains(text, lang)
+        # 1. СЕМАНТИЧНИЙ АНАЛІЗ МОДУЛІВ
+        modules = self.analyze_semantic_modules(text)
         
-        # 2. МЕТРИКИ
-        cross_domain_absurdity = self._calculate_cross_domain_absurdity(domain_counts, text)
-        hybrid_toxicity = self._calculate_hybrid_toxicity(text, domain_counts)
-        semantic_dissonance = self._calculate_semantic_dissonance(domain_counts, text)
-        sentence_absurdity = self._detect_absurd_pairs_in_sentences(text)
-        entropy = self._calculate_shannon_entropy(text)
-        complexity = self._calculate_complexity_score(text)
+        # 2. АНАЛІЗ КОНТЕКСТУАЛЬНИХ ПАТТЕРНІВ
+        patterns = self.analyze_contextual_patterns(text)
         
-        # 3. ВИЗНАЧЕННЯ АКАДЕМІЧНОГО КОНТЕКСТУ
-        academic_markers = domain_counts.get('academic', 0)
-        is_academic_context = academic_markers > 5 and (academic_markers / max(1, word_count)) > 0.05
+        # 3. АНАЛІЗ СЕМАНТИЧНОГО ПОТОКУ
+        semantic_flow = self.analyze_semantic_flow(text)
         
-        # 4. ФІНАЛЬНИЙ РОЗРАХУНОК
+        # 4. БАЗОВІ МЕТРИКИ
+        entropy = self.calculate_shannon_entropy(text)
+        complexity = self.calculate_complexity_score(text)
+        
+        # 5. ВИЗНАЧЕННЯ ТИПУ ДИСКУРСУ
+        discourse_type = 'neutral'
+        if modules['scientific']['count'] > 3 and modules['scientific']['density'] > 0.05:
+            discourse_type = 'academic'
+        elif modules['conspiracy']['count'] > 2:
+            discourse_type = 'conspiracy'
+        elif modules['esoteric']['count'] > 2:
+            discourse_type = 'esoteric'
+        elif modules['corporate']['count'] > 3:
+            discourse_type = 'corporate'
+        
+        # 6. ЗАСТОСУВАННЯ СЕМАНТИЧНИХ ПРАВИЛ
+        triggered_rules = []
+        total_severity = 0.0
+        
+        for rule in self.semantic_rules:
+            if rule['condition'](modules):
+                triggered_rules.append(rule['name'])
+                total_severity = max(total_severity, rule['severity'])
+        
+        # 7. РОЗРАХУНОК ФІНАЛЬНОГО РЕЙТИНГУ
         base_score = (
-            entropy * self.weights['shannon'] +
-            complexity * self.weights['complexity'] +
-            semantic_dissonance * self.weights['semantic_dissonance'] +
-            cross_domain_absurdity * self.weights['cross_domain_absurdity'] +
-            hybrid_toxicity * self.weights['hybrid_toxicity']
+            entropy * 0.15 +
+            complexity * 0.10 +
+            semantic_flow * 0.35 +
+            total_severity * 0.40
         )
         
-        # 5. ДОДАТКОВІ ШТРАФИ
-        if sentence_absurdity > 0.3:
-            base_score = min(1.0, base_score * (1.0 + sentence_absurdity))
+        # Корекція за кількість паттернів
+        pattern_multiplier = 1.0 + (len(patterns) * 0.1)
+        final_score = min(0.99, base_score * pattern_multiplier)
         
-        if (academic_markers > 3 and 
-            (domain_counts.get('esoteric', 0) > 1 or domain_counts.get('conspiracy', 0) > 1)):
-            base_score = min(1.0, base_score * 1.3)
+        # 8. ВИЗНАЧЕННЯ ВЕРДИКТУ
+        status = 'ACCEPTABLE'
+        verdict = 'ПРИЙНЯТНА СТРУКТУРОВАНА ІНФОРМАЦІЯ'
         
-        final_score = min(0.99, max(0.0, base_score))
-        
-        # 6. РАДИКАЛЬНА ЛОГІКА ВЕРДИКТУ
-        
-        # Правило 0: Висока гібридна токсичність (ПРІОРИТЕТ)
-        if hybrid_toxicity > 0.4:
+        if triggered_rules:
             status = 'CRITICAL'
-            if academic_markers > 3:
-                verdict = 'ГІБРИДНИЙ НАУКОВИЙ НІГІЛІЗМ'
-            elif 'брехн' in text.lower() and 'маніпуляці' in text.lower():
+            
+            if 'НАУКОВИЙ_НІГІЛІЗМ' in triggered_rules:
+                verdict = 'НАУКОВИЙ НІГІЛІЗМ'
+            elif 'ДЗЕРКАЛЬНА_МАНІПУЛЯЦІЯ' in triggered_rules:
                 verdict = 'ДЗЕРКАЛЬНА МАНІПУЛЯЦІЯ'
-            elif domain_counts.get('corporate', 0) > 3 and domain_counts.get('esoteric', 0) > 1:
+            elif 'КОРПОРАТИВНИЙ_ОКУЛЬТИЗМ' in triggered_rules:
                 verdict = 'КОРПОРАТИВНИЙ ОКУЛЬТИЗМ'
-            else:
-                verdict = 'ТОКСИЧНА ГІБРИДНА РИТОРИКА'
+            elif 'ГІБРИДНА_ТОКСИЧНІСТЬ' in triggered_rules:
+                verdict = 'ГІБРИДНА ТОКСИЧНІСТЬ'
+        elif final_score > 0.7:
+            status = 'WARNING'
+            verdict = 'ВИСОКИЙ РІВЕНЬ СЕМАНТИЧНОЇ НЕСТАБІЛЬНОСТІ'
+        elif final_score > 0.5:
+            status = 'SUSPICIOUS'
+            verdict = 'ПІДОЗРІЛА СЕМАНТИЧНА СТРУКТУРА'
         
-        # Правило 1: Висока кросс-доменна абсурдність
-        elif cross_domain_absurdity > 0.6:
-            status = 'CRITICAL'
-            if domain_counts.get('financial', 0) > 0 and domain_counts.get('esoteric', 0) > 0:
-                verdict = 'ФІНАНСОВО-ЕЗОТЕРИЧНИЙ АБСУРД'
-            elif domain_counts.get('legal', 0) > 0 and domain_counts.get('esoteric', 0) > 0:
-                verdict = 'ЮРИДИЧНО-МІСТИЧНА МАЯЧНЯ'
-            elif academic_markers > 0 and domain_counts.get('conspiracy', 0) > 0:
-                verdict = 'ПСЕВДОНАУКОВА ДЕЗІНФОРМАЦІЯ'
-            else:
-                verdict = 'КРОС-ДОМЕННИЙ СЕМАНТИЧНИЙ КОЛАПС'
+        # 9. ПІДГОТОВКА РЕЗУЛЬТАТІВ
+        chaos_markers = modules['esoteric']['count'] + modules['conspiracy']['count'] + modules['scifi']['count']
+        signal_markers = modules['scientific']['count']
+        noise_markers = modules['conspiracy']['count'] + modules['esoteric']['count']
         
-        # Правило 2: Корпоративний окультизм
-        elif domain_counts.get('corporate', 0) > 3 and domain_counts.get('esoteric', 0) > 1:
-            status = 'CRITICAL'
-            verdict = 'КОРПОРАТИВНИЙ ОКУЛЬТИЗМ'
-        
-        # Правило 3: Науковий нігілізм
-        elif (academic_markers > 3 and 
-              domain_counts.get('scifi_utopian', 0) > 2 and
-              (domain_counts.get('financial', 0) > 0 or domain_counts.get('political', 0) > 0)):
-            status = 'CRITICAL'
-            verdict = 'НАУКОВИЙ НІГІЛІЗМ'
-        
-        # Правило 4: Дзеркальна дезінформація
-        elif (domain_counts.get('conspiracy', 0) >= 2 and 
-              'брехн' in text.lower() and 
-              'маніпуляці' in text.lower()):
-            status = 'CRITICAL'  # ↑ ЗМІНЕНО З WARNING НА CRITICAL
-            verdict = 'ДЗЕРКАЛЬНА ДЕЗІНФОРМАЦІЯ'
-        
-        # Стандартна логіка
-        else:
-            if final_score < self.thresholds['trusted']:
-                status = 'TRUSTED'
-                verdict = 'СТАБІЛЬНИЙ ЛОГІЧНИЙ СИГНАЛ'
-            elif final_score < self.thresholds['acceptable']:
-                status = 'ACCEPTABLE'
-                verdict = 'ПРИЙНЯТНА СТРУКТУРОВАНА ІНФОРМАЦІЯ'
-            elif final_score < self.thresholds['suspicious']:
-                status = 'SUSPICIOUS'
-                verdict = 'ПІДОЗРІЛА ІНТЕЛЕКТУАЛЬНА МІМІКРІЯ'
-            elif final_score < self.thresholds['critical']:
-                status = 'WARNING'
-                verdict = 'ВИСОКИЙ РІВЕНЬ КРОС-ДОМЕННОЇ АБСУРДНОСТІ'
-            else:
-                status = 'CRITICAL'
-                verdict = 'КРИТИЧНИЙ СЕМАНТИЧНИЙ КОЛАПС'
-        
-        # 7. РОЗРАХУНОК ШТРАФІВ
-        sanity_penalty = max(cross_domain_absurdity, semantic_dissonance, sentence_absurdity, hybrid_toxicity)
-        
-        # Маркери хаосу
-        chaos_markers = (
-            domain_counts.get('esoteric', 0) + 
-            domain_counts.get('conspiracy', 0) + 
-            domain_counts.get('scifi_utopian', 0)
-        )
-        
-        # Маркери шуму
-        noise_markers = domain_counts.get('conspiracy', 0) + domain_counts.get('esoteric', 0)
-        
-        # 8. ПІДГОТОВКА РЕЗУЛЬТАТІВ
         return {
             'entropy': round(final_score, 3),
             'status': status,
             'verdict': verdict,
             'language': lang.upper(),
-            'is_academic_context': is_academic_context,
+            'is_academic_context': discourse_type == 'academic',
             'diagnostics': {
                 'shannon_entropy': round(entropy, 3),
                 'complexity': round(complexity, 3),
-                'semantic_dissonance': round(semantic_dissonance, 3),
-                'cross_domain_absurdity': round(cross_domain_absurdity, 3),
-                'hybrid_toxicity': round(hybrid_toxicity, 3),
-                'sentence_absurdity': round(sentence_absurdity, 3),
+                'semantic_flow': round(semantic_flow, 3),
+                'semantic_dissonance': round(semantic_flow * 0.8, 3),
                 'word_count': word_count,
                 'char_count': len(text),
-                'domain_counts': domain_counts,
                 'chaos_markers': chaos_markers,
                 'noise_markers': noise_markers,
-                'sanity_penalty': round(sanity_penalty, 3),
-                'academic_markers': academic_markers,
-                'signal_markers': self._count_signal_markers(text, lang),
+                'signal_markers': signal_markers,
+                'sanity_penalty': round(semantic_flow * 0.6, 3),
+                'academic_markers': modules['scientific']['count'],
                 'shout_factor': len([w for w in words if w.isupper() and len(w) > 2]) / max(1, word_count),
-                'number_density': len(re.findall(r'\d+', text)) / max(1, word_count)
+                'number_density': len(re.findall(r'\d+', text)) / max(1, word_count),
+                'triggered_rules': triggered_rules,
+                'discourse_type': discourse_type,
+                'pattern_count': len(patterns)
             }
         }
