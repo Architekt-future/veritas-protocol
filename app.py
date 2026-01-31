@@ -60,7 +60,7 @@ def analyze():
         return jsonify({}), 200
 
     if request.method == 'GET':
-        return jsonify({'status': 'online', 'version': '3.6-calibrated'}), 200
+        return jsonify({'status': 'online', 'version': '3.7-final'}), 200
 
     try:
         data = request.get_json()
@@ -127,7 +127,7 @@ def analyze():
         is_academic = diag.get('is_academic_context', False)
         lang = result.get('language', 'UK')
 
-        # 3. Розрахунок інтегрального індексу хаосу з контекстуальною корекцією
+        # 3. Розрахунок інтегрального індексу хаосу
         total_chaos_index = (chaos_markers * 0.1) + (shout_factor * 30) + (noise_markers * 0.3)
         
         # Корекція для академічних текстів
@@ -136,15 +136,14 @@ def analyze():
             if academic_markers > 10:
                 total_chaos_index *= 0.5
 
-        # 4. Аналіз емоційного впливу та дезорієнтації
+        # 4. Аналіз емоційного впливу
         emotional_pressure = False
         disorientation_risk = False
         emotional_comment = ""
 
-        # Критерії емоційного тиску
         if shout_factor > 0.3 or noise_markers > signal_markers * 2:
             emotional_pressure = True
-        # Критерії дезорієнтації
+        
         if entropy > 0.5 and complexity > 0.7:
             disorientation_risk = True
 
@@ -158,7 +157,7 @@ def analyze():
         else:
             emotional_comment = "ЕМОЦІЙНИЙ ВПЛИВ МІНІМАЛЬНИЙ. Текст зосереджений на фактах та логіці."
 
-        # 5. ПОЛІПШЕНА логіка вердикту з контекстуальною корекцією
+        # 5. НОВА логіка вердикту - СПРОЩЕНО
         impact_score = (total_chaos_index * 0.3) + (sanity_penalty * 15) + (entropy * 100 * 0.4)
         
         # Сильна корекція для академічних текстів
@@ -167,7 +166,7 @@ def analyze():
             if signal_markers > noise_markers * 5:
                 impact_score *= 0.5
         
-        # Додаткова корекція на основі співвідношення сигнал/шум
+        # Корекція на співвідношення сигнал/шум
         if signal_markers > 0:
             signal_noise_ratio = noise_markers / signal_markers
             if signal_noise_ratio < 0.05:
@@ -175,21 +174,21 @@ def analyze():
             elif signal_noise_ratio > 1.0:
                 impact_score *= 1.8
 
-        # ВИПРАВЛЕНІ пороги для вердикту з врахуванням контексту
-        # Критичний стан тільки для явної маячні з високим sanity_penalty
-        if sanity_penalty > 0.5 and (chaos_markers > 20 or shout_factor > 0.4):
+        # РАДИКАЛЬНО СПРОЩЕНА логіка вердикту
+        if sanity_penalty > 0.5 and (shout_factor > 0.4 or chaos_markers > 15):
+            # Явна маячня: високий shout_factor + chaos_markers + sanity_penalty
             status_class = 'critical'
             verdict = 'КРИТИЧНА НЕСУМІСНІСТЬ ЛОГІКИ'
             explanation = 'Текст містить взаємовиключні концепції та порушує базові принципи логічної сумісності.'
-        elif impact_score > 25 or (entropy > 0.65 and not is_academic):
+        elif impact_score > 20:
             status_class = 'warning'
             verdict = 'ВИСОКИЙ РІВЕНЬ МАНІПУЛЯЦІЇ'
             explanation = 'Виявлено структурні аномалії та ознаки інформаційного шуму.'
-        elif impact_score > 12 or entropy > 0.55:
+        elif impact_score > 10:
             status_class = 'acceptable'
             verdict = 'ПРИЙНЯТНА СТРУКТУРОВАНА ІНФОРМАЦІЯ'
             explanation = 'Текст має деякі особливості, але загалом відповідає нормам.'
-        elif is_academic and impact_score < 8:
+        elif is_academic and impact_score < 5:
             status_class = 'success'
             verdict = 'АКАДЕМІЧНИЙ ТЕКСТ ВИСОКОЇ ЯКОСТІ'
             explanation = 'Текст демонструє високий рівень логічної цілісності та наукової обґрунтованості.'
@@ -240,7 +239,7 @@ def analyze():
             final_result['extracted_text'] = extracted_text_for_display[:2000] + ('...' if len(extracted_text_for_display) > 2000 else '')
             final_result['extracted_text_length'] = len(extracted_text_for_display)
 
-        print(f"📊 Результат аналізу готовий: entropy={final_result['entropy']}, verdict={verdict}, academic={is_academic}, chaos={chaos_markers}")
+        print(f"📊 Результат: entropy={final_result['entropy']}, verdict={verdict}, academic={is_academic}, chaos={chaos_markers}, sanity={sanity_penalty}")
         return jsonify(final_result), 200
 
     except urllib.error.URLError as e:
