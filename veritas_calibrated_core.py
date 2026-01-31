@@ -1,5 +1,5 @@
 """
-Veritas Protocol - Calibrated Core Engine (FIXED v3)
+Veritas Protocol - Calibrated Core Engine (FIXED v4)
 Inspired by Orpheus LAC principles:
 - Weighted scoring (not binary)
 - Density-based detection (not count)
@@ -40,12 +40,14 @@ class VeritasCalibratedCore:
             'uk': {
                 'етично', 'необхідно', 'важливо', 'неприпустимо', 'історично',
                 'фундаментально', 'занепокоєння', 'перемога', 'збитки', 'довіра',
-                'шокуюча', 'паніка', 'приховували', 'потрясла', 'сенсація', 'терміново'
+                'шокуюча', 'паніка', 'приховували', 'потрясла', 'сенсація', 'терміново',
+                'катастрофічн', 'апокаліпсис', 'крах', 'знищен', 'загиб'
             },
             'en': {
                 'ethically', 'necessarily', 'important', 'unacceptable', 'historically',
                 'fundamentally', 'concern', 'victory', 'losses', 'trust',
-                'shocking', 'panic', 'hidden', 'sensational', 'must', 'urgent'
+                'shocking', 'panic', 'hidden', 'sensational', 'must', 'urgent',
+                'catastrophic', 'apocalypse', 'collapse', 'destruction', 'perish'
             }
         }
 
@@ -54,60 +56,69 @@ class VeritasCalibratedCore:
                 'якщо', 'тоді', 'тому', 'внаслідок', 'дорівнює', 'факт',
                 'даних', 'показник', 'вимір', 'кількість', 'дослідження',
                 'статистичний', 'кореляція', 'регресія', 'аналіз', 'респондентів',
-                'метод', 'експеримент', 'гіпотеза', 'вибірка'
+                'метод', 'експеримент', 'гіпотеза', 'вибірка', 'результат',
+                'протокол', 'систем', 'модель', 'теорі', 'практичн', 'висновок'
             },
             'en': {
                 'if', 'then', 'therefore', 'consequently', 'equals', 'fact',
                 'data', 'metric', 'measurement', 'quantity', 'research',
                 'statistical', 'correlation', 'regression', 'analysis', 'study',
-                'method', 'experiment', 'hypothesis', 'sample', 'respondents'
+                'method', 'experiment', 'hypothesis', 'sample', 'respondents',
+                'result', 'protocol', 'system', 'model', 'theory', 'conclusion'
             }
         }
 
-        # Academic indicators - РОЗШИРЕНО
+        # Academic indicators - УТОЧНЕНО
         self.academic_markers = {
             'uk': {
-                'дослідження', 'аналіз', 'метод', 'експеримент', 'гіпотеза',
+                'дослідження', 'аналіз', 'методолог', 'експеримент', 'гіпотеза',
                 'респондент', 'статистичн', 'кореляц', 'регрес', 'вибірк',
                 'науков', 'публікац', 'журнал', 'конференц', 'протокол',
                 'архітектур', 'систем', 'алгоритм', 'модель', 'теорі',
                 'практичн', 'результат', 'висновок', 'апроксимаці', 'синтез',
-                'верифікац', 'калібровка', 'детермінізм', 'ентропі', 'вердикт',
+                'верифікац', 'калібровка', 'детермінізм', 'вердикт',
                 'категорі', 'таксономі', 'епістемолог', 'семантичн'
             },
             'en': {
-                'research', 'study', 'analysis', 'method', 'experiment',
+                'research', 'study', 'analysis', 'methodology', 'experiment',
                 'hypothesis', 'respondent', 'statistical', 'correlation',
                 'regression', 'sample', 'scientific', 'publication', 'journal',
                 'conference', 'protocol', 'architecture', 'system', 'algorithm',
                 'model', 'theory', 'practice', 'result', 'conclusion',
                 'approximation', 'synthesis', 'verification', 'calibration',
-                'determinism', 'entropy', 'verdict', 'category', 'taxonomy',
+                'determinism', 'verdict', 'category', 'taxonomy',
                 'epistemological', 'semantic'
             }
         }
 
-        # FIXED: Only REAL conspiracy/pseudoscience
+        # ВИПРАВЛЕНО: Тільки справжня конспірологія, без політичних/військових термінів
         self.chaos_markers = {
             'uk': {
-                'рептилоїд', 'масон', 'чіпува', 'плоскоземель', 'плоск', 
+                'рептилоїд', 'масон', 'чіпува', 'плоскоземель', 'плоскоземл', 
                 'ілюмінат', 'глобаліст', 'світова змова', 'заговір', 'інопланетн',
-                'нібіру', 'анунак', 'хаос', 'дезорієнтац', 'маніпуляц'
+                'нібіру', 'анунак', 'хаос', 'дезорієнтац', 'маніпуляц', 'хімітрейл',
+                'психотрон', 'біогенн', 'універсальн змов', 'теорії змов',
+                'прибулець', 'рептилі', 'змовник', 'таємн орден', 'світов правлін'
             },
             'en': {
                 'lizard', 'reptilian', 'freemason', 'flat earth', 'illuminati',
                 'globalist', 'new world order', 'microchip implant', 'alien',
-                'nibiru', 'annunaki', 'chaos', 'disorientation', 'manipulation'
+                'nibiru', 'annunaki', 'chaos', 'disorientation', 'manipulation',
+                'chemtrail', 'psychotronic', 'bioweapon', 'universal conspiracy',
+                'conspiracy theory', 'reptilian', 'secret order', 'world government'
             }
         }
 
-        # РОЗШИРЕНО: More incompatible clusters
+        # ВИПРАВЛЕНО: Кластери для явної маячні, без політичних/військових тем
         self.incompatible_clusters = [
-            {'квантов', 'борщ', 'каструл', 'зажарк', 'ложк', 'кухн', 'буряк', 'сметан', 'суп'},
-            {'рептилоїд', 'масон', 'змов', 'контролю', 'таємн', 'прибулець'},
-            {'астральн', 'карм', 'чакр', 'вібрац', 'енерг', 'біопол', 'мультивсесвіт'},
-            {'глобальн', 'дестабілізац', 'когнітив', 'поле', 'резонанс', 'нелокальн'},
-            {'планк', 'гейзенберг', 'вакуум', 'флуктуац', 'тунель', 'ефект', 'шлунок'}
+            # Квантова фізика + кухня (явна маячня)
+            {'квантов', 'борщ', 'каструл', 'зажарк', 'ложк', 'кухн', 'буряк', 'сметан', 'суп', 'моркв', 'картопл'},
+            # Конспірологія без політики
+            {'рептилоїд', 'масон', 'змов', 'таємн', 'прибулець', 'інопланет', 'нібіру', 'анунак'},
+            # Езотерика + наука
+            {'астральн', 'карм', 'чакр', 'вібрац', 'енерг', 'біопол', 'мультивсесвіт', 'кристалізац'},
+            # Наука + кулінарія (маячня)
+            {'дискретн', 'вектор', 'ентропі', 'каструл', 'сметан', 'бульйон', 'термодинамік', 'черпак', 'хвильов', 'функц'}
         ]
 
     def detect_language(self, text: str) -> str:
@@ -181,7 +192,7 @@ class VeritasCalibratedCore:
                     if pattern in word or word in pattern:
                         match_count += 1
                         break
-            if match_count >= 2:
+            if match_count >= 3:  # Підвищено з 2 до 3 для меншої чутливості
                 return 0.9  # HIGH sanity penalty for obvious nonsense
         return 0.0
 
@@ -219,15 +230,15 @@ class VeritasCalibratedCore:
         # FIXED: Density-based chaos
         chaos_density = markers['chaos'] / word_count if word_count > 0 else 0
 
-        # Academic context - ПОЛІПШЕНА логіка
+        # Academic context - УТОЧНЕНО
         academic_density = markers['academic'] / word_count if word_count > 0 else 0
-        # Визначаємо академічність за кількома критеріями
+        # Визначаємо академічність за більш строгими критеріями
         is_academic = False
-        if academic_density > 0.01:  # Знижений поріг з 0.03 до 0.01
+        if academic_density > 0.015 and markers['academic'] > 5:  # Вищий поріг
             is_academic = True
-        elif markers['academic'] > 8:  # Або якщо багато академічних слів
+        elif markers['academic'] > 10 and word_count > 500:  # Для довгих текстів
             is_academic = True
-        elif markers['signal'] > 50 and complexity < 0.6:  # Багато сигнальних слів + низька складність
+        elif markers['signal'] > 30 and markers['academic'] > 3 and complexity < 0.5:
             is_academic = True
 
         # Noise/signal ratio
@@ -267,7 +278,7 @@ class VeritasCalibratedCore:
         else:
             status, verdict = 'CRITICAL', 'КРИТИЧНИЙ ІНФОРМАЦІЙНИЙ ХАОС'
 
-        # УЗГОДЖЕНІ КЛЮЧІ для diagnostics (важливо для фронтенду)
+        # УЗГОДЖЕНІ КЛЮЧИ для diagnostics (важливо для фронтенду)
         return {
             'entropy': round(final_entropy, 3),
             'status': status,
