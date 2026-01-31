@@ -92,6 +92,7 @@ class VeritasCalibratedCore:
         }
 
         # ВИПРАВЛЕНО: Тільки справжня конспірологія, без загальних слів
+        # Видалено слова, що можуть бути в новинах (типу "тимчасово окуповані", "жива сила" тощо)
         self.chaos_markers = {
             'uk': {
                 'рептилоїд', 'плоскоземель', 'плоскоземл', 'ілюмінат',
@@ -110,6 +111,7 @@ class VeritasCalibratedCore:
         }
 
         # РАДИКАЛЬНО СПРОЩЕНО: тільки ОЧЕВИДНА маячня
+        # Видалено кластери, які можуть спрацювати на новинні тексти
         self.incompatible_clusters = [
             # Квантова фізика + кухня (явна маячня)
             {'квантов', 'борщ', 'каструл', 'сметан', 'бульйон'},
@@ -120,9 +122,55 @@ class VeritasCalibratedCore:
             {'дискретн', 'вектор', 'буряк', 'резонанс', 'нелокальн'}
         ]
 
+        # Додано: список слів, що ідентифікують військовий контекст
+        self.military_context_indicators = {
+            'uk': {
+                'тимчасово окуповані', 'тимчасово окупована', 'окупаційна адміністрація',
+                'збройні сили', 'сили оборони', 'жива сила', 'бойовий потенціал',
+                'наступальні спроможності', 'завдано ураження', 'пункт управління',
+                'район населеного пункту', 'втрати противника', 'генеральний штаб',
+                'результати удару', 'уточнюються', 'зсу', 'зсу рф', 'бпла',
+                'мотострілецька бригада', 'зосередження живої сили', 'військовий об’єкт',
+                'противник', 'агресор', 'тимчасово окуповані території', 'склад матеріально-технічних засобів'
+            },
+            'en': {
+                'temporarily occupied', 'armed forces', 'defense forces', 'combat potential',
+                'offensive capabilities', 'strike', 'command post', 'settlement area',
+                'enemy losses', 'general staff', 'strike results', 'clarified',
+                'military object', 'opponent', 'aggressor'
+            }
+        }
+
+        # Додано: список слів, що ідентифікують новинний контекст
+        self.news_context_indicators = {
+            'uk': {
+                'повідомляє', 'інформує', 'зазначається', 'окремо зазначається',
+                'крім того', 'також', 'при цьому', 'за даними', 'джерело',
+                'новини', 'звіт', 'пресреліз', 'редакція', 'кореспондент'
+            },
+            'en': {
+                'reports', 'informs', 'noted', 'separately noted',
+                'in addition', 'also', 'at the same time', 'according to', 'source',
+                'news', 'report', 'press release', 'editorial', 'correspondent'
+            }
+        }
+
     def detect_language(self, text: str) -> str:
         ukrainian_chars = re.findall(r'[їієґ]', text.lower())
         return 'uk' if len(ukrainian_chars) > 3 else 'en'
+
+    def _has_context(self, text: str, lang: str, indicators: dict) -> bool:
+        """Перевіряє, чи текст містить слова з вказаного списку індикаторів."""
+        words = set(re.findall(r'\w+', text.lower()))
+        for phrase in indicators.get(lang, set()):
+            # Якщо індикатор складається з кількох слів, шукаємо підрядок
+            if ' ' in phrase:
+                if phrase in text.lower():
+                    return True
+            else:
+                if phrase in words:
+                    return True
+        return False
 
     def _shannon_entropy(self, text: str) -> float:
         if not text:
@@ -182,7 +230,21 @@ class VeritasCalibratedCore:
             'academic': academic_count
         }
 
-    def _check_sanity(self, words: list) -> float:
+    def _check_sanity(self, words: list, text: str, lang: str) -> float:
+        # Спочатку перевіряємо, чи текст не є новинним або військовим звітом.
+        # Якщо так, то значно знижуємо штраф.
+        has_military_context = self._has_context(text, lang, self.military_context_indicators)
+        has_news_context = self._has_context(text, lang, self.news_context_indicators)
+
+        # Якщо текст має ознаки військового або новинного контексту, то не штрафуємо за несумісність
+        # (або суттєво знижуємо штраф).
+        if has_military_context or has_news_context:
+            # У таких текстах дуже низька ймовірність справжньої несумісності.
+            # Можна повернути 0 або дуже мале значення.
+            # Але все ж перевіримо на явну маячню.
+            pass
+        # Якщо контексту немає, то застосовуємо стандартну перевірку.
+
         words_lower = [w.lower() for w in words]
         for cluster in self.incompatible_clusters:
             match_count = 0
@@ -193,6 +255,9 @@ class VeritasCalibratedCore:
                         break
             # Тільки при 3+ збігах з одного кластеру
             if match_count >= 3:
+                # Але якщо це військовий або новинний контекст, то знижуємо штраф
+                if has_military_context or has_news_context:
+                    return 0.1  # Дуже низький штраф замість 0.9
                 return 0.9
         return 0.0
 
@@ -223,7 +288,7 @@ class VeritasCalibratedCore:
         shannon = self._shannon_entropy(text)
         complexity = self._calculate_complexity(text)
         markers = self._count_markers(words, lang)
-        sanity_penalty = self._check_sanity(words)
+        sanity_penalty = self._check_sanity(words, text, lang)
         number_density = self._calculate_number_density(text, word_count)
         shout_factor = self._calculate_shout_factor(text, word_count)
 
@@ -239,6 +304,18 @@ class VeritasCalibratedCore:
             is_academic = True
         elif markers['signal'] > 50 and markers['academic'] > 5 and complexity < 0.6:
             is_academic = True
+
+        # Додатково: визначення військового та новинного контексту для корекції
+        has_military_context = self._has_context(text, lang, self.military_context_indicators)
+        has_news_context = self._has_context(text, lang, self.news_context_indicators)
+
+        # Корекція chaos_density та sanity_penalty для військових/новинних текстів
+        if has_military_context or has_news_context:
+            # Знижуємо chaos_density, оскільки багато термінів не є конспірологією
+            chaos_density *= 0.1
+            # Якщо sanity_penalty не було знижено в _check_sanity, знижуємо її тут
+            if sanity_penalty > 0:
+                sanity_penalty *= 0.1
 
         # Noise/signal ratio
         if markers['signal'] + markers['noise'] > 0:
@@ -262,6 +339,10 @@ class VeritasCalibratedCore:
         # Academic correction
         if is_academic:
             base_entropy *= 0.6
+
+        # Додаткова корекція для військових/новинних текстів
+        if has_military_context or has_news_context:
+            base_entropy *= 0.7
 
         final_entropy = min(0.99, max(0.0, base_entropy))
 
