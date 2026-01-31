@@ -72,6 +72,7 @@ def analyze():
         source = 'Manual Input'
         title = 'Manual Input'
         text_to_analyze = ""
+        extracted_text_for_display = ""
 
         if url:
             req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
@@ -80,10 +81,14 @@ def analyze():
             ext = extractor.extract_from_url(url, html)
             if not ext['success']: raise Exception(ext['error'])
             text_to_analyze = ext['text']
+            extracted_text_for_display = ext['text']
             source = ext['source']
             title = ext['title']
         else:
             text_to_analyze = raw_text
+            extracted_text_for_display = raw_text
+            if data.get('source'):
+                source = data.get('source')
 
         if not text_to_analyze or len(text_to_analyze) < 10:
             return jsonify({'error': 'Content too short'}), 400
@@ -170,6 +175,9 @@ def analyze():
             'shout_factor': shout_factor,
             'noise_markers': noise_markers,
             'signal_markers': signal_markers,
+            # Витягнутий текст для відображення
+            'extracted_text': extracted_text_for_display[:2000] + ('...' if len(extracted_text_for_display) > 2000 else ''),
+            'extracted_text_length': len(extracted_text_for_display),
             # Результати аналізу впливу
             'emotional_pressure': emotional_pressure,
             'disorientation_risk': disorientation_risk,
