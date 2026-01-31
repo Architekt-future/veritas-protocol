@@ -126,6 +126,9 @@ def analyze():
         text = data.get('text', '').strip()
         source = data.get('source', 'Manual Input')
         title = 'Manual Input'
+
+        text_to_analyze = ""
+        mode = ""
         
         # URL MODE: Scrape content
         if url:
