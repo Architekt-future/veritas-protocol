@@ -20,7 +20,7 @@
         }
 
         .container {
-            max-width: 900px;
+            max-width: 1200px;
             margin: 0 auto;
         }
 
@@ -262,42 +262,99 @@
             50% { opacity: 0.6; }
         }
 
-        .diagnostics {
-            background: rgba(0, 0, 0, 0.6);
-            border-radius: 10px;
-            padding: 20px;
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
             margin-top: 30px;
         }
 
-        .diagnostics h3 {
-            color: #00d4ff;
-            margin-bottom: 15px;
-            font-size: 1.2em;
+        .metric-card {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 4px solid #00d4ff;
         }
 
-        .diag-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
+        .metric-card.critical {
+            border-left-color: #ff4444;
         }
 
-        .diag-item {
-            background: rgba(0, 0, 0, 0.5);
-            padding: 15px;
-            border-radius: 8px;
-            border-left: 3px solid #00d4ff;
+        .metric-card.warning {
+            border-left-color: #ffaa00;
         }
 
-        .diag-label {
-            font-size: 0.85em;
+        .metric-label {
+            font-size: 0.9em;
             color: #888;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
-        .diag-value {
-            font-size: 1.3em;
+        .metric-value {
+            font-size: 1.8em;
             color: #00d4ff;
             font-weight: bold;
+        }
+
+        .metric-card.critical .metric-value {
+            color: #ff4444;
+        }
+
+        .metric-card.warning .metric-value {
+            color: #ffaa00;
+        }
+
+        .metric-description {
+            font-size: 0.8em;
+            color: #aaa;
+            margin-top: 8px;
+            line-height: 1.4;
+        }
+
+        .influence-analysis {
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 40px;
+            border: 2px solid rgba(255, 170, 0, 0.5);
+        }
+
+        .influence-analysis h3 {
+            color: #ffaa00;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .influence-result {
+            font-size: 1.1em;
+            line-height: 1.6;
+            color: #e0e0e0;
+        }
+
+        .influence-flag {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin-right: 10px;
+            font-size: 0.9em;
+        }
+
+        .flag-danger {
+            background: rgba(255, 68, 68, 0.3);
+            color: #ff4444;
+        }
+
+        .flag-warning {
+            background: rgba(255, 170, 0, 0.3);
+            color: #ffaa00;
+        }
+
+        .flag-safe {
+            background: rgba(0, 212, 255, 0.3);
+            color: #00d4ff;
         }
 
         .extracted-text {
@@ -354,7 +411,7 @@
     <div class="container">
         <div class="header">
             <h1>💠 VERITAS TERMINAL</h1>
-            <div class="subtitle">Information Entropy Analyzer v3.1 Calibrated (Orpheus)</div>
+            <div class="subtitle">Information Entropy & Influence Analyzer v3.2 Calibrated</div>
             <div class="api-status checking" id="apiStatus">⚙️ Connecting...</div>
         </div>
 
@@ -408,12 +465,12 @@
         </div>
 
         <div class="panel results" id="resultsPanel">
-            <!-- Results will be inserted here -->
+            <!-- Results will be inserted here by JavaScript -->
         </div>
 
         <div class="footer">
-            <p>💠 Veritas Protocol Terminal v3.1 - Orpheus Calibrated</p>
-            <p>Backend: Python Flask (Weighted Scoring + Academic Context)</p>
+            <p>💠 Veritas Protocol Terminal v3.2 - Orpheus Calibrated</p>
+            <p>Backend: Python Flask (Weighted Scoring + Influence Analysis)</p>
             <p>Co-authored by Dmytro Kholodniak & Chimeric Collective</p>
         </div>
     </div>
@@ -426,11 +483,11 @@
 
         async function checkAPI() {
             const statusEl = document.getElementById('apiStatus');
-            
+
             try {
                 const response = await fetch(API_URL, { method: 'GET' });
                 const data = await response.json();
-                
+
                 if (data.status === 'online') {
                     statusEl.textContent = '✅ API Online';
                     statusEl.className = 'api-status online';
@@ -443,233 +500,183 @@
             }
         }
 
-       function switchMode(mode, element) {
-    currentMode = mode;
-    
-    // 1. Оновлюємо вигляд вкладок (табів)
-    document.querySelectorAll('.mode-tab').forEach(tab => {
-        tab.classList.remove('active');
-    });
+        function switchMode(mode) {
+            currentMode = mode;
 
-    // Якщо ми передали 'this' у функцію — підсвічуємо його, 
-    // інакше шукаємо через event (для страховки)
-    if (element) {
-        element.classList.add('active');
-    } else if (window.event) {
-        window.event.target.classList.add('active');
-    }
-    
-    // 2. Перемикаємо видимість контейнерів для вводу
-    const urlModeEl = document.getElementById('urlMode');
-    const textModeEl = document.getElementById('textMode');
-    
-    if (mode === 'url') {
-        urlModeEl.classList.add('active');
-        textModeEl.classList.remove('active');
-        // Очищуємо поле тексту, якщо перейшли на URL (за бажанням)
-        document.getElementById('textContent').value = ''; 
-    } else {
-        textModeEl.classList.add('active');
-        urlModeEl.classList.remove('active');
-        // Очищуємо поле URL, якщо перейшли на текст
-        document.getElementById('urlInput').value = '';
-    }
+            document.querySelectorAll('.mode-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
 
-    // 3. Ховаємо блок з витягнутим текстом при зміні режиму, 
-    // щоб старі результати не муляли очі
-    const extractedContainer = document.getElementById('extractedTextContainer');
-    if (extractedContainer) {
-        extractedContainer.style.display = 'none';
-    }
-}
+            const urlModeEl = document.getElementById('urlMode');
+            const textModeEl = document.getElementById('textMode');
 
-       async function analyze() {
+            if (mode === 'url') {
+                document.querySelector('.mode-tab:nth-child(1)').classList.add('active');
+                urlModeEl.classList.add('active');
+                textModeEl.classList.remove('active');
+                document.getElementById('textInput').value = '';
+                document.getElementById('sourceInput').value = '';
+            } else {
+                document.querySelector('.mode-tab:nth-child(2)').classList.add('active');
+                textModeEl.classList.add('active');
+                urlModeEl.classList.remove('active');
+                document.getElementById('urlInput').value = '';
+            }
+
+            const extractedContainer = document.getElementById('extractedTextContainer');
+            if (extractedContainer) {
+                extractedContainer.style.display = 'none';
+            }
+        }
+
+        async function analyze() {
             const analyzeBtn = document.getElementById('analyzeBtn');
+            const urlInput = document.getElementById('urlInput').value.trim();
+            const textInput = document.getElementById('textInput').value.trim();
+            const sourceInput = document.getElementById('sourceInput').value.trim();
             const resultsPanel = document.getElementById('resultsPanel');
 
-            let payload = {};
-            if (currentMode === 'url') {
-                const url = document.getElementById('urlInput').value.trim();
-                if (!url) { alert('❌ Please enter a URL'); return; }
-                payload = { url };
-            } else {
-                const text = document.getElementById('textInput').value.trim();
-                const source = document.getElementById('sourceInput').value.trim();
-                if (!text) { alert('❌ Please enter text'); return; }
-                payload = { text, source: source || 'Manual Input' };
+            if ((currentMode === 'url' && !urlInput) || (currentMode === 'text' && !textInput)) {
+                alert('Будь ласка, введіть ' + (currentMode === 'url' ? 'URL' : 'текст'));
+                return;
             }
 
             analyzeBtn.disabled = true;
             analyzeBtn.textContent = '⏳ ANALYZING...';
-            resultsPanel.innerHTML = '<div class="loading">⚙️ Processing with calibrated engine...</div>';
-            resultsPanel.classList.add('show');
+
+            resultsPanel.classList.remove('show');
+            resultsPanel.innerHTML = '<div class="loading">⏳ Аналіз запущено...</div>';
 
             try {
+                const requestData = currentMode === 'url' ? { url: urlInput } : { 
+                    text: textInput,
+                    source: sourceInput || 'Manual Input'
+                };
+
                 const response = await fetch(API_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify(requestData)
                 });
 
-                const data = await response.json();
-                if (data.error) throw new Error(data.error);
+                const result = await response.json();
 
-                // Дістаємо ентропію для візуалізації
-                const entropy = data.shannon_entropy || data.entropy_score || 0;
+                if (!response.ok) {
+                    throw new Error(result.error || 'Помилка сервера');
+                }
 
-                // МАЛЮЄМО ВСЕ В ОДНОМУ МІСЦІ
-                resultsPanel.innerHTML = `
-                    <div class="result-card">
-                        <div class="verdict-box ${data.status_class || 'success'}">
-                            <h3>${data.verdict || 'ANALYSIS COMPLETE'}</h3>
-                            <p>${data.explanation || ''}</p>
-                        </div>
-
-                        <div class="entropy-display">
-                            <div class="entropy-label">SHANNON ENTROPY</div>
-                            <div class="entropy-value" style="color: ${getEntropyColor(entropy)}">
-                                ${entropy.toFixed(3)}
-                            </div>
-                            
-                            <div class="entropy-bar-container">
-                                <div class="entropy-bar" 
-                                     style="width: ${Math.round(entropy * 100)}%; background: ${getEntropyGradient(entropy)};">
-                                    ${Math.round(entropy * 100)}%
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="stats-grid">
-                            <div class="stat-item">
-                                <span class="label">Chaos Markers</span>
-                                <span class="value">${data.chaos_markers || 0}</span>
-                            </div>
-                            <div class="stat-item">
-                                <span class="label">Source</span>
-                                <span class="value">${data.source || 'Unknown'}</span>
-                            </div>
-                        </div>
-
-                        ${(currentMode === 'url' && data.extracted_text) ? `
-                            <div class="extracted-section">
-                                <strong>Extracted Content Preview:</strong>
-                                <div class="text-preview">${data.extracted_text}</div>
-                            </div>
-                        ` : ''}
-                    </div>
-                `;
+                displayResults(result);
 
             } catch (error) {
-                resultsPanel.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
-            } finally {
-                analyzeBtn.disabled = false;
-                analyzeBtn.textContent = '🚀 ANALYZE SIGNAL';
-            }
-        }
-
-        function displayResults(result) {
-            const resultsPanel = document.getElementById('resultsPanel');
-            const entropy = result.entropy;
-            const status = result.status.toLowerCase();
-
-            let html = `
-                <div class="entropy-display">
-                    <div class="entropy-value" style="color: ${getEntropyColor(entropy)}">
-                        ${entropy.toFixed(3)}
-                    </div>
-                    
-                    <div class="entropy-bar-container">
-                        <div class="entropy-bar" 
-                             style="width: ${Math.round(entropy * 100)}%; background: ${getEntropyGradient(entropy)};">
-                            ${Math.round(entropy * 100)}%
-                        </div>
-                    </div>
-
-                    <div class="verdict ${status}">
-                        ${result.verdict}
-                    </div>
-                </div>
-            `;
-
-            // Extracted text (for URL mode)
-            if (result.extracted_text) {
-                html += `
-                    <div class="extracted-text">
-                        <h4>📄 Extracted Text Preview:</h4>
-                        <div>${result.extracted_text}</div>
+                resultsPanel.innerHTML = `
+                    <div class="error">
+                        ❌ Помилка: ${error.message}
                     </div>
                 `;
+            } finally {
+                analyzeBtn.disabled = false;
+                analyzeBtn.textContent = '🔍 ANALYZE';
+                resultsPanel.classList.add('show');
             }
+        }
 
-            // Diagnostics
-            html += `
-                <div class="diagnostics">
-                    <h3>📊 DIAGNOSTICS</h3>
-                    <div class="diag-grid">
+        function displayResults(data) {
+            const resultsPanel = document.getElementById('resultsPanel');
+            const statusClass = data.status ? data.status.toLowerCase() : 'unknown';
+
+            const getBarColor = (status) => {
+                switch(status.toUpperCase()) {
+                    case 'TRUSTED': return '#00ff88';
+                    case 'ACCEPTABLE': return '#00d4ff';
+                    case 'SUSPICIOUS': return '#ffaa00';
+                    case 'WARNING': return '#ff6464';
+                    case 'CRITICAL': return '#ff0000';
+                    default: return '#888';
+                }
+            };
+
+            const getBarWidth = (entropy) => Math.min(100, Math.max(5, entropy * 100));
+
+            const metrics = [
+                { label: 'ЕНТРОПІЯ ШЕННОНА', value: data.shannon_entropy, desc: 'Міра випадковості та невизначеності в тексті' },
+                { label: 'СКЛАДНІСТЬ', value: data.complexity, desc: 'Структурна складність тексту' },
+                { label: 'ІНДЕКС ХАОСУ', value: data.total_chaos_index, desc: 'Загальний рівень інформаційного хаосу' },
+                { label: 'МАРКЕРИ ШУМУ', value: data.noise_markers, desc: 'Кількість слів, що створюють емоційний шум' },
+                { label: 'МАРКЕРИ СИГНАЛУ', value: data.signal_markers, desc: 'Кількість логічних та фактологічних слів' },
+                { label: 'МАРКЕРИ ХАОСУ', value: data.chaos_markers, desc: 'Позначки конспірології та псевдонауки' },
+                { label: 'ФАКТОР КРИКУ', value: data.shout_factor, desc: 'Використання капслоку та знаків оклику' },
+                { label: 'ЩІЛЬНІСТЬ ЧИСЕЛ', value: data.number_density, desc: 'Частота використання чисел' },
+                { label: 'ШТРАФ САНІТАРІЇ', value: data.sanity_penalty, desc: 'Порушення логічної сумісності' },
+                { label: 'СЛІВ', value: data.word_count, desc: 'Загальна кількість слів' },
+                { label: 'СИМВОЛІВ', value: data.char_count, desc: 'Загальна кількість символів' }
+            ];
+
+            const influenceHTML = data.emotional_pressure || data.disorientation_risk ? `
+                <div class="influence-analysis">
+                    <h3>🧠 АНАЛІЗ ЕМОЦІЙНОГО ВПЛИВУ ТА ДЕЗОРІЄНТАЦІЇ</h3>
+                    <div class="influence-result">
+                        ${data.emotional_pressure ? '<span class="influence-flag flag-danger">ЕМОЦІЙНИЙ ТИСК</span>' : ''}
+                        ${data.disorientation_risk ? '<span class="influence-flag flag-warning">РИЗИК ДЕЗОРІЄНТАЦІЇ</span>' : ''}
+                        ${!data.emotional_pressure && !data.disorientation_risk ? '<span class="influence-flag flag-safe">МІНІМАЛЬНИЙ ВПЛИВ</span>' : ''}
+                        <p>${data.emotional_analysis || 'Аналіз не доступний.'}</p>
+                    </div>
+                </div>
+            ` : '';
+
+            const metricsHTML = metrics.map(metric => {
+                const isCritical = metric.label.includes('ХАОС') && metric.value > 10;
+                const isWarning = metric.label.includes('ШУМУ') && metric.value > 5;
+                const cardClass = isCritical ? 'critical' : (isWarning ? 'warning' : '');
+                return `
+                    <div class="metric-card ${cardClass}">
+                        <div class="metric-label">${metric.label}</div>
+                        <div class="metric-value">${typeof metric.value === 'number' ? metric.value.toFixed(3) : metric.value}</div>
+                        <div class="metric-description">${metric.desc}</div>
+                    </div>
+                `;
+            }).join('');
+
+            resultsPanel.innerHTML = `
+                <div class="entropy-display">
+                    <h2>📊 РЕЗУЛЬТАТ АНАЛІЗУ</h2>
+                    <div class="entropy-value" style="color: ${getBarColor(data.status)}">
+                        ${data.entropy ? data.entropy.toFixed(3) : 'N/A'}
+                    </div>
+                    <div class="entropy-bar-container">
+                        <div class="entropy-bar" 
+                             style="width: ${getBarWidth(data.entropy)}%; 
+                                    background: ${getBarColor(data.status)};">
+                            ${data.entropy ? (data.entropy * 100).toFixed(1) + '%' : ''}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="verdict ${statusClass}">
+                    ${data.verdict || 'Немає вердикту'}
+                </div>
+
+                ${influenceHTML}
+
+                <div class="metrics-grid">
+                    ${metricsHTML}
+                </div>
+
+                ${data.extracted_text ? `
+                    <div class="extracted-text" id="extractedTextContainer">
+                        <h4>📄 Витягнутий текст:</h4>
+                        <p>${data.extracted_text.substring(0, 500)}${data.extracted_text.length > 500 ? '...' : ''}</p>
+                    </div>
+                ` : ''}
             `;
 
-            if (result.diagnostics) {
-                const diag = result.diagnostics;
-                
-                const items = [
-                    ['Shannon Entropy', diag.shannon_entropy || 'N/A'],
-                    ['Complexity', diag.complexity || 'N/A'],
-                    ['Signal Markers', diag.signal_markers || 'N/A'],
-                    ['Noise Markers', diag.noise_markers || 'N/A'],
-                    ['Chaos Markers', diag.chaos_markers || 0],
-                    ['Chaos Density', diag.chaos_density ? (diag.chaos_density * 100).toFixed(2) + '%' : 'N/A'],
-                    ['Academic Markers', diag.academic_markers || 0],
-                    ['Academic Context', diag.is_academic_context ? 'YES ✅' : 'NO'],
-                    ['Number Density', diag.number_density || 'N/A'],
-                    ['Shout Factor', diag.shout_factor || 'N/A'],
-                    ['Sanity Penalty', diag.sanity_penalty || 'N/A'],
-                    ['Word Count', diag.word_count || 'N/A'],
-                    ['Language', result.language || 'N/A'],
-                    ['Source', result.source || 'Unknown']
-                ];
-
-                items.forEach(([label, value]) => {
-                    let borderColor = '#00d4ff';
-                    if (label === 'Sanity Penalty' && diag.sanity_violations) {
-                        borderColor = '#ff0000';
-                    }
-                    if (label === 'Chaos Density' && diag.chaos_density > 0.05) {
-                        borderColor = '#ff0000';
-                    }
-                    
-                    html += `
-                        <div class="diag-item" style="border-left-color: ${borderColor};">
-                            <div class="diag-label">${label}</div>
-                            <div class="diag-value">${value}</div>
-                        </div>
-                    `;
-                });
-            }
-
-            html += `</div></div>`;
-            resultsPanel.innerHTML = html;
-        }
-
-        function getEntropyColor(entropy) {
-            if (entropy < 0.30) return '#00ff88'; // Чистий, спокійний текст
-            if (entropy < 0.45) return '#00d4ff'; // Нормальний робочий текст
-            if (entropy < 0.55) return '#ffaa00'; // Помірна складність / Увага
-            if (entropy < 0.60) return '#ff6464'; // Підозріло висока щільність (Твій борщ попаде сюди)
-            return '#ff0000'; // Критичний хаос (Трамп і Епштейн будуть тут)
-        }
-
-        function getEntropyGradient(entropy) {
-            if (entropy < 0.30) return 'linear-gradient(90deg, #00ff88, #00cc66)';
-            if (entropy < 0.45) return 'linear-gradient(90deg, #00d4ff, #0099ff)';
-            if (entropy < 0.55) return 'linear-gradient(90deg, #ffaa00, #ff8800)';
-            if (entropy < 0.60) return 'linear-gradient(90deg, #ff6464, #ff4444)';
-            return 'linear-gradient(90deg, #ff0000, #cc0000)';
+            resultsPanel.classList.add('show');
         }
 
         function clearAll() {
             document.getElementById('urlInput').value = '';
             document.getElementById('textInput').value = '';
             document.getElementById('sourceInput').value = '';
+            document.getElementById('resultsPanel').innerHTML = '';
             document.getElementById('resultsPanel').classList.remove('show');
         }
     </script>
