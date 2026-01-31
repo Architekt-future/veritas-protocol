@@ -90,7 +90,7 @@ class VeritasCalibratedCore:
             ]
         }
 
-    def detect_patterns(self, text: str) -> list:
+    def detect_patterns(self, text):
         """Виявляє критичні паттерни"""
         detected = []
         text_lower = text.lower()
@@ -103,7 +103,7 @@ class VeritasCalibratedCore:
         
         return detected
 
-    def count_terms(self, text: str) -> dict:
+    def count_terms(self, text):
         """Підраховує терміни за категоріями"""
         counts = {}
         text_lower = text.lower()
@@ -117,7 +117,7 @@ class VeritasCalibratedCore:
         
         return counts
 
-    def calculate_semantic_chaos(self, text: str) -> float:
+    def calculate_semantic_chaos(self, text):
         """Обчислює семантичний хаос"""
         sentences = re.split(r'[.!?]+', text)
         if len(sentences) < 3:
@@ -140,7 +140,7 @@ class VeritasCalibratedCore:
         chaos_score = (active_categories * 0.2) + (incompatible_pairs * 0.3)
         return min(1.0, chaos_score)
 
-    def analyze(self, text: str) -> Dict:
+    def analyze(self, text):
         """Основний метод аналізу"""
         if not text or len(text.strip()) < 20:
             return {'error': 'Text too short'}
@@ -225,7 +225,7 @@ class VeritasCalibratedCore:
             }
         }
 
-    def _calculate_shannon_entropy(self, text: str) -> float:
+    def _calculate_shannon_entropy(self, text):
         """Обчислює ентропію Шеннона"""
         if not text:
             return 0.0
@@ -253,7 +253,7 @@ class VeritasCalibratedCore:
         
         return min(1.0, normalized)
 
-    def _calculate_complexity(self, text: str) -> float:
+    def _calculate_complexity(self, text):
         """Обчислює складність тексту"""
         words = re.findall(r'\w+', text.lower())
         if len(words) < 10:
