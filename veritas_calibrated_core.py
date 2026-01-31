@@ -1,303 +1,255 @@
-"""
-Veritas Protocol - Calibrated Core Engine (FIXED v5)
-Inspired by Orpheus LAC principles:
-- Weighted scoring (not binary)
-- Density-based detection (not count)
-- Configurable thresholds
-- Academic context awareness
-"""
-
-import math
 import re
-from typing import Dict, Optional
+import math
+from collections import Counter
 
-class VeritasCalibratedCore:
-    """Calibrated entropy analysis with weighted scoring"""
-
+class VeritasAnalyzer:
+    """
+    Основний аналізатор тексту з виправленою логікою для новинних текстів
+    """
+    
     def __init__(self):
-        # Configurable thresholds
-        self.thresholds = {
-            'trusted': 0.35,
-            'acceptable': 0.55,
-            'suspicious': 0.75,
-            'critical': 0.85
+        self.noise_markers = ['неймовірно', 'шок', 'сенсація', 'невероятно', 'ви не повірите']
+        self.signal_markers = ['згідно', 'дані', 'статистика', 'дослідження', 'експерт']
+        self.academic_markers = ['методологія', 'гіпотеза', 'емпіричний', 'кореляція', 'дисперсія']
+        
+    def analyze_text(self, text):
+        """
+        Повний аналіз тексту з виправленою логікою
+        """
+        analysis = {}
+        
+        # Базові метрики
+        analysis['word_count'] = len(text.split())
+        analysis['char_count'] = len(text)
+        
+        # Оновлений аналіз логічної сумісності
+        logic_score, logic_flags = self._analyze_logical_consistency(text)
+        analysis['logic_inconsistency'] = logic_score
+        analysis['logic_flags'] = logic_flags
+        
+        # Інші метрики
+        analysis['entropy'] = self._calculate_entropy(text)
+        analysis['chaos_index'] = self._calculate_chaos_index(text)
+        analysis['noise_markers'] = self._count_markers(text, self.noise_markers)
+        analysis['signal_markers'] = self._count_markers(text, self.signal_markers)
+        analysis['chaos_markers'] = self._calibrate_chaos_markers(text)  # ОНОВЛЕНО
+        analysis['scream_factor'] = self._calculate_scream_factor(text)
+        analysis['number_density'] = self._calculate_number_density(text)
+        analysis['sanitary_penalty'] = logic_score  # Тепер відповідає логічній сумісності
+        analysis['academic_markers'] = self._count_markers(text, self.academic_markers)
+        
+        # Обчислення похідних метрик
+        analysis['noise_signal_ratio'] = (
+            analysis['noise_markers'] / analysis['signal_markers'] 
+            if analysis['signal_markers'] > 0 else 0
+        )
+        
+        analysis['influence_index'] = self._calculate_influence_index(analysis)
+        
+        # Визначення прапорів
+        flags = []
+        if logic_score > 0.7:
+            flags.append('КРИТИЧНА НЕСУМІСНІСТЬ ЛОГІКИ')
+        elif logic_score > 0.4:
+            flags.append('ЧАСТКОВА ЛОГІЧНА НЕСУМІСНІСТЬ')
+            
+        analysis['flags'] = flags
+        
+        return analysis
+    
+    def _analyze_logical_consistency(self, text):
+        """
+        ВИПРАВЛЕНА ФУНКЦІЯ: Аналіз логічної сумісності з урахуванням контексту
+        """
+        consistency_score = 0.0
+        flags = []
+        
+        # Контекстні винятки для новинних текстів
+        context_exceptions = {
+            'військовий_контекст': [
+                'тимчасово окуповані', 'тимчасово окупована', 'окупаційна адміністрація',
+                'збройні сили', 'сили оборони', 'жива сила', 'зсу рф',
+                'бойовий потенціал', 'наступальні спроможності', 'завдано ураження',
+                'пункт управління', 'район населеного пункту', 'втрати противника',
+                'генеральний штаб', 'результати удару', 'уточнюються'
+            ],
+            'новинний_контекст': [
+                'повідомляє', 'інформує', 'зазначається', 'окремо зазначається',
+                'крім того', 'також', 'при цьому', 'за даними'
+            ]
         }
-
-        # Configurable weights (Orpheus style)
-        self.weights = {
-            'shannon': 0.25,
-            'complexity': 0.15,
-            'noise_signal_ratio': 0.20,
-            'chaos_density': 0.15,
-            'sanity_violation': 0.15,
-            'shout_factor': 0.10
-        }
-
-        # Configurable chaos threshold
-        self.chaos_density_threshold = 0.05  # 5% of text
-
-        self.noise_markers = {
-            'uk': {
-                'шокуюча', 'паніка', 'приховували', 'потрясла', 'сенсація', 'терміново',
-                'катастрофічн', 'апокаліпсис', 'крах', 'знищен', 'загиб', 'жахливий',
-                'небезпека', 'злочин', 'зрада', 'зрадник', 'вбивство', 'кривавий'
-            },
-            'en': {
-                'shocking', 'panic', 'hidden', 'sensational', 'must', 'urgent',
-                'catastrophic', 'apocalypse', 'collapse', 'destruction', 'perish',
-                'horrible', 'danger', 'crime', 'betrayal', 'traitor', 'murder', 'bloody'
-            }
-        }
-
-        self.signal_markers = {
-            'uk': {
-                'якщо', 'тоді', 'тому', 'внаслідок', 'дорівнює', 'факт',
-                'даних', 'показник', 'вимір', 'кількість', 'дослідження',
-                'статистичний', 'кореляція', 'регресія', 'аналіз', 'респондентів',
-                'метод', 'експеримент', 'гіпотеза', 'вибірка', 'результат',
-                'протокол', 'систем', 'модель', 'теорі', 'практичн', 'висновок',
-                'звіт', 'документ', 'закон', 'правило', 'процедура', 'стандарт'
-            },
-            'en': {
-                'if', 'then', 'therefore', 'consequently', 'equals', 'fact',
-                'data', 'metric', 'measurement', 'quantity', 'research',
-                'statistical', 'correlation', 'regression', 'analysis', 'study',
-                'method', 'experiment', 'hypothesis', 'sample', 'respondents',
-                'result', 'protocol', 'system', 'model', 'theory', 'conclusion',
-                'report', 'document', 'law', 'rule', 'procedure', 'standard'
-            }
-        }
-
-        # Academic indicators - ВИПРАВЛЕНО
-        self.academic_markers = {
-            'uk': {
-                'дослідження', 'аналіз', 'методолог', 'експеримент', 'гіпотеза',
-                'респондент', 'статистичн', 'кореляц', 'регрес', 'вибірк',
-                'науков', 'публікац', 'журнал', 'конференц', 'протокол',
-                'архітектур', 'систем', 'алгоритм', 'модель', 'теорі',
-                'практичн', 'результат', 'висновок', 'апроксимаці', 'синтез',
-                'верифікац', 'калібровка', 'детермінізм', 'вердикт',
-                'категорі', 'таксономі', 'епістемолог', 'семантичн'
-            },
-            'en': {
-                'research', 'study', 'analysis', 'methodology', 'experiment',
-                'hypothesis', 'respondent', 'statistical', 'correlation',
-                'regression', 'sample', 'scientific', 'publication', 'journal',
-                'conference', 'protocol', 'architecture', 'system', 'algorithm',
-                'model', 'theory', 'practice', 'result', 'conclusion',
-                'approximation', 'synthesis', 'verification', 'calibration',
-                'determinism', 'verdict', 'category', 'taxonomy',
-                'epistemological', 'semantic'
-            }
-        }
-
-        # ВИПРАВЛЕНО: Тільки справжня конспірологія, без загальних слів
-        self.chaos_markers = {
-            'uk': {
-                'рептилоїд', 'плоскоземель', 'плоскоземл', 'ілюмінат',
-                'нібіру', 'анунак', 'хімітрейл', 'психотрон', 'біогенн',
-                'універсальн змов', 'теорії змов', 'прибулець', 'рептилі',
-                'змовник', 'таємн орден', 'світов правлін', 'чіпува',
-                'інопланетн', 'масон', 'глобаліст', 'світова змова'
-            },
-            'en': {
-                'reptilian', 'flat earth', 'illuminati', 'nibiru',
-                'annunaki', 'chemtrail', 'psychotronic', 'bioweapon',
-                'universal conspiracy', 'conspiracy theory', 'alien',
-                'reptilian', 'secret order', 'world government', 'microchip',
-                'freemason', 'globalist', 'new world order'
-            }
-        }
-
-        # РАДИКАЛЬНО СПРОЩЕНО: тільки ОЧЕВИДНА маячня
-        self.incompatible_clusters = [
-            # Квантова фізика + кухня (явна маячня)
-            {'квантов', 'борщ', 'каструл', 'сметан', 'бульйон'},
-            {'енерг', 'чакр', 'біопол', 'астральн', 'карм'},
-            {'мультивсесвіт', 'кристалізац', 'суп', 'черпак', 'картопл'},
-            # Абсурдні комбінації
-            {'планк', 'гейзенберг', 'моркв', 'шлунок', 'тунель'},
-            {'дискретн', 'вектор', 'буряк', 'резонанс', 'нелокальн'}
+        
+        # Нормальні логічні зв'язки
+        normal_connectors = [
+            'також', 'крім того', 'окремо', 'при цьому', 'однак', 'проте',
+            'незважаючи на', 'хоча', 'в той же час', 'з одного боку', 'з іншого боку'
         ]
-
-    def detect_language(self, text: str) -> str:
-        ukrainian_chars = re.findall(r'[їієґ]', text.lower())
-        return 'uk' if len(ukrainian_chars) > 3 else 'en'
-
-    def _shannon_entropy(self, text: str) -> float:
-        if not text:
-            return 0.0
-        char_freq = {}
-        for char in text:
-            char_freq[char] = char_freq.get(char, 0) + 1
-        entropy = 0.0
-        text_len = len(text)
-        for count in char_freq.values():
-            p = count / text_len
-            if p > 0:
-                entropy -= p * math.log2(p)
-        return min(1.0, entropy / 8.0)
-
-    def _calculate_complexity(self, text: str) -> float:
-        words = re.findall(r'\w+', text.lower())
-        if not words:
-            return 1.0
-        unique_words = len(set(words))
-        total_words = len(words)
-        diversity = unique_words / total_words
-        complexity = 1.0 - diversity
-        if total_words > 500 and complexity > 0.6:
-            complexity *= 0.7
-        return complexity
-
-    def _count_markers(self, words: list, lang: str) -> Dict:
-        noise_count = 0
-        signal_count = 0
-        chaos_count = 0
-        academic_count = 0
-
-        for word in words:
-            word_lower = word.lower()
-            for marker in self.noise_markers.get(lang, set()):
-                if marker in word_lower:
-                    noise_count += 1
-                    break
-            for marker in self.signal_markers.get(lang, set()):
-                if marker in word_lower:
-                    signal_count += 1
-                    break
-            for marker in self.chaos_markers.get(lang, set()):
-                if marker in word_lower or word_lower in marker:
-                    chaos_count += 1
-                    break
-            for marker in self.academic_markers.get(lang, set()):
-                if marker in word_lower:
-                    academic_count += 1
-                    break
-
-        return {
-            'noise': noise_count,
-            'signal': signal_count,
-            'chaos': chaos_count,
-            'academic': academic_count
+        
+        # Справжні протиріччя (тільки в межах одного речення)
+        real_contradictions = [
+            ('повністю виграли', 'повністю програли'),
+            ('абсолютно точно', 'можливо'),
+            ('завжди', 'ніколи'),
+            ('всі без винятку', 'жоден'),
+            ('підтверджено наукою', 'спростовано')
+        ]
+        
+        text_lower = text.lower()
+        
+        # Автоматично знижуємо штраф для військових новин
+        has_military_context = any(
+            phrase in text_lower for phrase in context_exceptions['військовий_контекст']
+        )
+        has_news_context = any(
+            phrase in text_lower for phrase in context_exceptions['новинний_контекст']
+        )
+        
+        if has_military_context:
+            consistency_score = 0.1  # Дуже низький штраф для військових звітів
+            return consistency_score, flags
+        
+        # Аналіз тільки для не-новинних текстів
+        sentences = re.split(r'[.!?]+', text)
+        contradiction_count = 0
+        
+        for sentence in sentences:
+            sentence_lower = sentence.lower()
+            
+            for term1, term2 in real_contradictions:
+                if term1 in sentence_lower and term2 in sentence_lower:
+                    # Перевірка чи це не частина нормального зв'язку
+                    has_normal_connector = any(
+                        connector in sentence_lower for connector in normal_connectors
+                    )
+                    
+                    if not has_normal_connector:
+                        contradiction_count += 1
+        
+        # Обчислення штрафу
+        if contradiction_count > 0:
+            consistency_score = min(0.9, contradiction_count * 0.3)
+            
+            if consistency_score > 0.7:
+                flags.append('КРИТИЧНА НЕСУМІСНІСТЬ ЛОГІКИ')
+        
+        return consistency_score, flags
+    
+    def _calibrate_chaos_markers(self, text):
+        """
+        ВИПРАВЛЕНА ФУНКЦІЯ: Калібрує маркери хаосу
+        """
+        chaos_markers = 0
+        text_lower = text.lower()
+        
+        # Справжні маркери хаосу
+        real_chaos_terms = {
+            'світова закуліса': 5,
+            'рептилоїди': 5,
+            'плоска земля': 5,
+            'хімічні стежи': 4,
+            'вакцинна змова': 4,
+            '5g випромінювання': 4,
+            'біолабораторії сша': 4,
+            'глибокий стан': 4,
+            'ілюмінати': 3,
+            'зомбування': 3
         }
-
-    def _check_sanity(self, words: list) -> float:
-        words_lower = [w.lower() for w in words]
-        for cluster in self.incompatible_clusters:
-            match_count = 0
-            for word in words_lower:
-                for pattern in cluster:
-                    if pattern in word or word in pattern:
-                        match_count += 1
+        
+        # Нормальні терміни (не рахувати)
+        normal_terms = [
+            'тимчасово окуповані', 'зсу рф', 'жива сила',
+            'пункт управління', 'бойовий потенціал',
+            'район населеного пункту', 'генеральний штаб'
+        ]
+        
+        # Рахуємо тільки справжні маркери
+        for term, weight in real_chaos_terms.items():
+            if term in text_lower:
+                # Перевіряємо чи це не частина нормального контексту
+                is_normal = False
+                for normal in normal_terms:
+                    if normal in text_lower and term not in normal:
+                        is_normal = False
                         break
-            # Тільки при 3+ збігах з одного кластеру
-            if match_count >= 3:
-                return 0.9
-        return 0.0
-
-    def _calculate_number_density(self, text: str, word_count: int) -> float:
-        if word_count == 0:
-            return 0.0
-        numbers = re.findall(r'\d+\.?\d*', text)
-        return len(numbers) / (word_count + 1)
-
-    def _calculate_shout_factor(self, text: str, word_count: int) -> float:
-        if word_count == 0:
-            return 0.0
-        caps_words = len([w for w in text.split() if w.isupper() and len(w) > 5])
-        exclamations = text.count('!')
-        questions = text.count('?')
-        shout = (exclamations * 2 + caps_words * 3 + questions) / (word_count + 1)
-        return min(shout, 1.0)
-
-    def analyze(self, text: str) -> Dict:
-        """MAIN ANALYSIS (FIXED with Orpheus principles)"""
-        if not text or len(text.strip()) < 10:
-            return {'error': 'Text too short'}
-
-        lang = self.detect_language(text)
-        words = re.findall(r'\w+', text.lower())
-        word_count = len(words)
-
-        shannon = self._shannon_entropy(text)
-        complexity = self._calculate_complexity(text)
-        markers = self._count_markers(words, lang)
-        sanity_penalty = self._check_sanity(words)
-        number_density = self._calculate_number_density(text, word_count)
-        shout_factor = self._calculate_shout_factor(text, word_count)
-
-        # FIXED: Density-based chaos
-        chaos_density = markers['chaos'] / word_count if word_count > 0 else 0
-
-        # Academic context - ВИПРАВЛЕНО
-        academic_density = markers['academic'] / word_count if word_count > 0 else 0
-        is_academic = False
-        if academic_density > 0.02 and markers['academic'] > 8:
-            is_academic = True
-        elif markers['academic'] > 15 and word_count > 1000:
-            is_academic = True
-        elif markers['signal'] > 50 and markers['academic'] > 5 and complexity < 0.6:
-            is_academic = True
-
-        # Noise/signal ratio
-        if markers['signal'] + markers['noise'] > 0:
-            noise_signal_ratio = markers['noise'] / (markers['signal'] + markers['noise'] + 1)
-        else:
-            noise_signal_ratio = 0.5
-
-        # === WEIGHTED SCORING (Orpheus) ===
-        components = {
-            'shannon': shannon,
-            'complexity': complexity,
-            'noise_signal_ratio': noise_signal_ratio,
-            'chaos_density': chaos_density,
-            'sanity_violation': sanity_penalty,
-            'shout_factor': shout_factor
-        }
-
-        base_entropy = sum(components[key] * self.weights[key] for key in components.keys())
-        base_entropy *= (1.0 - number_density * 0.25)
-
-        # Academic correction
-        if is_academic:
-            base_entropy *= 0.6
-
-        final_entropy = min(0.99, max(0.0, base_entropy))
-
-        # Verdict
-        if final_entropy < self.thresholds['trusted']:
-            status, verdict = 'TRUSTED', 'СТАБІЛЬНИЙ ЛОГІЧНИЙ СИГНАЛ'
-        elif final_entropy < self.thresholds['acceptable']:
-            status, verdict = 'ACCEPTABLE', 'ПРИЙНЯТНА СТРУКТУРОВАНА ІНФОРМАЦІЯ'
-        elif final_entropy < self.thresholds['suspicious']:
-            status, verdict = 'SUSPICIOUS', 'ПІДОЗРІЛА ЕМОЦІЙНА РИТОРИКА'
-        elif final_entropy < self.thresholds['critical']:
-            status, verdict = 'WARNING', 'ВИСОКИЙ РІВЕНЬ МАНІПУЛЯЦІЇ'
-        else:
-            status, verdict = 'CRITICAL', 'КРИТИЧНИЙ ІНФОРМАЦІЙНИЙ ХАОС'
-
-        # УЗГОДЖЕНІ КЛЮЧИ для diagnostics (важливо для фронтенду)
-        return {
-            'entropy': round(final_entropy, 3),
-            'status': status,
-            'verdict': verdict,
-            'language': lang.upper(),
-            'diagnostics': {
-                'shannon_entropy': round(shannon, 3),
-                'complexity': round(complexity, 3),
-                'noise_markers': markers['noise'],
-                'signal_markers': markers['signal'],
-                'chaos_markers': markers['chaos'],
-                'chaos_density': round(chaos_density, 4),
-                'academic_markers': markers['academic'],
-                'academic_density': round(academic_density, 4),
-                'is_academic_context': is_academic,
-                'number_density': round(number_density, 3),
-                'shout_factor': round(shout_factor, 3),
-                'sanity_penalty': round(sanity_penalty, 3),
-                'sanity_violations': sanity_penalty > 0,
-                'word_count': word_count,
-                'char_count': len(text)
-            }
-        }
+                
+                if not is_normal:
+                    chaos_markers += weight
+        
+        return chaos_markers
+    
+    def _calculate_entropy(self, text):
+        """Обчислення ентропії Шеннона"""
+        if not text:
+            return 0
+        
+        char_count = Counter(text.lower())
+        total_chars = len(text)
+        entropy = 0
+        
+        for count in char_count.values():
+            probability = count / total_chars
+            if probability > 0:
+                entropy -= probability * math.log2(probability)
+        
+        return round(entropy, 3)
+    
+    def _calculate_chaos_index(self, text):
+        """Обчислення індексу хаосу"""
+        words = text.split()
+        if len(words) < 10:
+            return 0
+        
+        # Спрощена версія
+        chaos_score = 0
+        
+        # Кількість знаків оклику та питань
+        chaos_score += text.count('!') * 0.1
+        chaos_score += text.count('?') * 0.05
+        
+        # Великі літери
+        upper_ratio = sum(1 for c in text if c.isupper()) / len(text) if text else 0
+        chaos_score += upper_ratio * 2
+        
+        return round(chaos_score, 3)
+    
+    def _count_markers(self, text, markers):
+        """Підрахунок маркерів у тексті"""
+        text_lower = text.lower()
+        count = 0
+        
+        for marker in markers:
+            count += text_lower.count(marker)
+        
+        return count
+    
+    def _calculate_scream_factor(self, text):
+        """Обчислення фактору крику"""
+        if len(text) == 0:
+            return 0
+        
+        uppercase = sum(1 for c in text if c.isupper())
+        exclamation = text.count('!')
+        
+        scream_score = (uppercase / len(text) * 0.7) + (exclamation / len(text.split()) * 0.3)
+        return round(min(scream_score, 1.0), 3)
+    
+    def _calculate_number_density(self, text):
+        """Щільність чисел у тексті"""
+        words = text.split()
+        if not words:
+            return 0
+        
+        number_words = sum(1 for word in words if any(char.isdigit() for char in word))
+        return round(number_words / len(words), 3)
+    
+    def _calculate_influence_index(self, analysis):
+        """Обчислення індексу впливу"""
+        base_score = 10
+        
+        # Додаємо ваги
+        base_score += analysis['chaos_index'] * 2
+        base_score += analysis['scream_factor'] * 5
+        base_score -= analysis['logic_inconsistency'] * 3
+        base_score += analysis['noise_signal_ratio'] * 2
+        
+        return round(max(0, base_score), 2)
