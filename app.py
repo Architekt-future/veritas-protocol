@@ -30,15 +30,12 @@ class TextExtractor:
                 
                 html = response.read().decode('utf-8', errors='ignore')
             
-            # Очищення HTML
             html = re.sub(r'<script[^>]*>.*?</script>', '', html, flags=re.DOTALL | re.IGNORECASE)
             html = re.sub(r'<style[^>]*>.*?</style>', '', html, flags=re.DOTALL | re.IGNORECASE)
-            
-            # Видалення всіх тегів зображень
             html = re.sub(r'<img[^>]*>', '', html, flags=re.IGNORECASE)
             
-            # Вилучення тексту
-            text = self._extract_text(html)
+            text = re.sub(r'<[^>]+>', ' ', html)
+            text = re.sub(r'\s+', ' ', text).strip()
             
             if len(text) < 50:
                 return {
@@ -57,14 +54,7 @@ class TextExtractor:
         except Exception as e:
             return {'success': False, 'error': f'Помилка: {str(e)}', 'url': url}
     
-    def _extract_text(self, html: str) -> str:
-        """Видобуває текст з HTML"""
-        text = re.sub(r'<[^>]+>', ' ', html)
-        text = re.sub(r'\s+', ' ', text)
-        return text.strip()
-    
     def _extract_domain(self, url: str) -> str:
-        """Видобуває домен з URL"""
         match = re.search(r'https?://(?:www\.)?([^/]+)', url)
         return match.group(1) if match else "unknown"
 
@@ -80,7 +70,7 @@ def analyze():
         return jsonify({}), 200
 
     if request.method == 'GET':
-        return jsonify({'status': 'online', 'version': '3.8-enhanced'}), 200
+        return jsonify({'status': 'online', 'version': '6.0-radical'}), 200
 
     try:
         data = request.get_json()
@@ -94,8 +84,6 @@ def analyze():
         source = 'Manual Input'
         
         if url:
-            print(f"🔗 Обробка URL: {url}")
-            
             if not url.startswith(('http://', 'https://')):
                 return jsonify({'error': 'Невірний протокол URL'}), 400
             
@@ -106,20 +94,15 @@ def analyze():
             
             text_to_analyze = result['text']
             source = result['source']
-            
-            print(f"✅ Текст витягнуто: {len(text_to_analyze)} символів")
-            
         else:
             text_to_analyze = raw_text
             if data.get('source'):
                 source = data.get('source')
-            print(f"📝 Аналіз тексту: {len(text_to_analyze)} символів")
 
         if not text_to_analyze or len(text_to_analyze) < 20:
             return jsonify({'error': 'Текст занадто короткий'}), 400
 
         # АНАЛІЗ ТЕКСТУ
-        print("🔍 Запуск розширеного аналізу...")
         result = engine.analyze(text_to_analyze)
         
         if 'error' in result:
@@ -132,18 +115,17 @@ def analyze():
         total_chaos_index = (
             diag.get('chaos_markers', 0) * 0.5 +
             diag.get('semantic_dissonance', 0) * 50 +
-            diag.get('hybrid_toxicity', 0) * 30
+            diag.get('semantic_flow', 0) * 30
         )
         
         impact_score = (
             result['entropy'] * 100 +
-            diag.get('semantic_dissonance', 0) * 70 +  # ↑ збільшено
-            diag.get('sanity_penalty', 0) * 60 +       # ↑ збільшено
-            diag.get('hybrid_toxicity', 0) * 50 +      # ↑ збільшено
-            diag.get('cross_domain_absurdity', 0) * 40 # ↑ збільшено
+            diag.get('semantic_dissonance', 0) * 70 +
+            diag.get('sanity_penalty', 0) * 60 +
+            diag.get('semantic_flow', 0) * 50
         )
         
-        # Сформувати відповідь для фронтенду
+        # Сформувати відповідь
         response = {
             'entropy': result['entropy'],
             'status': result['status'],
@@ -172,24 +154,18 @@ def analyze():
             'word_count': diag.get('word_count', 0),
             'char_count': diag.get('char_count', 0),
             'signal_noise_ratio': round(diag.get('noise_markers', 0) / max(1, diag.get('signal_markers', 1)), 3),
-            'hybrid_toxicity': diag.get('hybrid_toxicity', 0),
-            'cross_domain_absurdity': diag.get('cross_domain_absurdity', 0),
-            'sentence_absurdity': diag.get('sentence_absurdity', 0)
         }
         
         # Аналіз емоційного впливу
         emotional_pressure = (
             diag.get('chaos_markers', 0) > 5 or 
-            diag.get('hybrid_toxicity', 0) > 0.3 or
-            'критичний' in result['status'].lower() or
-            'нігілізм' in result['verdict'].lower() or
-            'маніпуляція' in result['verdict'].lower()
+            diag.get('semantic_flow', 0) > 0.3 or
+            'критичний' in result['status'].lower()
         )
         
         disorientation_risk = (
             diag.get('semantic_dissonance', 0) > 0.3 or
-            diag.get('cross_domain_absurdity', 0) > 0.4 or
-            diag.get('sentence_absurdity', 0) > 0.2
+            diag.get('semantic_flow', 0) > 0.4
         )
         
         response['emotional_pressure'] = emotional_pressure
@@ -202,7 +178,6 @@ def analyze():
             response['extracted_text_length'] = len(text_to_analyze)
             response['show_extracted_text'] = True
         
-        print(f"📊 Результат: entropy={result['entropy']}, verdict={result['verdict']}")
         return jsonify(response), 200
 
     except Exception as e:
@@ -210,64 +185,34 @@ def analyze():
         return jsonify({'error': f'Внутрішня помилка: {str(e)}'}), 500
 
 def generate_explanation(result: dict, diag: dict) -> str:
-    """Генерує пояснення на основі результатів аналізу"""
+    """Генерує пояснення"""
     verdict = result['verdict']
-    hybrid_toxicity = diag.get('hybrid_toxicity', 0)
-    cross_domain_absurdity = diag.get('cross_domain_absurdity', 0)
     
-    if 'КРОС-ДОМЕННИЙ СЕМАНТИЧНИЙ КОЛАПС' in verdict:
-        return "Текст поєднує несумісні концепції з різних сфер знань (наука+фінанси+фізика), створюючи семантичну кашу."
-    
-    elif 'ГІБРИДНИЙ НАУКОВИЙ НІГІЛІЗМ' in verdict:
-        return "Наукові терміни використовуються для обґрунтування абсурдних соціально-економічних висновків (нейтрино → фондовий ринок)."
+    if 'НАУКОВИЙ НІГІЛІЗМ' in verdict:
+        return "Текст зловживає науковою термінологією для обґрунтування абсурдних соціально-економічних концепцій."
     
     elif 'ДЗЕРКАЛЬНА МАНІПУЛЯЦІЯ' in verdict:
-        return "Текст звинувачує інших у маніпуляціях, використовуючи сам методи маніпулятивної риторики ('брехня', 'фейк')."
+        return "Текст використовує риторику 'розкриття правди' для приховування власних маніпулятивних технік."
     
     elif 'КОРПОРАТИВНИЙ ОКУЛЬТИЗМ' in verdict:
-        return "Корпоративний жаргон змішаний з езотеричними концепціями, створюючи псевдонаукову риторику для впливу."
+        return "Корпоративний жаргон змішаний з езотерикою, створюючи токсичну гібридну риторику."
     
-    elif 'ФІНАНСОВО-ЕЗОТЕРИЧНИЙ АБСУРД' in verdict:
-        return "Фінансові терміни поєднуються з езотерикою, створюючи семантичний колапс."
-    
-    elif 'ПСЕВДОНАУКОВА ДЕЗІНФОРМАЦІЯ' in verdict:
-        return "Науковий стиль використаний для поширення конспірологічних ідей."
-    
-    elif 'НАУКОВИЙ НІГІЛІЗМ' in verdict:
-        return "Фізичні терміни застосовуються до соціальних явищ, створюючи науково-утопічну маячню."
-    
-    elif hybrid_toxicity > 0.4:
-        return "Високий рівень гібридної токсичності: текст поєднує правду з маніпулятивними техніками."
-    
-    elif cross_domain_absurdity > 0.5:
-        return "Високий рівень кросс-доменної абсурдності: несумісні поняття з різних доменів."
-    
-    elif result['entropy'] > 0.6:
-        return "Високий рівень інформаційного хаосу та семантичної несумісності."
+    elif 'ГІБРИДНА ТОКСИЧНІСТЬ' in verdict:
+        return "Текст поєднує елементи різних дискурсів у штучну та маніпулятивну конструкцію."
     
     else:
-        return "Текст відповідає нормам логічної сумісності."
+        return "Текст демонструє нормальну семантичну структуру."
 
 def generate_emotional_analysis(result: dict, diag: dict) -> str:
     """Генерує аналіз емоційного впливу"""
-    hybrid_toxicity = diag.get('hybrid_toxicity', 0)
-    chaos_markers = diag.get('chaos_markers', 0)
-    semantic_dissonance = diag.get('semantic_dissonance', 0)
+    if 'критичний' in result['status'].lower():
+        return "ВИСОКИЙ РИЗИК МАНІПУЛЯЦІЇ: текст використовує складні семантичні конструкції для прихованого впливу."
     
-    if hybrid_toxicity > 0.4:
-        return "ВИСОКА ГІБРИДНА ТОКСИЧНІСТЬ: текст поєднує правду з тонкою отрутою, створюючи ефект 'отруєної конфети'. Ризик поступового зомбування."
-    
-    elif chaos_markers > 10:
-        return "ВИСОКИЙ РІВЕНЬ ХАОСУ: поєднання езотерики, конспірології та наукової фантастики створює когнітивне навантаження."
-    
-    elif semantic_dissonance > 0.5:
-        return "СЕМАНТИЧНИЙ ДИСОНАНС: логічні несумісності можуть викликати дезорієнтацію та підвищену критичність."
-    
-    elif 'ДЗЕРКАЛЬНА' in result['verdict']:
-        return "ДЗЕРКАЛЬНА ТЕХНІКА: текст звинувачує інших у власних методах, створюючи когнітивний дисонанс."
+    elif diag.get('semantic_flow', 0) > 0.3:
+        return "СЕМАНТИЧНА НЕСТАБІЛЬНІСТЬ: швидкі переходи між різними концепціями можуть викликати дезорієнтацію."
     
     else:
-        return "МІНІМАЛЬНИЙ ЕМОЦІЙНИЙ ВПЛИВ: текст не містить явних маніпулятивних технік."
+        return "МІНІМАЛЬНИЙ ЕМОЦІЙНИЙ ВПЛИВ."
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=False)
