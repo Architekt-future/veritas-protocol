@@ -159,5 +159,7 @@ def analyze():
             result['title'] = title
             result['url'] = url
             result['mode'] = 'url_scraping'
-        # Збільшуємо прев'ю тексту для скрапінгу
-        result['extracted_text'] = text[:1500] + '...' if len(text) > 1500 else text
+            result['extracted_text'] = text[:1500] + '...' if len(text) > 1500 else text
+                
+        except Exception as e:  # ← ДОДАЙ ЦЕ!
+            return jsonify({'error': f'Scraping failed: {str(e)}'}), 500
