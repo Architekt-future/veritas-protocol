@@ -1,5 +1,5 @@
 """
-Veritas Protocol - Calibrated Core Engine (FIXED v2)
+Veritas Protocol - Calibrated Core Engine (FIXED v3)
 Inspired by Orpheus LAC principles:
 - Weighted scoring (not binary)
 - Density-based detection (not count)
@@ -64,37 +64,50 @@ class VeritasCalibratedCore:
             }
         }
 
-        # Academic indicators
+        # Academic indicators - РОЗШИРЕНО
         self.academic_markers = {
             'uk': {
                 'дослідження', 'аналіз', 'метод', 'експеримент', 'гіпотеза',
                 'респондент', 'статистичн', 'кореляц', 'регрес', 'вибірк',
-                'науков', 'публікац', 'журнал', 'конференц'
+                'науков', 'публікац', 'журнал', 'конференц', 'протокол',
+                'архітектур', 'систем', 'алгоритм', 'модель', 'теорі',
+                'практичн', 'результат', 'висновок', 'апроксимаці', 'синтез',
+                'верифікац', 'калібровка', 'детермінізм', 'ентропі', 'вердикт',
+                'категорі', 'таксономі', 'епістемолог', 'семантичн'
             },
             'en': {
                 'research', 'study', 'analysis', 'method', 'experiment',
                 'hypothesis', 'respondent', 'statistical', 'correlation',
-                'regression', 'sample', 'scientific', 'publication', 'journal'
+                'regression', 'sample', 'scientific', 'publication', 'journal',
+                'conference', 'protocol', 'architecture', 'system', 'algorithm',
+                'model', 'theory', 'practice', 'result', 'conclusion',
+                'approximation', 'synthesis', 'verification', 'calibration',
+                'determinism', 'entropy', 'verdict', 'category', 'taxonomy',
+                'epistemological', 'semantic'
             }
         }
 
         # FIXED: Only REAL conspiracy/pseudoscience
         self.chaos_markers = {
             'uk': {
-                'рептилоїд', 'масон', 'чіпува', 'плоск', 
-                'ілюмінат', 'глобаліст', 'світова змова', 'заговір'
+                'рептилоїд', 'масон', 'чіпува', 'плоскоземель', 'плоск', 
+                'ілюмінат', 'глобаліст', 'світова змова', 'заговір', 'інопланетн',
+                'нібіру', 'анунак', 'хаос', 'дезорієнтац', 'маніпуляц'
             },
             'en': {
-                'lizard', 'reptilian', 'freemason', 'flat earth',
-                'illuminati', 'globalist', 'new world order', 'microchip implant'
+                'lizard', 'reptilian', 'freemason', 'flat earth', 'illuminati',
+                'globalist', 'new world order', 'microchip implant', 'alien',
+                'nibiru', 'annunaki', 'chaos', 'disorientation', 'manipulation'
             }
         }
 
-        # FIXED: Only TRULY incompatible (removed scientific terms!)
+        # РОЗШИРЕНО: More incompatible clusters
         self.incompatible_clusters = [
-            {'квантов', 'борщ', 'каструл', 'зажарк', 'ложк', 'кухн'},
-            {'рептилоїд', 'масон', 'змов', 'контролю', 'таємн'},
-            {'астральн', 'карм', 'чакр', 'вібрац', 'енерг', 'біопол'}
+            {'квантов', 'борщ', 'каструл', 'зажарк', 'ложк', 'кухн', 'буряк', 'сметан', 'суп'},
+            {'рептилоїд', 'масон', 'змов', 'контролю', 'таємн', 'прибулець'},
+            {'астральн', 'карм', 'чакр', 'вібрац', 'енерг', 'біопол', 'мультивсесвіт'},
+            {'глобальн', 'дестабілізац', 'когнітив', 'поле', 'резонанс', 'нелокальн'},
+            {'планк', 'гейзенберг', 'вакуум', 'флуктуац', 'тунель', 'ефект', 'шлунок'}
         ]
 
     def detect_language(self, text: str) -> str:
@@ -169,7 +182,7 @@ class VeritasCalibratedCore:
                         match_count += 1
                         break
             if match_count >= 2:
-                return 0.9
+                return 0.9  # HIGH sanity penalty for obvious nonsense
         return 0.0
 
     def _calculate_number_density(self, text: str, word_count: int) -> float:
@@ -206,9 +219,16 @@ class VeritasCalibratedCore:
         # FIXED: Density-based chaos
         chaos_density = markers['chaos'] / word_count if word_count > 0 else 0
 
-        # Academic context
+        # Academic context - ПОЛІПШЕНА логіка
         academic_density = markers['academic'] / word_count if word_count > 0 else 0
-        is_academic = academic_density > 0.03
+        # Визначаємо академічність за кількома критеріями
+        is_academic = False
+        if academic_density > 0.01:  # Знижений поріг з 0.03 до 0.01
+            is_academic = True
+        elif markers['academic'] > 8:  # Або якщо багато академічних слів
+            is_academic = True
+        elif markers['signal'] > 50 and complexity < 0.6:  # Багато сигнальних слів + низька складність
+            is_academic = True
 
         # Noise/signal ratio
         if markers['signal'] + markers['noise'] > 0:
@@ -258,14 +278,14 @@ class VeritasCalibratedCore:
                 'complexity': round(complexity, 3),
                 'noise_markers': markers['noise'],
                 'signal_markers': markers['signal'],
-                'chaos_markers': markers['chaos'],  # Ключ змінений для узгодження
+                'chaos_markers': markers['chaos'],
                 'chaos_density': round(chaos_density, 4),
                 'academic_markers': markers['academic'],
                 'academic_density': round(academic_density, 4),
                 'is_academic_context': is_academic,
                 'number_density': round(number_density, 3),
                 'shout_factor': round(shout_factor, 3),
-                'sanity_penalty': round(sanity_penalty, 3),  # Ключ змінений для узгодження
+                'sanity_penalty': round(sanity_penalty, 3),
                 'sanity_violations': sanity_penalty > 0,
                 'word_count': word_count,
                 'char_count': len(text)
