@@ -1,267 +1,231 @@
 """
-Veritas Protocol - Radical Engine v6.0
-Contextual Semantic Analysis with Neural Network-inspired Logic
+Veritas Protocol - Ultimate Simplified Engine v7.0
+Only what matters: patterns, context, verdicts
 """
 
-import math
 import re
-from typing import Dict, List, Tuple, Set
-from collections import defaultdict
+import math
 
 class VeritasCalibratedCore:
-    """Neural network-inspired analysis with contextual absurdity detection"""
+    """Ultimate simplified detector of hybrid manipulation"""
     
     def __init__(self):
-        # НОВА АРХІТЕКТУРА: Глибинний семантичний аналіз
-        self.context_layers = {
-            'layer1': {'weight': 0.20},  # Базові терміни
-            'layer2': {'weight': 0.35},  # Контекстуальні зв'язки
-            'layer3': {'weight': 0.45},  # Мета-семантика
-        }
-        
-        # СЕМАНТИЧНІ МОДУЛІ (замість простих списків)
-        self.semantic_modules = {
-            # Модуль 1: Науковий дискурс
-            'scientific': {
-                'core_terms': {
-                    'статистичний', 'аналіз', 'кореляція', 'регресія', 'емпіричний',
-                    'методологія', 'гіпотеза', 'експеримент', 'результат', 'висновок',
-                    'верифікація', 'валідація', 'цитування', 'індекс', 'теорема',
-                    'аксіома', 'постулат', 'деривація', 'інтеграція', 'диференціація'
-                },
-                'context_terms': {
-                    'дослідження', 'публікація', 'журнал', 'конференція', 'протокол',
-                    'модель', 'симуляція', 'прогноз', 'стохастичний', 'вероятність'
-                },
-                'absurd_connections': {'езотеричний', 'конспірологічний', 'містичний'}
-            },
-            
-            # Модуль 2: Фінансовий дискурс
-            'financial': {
-                'core_terms': {
-                    'фондовий', 'ринок', 'індекс', 'акція', 'облігація', 'інвестиція',
-                    'капітал', 'бюджет', 'податок', 'дефіцит', 'профіцит', 'інфляція'
-                },
-                'context_terms': {
-                    'трейдер', 'портфель', 'актив', 'пасив', 'рентабельність',
-                    'ліквідність', 'волатильність', 'диверсифікація'
-                },
-                'absurd_connections': {'чакра', 'карма', 'астральний', 'енергетичний'}
-            },
-            
-            # Модуль 3: Езотеричний дискурс
-            'esoteric': {
-                'core_terms': {
-                    'чакра', 'карма', 'астральний', 'енергетичний', 'вібрація',
-                    'резонанс', 'прана', 'ці', 'рейкі', 'медитація', 'транс'
-                },
-                'context_terms': {
-                    'архетип', 'колективне', 'несвідоме', 'синхронічність',
-                    'нумерологія', 'астрологія', 'хіромантія', 'біолокація'
-                },
-                'forbidden_contexts': {'науковий', 'фінансовий', 'юридичний'}
-            },
-            
-            # Модуль 4: Конспірологічний дискурс
-            'conspiracy': {
-                'core_terms': {
-                    'змова', 'таємний', 'орден', 'ілюмінат', 'рептилоїд', 'плоскоземель',
-                    'хімітрейл', '5g', 'чіп', 'вакцина', 'контроль', 'розуму'
-                },
-                'context_terms': {
-                    'приховують', 'приховування', 'брехня', 'фейк', 'дезінформація',
-                    'маніпуляція', 'пропаганда', 'зомбування', 'психотронна'
-                },
-                'mirror_flags': {'правда', 'істина', 'свобода', 'розкриття'}
-            },
-            
-            # Модуль 5: Корпоративний дискурс
-            'corporate': {
-                'core_terms': {
-                    'синергія', 'стратегія', 'оптимізація', 'ефективність',
-                    'kpi', 'окр', 'ланцюг', 'постачання', 'стейкхолдер'
-                },
-                'context_terms': {
-                    'бренд', 'позиціонування', 'ринкова', 'частка', 'монетизація',
-                    'масштабування', 'інновація', 'парадигма', 'холістичний'
-                },
-                'toxic_mixes': {'езотеричний', 'містичний', 'конспірологічний'}
-            },
-            
-            # Модуль 6: Науково-фантастичний дискурс
-            'scifi': {
-                'core_terms': {
-                    'нейтрино', 'квантовий', 'суперпозиція', 'ентанґлемент',
-                    'телепортація', 'мультивсесвіт', 'паралельний', 'вимір'
-                },
-                'context_terms': {
-                    'портал', 'симуляція', 'голограма', 'кіборг', 'трансгуманізм',
-                    'сингулярність', 'нанотехнологія', 'біотехнологія'
-                },
-                'abuse_contexts': {'фінансовий', 'політичний', 'соціальний'}
-            }
-        }
-        
-        # СИНОНІМІЧНІ ЛАНЦЮГИ (для розпізнавання прихованих зв'язків)
-        self.synonym_chains = {
-            'наука': ['науковий', 'дослідницький', 'емпіричний', 'експериментальний'],
-            'маніпуляція': ['вплив', 'контроль', 'програмування', 'зомбування'],
-            'духовність': ['езотеричний', 'містичний', 'астральний', 'енергетичний'],
-            'фінанси': ['економіка', 'капітал', 'ринок', 'інвестиція'],
-            'технологія': ['цифровий', 'алгоритм', 'програмний', 'апаратний']
-        }
-        
-        # СЕМАНТИЧНІ ПРАВИЛА (нейроноподібна логіка)
-        self.semantic_rules = [
+        # ТІЛЬКИ КРИТИЧНІ ПРАВИЛА
+        self.critical_patterns = [
+            # 1. НАУКОВИЙ НІГІЛІЗМ
             {
                 'name': 'НАУКОВИЙ_НІГІЛІЗМ',
-                'condition': lambda modules: (
-                    modules['scientific']['count'] > 3 and
-                    modules['scifi']['count'] > 2 and
-                    modules['financial']['count'] > 0
-                ),
-                'severity': 0.8,
-                'verdict': 'НАУКОВИЙ НІГІЛІЗМ'
+                'patterns': [
+                    r'(нейтрино|квантовий|іоносфера).*?(ринок|економіка|трейдер|фондовий|політика)',
+                    r'(статистичний|емпіричний|методологія).*?(детермінований|голографічний|електромагнітний).*?(економіка|ринок)',
+                    r'(фізичний|науковий).*?(процес|закон).*?(соціальний|політичний|економічний)'
+                ],
+                'verdict': 'ГІБРИДНИЙ НАУКОВИЙ НІГІЛІЗМ',
+                'explanation': 'Наукові терміни використані для обґрунтування абсурдних соціально-економічних концепцій',
+                'score_boost': 0.6
             },
+            
+            # 2. ДЗЕРКАЛЬНА МАНІПУЛЯЦІЯ
             {
                 'name': 'ДЗЕРКАЛЬНА_МАНІПУЛЯЦІЯ',
-                'condition': lambda modules: (
-                    modules['conspiracy']['count'] > 2 and
-                    any(term in ['брехня', 'маніпуляція', 'фейк'] for term in modules['conspiracy']['found_terms'])
-                ),
-                'severity': 0.7,
-                'verdict': 'ДЗЕРКАЛЬНА МАНІПУЛЯЦІЯ'
+                'patterns': [
+                    r'(брехня|фейк|маніпуляція|дезінформація).*?(правда|істина|свобода|розкриття)',
+                    r'(контроль|зомбування|програмування).*?(сприйняття|мислення|критичне)',
+                    r'(алгоритм|код|сигнал).*?(клітка|в\'язень|раб)'
+                ],
+                'verdict': 'ДЗЕРКАЛЬНА МАНІПУЛЯЦІЯ',
+                'explanation': 'Текст звинувачує інших у власних методах, створюючи когнітивний дисонанс',
+                'score_boost': 0.5
             },
+            
+            # 3. КОРПОРАТИВНИЙ ОКУЛЬТИЗМ
             {
                 'name': 'КОРПОРАТИВНИЙ_ОКУЛЬТИЗМ',
-                'condition': lambda modules: (
-                    modules['corporate']['count'] > 3 and
-                    modules['esoteric']['count'] > 1
-                ),
-                'severity': 0.6,
-                'verdict': 'КОРПОРАТИВНИЙ ОКУЛЬТИЗМ'
+                'patterns': [
+                    r'(синергія|kpi|стратегія|оптимізація).*?(квантовий|аура|чакра|енергетичний)',
+                    r'(холістичний|екосистема|трансформація).*?(вібрація|резонанс|космічний)',
+                    r'(мета-фізичний|трансцендентний).*?(ринкова.*?частка|монетизація|рентабельність)'
+                ],
+                'verdict': 'КОРПОРАТИВНИЙ ОКУЛЬТИЗМ',
+                'explanation': 'Корпоративний жаргон змішаний з езотерикою для створення псевдонаукової риторики',
+                'score_boost': 0.4
             },
+            
+            # 4. КРОС-ДОМЕННИЙ АБСУРД
             {
-                'name': 'ГІБРИДНА_ТОКСИЧНІСТЬ',
-                'condition': lambda modules: (
-                    len([m for m in modules.values() if m['count'] > 1]) >= 3 and
-                    modules.get('scientific', {}).get('count', 0) > 0 and
-                    (modules.get('esoteric', {}).get('count', 0) > 0 or 
-                     modules.get('conspiracy', {}).get('count', 0) > 0)
-                ),
-                'severity': 0.9,
-                'verdict': 'ГІБРИДНА ТОКСИЧНІСТЬ'
+                'name': 'КРОС_ДОМЕННИЙ_АБСУРД',
+                'patterns': [
+                    r'(юридичний|закон|кодекс).*?(чакра|карма|астральний)',
+                    r'(фінансовий|інвестиція|капітал).*?(езотеричний|містичний|нумерологія)',
+                    r'(технологічний|алгоритм|програмний).*?(духовний|пробудження|ініціація)'
+                ],
+                'verdict': 'КРОС-ДОМЕННИЙ СЕМАНТИЧНИЙ АБСУРД',
+                'explanation': 'Абсурдне поєднання термінів з несумісних сфер діяльності',
+                'score_boost': 0.5
             }
         ]
         
-        # КОНТЕКСТУАЛЬНІ ШАБЛОНИ
-        self.context_patterns = [
-            {
-                'name': 'фізика_для_економіки',
-                'pattern': r'(нейтрино|квантовий|ентанґлемент).*?(ринок|економіка|трейдер|фондовий)',
-                'severity': 0.8
-            },
-            {
-                'name': 'магія_для_бізнесу',
-                'pattern': r'(чакра|аура|енергія|вібрація).*?(kpi|оптимізація|стратегія|рентабельність)',
-                'severity': 0.7
-            },
-            {
-                'name': 'звинувачення_в_маніпуляції',
-                'pattern': r'(брехня|фейк|маніпуляція|дезінформація).*?(правда|істина|розкриття|свобода)',
-                'severity': 0.6
-            }
-        ]
+        # ТЕРМІНИ ДЛЯ ПІДРАХУНКУ
+        self.term_categories = {
+            'academic': [
+                'статистичний', 'аналіз', 'кореляція', 'регресія', 'емпіричний',
+                'методологія', 'гіпотеза', 'експеримент', 'результат', 'висновок',
+                'верифікація', 'валідація', 'цитування', 'індекс', 'теорема'
+            ],
+            'esoteric': [
+                'чакра', 'карма', 'астральний', 'енергетичний', 'вібрація',
+                'резонанс', 'прана', 'медитація', 'транс', 'архетип'
+            ],
+            'conspiracy': [
+                'змова', 'таємний', 'ілюмінат', 'рептилоїд', 'хімітрейл',
+                '5g', 'чіп', 'вакцина', 'контроль', 'розуму', 'брехня'
+            ],
+            'corporate': [
+                'синергія', 'стратегія', 'оптимізація', 'kpi', 'окр',
+                'бренд', 'позиціонування', 'монетизація', 'інновація'
+            ],
+            'scifi': [
+                'нейтрино', 'квантовий', 'ентанґлемент', 'телепортація',
+                'мультивсесвіт', 'паралельний', 'вимір', 'сингулярність'
+            ]
+        }
 
-    def detect_language(self, text: str) -> str:
-        """Визначає мову тексту"""
-        ukrainian_chars = re.findall(r'[їієґ]', text.lower())
-        return 'uk' if len(ukrainian_chars) > 3 else 'en'
-
-    def analyze_semantic_modules(self, text: str) -> Dict:
-        """Аналізує текст через семантичні модулі"""
+    def detect_patterns(self, text: str) -> list:
+        """Виявляє критичні паттерни"""
+        detected = []
         text_lower = text.lower()
-        modules_analysis = {}
         
-        for module_name, module_data in self.semantic_modules.items():
-            found_terms = set()
-            
-            # Перевірка основних термінів
-            for term in module_data['core_terms']:
-                if re.search(r'\b' + re.escape(term) + r'\b', text_lower):
-                    found_terms.add(term)
-            
-            # Перевірка контекстних термінів
-            for term in module_data['context_terms']:
-                if re.search(r'\b' + re.escape(term) + r'\b', text_lower):
-                    found_terms.add(term)
-            
-            modules_analysis[module_name] = {
-                'count': len(found_terms),
-                'found_terms': list(found_terms),
-                'density': len(found_terms) / max(1, len(text_lower.split()))
-            }
+        for pattern in self.critical_patterns:
+            for regex in pattern['patterns']:
+                if re.search(regex, text_lower, re.DOTALL | re.IGNORECASE):
+                    detected.append(pattern)
+                    break  # Знайшли один патерн — досить
         
-        return modules_analysis
+        return detected
 
-    def analyze_contextual_patterns(self, text: str) -> Dict:
-        """Аналізує контекстуальні паттерни"""
-        patterns_found = []
+    def count_terms(self, text: str) -> dict:
+        """Підраховує терміни за категоріями"""
+        counts = {}
+        text_lower = text.lower()
         
-        for pattern in self.context_patterns:
-            matches = re.findall(pattern['pattern'], text.lower(), re.DOTALL)
-            if matches:
-                patterns_found.append({
-                    'name': pattern['name'],
-                    'count': len(matches),
-                    'severity': pattern['severity']
-                })
+        for category, terms in self.term_categories.items():
+            count = 0
+            for term in terms:
+                matches = re.findall(r'\b' + re.escape(term) + r'\b', text_lower)
+                count += len(matches)
+            counts[category] = count
         
-        return patterns_found
+        return counts
 
-    def analyze_semantic_flow(self, text: str) -> float:
-        """Аналізує семантичний потік тексту"""
+    def calculate_semantic_chaos(self, text: str) -> float:
+        """Обчислює семантичний хаос"""
         sentences = re.split(r'[.!?]+', text)
-        if len(sentences) < 2:
+        if len(sentences) < 3:
             return 0.0
         
-        semantic_shifts = 0
-        prev_semantic_field = None
+        term_counts = self.count_terms(text)
         
-        for sentence in sentences:
-            sentence_lower = sentence.lower()
-            current_field = None
-            
-            # Визначаємо семантичне поле речення
-            if any(term in sentence_lower for term in self.semantic_modules['scientific']['core_terms']):
-                current_field = 'scientific'
-            elif any(term in sentence_lower for term in self.semantic_modules['financial']['core_terms']):
-                current_field = 'financial'
-            elif any(term in sentence_lower for term in self.semantic_modules['esoteric']['core_terms']):
-                current_field = 'esoteric'
-            elif any(term in sentence_lower for term in self.semantic_modules['conspiracy']['core_terms']):
-                current_field = 'conspiracy'
-            
-            if prev_semantic_field and current_field and prev_semantic_field != current_field:
-                # Штраф за абсурдні переходи
-                absurd_transitions = [
-                    ('scientific', 'esoteric'),
-                    ('financial', 'esoteric'),
-                    ('scientific', 'conspiracy'),
-                    ('corporate', 'esoteric')
-                ]
-                
-                if (prev_semantic_field, current_field) in absurd_transitions:
-                    semantic_shifts += 2
-                else:
-                    semantic_shifts += 1
-            
-            if current_field:
-                prev_semantic_field = current_field
+        # Хаос = різноманітність категорій + їх несумісність
+        active_categories = sum(1 for count in term_counts.values() if count > 0)
         
-        return semantic_shifts / len(sentences)
+        # Несумісні пари
+        incompatible_pairs = 0
+        if term_counts['academic'] > 0 and (term_counts['esoteric'] > 0 or term_counts['conspiracy'] > 0):
+            incompatible_pairs += 1
+        if term_counts['corporate'] > 0 and term_counts['esoteric'] > 0:
+            incompatible_pairs += 1
+        if term_counts['scifi'] > 0 and term_counts['conspiracy'] > 0:
+            incompatible_pairs += 1
+        
+        chaos_score = (active_categories * 0.2) + (incompatible_pairs * 0.3)
+        return min(1.0, chaos_score)
 
-    def calculate_shannon_entropy(self, text: str) -> float:
+    def analyze(self, text: str) -> Dict:
+        """Основний метод аналізу"""
+        if not text or len(text.strip()) < 20:
+            return {'error': 'Text too short'}
+        
+        words = text.split()
+        word_count = len(words)
+        
+        # 1. ВИЯВЛЕННЯ ПАТТЕРНІВ
+        detected_patterns = self.detect_patterns(text)
+        
+        # 2. ПІДРАХУНОК ТЕРМІНІВ
+        term_counts = self.count_terms(text)
+        
+        # 3. СЕМАНТИЧНИЙ ХАОС
+        semantic_chaos = self.calculate_semantic_chaos(text)
+        
+        # 4. БАЗОВІ МЕТРИКИ
+        shannon_entropy = self._calculate_shannon_entropy(text)
+        complexity = self._calculate_complexity(text)
+        
+        # 5. ФІНАЛЬНИЙ РОЗРАХУНОК
+        base_score = shannon_entropy * 0.3 + complexity * 0.2 + semantic_chaos * 0.5
+        
+        # БУСТ ЗА ПАТТЕРНИ
+        for pattern in detected_patterns:
+            base_score += pattern['score_boost']
+        
+        final_score = min(0.99, base_score)
+        
+        # 6. ВЕРДИКТ
+        if detected_patterns:
+            # Використовуємо перший знайдений паттерн (найважливіший)
+            main_pattern = detected_patterns[0]
+            status = 'CRITICAL'
+            verdict = main_pattern['verdict']
+            explanation = main_pattern['explanation']
+        elif final_score > 0.6:
+            status = 'CRITICAL'
+            verdict = 'ВИСОКИЙ РІВЕНЬ СЕМАНТИЧНОГО ХАОСУ'
+            explanation = 'Текст демонструє критичний рівень семантичної несумісності'
+        elif final_score > 0.4:
+            status = 'WARNING'
+            verdict = 'ПІДОЗРІЛА СЕМАНТИЧНА СТРУКТУРА'
+            explanation = 'Текст містить ознаки семантичних несумісностей'
+        elif final_score > 0.3:
+            status = 'ACCEPTABLE'
+            verdict = 'ПРИЙНЯТНА СТРУКТУРОВАНА ІНФОРМАЦІЯ'
+            explanation = 'Текст відповідає нормам логічної сумісності'
+        else:
+            status = 'TRUSTED'
+            verdict = 'СТАБІЛЬНИЙ ЛОГІЧНИЙ СИГНАЛ'
+            explanation = 'Текст демонструє високу логічну цілісність'
+        
+        # 7. МЕТРИКИ ДЛЯ ВІДОБРАЖЕННЯ
+        chaos_markers = term_counts['esoteric'] + term_counts['conspiracy'] + term_counts['scifi']
+        academic_markers = term_counts['academic']
+        noise_markers = term_counts['conspiracy'] + term_counts['esoteric']
+        signal_markers = term_counts['academic']
+        
+        return {
+            'entropy': round(final_score, 3),
+            'status': status,
+            'verdict': verdict,
+            'language': 'UK',
+            'is_academic_context': academic_markers > 5,
+            'explanation': explanation,
+            'diagnostics': {
+                'shannon_entropy': round(shannon_entropy, 3),
+                'complexity': round(complexity, 3),
+                'semantic_dissonance': round(semantic_chaos * 0.8, 3),
+                'word_count': word_count,
+                'char_count': len(text),
+                'chaos_markers': chaos_markers,
+                'noise_markers': noise_markers,
+                'signal_markers': signal_markers,
+                'sanity_penalty': round(semantic_chaos * 0.7, 3),
+                'academic_markers': academic_markers,
+                'shout_factor': len([w for w in words if w.isupper() and len(w) > 2]) / max(1, word_count),
+                'number_density': len(re.findall(r'\d+', text)) / max(1, word_count),
+                'detected_patterns': [p['name'] for p in detected_patterns],
+                'pattern_count': len(detected_patterns)
+            }
+        }
+
+    def _calculate_shannon_entropy(self, text: str) -> float:
         """Обчислює ентропію Шеннона"""
         if not text:
             return 0.0
@@ -289,7 +253,7 @@ class VeritasCalibratedCore:
         
         return min(1.0, normalized)
 
-    def calculate_complexity_score(self, text: str) -> float:
+    def _calculate_complexity(self, text: str) -> float:
         """Обчислює складність тексту"""
         words = re.findall(r'\w+', text.lower())
         if len(words) < 10:
@@ -305,110 +269,3 @@ class VeritasCalibratedCore:
         
         complexity = (unique_ratio * 0.6) + (min(1.0, avg_sentence_length / 25) * 0.4)
         return min(1.0, complexity)
-
-    def analyze(self, text: str) -> Dict:
-        """Основний метод аналізу"""
-        if not text or len(text.strip()) < 20:
-            return {'error': 'Text too short'}
-        
-        lang = self.detect_language(text)
-        words = text.split()
-        word_count = len(words)
-        
-        # 1. СЕМАНТИЧНИЙ АНАЛІЗ МОДУЛІВ
-        modules = self.analyze_semantic_modules(text)
-        
-        # 2. АНАЛІЗ КОНТЕКСТУАЛЬНИХ ПАТТЕРНІВ
-        patterns = self.analyze_contextual_patterns(text)
-        
-        # 3. АНАЛІЗ СЕМАНТИЧНОГО ПОТОКУ
-        semantic_flow = self.analyze_semantic_flow(text)
-        
-        # 4. БАЗОВІ МЕТРИКИ
-        entropy = self.calculate_shannon_entropy(text)
-        complexity = self.calculate_complexity_score(text)
-        
-        # 5. ВИЗНАЧЕННЯ ТИПУ ДИСКУРСУ
-        discourse_type = 'neutral'
-        if modules['scientific']['count'] > 3 and modules['scientific']['density'] > 0.05:
-            discourse_type = 'academic'
-        elif modules['conspiracy']['count'] > 2:
-            discourse_type = 'conspiracy'
-        elif modules['esoteric']['count'] > 2:
-            discourse_type = 'esoteric'
-        elif modules['corporate']['count'] > 3:
-            discourse_type = 'corporate'
-        
-        # 6. ЗАСТОСУВАННЯ СЕМАНТИЧНИХ ПРАВИЛ
-        triggered_rules = []
-        total_severity = 0.0
-        
-        for rule in self.semantic_rules:
-            if rule['condition'](modules):
-                triggered_rules.append(rule['name'])
-                total_severity = max(total_severity, rule['severity'])
-        
-        # 7. РОЗРАХУНОК ФІНАЛЬНОГО РЕЙТИНГУ
-        base_score = (
-            entropy * 0.15 +
-            complexity * 0.10 +
-            semantic_flow * 0.35 +
-            total_severity * 0.40
-        )
-        
-        # Корекція за кількість паттернів
-        pattern_multiplier = 1.0 + (len(patterns) * 0.1)
-        final_score = min(0.99, base_score * pattern_multiplier)
-        
-        # 8. ВИЗНАЧЕННЯ ВЕРДИКТУ
-        status = 'ACCEPTABLE'
-        verdict = 'ПРИЙНЯТНА СТРУКТУРОВАНА ІНФОРМАЦІЯ'
-        
-        if triggered_rules:
-            status = 'CRITICAL'
-            
-            if 'НАУКОВИЙ_НІГІЛІЗМ' in triggered_rules:
-                verdict = 'НАУКОВИЙ НІГІЛІЗМ'
-            elif 'ДЗЕРКАЛЬНА_МАНІПУЛЯЦІЯ' in triggered_rules:
-                verdict = 'ДЗЕРКАЛЬНА МАНІПУЛЯЦІЯ'
-            elif 'КОРПОРАТИВНИЙ_ОКУЛЬТИЗМ' in triggered_rules:
-                verdict = 'КОРПОРАТИВНИЙ ОКУЛЬТИЗМ'
-            elif 'ГІБРИДНА_ТОКСИЧНІСТЬ' in triggered_rules:
-                verdict = 'ГІБРИДНА ТОКСИЧНІСТЬ'
-        elif final_score > 0.7:
-            status = 'WARNING'
-            verdict = 'ВИСОКИЙ РІВЕНЬ СЕМАНТИЧНОЇ НЕСТАБІЛЬНОСТІ'
-        elif final_score > 0.5:
-            status = 'SUSPICIOUS'
-            verdict = 'ПІДОЗРІЛА СЕМАНТИЧНА СТРУКТУРА'
-        
-        # 9. ПІДГОТОВКА РЕЗУЛЬТАТІВ
-        chaos_markers = modules['esoteric']['count'] + modules['conspiracy']['count'] + modules['scifi']['count']
-        signal_markers = modules['scientific']['count']
-        noise_markers = modules['conspiracy']['count'] + modules['esoteric']['count']
-        
-        return {
-            'entropy': round(final_score, 3),
-            'status': status,
-            'verdict': verdict,
-            'language': lang.upper(),
-            'is_academic_context': discourse_type == 'academic',
-            'diagnostics': {
-                'shannon_entropy': round(entropy, 3),
-                'complexity': round(complexity, 3),
-                'semantic_flow': round(semantic_flow, 3),
-                'semantic_dissonance': round(semantic_flow * 0.8, 3),
-                'word_count': word_count,
-                'char_count': len(text),
-                'chaos_markers': chaos_markers,
-                'noise_markers': noise_markers,
-                'signal_markers': signal_markers,
-                'sanity_penalty': round(semantic_flow * 0.6, 3),
-                'academic_markers': modules['scientific']['count'],
-                'shout_factor': len([w for w in words if w.isupper() and len(w) > 2]) / max(1, word_count),
-                'number_density': len(re.findall(r'\d+', text)) / max(1, word_count),
-                'triggered_rules': triggered_rules,
-                'discourse_type': discourse_type,
-                'pattern_count': len(patterns)
-            }
-        }
