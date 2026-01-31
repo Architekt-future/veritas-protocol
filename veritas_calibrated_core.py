@@ -1,13 +1,14 @@
 """
-Veritas Protocol - Semantic Void Detector v8.3 (Calibrated)
-Enhanced detection with improved pattern recognition and logic checks
+Veritas Protocol - Semantic Void Detector v8.4 (Metric-Combined)
+Uses combined metrics for better detection of subtle manipulation
 """
 
 import re
 import math
+from collections import Counter
 
 class VeritasCalibratedCore:
-    """Advanced detector with calibrated sensitivity"""
+    """Advanced detector with metric combination rules"""
     
     def __init__(self):
         # ОПТИМІЗОВАНІ ПАТТЕРНИ
@@ -18,25 +19,25 @@ class VeritasCalibratedCore:
                 'patterns': [
                     r'(бднф|гіпокамп|нейропластичність|синапси).*?(5g|супутник|таргетування|чип)',
                     r'(нейтрино|квантовий|ентропія).*?(ринок|економіка|трейдер|політика|вибори)',
-                    r'(фізичний|науковий).*?(процес|закон|формула).*?(соціальний|політичний|економічний).*?(абсурд|конструкт|ілюзія)'
+                    r'(фізичний|науковий).*?(процес|закон|формула).*?(соціальний|політичний|економічний)',
+                    r'(днк|генетичний).*?(алгоритм|код|шифр|підпис).*?(контроль|переписування)'
                 ],
                 'verdict': 'ГІБРИДНИЙ НАУКОВИЙ НІГІЛІЗМ',
                 'explanation': 'Наукові терміни використані для обґрунтування абсурдних концепцій',
-                'score_boost': 0.8
+                'score_boost': 0.7
             },
             
-            # 2. СЕМАНТИЧНА ПУСТОТА (гуманітарний туман)
+            # 2. СЕМАНТИЧНА ПУСТОТА
             {
                 'name': 'СЕМАНТИЧНА_ПУСТОТА',
                 'patterns': [
                     r'(холістичний|емпатичний|трансцендентний).*?(синхронізація|діалог|резонанс).*?(відсутність|небуття|туман)',
                     r'(фрактальне|пост-біологічне|пост-істина).*?(відображення|діалог|реальність).*?(необ\'єктивний|невизначений)',
-                    r'(ціннісні\s+наративи|соціальний\s+ландшафт).*?(інтегрувати\s+суперечності|гармонізувати\s+дихотомії)',
-                    r'(небуття|емпатична.*?синхронізація|фрактальне.*?відображення).*?(вища.*?форма|інтелектуальна.*?свобода)'
+                    r'(ціннісні\s+наративи|соціальний\s+ландшафт).*?(інтегрувати\s+суперечності|гармонізувати\s+дихотомії)'
                 ],
                 'verdict': 'СЕМАНТИЧНА ПУСТОТА',
                 'explanation': 'Текст використовує гуманітарну термінологію для приховування відсутності змісту',
-                'score_boost': 0.7
+                'score_boost': 0.6
             },
             
             # 3. ІСТОРИЧНИЙ РЕВІЗІОНІЗМ
@@ -45,66 +46,11 @@ class VeritasCalibratedCore:
                 'patterns': [
                     r'(антарктида|атлантида|аґарта).*?(теплова\s+аномалія|таяня\s+льодовик|атланти|резонатор)',
                     r'(штучний\s+місяць|вибух\s+місяця).*?(повінь|катастрофа|1612|цивілізація)',
-                    r'(наполеон|александр\s+македонський).*?(підземний\s+місто|таємна\s+ціль|аномалія|технологія)',
-                    r'(офіційна\s+історія|завіса).*?(приховує|таємниця).*?(антарктида|атланти)'
+                    r'(наполеон|александр\s+македонський).*?(підземний\s+місто|таємна\s+ціль|аномалія|технологія)'
                 ],
                 'verdict': 'ПСЕВДО-ІСТОРИЧНИЙ РЕВІЗІОНІЗМ',
                 'explanation': 'Текст створює альтернативну історію з анахронічними елементами',
-                'score_boost': 0.8
-            },
-            
-            # 4. ПРОРОЧИЙ АЛАРМІЗМ
-            {
-                'name': 'ПРОРОЧИЙ_АЛАРМІЗМ',
-                'patterns': [
-                    r'(велике\s+перезавантаження|пожежа\s+реальності).*?(неможливо\s+зупинити|пожирає|споживає)',
-                    r'(механізм\s+зупинити|тиша\s+ефірі).*?(красномовний\s+доказ|очевидний|беззаперечний)',
-                    r'(деактивувати\s+підпис|адміралтейський\s+код).*?(переписати\s+днк|дезінфекція|людство)',
-                    r'(тінь\s+стає\s+довшою|відблиск\s+пожежі).*?(споживає\s+реальність|пожирає)'
-                ],
-                'verdict': 'ПРОРОЧИЙ АЛАРМІЗМ',
-                'explanation': 'Використання апокаліптичних метафор для створення прихованої тривоги',
                 'score_boost': 0.7
-            },
-            
-            # 5. ЕКОНОМІЧНА НЕКРОМАНТІЯ
-            {
-                'name': 'ЕКОНОМІЧНА_НЕКРОМАНТІЯ',
-                'patterns': [
-                    r'(облігація|криптовалюта|банк|хеджування).*?(потойбічний|карма|душа|потойбіччя)',
-                    r'(ставка\s+дисконтування).*?(неспокійна\s+душа|депресія\s+населення)',
-                    r'(карма\s+актив|ліквідний\s+актив).*?(ломбард|hades-coin|кредит)',
-                    r'(ефірний\s+пласт|енергія\s+потойбіччя).*?(інструмент|капітал|інвестиція)'
-                ],
-                'verdict': 'ЕКОНОМІЧНА НЕКРОМАНТІЯ',
-                'explanation': 'Економічні терміни поєднуються з езотерикою для створення абсурдних концепцій',
-                'score_boost': 0.8
-            },
-            
-            # 6. ЛОГІЧНИЙ NON-SEQUITUR
-            {
-                'name': 'LOGICAL_NON_SEQUITUR',
-                'patterns': [
-                    r'(вода\s+кипить.*?100|сонце\s+сходить.*?сході|2\+2=4).*?(ядерний\s+арсенал|дестабілізація|хаос)',
-                    r'(фундаментальні\s+істини|логічний\s+аналіз).*?(хаос.*?логіка|випадкові\s+числа|дестабілізація)'
-                ],
-                'verdict': 'ЛОГІЧНИЙ NON-SEQUITUR',
-                'explanation': 'Абсурдні висновки з правильних тверджень',
-                'score_boost': 0.7
-            },
-            
-            # 7. МОРАЛЬНА МАНІПУЛЯЦІЯ
-            {
-                'name': 'МОРАЛЬНА_МАНІПУЛЯЦІЯ',
-                'patterns': [
-                    r'(патріот|безпека|стабільність).*?(приховувати|антисоціальний|загроза)',
-                    r'(справжній\s+патріот|справжня\s+свобода).*?(прийняття\s+опіки|відсутність\s+волі)',
-                    r'(обмежений\s+сприйняття|не\s+здатний\s+побачити).*?(ключі|двері|опіка)',
-                    r'(приватне\s+життя|право\s+на\s+приватність).*?(антисоціальний|загроза|моральна\s+ерозія)'
-                ],
-                'verdict': 'МОРАЛЬНА МАНІПУЛЯЦІЯ',
-                'explanation': 'Моральні терміни використані для приховування авторитарних закликів',
-                'score_boost': 0.8
             }
         ]
         
@@ -113,44 +59,54 @@ class VeritasCalibratedCore:
             'кореляція', 'верифікація', 'гіпотеза', 'вибірка', 'значущість',
             'нейрони', 'синапси', 'метааналіз', 'статистичний', 'логістика',
             'деескалація', 'макроекономічний', 'інвестиції', 'інфраструктура',
-            'ратифікація', 'протокол', 'емпіричний', 'квалітативний', 'кількісний',
-            'показник', 'аналіз', 'результат', 'дослідження', 'метод', 'система',
-            'модель', 'теорія', 'практика', 'експеримент', 'контрольна група'
+            'ратифікація', 'протокол', 'емпіричний', 'квалітативний', 'кількісний'
         ]
         
         self.chaos_indicators = {
-            'esoteric': ['чакра', 'карма', 'астральний', 'енергетичний', 'вібрація', 'резонанс серця'],
-            'conspiracy': ['змова', 'рептилоїд', 'хімітрейл', '5g', 'дезінформація', 'ілюмінат'],
-            'pseudoscience': ['квантовий', 'нейтрино', 'іоносфера', 'кристалічний', 'енергія ефіру'],
-            'revisionism': ['антарктида', 'атлантида', 'наполеон', 'штучний місяць', 'аґарта', 'му'],
-            'alarmism': ['перезавантаження', 'пожежа реальності', 'деактивувати', 'велике перезавантаження'],
-            'economic_occult': ['потойбічний', 'карма актив', 'hades-coin', 'ефірний пласт'],
-            'sci_fi_concepts': ['нейромережа', 'хмарні обчислення', 'біополе', 'пост-біологічний', '5d']
+            'esoteric': ['чакра', 'карма', 'астральний', 'енергетичний', 'вібрація'],
+            'conspiracy': ['змова', 'рептилоїд', 'хімітрейл', '5g', 'дезінформація'],
+            'pseudoscience': ['квантовий', 'нейтрино', 'іоносфера', 'кристалічний'],
+            'revisionism': ['антарктида', 'атлантида', 'наполеон', 'штучний місяць'],
+            'alarmism': ['перезавантаження', 'пожежа реальності', 'деактивувати']
         }
         
         self.signal_markers = [
             'факт', 'дані', 'показник', 'кількість', 'число', 'статистика',
-            'дослідження', 'експеримент', 'результат', 'метод', 'протокол',
-            'вимір', 'аналіз', 'доказ', 'тест', 'контроль', 'повторюваність'
+            'дослідження', 'експеримент', 'результат', 'метод', 'протокол'
         ]
         
-        # ПОКРАЩЕНІ КОНФЛІКТНІ ПАРИ
-        self.conflict_pairs = [
-            ('бднф', '5g'), ('гіпокамп', 'таргетування'), ('нейропластичність', 'супутник'),
-            ('статистика', 'антигравітація'), ('формула', 'сиріус'), ('ентропія', 'ноосфера'),
-            ('фізика', 'магія'), ('медицина', 'енергія'), ('економіка', 'карма'),
-            ('наука', 'езотерика'), ('технологія', 'душа'), ('логіка', 'чакра'),
-            ('днк', 'підпис'), ('алгоритм', 'дезінфекція'), ('код', 'атланти'),
-            ('ринок', 'потойбіччя'), ('облігація', 'карма'), ('банк', 'душа')
-        ]
-        
-        # ЛОГІЧНІ NON-SEQUITUR ШАБЛОНИ
-        self.non_sequitur_patterns = [
-            (r'вода.*?кипить.*?100', r'ядерний.*?арсенал'),
-            (r'сонце.*?сходить.*?сході', r'дестабілізація'),
-            (r'2\+2=4', r'хаос.*?логіка'),
-            (r'земля.*?кругла', r'випадкові.*?числа'),
-            (r'гравітація.*?існує', r'анігілює.*?антиматерія')
+        # МЕТРИЧНІ КОМБІНАЦІЇ ДЛЯ ШТРАФІВ
+        self.metric_combinations = [
+            # Ентропія високА + нуль сигналу = великий штраф
+            {
+                'condition': lambda m: m['shannon_entropy'] > 0.75 and m['signal_markers'] == 0,
+                'penalty': 0.4,
+                'explanation': 'Висока ентропія без сигнальних маркерів'
+            },
+            # Ентропія середня + висока складність + мало сигналу
+            {
+                'condition': lambda m: m['shannon_entropy'] > 0.7 and m['complexity'] > 0.75 and m['signal_markers'] < 2,
+                'penalty': 0.3,
+                'explanation': 'Складний текст з низькою інформацією'
+            },
+            # Маркери хаосу > 2 + сигнал = 0
+            {
+                'condition': lambda m: m['chaos_markers'] >= 2 and m['signal_markers'] == 0,
+                'penalty': 0.35,
+                'explanation': 'Багато хаосу без фактичної інформації'
+            },
+            # Академічні терміни + маркери хаосу (несумісність)
+            {
+                'condition': lambda m: m['academic_markers'] > 0 and m['chaos_markers'] > 0,
+                'penalty': 0.25,
+                'explanation': 'Наукові терміни змішані з хаосом'
+            },
+            # Висока складність + низький сигнал + нормальна ентропія
+            {
+                'condition': lambda m: m['complexity'] > 0.8 and m['signal_markers'] < 2 and 0.6 < m['shannon_entropy'] < 0.8,
+                'penalty': 0.2,
+                'explanation': 'Замудрений текст з малою інформацією'
+            }
         ]
 
     def detect_patterns(self, text):
@@ -189,66 +145,75 @@ class VeritasCalibratedCore:
         
         return counts
 
+    def calculate_combined_metrics_penalty(self, metrics):
+        """Обчислює штраф на основі комбінацій метрик"""
+        total_penalty = 0.0
+        applied_explanations = []
+        
+        for combo in self.metric_combinations:
+            if combo['condition'](metrics):
+                total_penalty += combo['penalty']
+                applied_explanations.append(combo['explanation'])
+        
+        return min(total_penalty, 0.8), applied_explanations
+
     def calculate_semantic_sanitary_penalty(self, text):
         """Обчислює штраф санітарії на основі конфліктних пар"""
         penalty = 0.0
         text_lower = text.lower()
         
-        for term1, term2 in self.conflict_pairs:
+        # Конфліктні пари
+        conflict_pairs = [
+            ('бднф', '5g'), ('нейропластичність', 'супутник'), ('гіпокамп', 'таргетування'),
+            ('статистика', 'антигравітація'), ('формула', 'сиріус'), ('ентропія', 'ноосфера'),
+            ('фізика', 'магія'), ('медицина', 'енергія'), ('економіка', 'карма'),
+            ('наука', 'езотерика'), ('технологія', 'душа'), ('логіка', 'чакра'),
+            ('днк', 'підпис'), ('алгоритм', 'дезінфекція'), ('код', 'атланти')
+        ]
+        
+        for term1, term2 in conflict_pairs:
             if term1 in text_lower and term2 in text_lower:
-                penalty += 0.5  # Збільшено штраф!
+                penalty += 0.3
         
-        # Перевірка non-sequitur
-        for pattern1, pattern2 in self.non_sequitur_patterns:
+        # Non-sequitur шаблони
+        non_sequitur_patterns = [
+            (r'вода.*?кипить.*?100', r'ядерний.*?арсенал'),
+            (r'сонце.*?сходить.*?сході', r'дестабілізація'),
+            (r'2\+2=4', r'хаос.*?логіка'),
+            (r'земля.*?кругла', r'випадкові.*?числа')
+        ]
+        
+        for pattern1, pattern2 in non_sequitur_patterns:
             if re.search(pattern1, text_lower) and re.search(pattern2, text_lower):
-                penalty += 0.6
+                penalty += 0.4
         
-        return min(penalty, 0.8)
+        return min(penalty, 0.7)
 
-    def detect_semantic_gap(self, text):
-        """Виявляє семантичні розриви (логичні дистанції)"""
-        text_lower = text.lower()
-        gap_score = 0.0
-        
-        # Велика логічна дистанція
-        if any(word in text_lower for word in ['квантовий', 'нейтрино', 'формула']):
-            if any(word in text_lower for word in ['ринок', 'економіка', 'політика', 'вибори']):
-                gap_score += 0.7
-        
-        # Мікс науки та езотерики
-        if any(word in text_lower for word in ['наука', 'фізика', 'хімія', 'біологія']):
-            if any(word in text_lower for word in ['чакра', 'карма', 'астральний', 'енергія']):
-                gap_score += 0.6
-        
-        # Історичні анахронізми
-        if any(word in text_lower for word in ['антарктида', 'атлантида', 'наполеон']):
-            if any(word in text_lower for word in ['технологія', 'комп\'ютер', 'інтернет']):
-                gap_score += 0.5
-        
-        return min(1.0, gap_score)
-
-    def calculate_semantic_void(self, text, term_counts, shannon_entropy):
+    def calculate_semantic_void(self, text, term_counts, shannon_entropy, complexity):
         """Обчислює семантичну пустоту"""
         void_score = 0.0
         
         # Правило 1: Висока ентропія + нуль сигнальних маркерів
-        if shannon_entropy > 0.7 and term_counts['signal'] == 0:
+        if shannon_entropy > 0.75 and term_counts['signal'] == 0:
             void_score += 0.5
+        elif shannon_entropy > 0.7 and term_counts['signal'] < 1:
+            void_score += 0.3
         
         # Правило 2: Багато академічних термінів але мало конкретики
         if term_counts['academic'] > 3 and term_counts['signal'] < 2:
-            void_score += 0.4
+            void_score += 0.3
         
-        # Правило 3: Висока складність речень але низька інформативність
-        complexity = self._calculate_complexity(text)
-        if complexity > 0.8 and term_counts['signal'] < 3:
-            void_score += 0.4
+        # Правило 3: Висока складність + низька інформативність
+        if complexity > 0.8 and term_counts['signal'] < 2:
+            void_score += 0.3
+        elif complexity > 0.75 and term_counts['signal'] < 1:
+            void_score += 0.2
         
         # Правило 4: Гуманітарний туман
         text_lower = text.lower()
         humanities_terms = ['холістичний', 'емпатичний', 'трансцендентний', 'фрактальний']
         if any(term in text_lower for term in humanities_terms) and term_counts['signal'] < 1:
-            void_score += 0.3
+            void_score += 0.2
         
         return min(1.0, void_score)
 
@@ -266,19 +231,29 @@ class VeritasCalibratedCore:
         shannon_entropy = self._calculate_shannon_entropy(text)
         complexity = self._calculate_complexity(text)
         
-        # Розширені метрики
-        semantic_void = self.calculate_semantic_void(text, term_counts, shannon_entropy)
-        sanitary_penalty = self.calculate_semantic_sanitary_penalty(text)
-        semantic_gap = self.detect_semantic_gap(text)
+        # Основні метрики для комбінацій
+        base_metrics = {
+            'shannon_entropy': shannon_entropy,
+            'complexity': complexity,
+            'signal_markers': term_counts['signal'],
+            'chaos_markers': term_counts['chaos'],
+            'academic_markers': term_counts['academic'],
+            'word_count': word_count
+        }
         
-        # БАЗОВА ОЦІНКА
+        # Розширені метрики
+        semantic_void = self.calculate_semantic_void(text, term_counts, shannon_entropy, complexity)
+        sanitary_penalty = self.calculate_semantic_sanitary_penalty(text)
+        metric_penalty, metric_explanations = self.calculate_combined_metrics_penalty(base_metrics)
+        
+        # БАЗОВА ОЦІНКА з метричними комбінаціями
         base_score = (
-            shannon_entropy * 0.2 + 
-            complexity * 0.1 + 
-            (term_counts['chaos'] / max(1, word_count)) * 0.3 +
-            semantic_void * 0.25 +
-            sanitary_penalty * 0.1 +
-            semantic_gap * 0.05
+            shannon_entropy * 0.15 + 
+            complexity * 0.10 + 
+            (term_counts['chaos'] / max(1, word_count)) * 0.25 +
+            semantic_void * 0.20 +
+            sanitary_penalty * 0.15 +
+            metric_penalty * 0.15
         )
         
         # Штрафи за паттерни
@@ -286,13 +261,13 @@ class VeritasCalibratedCore:
             base_score += pattern['score_boost']
         
         # АКАДЕМІЧНИЙ ЗАХИСТ: знижуємо оцінку для справжніх наукових текстів
-        if term_counts['academic'] >= 4 and term_counts['signal'] >= 3 and term_counts['chaos'] == 0:
+        if term_counts['academic'] >= 3 and term_counts['signal'] >= 2 and term_counts['chaos'] == 0:
             base_score *= 0.3  # Сильний захист!
-        elif term_counts['academic'] >= 3 and term_counts['signal'] >= 2:
+        elif term_counts['academic'] >= 2 and term_counts['signal'] >= 1:
             base_score *= 0.5
         
-        # КРИТИЧНІ ВИПАДКИ: завжди висока оцінка
-        if sanitary_penalty > 0.5 or semantic_gap > 0.5:
+        # Гарантований високий бал для критичних випадків
+        if sanitary_penalty > 0.4 or metric_penalty > 0.3:
             base_score = max(base_score, 0.7)
         
         final_score = min(0.99, max(0.0, base_score))
@@ -308,7 +283,7 @@ class VeritasCalibratedCore:
             if semantic_void > 0.5:
                 verdict = 'СЕМАНТИЧНА ПУСТОТА'
                 explanation = 'Високий рівень абстракції при відсутності конкретного змісту'
-            elif semantic_gap > 0.4:
+            elif sanitary_penalty > 0.4:
                 verdict = 'ВИСОКИЙ РІВЕНЬ СЕМАНТИЧНОГО ХАОСУ'
                 explanation = 'Текст демонструє критичний рівень семантичної несумісності'
             else:
@@ -327,6 +302,10 @@ class VeritasCalibratedCore:
             verdict = 'СТАБІЛЬНИЙ ЛОГІЧНИЙ СИГНАЛ'
             explanation = 'Текст демонструє високу логічну цілісність'
         
+        # Додаємо пояснення метричних комбінацій
+        if metric_explanations:
+            explanation += " | " + " + ".join(metric_explanations)
+        
         return {
             'entropy': round(final_score, 3),
             'status': status,
@@ -338,7 +317,7 @@ class VeritasCalibratedCore:
                 'complexity': round(complexity, 3),
                 'semantic_void': round(semantic_void, 3),
                 'sanity_penalty': round(sanitary_penalty, 3),
-                'semantic_gap': round(semantic_gap, 3),
+                'metric_penalty': round(metric_penalty, 3),
                 'word_count': word_count,
                 'char_count': len(text),
                 'academic_markers': term_counts['academic'],
@@ -348,7 +327,7 @@ class VeritasCalibratedCore:
                 'pattern_count': len(detected_patterns),
                 'shout_factor': len([w for w in words if w.isupper() and len(w) > 2]) / max(1, word_count),
                 'number_density': len(re.findall(r'\d+', text)) / max(1, word_count),
-                'semantic_gap_markers': 1 if semantic_gap > 0.3 else 0
+                'signal_to_noise': term_counts['signal'] / max(1, term_counts['chaos']) if term_counts['chaos'] > 0 else 999
             }
         }
 
