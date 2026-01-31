@@ -117,12 +117,14 @@ def analyze():
             result['verdict'] = 'СТАБІЛЬНИЙ ЛОГІЧНИЙ СИГНАЛ'
             result['explanation'] = 'Структура тексту в межах норми. Аномалій не виявлено.'
 
-        # Додаємо дані для відображення
+       # Додаємо ВСІ дані для відображення на фронтенді
         result['shannon_entropy'] = entropy
-        result['chaos_markers'] = total_chaos_score
-        result['source'] = source
-        result['title'] = title
-        result['mode'] = 'url' if url else 'text'
+        result['chaos_markers'] = total_chaos_score # Твій сумарний бал хаосу
+        result['complexity'] = complexity
+        result['sanity_penalty'] = sanity
+        result['shout_factor'] = shout
+        result['number_density'] = density
+        result['language'] = language
         
         if entropy > 0.58 or chaos > 15:
             result['status_class'] = 'danger'
