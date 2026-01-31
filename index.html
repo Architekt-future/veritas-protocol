@@ -311,6 +311,72 @@
             margin-bottom: 4px;
         }
 
+        /* MODE TABS */
+        .mode-tabs {
+            display: flex;
+            gap: 0;
+            margin-bottom: 15px;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.25);
+        }
+
+        .mode-tab {
+            flex: 1;
+            padding: 9px 10px;
+            text-align: center;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            font-weight: bold;
+            cursor: pointer;
+            background: rgba(0,0,0,0.4);
+            color: #888;
+            border: none;
+            transition: background 0.2s, color 0.2s;
+            user-select: none;
+        }
+
+        .mode-tab:hover {
+            background: rgba(255,255,255,0.08);
+        }
+
+        .mode-tab.active {
+            background: rgba(0, 212, 255, 0.15);
+            color: #00d4ff;
+        }
+
+        .mode-panel {
+            display: none;
+        }
+
+        .mode-panel.active {
+            display: block;
+        }
+
+        .input-group textarea {
+            width: 100%;
+            min-height: 140px;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            resize: vertical;
+            line-height: 1.5;
+        }
+
+        .input-group textarea:focus {
+            outline: none;
+            border-color: #00d4ff;
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+        }
+
+        .input-group textarea::placeholder {
+            color: #555;
+        }
+
         /* LOADING */
         .loading {
             color: #00d4ff;
@@ -381,14 +447,34 @@
             <div class="panel">
                 <div class="panel-title">⚡ DATA INPUT</div>
                 
-                <div class="input-group">
-                    <label for="urlInput">Target URL:</label>
-                    <input 
-                        type="text" 
-                        id="urlInput" 
-                        placeholder="https://example.com/news-article"
-                        value=""
-                    />
+                <!-- MODE TOGGLE -->
+                <div class="mode-tabs">
+                    <button class="mode-tab active" id="tabURL" onclick="switchMode('url')">🔗 URL</button>
+                    <button class="mode-tab" id="tabManual" onclick="switchMode('manual')">✏️ Manual</button>
+                </div>
+
+                <!-- URL MODE -->
+                <div class="mode-panel active" id="panelURL">
+                    <div class="input-group">
+                        <label for="urlInput">Target URL:</label>
+                        <input 
+                            type="text" 
+                            id="urlInput" 
+                            placeholder="https://example.com/news-article"
+                            value=""
+                        />
+                    </div>
+                </div>
+
+                <!-- MANUAL MODE -->
+                <div class="mode-panel" id="panelManual">
+                    <div class="input-group">
+                        <label for="textInput">Paste text for analysis:</label>
+                        <textarea 
+                            id="textInput" 
+                            placeholder="Введіть або вставіть текст сюда для аналізу..."
+                        ></textarea>
+                    </div>
                 </div>
 
                 <div class="input-group">
@@ -496,6 +582,9 @@
         // API Configuration
         const API_BASE = '/api/analyze';
       
+        // Current mode state
+        let currentMode = 'url';
+
         // Check API status on load
         window.addEventListener('load', checkAPIStatus);
 
@@ -521,48 +610,44 @@
             }
         }
 
-        // DATA CLEANER MODULE (used only for display, not for entropy calc)
-        function cleanText(rawText) {
-            let cleaned = rawText;
-            cleaned = cleaned.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
-            cleaned = cleaned.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
-            cleaned = cleaned.replace(/<%[\s\S]*?%>/g, '');
-            cleaned = cleaned.replace(/<!--[\s\S]*?-->/g, '');
-            cleaned = cleaned.replace(/<[^>]+>/g, ' ');
-            cleaned = cleaned.replace(/У вас відключено JavaScript/gi, '');
-            cleaned = cleaned.replace(/JavaScript is disabled/gi, '');
-            cleaned = cleaned.replace(/\s+/g, ' ');
-            cleaned = cleaned.trim();
-            return cleaned;
+        // MODE SWITCHER
+        function switchMode(mode) {
+            currentMode = mode;
+
+            document.getElementById('tabURL').className = 'mode-tab' + (mode === 'url' ? ' active' : '');
+            document.getElementById('tabManual').className = 'mode-tab' + (mode === 'manual' ? ' active' : '');
+            document.getElementById('panelURL').className = 'mode-panel' + (mode === 'url' ? ' active' : '');
+            document.getElementById('panelManual').className = 'mode-panel' + (mode === 'manual' ? ' active' : '');
         }
 
-        // ANALYZE FUNCTION — sends POST to backend, uses backend results
+        // UNIFIED ANALYZE — works in both URL and Manual mode
         async function analyzeURL() {
-            const urlInput = document.getElementById('urlInput').value.trim();
             const analyzeBtn = document.getElementById('analyzeBtn');
             const textDisplay = document.getElementById('textDisplay');
             const metricsPanel = document.getElementById('metricsPanel');
 
-            if (!urlInput) {
-                alert('❌ Please enter a URL');
-                return;
+            // Build payload based on current mode
+            let payload = {};
+            if (currentMode === 'url') {
+                const url = document.getElementById('urlInput').value.trim();
+                if (!url) { alert('❌ Please enter a URL'); return; }
+                payload = { url: url };
+            } else {
+                const text = document.getElementById('textInput').value.trim();
+                if (!text || text.length < 20) { alert('❌ Text must be at least 20 characters'); return; }
+                payload = { text: text, source: 'Manual Input' };
             }
 
             // Disable button
             analyzeBtn.disabled = true;
             analyzeBtn.textContent = '⏳ ANALYZING...';
-
-            // Show loading
             textDisplay.innerHTML = '<div class="loading">⚙️ Sending to backend...</div>';
 
             try {
-                // POST to backend with URL — backend does scraping + full analysis
                 const response = await fetch(API_BASE, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ url: urlInput })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
                 });
 
                 const data = await response.json();
@@ -571,9 +656,12 @@
                     throw new Error(data.error);
                 }
 
-                // Show extracted text from backend
-                const extractedText = data.extracted_text || '';
-                textDisplay.textContent = extractedText || 'No text extracted';
+                // Show text: extracted_text for URL mode, original input for manual
+                if (currentMode === 'url') {
+                    textDisplay.textContent = data.extracted_text || 'No text extracted';
+                } else {
+                    textDisplay.textContent = payload.text;
+                }
 
                 // === USE BACKEND DATA FOR EVERYTHING ===
                 const entropy = data.entropy || 0;
@@ -677,6 +765,7 @@
         // CLEAR ALL
         function clearAll() {
             document.getElementById('urlInput').value = '';
+            document.getElementById('textInput').value = '';
             document.getElementById('textDisplay').textContent = 'Waiting for analysis...';
             document.getElementById('entropyValue').textContent = '---';
             document.getElementById('entropyValue').style.color = '#e0e0e0';
@@ -699,9 +788,17 @@
             }
         }
 
-        // Allow Enter key to trigger analysis
+        // Enter key: trigger in URL mode only (manual needs Enter for new lines)
         document.getElementById('urlInput').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
+                analyzeURL();
+            }
+        });
+
+        // Ctrl+Enter in textarea triggers analyze
+        document.getElementById('textInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                e.preventDefault();
                 analyzeURL();
             }
         });
