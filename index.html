@@ -369,7 +369,7 @@
             border-radius: 10px;
             padding: 20px;
             margin-top: 20px;
-            max-height: 300px;
+            max-height: 400px;
             overflow-y: auto;
             font-size: 0.9em;
             line-height: 1.6;
@@ -379,6 +379,23 @@
         .extracted-text h4 {
             color: #00d4ff;
             margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .text-length {
+            font-size: 0.8em;
+            color: #888;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 3px 10px;
+            border-radius: 10px;
+        }
+
+        .text-content {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-family: 'Courier New', monospace;
         }
 
         .loading {
@@ -643,6 +660,15 @@
                 `;
             }).join('');
 
+            const extractedTextHTML = data.extracted_text ? `
+                <div class="extracted-text" id="extractedTextContainer">
+                    <h4>📄 Текст для аналізу:
+                        <span class="text-length">${data.extracted_text_length} символів</span>
+                    </h4>
+                    <div class="text-content">${data.extracted_text}</div>
+                </div>
+            ` : '';
+
             resultsPanel.innerHTML = `
                 <div class="entropy-display">
                     <h2>📊 РЕЗУЛЬТАТ АНАЛІЗУ</h2>
@@ -672,12 +698,7 @@
                     ${metricsHTML}
                 </div>
 
-                ${data.extracted_text ? `
-                    <div class="extracted-text" id="extractedTextContainer">
-                        <h4>📄 Витягнутий текст:</h4>
-                        <p>${data.extracted_text.substring(0, 500)}${data.extracted_text.length > 500 ? '...' : ''}</p>
-                    </div>
-                ` : ''}
+                ${extractedTextHTML}
             `;
 
             resultsPanel.classList.add('show');
