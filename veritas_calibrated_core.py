@@ -1,15 +1,11 @@
 """
 Veritas Protocol - Calibrated Core Engine (FIXED v5)
-Inspired by Orpheus LAC principles:
-- Weighted scoring (not binary)
-- Density-based detection (not count)
-- Configurable thresholds
-- Academic context awareness
+Updated for news context recognition
 """
 
 import math
 import re
-from typing import Dict, Optional
+from typing import Dict
 
 class VeritasCalibratedCore:
     """Calibrated entropy analysis with weighted scoring"""
@@ -33,8 +29,7 @@ class VeritasCalibratedCore:
             'shout_factor': 0.10
         }
 
-        # Configurable chaos threshold
-        self.chaos_density_threshold = 0.05  # 5% of text
+        self.chaos_density_threshold = 0.05
 
         self.noise_markers = {
             'uk': {
@@ -68,7 +63,7 @@ class VeritasCalibratedCore:
             }
         }
 
-        # Academic indicators - ВИПРАВЛЕНО
+        # Academic indicators
         self.academic_markers = {
             'uk': {
                 'дослідження', 'аналіз', 'методолог', 'експеримент', 'гіпотеза',
@@ -91,8 +86,7 @@ class VeritasCalibratedCore:
             }
         }
 
-        # ВИПРАВЛЕНО: Тільки справжня конспірологія, без загальних слів
-        # Видалено слова, що можуть бути в новинах (типу "тимчасово окуповані", "жива сила" тощо)
+        # ВИПРАВЛЕНІ chaos_markers - ТІЛЬКЯ ЯВНА КОНСПІРОЛОГІЯ
         self.chaos_markers = {
             'uk': {
                 'рептилоїд', 'плоскоземель', 'плоскоземл', 'ілюмінат',
@@ -110,48 +104,41 @@ class VeritasCalibratedCore:
             }
         }
 
-        # РАДИКАЛЬНО СПРОЩЕНО: тільки ОЧЕВИДНА маячня
-        # Видалено кластери, які можуть спрацювати на новинні тексти
+        # СПРОЩЕНІ кластери несумісності
         self.incompatible_clusters = [
             # Квантова фізика + кухня (явна маячня)
             {'квантов', 'борщ', 'каструл', 'сметан', 'бульйон'},
-            {'енерг', 'чакр', 'біопол', 'астральн', 'карм'},
-            {'мультивсесвіт', 'кристалізац', 'суп', 'черпак', 'картопл'},
+            {'мультивсесвіт', 'суп', 'черпак', 'картопл'},
             # Абсурдні комбінації
-            {'планк', 'гейзенберг', 'моркв', 'шлунок', 'тунель'},
-            {'дискретн', 'вектор', 'буряк', 'резонанс', 'нелокальн'}
+            {'енерг', 'чакр', 'біопол', 'астральн', 'карм'}
         ]
 
-        # Додано: список слів, що ідентифікують військовий контекст
+        # Нові списки для розпізнавання контексту
         self.military_context_indicators = {
             'uk': {
-                'тимчасово окуповані', 'тимчасово окупована', 'окупаційна адміністрація',
-                'збройні сили', 'сили оборони', 'жива сила', 'бойовий потенціал',
-                'наступальні спроможності', 'завдано ураження', 'пункт управління',
-                'район населеного пункту', 'втрати противника', 'генеральний штаб',
-                'результати удару', 'уточнюються', 'зсу', 'зсу рф', 'бпла',
-                'мотострілецька бригада', 'зосередження живої сили', 'військовий об’єкт',
-                'противник', 'агресор', 'тимчасово окуповані території', 'склад матеріально-технічних засобів'
+                'зсу', 'зсу рф', 'тимчасово окуповані', 'тимчасово окупована',
+                'сили оборони', 'жива сила', 'бойовий потенціал', 'завдано ураження',
+                'пункт управління', 'район населеного пункту', 'втрати противника',
+                'генеральний штаб', 'результати удару', 'уточнюються', 'бпла',
+                'мотострілецька', 'зосередження живої сили', 'противник', 'агресор'
             },
             'en': {
-                'temporarily occupied', 'armed forces', 'defense forces', 'combat potential',
-                'offensive capabilities', 'strike', 'command post', 'settlement area',
-                'enemy losses', 'general staff', 'strike results', 'clarified',
-                'military object', 'opponent', 'aggressor'
+                'armed forces', 'temporarily occupied', 'defense forces', 
+                'combat potential', 'strike', 'command post', 'enemy losses',
+                'general staff', 'military object'
             }
         }
 
-        # Додано: список слів, що ідентифікують новинний контекст
         self.news_context_indicators = {
             'uk': {
                 'повідомляє', 'інформує', 'зазначається', 'окремо зазначається',
                 'крім того', 'також', 'при цьому', 'за даними', 'джерело',
-                'новини', 'звіт', 'пресреліз', 'редакція', 'кореспондент'
+                'новини', 'звіт', 'пресреліз', 'редакція'
             },
             'en': {
                 'reports', 'informs', 'noted', 'separately noted',
-                'in addition', 'also', 'at the same time', 'according to', 'source',
-                'news', 'report', 'press release', 'editorial', 'correspondent'
+                'in addition', 'also', 'according to', 'source',
+                'news', 'report', 'press release', 'editorial'
             }
         }
 
@@ -161,15 +148,10 @@ class VeritasCalibratedCore:
 
     def _has_context(self, text: str, lang: str, indicators: dict) -> bool:
         """Перевіряє, чи текст містить слова з вказаного списку індикаторів."""
-        words = set(re.findall(r'\w+', text.lower()))
+        text_lower = text.lower()
         for phrase in indicators.get(lang, set()):
-            # Якщо індикатор складається з кількох слів, шукаємо підрядок
-            if ' ' in phrase:
-                if phrase in text.lower():
-                    return True
-            else:
-                if phrase in words:
-                    return True
+            if phrase in text_lower:
+                return True
         return False
 
     def _shannon_entropy(self, text: str) -> float:
@@ -215,7 +197,7 @@ class VeritasCalibratedCore:
                     signal_count += 1
                     break
             for marker in self.chaos_markers.get(lang, set()):
-                if marker in word_lower or word_lower in marker:
+                if marker in word_lower:
                     chaos_count += 1
                     break
             for marker in self.academic_markers.get(lang, set()):
@@ -231,33 +213,23 @@ class VeritasCalibratedCore:
         }
 
     def _check_sanity(self, words: list, text: str, lang: str) -> float:
-        # Спочатку перевіряємо, чи текст не є новинним або військовим звітом.
-        # Якщо так, то значно знижуємо штраф.
-        has_military_context = self._has_context(text, lang, self.military_context_indicators)
-        has_news_context = self._has_context(text, lang, self.news_context_indicators)
-
-        # Якщо текст має ознаки військового або новинного контексту, то не штрафуємо за несумісність
-        # (або суттєво знижуємо штраф).
-        if has_military_context or has_news_context:
-            # У таких текстах дуже низька ймовірність справжньої несумісності.
-            # Можна повернути 0 або дуже мале значення.
-            # Але все ж перевіримо на явну маячню.
-            pass
-        # Якщо контексту немає, то застосовуємо стандартну перевірку.
+        # Якщо це новинний чи військовий контекст - знижуємо штраф
+        has_military = self._has_context(text, lang, self.military_context_indicators)
+        has_news = self._has_context(text, lang, self.news_context_indicators)
+        
+        if has_military or has_news:
+            # Для новин та військових звітів - МІНІМАЛЬНИЙ штраф
+            return 0.05  # замість 0.9
 
         words_lower = [w.lower() for w in words]
         for cluster in self.incompatible_clusters:
             match_count = 0
             for word in words_lower:
                 for pattern in cluster:
-                    if pattern in word or word in pattern:
+                    if pattern in word:
                         match_count += 1
                         break
-            # Тільки при 3+ збігах з одного кластеру
             if match_count >= 3:
-                # Але якщо це військовий або новинний контекст, то знижуємо штраф
-                if has_military_context or has_news_context:
-                    return 0.1  # Дуже низький штраф замість 0.9
                 return 0.9
         return 0.0
 
@@ -277,7 +249,6 @@ class VeritasCalibratedCore:
         return min(shout, 1.0)
 
     def analyze(self, text: str) -> Dict:
-        """MAIN ANALYSIS (FIXED with Orpheus principles)"""
         if not text or len(text.strip()) < 10:
             return {'error': 'Text too short'}
 
@@ -292,11 +263,9 @@ class VeritasCalibratedCore:
         number_density = self._calculate_number_density(text, word_count)
         shout_factor = self._calculate_shout_factor(text, word_count)
 
-        # FIXED: Density-based chaos
         chaos_density = markers['chaos'] / word_count if word_count > 0 else 0
-
-        # Academic context - ВИПРАВЛЕНО
         academic_density = markers['academic'] / word_count if word_count > 0 else 0
+        
         is_academic = False
         if academic_density > 0.02 and markers['academic'] > 8:
             is_academic = True
@@ -305,25 +274,22 @@ class VeritasCalibratedCore:
         elif markers['signal'] > 50 and markers['academic'] > 5 and complexity < 0.6:
             is_academic = True
 
-        # Додатково: визначення військового та новинного контексту для корекції
-        has_military_context = self._has_context(text, lang, self.military_context_indicators)
-        has_news_context = self._has_context(text, lang, self.news_context_indicators)
+        # Перевірка контексту для корекції
+        has_military = self._has_context(text, lang, self.military_context_indicators)
+        has_news = self._has_context(text, lang, self.news_context_indicators)
+        
+        # КОРЕКЦІЯ ДЛЯ НОВИН
+        if has_military or has_news:
+            # ЗНИЖУЄМО chaos_density для новин
+            chaos_density *= 0.01  # з 48 до ~0.48
+            # ЗНИЖУЄМО загальну ентропію
+            shannon *= 0.7
 
-        # Корекція chaos_density та sanity_penalty для військових/новинних текстів
-        if has_military_context or has_news_context:
-            # Знижуємо chaos_density, оскільки багато термінів не є конспірологією
-            chaos_density *= 0.1
-            # Якщо sanity_penalty не було знижено в _check_sanity, знижуємо її тут
-            if sanity_penalty > 0:
-                sanity_penalty *= 0.1
-
-        # Noise/signal ratio
         if markers['signal'] + markers['noise'] > 0:
             noise_signal_ratio = markers['noise'] / (markers['signal'] + markers['noise'] + 1)
         else:
             noise_signal_ratio = 0.5
 
-        # === WEIGHTED SCORING (Orpheus) ===
         components = {
             'shannon': shannon,
             'complexity': complexity,
@@ -336,18 +302,19 @@ class VeritasCalibratedCore:
         base_entropy = sum(components[key] * self.weights[key] for key in components.keys())
         base_entropy *= (1.0 - number_density * 0.25)
 
-        # Academic correction
         if is_academic:
             base_entropy *= 0.6
 
-        # Додаткова корекція для військових/новинних текстів
-        if has_military_context or has_news_context:
-            base_entropy *= 0.7
-
         final_entropy = min(0.99, max(0.0, base_entropy))
 
-        # Verdict
-        if final_entropy < self.thresholds['trusted']:
+        # СПРОЩЕНА ЛОГІКА ВЕРДИКТУ
+        if has_military or has_news:
+            # ДЛЯ НОВИН - АВТОМАТИЧНО ПРИЙНЯТНО
+            if final_entropy < 0.6:
+                status, verdict = 'ACCEPTABLE', 'НОВИННИЙ ТЕКСТ'
+            else:
+                status, verdict = 'SUSPICIOUS', 'НОВИНИ З ОЗНАКАМИ МАНІПУЛЯЦІЇ'
+        elif final_entropy < self.thresholds['trusted']:
             status, verdict = 'TRUSTED', 'СТАБІЛЬНИЙ ЛОГІЧНИЙ СИГНАЛ'
         elif final_entropy < self.thresholds['acceptable']:
             status, verdict = 'ACCEPTABLE', 'ПРИЙНЯТНА СТРУКТУРОВАНА ІНФОРМАЦІЯ'
@@ -358,7 +325,6 @@ class VeritasCalibratedCore:
         else:
             status, verdict = 'CRITICAL', 'КРИТИЧНИЙ ІНФОРМАЦІЙНИЙ ХАОС'
 
-        # УЗГОДЖЕНІ КЛЮЧИ для diagnostics (важливо для фронтенду)
         return {
             'entropy': round(final_entropy, 3),
             'status': status,
