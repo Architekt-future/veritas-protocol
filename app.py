@@ -37,6 +37,7 @@ def analyze():
         # Спробуємо взяти текст з усіх можливих ключів, які міг надіслати фронтенд
         input_text = data.get('text') or data.get('textContent') or ""
         input_text = str(input_text).strip()
+        source = data.get('source', 'Manual Input') or 'Manual Input'
         
         text_to_analyze = ""
         mode = ""
