@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>💠 Veritas Terminal v3.2</title>
+    <title>💠 Veritas Terminal v3.3</title>
     <style>
         * {
             margin: 0;
@@ -232,6 +232,12 @@
             border-color: #00ff88;
         }
 
+        .verdict.acceptable {
+            background: rgba(0, 212, 255, 0.2);
+            color: #00d4ff;
+            border-color: #00d4ff;
+        }
+
         .verdict.warning {
             background: rgba(255, 170, 0, 0.2);
             color: #ffaa00;
@@ -268,6 +274,26 @@
             font-size: 1.1em;
         }
 
+        .context-indicator {
+            margin: 15px 0;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .context-indicator.academic {
+            background: rgba(0, 100, 255, 0.2);
+            color: #0064ff;
+            border: 2px solid #0064ff;
+        }
+
+        .context-indicator.general {
+            background: rgba(100, 100, 100, 0.2);
+            color: #aaa;
+            border: 2px solid #aaa;
+        }
+
         .metrics-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
@@ -290,6 +316,10 @@
             border-left-color: #ffaa00;
         }
 
+        .metric-card.academic {
+            border-left-color: #0064ff;
+        }
+
         .metric-label {
             font-size: 0.9em;
             color: #888;
@@ -310,6 +340,10 @@
 
         .metric-card.warning .metric-value {
             color: #ffaa00;
+        }
+
+        .metric-card.academic .metric-value {
+            color: #0064ff;
         }
 
         .metric-description {
@@ -361,6 +395,11 @@
         .flag-safe {
             background: rgba(0, 212, 255, 0.3);
             color: #00d4ff;
+        }
+
+        .flag-academic {
+            background: rgba(0, 100, 255, 0.3);
+            color: #0064ff;
         }
 
         .extracted-text {
@@ -434,7 +473,7 @@
     <div class="container">
         <div class="header">
             <h1>💠 VERITAS TERMINAL</h1>
-            <div class="subtitle">Information Entropy & Influence Analyzer v3.2 Calibrated</div>
+            <div class="subtitle">Information Entropy & Influence Analyzer v3.3 Calibrated</div>
             <div class="api-status checking" id="apiStatus">⚙️ Connecting...</div>
         </div>
 
@@ -492,8 +531,8 @@
         </div>
 
         <div class="footer">
-            <p>💠 Veritas Protocol Terminal v3.2 - Orpheus Calibrated</p>
-            <p>Backend: Python Flask (Weighted Scoring + Influence Analysis)</p>
+            <p>💠 Veritas Protocol Terminal v3.3 - Orpheus Calibrated</p>
+            <p>Backend: Python Flask (Weighted Scoring + Context-Aware Analysis)</p>
             <p>Co-authored by Dmytro Kholodniak & Chimeric Collective</p>
         </div>
     </div>
@@ -610,6 +649,7 @@
             const getBarColor = (status) => {
                 switch(status) {
                     case 'success': return '#00ff88';
+                    case 'acceptable': return '#00d4ff';
                     case 'warning': return '#ffaa00';
                     case 'critical': return '#ff0000';
                     default: return '#888';
@@ -629,9 +669,21 @@
                 { label: 'ЩІЛЬНІСТЬ ЧИСЕЛ', value: data.number_density, desc: 'Частота використання чисел' },
                 { label: 'ШТРАФ САНІТАРІЇ', value: data.sanity_penalty, desc: 'Порушення логічної сумісності' },
                 { label: 'ІНДЕКС ВПЛИВУ', value: data.impact_score, desc: 'Загальний індекс впливу на основі всіх метрик' },
+                { label: 'МАРКЕРИ АКАДЕМІЇ', value: data.academic_markers, desc: 'Кількість академічних термінів' },
+                { label: 'СПІВВІДНОШЕННЯ ШУМ/СИГНАЛ', value: data.signal_noise_ratio, desc: 'Співвідношення маркерів шуму до сигналу' },
                 { label: 'СЛІВ', value: data.word_count, desc: 'Загальна кількість слів' },
                 { label: 'СИМВОЛІВ', value: data.char_count, desc: 'Загальна кількість символів' }
             ];
+
+            const contextHTML = data.is_academic_context ? `
+                <div class="context-indicator academic">
+                    🎓 АКАДЕМІЧНИЙ КОНТЕКСТ: Текст містить ${data.academic_markers} академічних маркерів (щільність: ${(data.academic_density * 100).toFixed(2)}%)
+                </div>
+            ` : `
+                <div class="context-indicator general">
+                    📰 ЗАГАЛЬНИЙ КОНТЕКСТ: Текст не визначено як академічний
+                </div>
+            `;
 
             const influenceHTML = data.emotional_pressure || data.disorientation_risk ? `
                 <div class="influence-analysis">
@@ -639,6 +691,7 @@
                     <div class="influence-result">
                         ${data.emotional_pressure ? '<span class="influence-flag flag-danger">ЕМОЦІЙНИЙ ТИСК</span>' : ''}
                         ${data.disorientation_risk ? '<span class="influence-flag flag-warning">РИЗИК ДЕЗОРІЄНТАЦІЇ</span>' : ''}
+                        ${data.is_academic_context ? '<span class="influence-flag flag-academic">АКАДЕМІЧНИЙ</span>' : ''}
                         ${!data.emotional_pressure && !data.disorientation_risk ? '<span class="influence-flag flag-safe">МІНІМАЛЬНИЙ ВПЛИВ</span>' : ''}
                         <p>${data.emotional_analysis || 'Аналіз не доступний.'}</p>
                     </div>
@@ -646,11 +699,29 @@
             ` : '';
 
             const metricsHTML = metrics.map(metric => {
-                const isCritical = (metric.label.includes('ІНДЕКС ХАОСУ') && metric.value > 40) || 
-                                  (metric.label.includes('ЕНТРОПІЯ') && metric.value > 0.65);
-                const isWarning = (metric.label.includes('ІНДЕКС ХАОСУ') && metric.value > 20) || 
-                                 (metric.label.includes('ЕНТРОПІЯ') && metric.value > 0.50);
-                const cardClass = isCritical ? 'critical' : (isWarning ? 'warning' : '');
+                let cardClass = '';
+                let isCritical = false;
+                let isWarning = false;
+                let isAcademic = false;
+                
+                if (metric.label.includes('МАРКЕРИ АКАДЕМІЇ') && metric.value > 5) {
+                    isAcademic = true;
+                } else if (metric.label.includes('ІНДЕКС ХАОСУ')) {
+                    if (metric.value > 40 && !data.is_academic_context) isCritical = true;
+                    else if (metric.value > 20 && !data.is_academic_context) isWarning = true;
+                } else if (metric.label.includes('ЕНТРОПІЯ')) {
+                    if (metric.value > 0.70 && !data.is_academic_context) isCritical = true;
+                    else if (metric.value > 0.60) isWarning = true;
+                } else if (metric.label.includes('ІНДЕКС ВПЛИВУ')) {
+                    if (metric.value > 60 && !data.is_academic_context) isCritical = true;
+                    else if (metric.value > 30) isWarning = true;
+                } else if (metric.label.includes('МАРКЕРИ ХАОСУ')) {
+                    if (metric.value > 50 && !data.is_academic_context) isCritical = true;
+                    else if (metric.value > 20 && !data.is_academic_context) isWarning = true;
+                }
+                
+                cardClass = isCritical ? 'critical' : (isWarning ? 'warning' : (isAcademic ? 'academic' : ''));
+                
                 return `
                     <div class="metric-card ${cardClass}">
                         <div class="metric-label">${metric.label}</div>
@@ -683,6 +754,8 @@
                         </div>
                     </div>
                 </div>
+
+                ${contextHTML}
 
                 <div class="verdict ${statusClass}">
                     ${data.verdict || 'Немає вердикту'}
