@@ -60,7 +60,7 @@ def analyze():
         return jsonify({}), 200
 
     if request.method == 'GET':
-        return jsonify({'status': 'online', 'version': '3.4-calibrated'}), 200
+        return jsonify({'status': 'online', 'version': '3.5-calibrated'}), 200
 
     try:
         data = request.get_json()
@@ -91,14 +91,13 @@ def analyze():
             extracted_text_for_display = ext['text']
             source = ext['source']
             title = ext['title']
-            show_extracted_text = True  # Показувати тільки для URL
+            show_extracted_text = True
             
             print(f"✅ Текст витягнуто: {len(text_to_analyze)} символів, {len(text_to_analyze.split())} слів")
             print(f"📌 Джерело: {source}, Заголовок: {title}")
             
         else:
             text_to_analyze = raw_text
-            # Не зберігаємо текст для відображення в режимі тексту
             show_extracted_text = False
             if data.get('source'):
                 source = data.get('source')
@@ -131,21 +130,25 @@ def analyze():
         # 3. Розрахунок інтегрального індексу хаосу з академічною корекцією
         total_chaos_index = (chaos_markers * 0.1) + (shout_factor * 30) + (noise_markers * 0.3)
         
-        if is_academic or academic_density > 0.02:
-            total_chaos_index *= 0.5
+        # ПОЛІПШЕНА корекція для академічних текстів
+        if is_academic:
+            total_chaos_index *= 0.3  # Сильніше знижуємо для академічних текстів
             if academic_markers > 10:
-                total_chaos_index *= 0.7
+                total_chaos_index *= 0.5
 
         # 4. Аналіз емоційного впливу та дезорієнтації
         emotional_pressure = False
         disorientation_risk = False
         emotional_comment = ""
 
+        # Критерії емоційного тиску
         if shout_factor > 0.3 or noise_markers > signal_markers * 2:
             emotional_pressure = True
+        # Критерії дезорієнтації
         if entropy > 0.5 and complexity > 0.7:
             disorientation_risk = True
 
+        # Формування висновку щодо впливу
         if emotional_pressure and disorientation_risk:
             emotional_comment = "ВИСОКИЙ РІВЕНЬ ЕМОЦІЙНОГО ВПЛИВУ ТА ДЕЗОРІЄНТАЦІЇ. Текст використовує капслок, перебільшення та має високу ентропію, що може спантеличувати читача та впливати на його думку."
         elif emotional_pressure:
@@ -155,31 +158,41 @@ def analyze():
         else:
             emotional_comment = "ЕМОЦІЙНИЙ ВПЛИВ МІНІМАЛЬНИЙ. Текст зосереджений на фактах та логіці."
 
-        # 5. УТОЧНЕНА логіка вердикту з контекстуальною корекцією
-        impact_score = (total_chaos_index * 0.3) + (sanity_penalty * 10) + (entropy * 100 * 0.4)
+        # 5. ПОЛІПШЕНА логіка вердикту з контекстуальною корекцією
+        impact_score = (total_chaos_index * 0.3) + (sanity_penalty * 15) + (entropy * 100 * 0.4)
         
+        # Сильна корекція для академічних текстів
         if is_academic:
-            impact_score *= 0.4
+            impact_score *= 0.3  # Ще сильніше знижуємо вплив для академічних текстів
+            if signal_markers > noise_markers * 5:  # Дуже високе співвідношення сигнал/шум
+                impact_score *= 0.5
         
+        # Додаткова корекція на основі співвідношення сигнал/шум
         if signal_markers > 0:
             signal_noise_ratio = noise_markers / signal_markers
-            if signal_noise_ratio < 0.1:
-                impact_score *= 0.6
-            elif signal_noise_ratio > 2.0:
-                impact_score *= 1.5
+            if signal_noise_ratio < 0.05:  # Дуже високий рівень сигналу
+                impact_score *= 0.4
+            elif signal_noise_ratio > 1.0:  # Високий рівень шуму
+                impact_score *= 1.8
 
-        if impact_score > 60 or (entropy > 0.70 and chaos_markers > 50 and not is_academic):
+        # ВИПРАВЛЕНІ пороги для вердикту
+        # Критичний стан для явної маячні
+        if sanity_penalty > 0.5:  # Якщо є явне порушення логіки (як борщ з квантовою фізикою)
             status_class = 'critical'
-            verdict = 'КРИТИЧНИЙ ІНФОРМАЦІЙНИЙ ХАОС'
-            explanation = 'Екстремальний рівень ентропії та хаосу вказують на системну маніпуляцію.'
-        elif impact_score > 30 or entropy > 0.60:
+            verdict = 'КРИТИЧНА НЕСУМІСНІСТЬ ЛОГІКИ'
+            explanation = 'Текст містить взаємовиключні концепції та порушує базові принципи логічної сумісності.'
+        elif impact_score > 25 or (entropy > 0.65 and not is_academic):
             status_class = 'warning'
-            verdict = 'ПІДОЗРІЛА ЕМОЦІЙНА РИТОРИКА'
+            verdict = 'ВИСОКИЙ РІВЕНЬ МАНІПУЛЯЦІЇ'
             explanation = 'Виявлено структурні аномалії та ознаки інформаційного шуму.'
-        elif impact_score > 15 or entropy > 0.50:
+        elif impact_score > 12 or entropy > 0.55:
             status_class = 'acceptable'
             verdict = 'ПРИЙНЯТНА СТРУКТУРОВАНА ІНФОРМАЦІЯ'
             explanation = 'Текст має деякі особливості, але загалом відповідає нормам.'
+        elif is_academic and impact_score < 8:
+            status_class = 'success'
+            verdict = 'АКАДЕМІЧНИЙ ТЕКСТ ВИСОКОЇ ЯКОСТІ'
+            explanation = 'Текст демонструє високий рівень логічної цілісності та наукової обґрунтованості.'
         else:
             status_class = 'success'
             verdict = 'СТАБІЛЬНИЙ ЛОГІЧНИЙ СИГНАЛ'
@@ -227,7 +240,7 @@ def analyze():
             final_result['extracted_text'] = extracted_text_for_display[:2000] + ('...' if len(extracted_text_for_display) > 2000 else '')
             final_result['extracted_text_length'] = len(extracted_text_for_display)
 
-        print(f"📊 Результат аналізу готовий: entropy={final_result['entropy']}, verdict={verdict}")
+        print(f"📊 Результат аналізу готовий: entropy={final_result['entropy']}, verdict={verdict}, academic={is_academic}")
         return jsonify(final_result), 200
 
     except urllib.error.URLError as e:
