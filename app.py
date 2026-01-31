@@ -136,28 +136,28 @@ def analyze():
         result = engine.analyze(text)
         
         # 3. КАЛІБРУВАННЯ ТА ВЕРДИКТ (Наша нова логіка)
-                # Дістаємо показники
-                entropy = result.get('shannon_entropy', 0)
-                chaos = result.get('chaos_markers', 0)
+        # Дістаємо показники
+        entropy = result.get('shannon_entropy', 0)
+        chaos = result.get('chaos_markers', 0)
                 
-                # Визначаємо вердикт та клас (danger/warning/success)
-                if entropy > 0.58 or chaos > 15:
-                    result['status_class'] = 'danger'
-                    result['verdict'] = 'КРИТИЧНИЙ РІВЕНЬ ХАОСУ'
-                    result['explanation'] = 'Виявлено ознаки інтенсивного маніпулятивного впливу. Текст має аномально високу ентропію.'
-                elif entropy > 0.45 or chaos > 8:
-                    result['status_class'] = 'warning'
-                    result['verdict'] = 'ПІДОЗРІЛИЙ СИГНАЛ'
-                    result['explanation'] = 'Текст містить специфічні маркери емоційної дестабілізації. Можлива маніпуляція.'
-                else:
-                    result['status_class'] = 'success'
-                    result['verdict'] = 'СТАБІЛЬНИЙ ЛОГІЧНИЙ СИГНАЛ'
-                    result['explanation'] = 'Структура тексту в межах норми. Аномалій не виявлено.'
-                # --- КІНЕЦЬ БЛОКУ КАЛІБРУВАННЯ ---
+        # Визначаємо вердикт та клас (danger/warning/success)
+        if entropy > 0.58 or chaos > 15:
+            result['status_class'] = 'danger'
+            result['verdict'] = 'КРИТИЧНИЙ РІВЕНЬ ХАОСУ'
+            result['explanation'] = 'Виявлено ознаки інтенсивного маніпулятивного впливу. Текст має аномально високу ентропію.'
+        elif entropy > 0.45 or chaos > 8:
+            result['status_class'] = 'warning'
+            result['verdict'] = 'ПІДОЗРІЛИЙ СИГНАЛ'
+            result['explanation'] = 'Текст містить специфічні маркери емоційної дестабілізації. Можлива маніпуляція.'
+        else:
+            result['status_class'] = 'success'
+            result['verdict'] = 'СТАБІЛЬНИЙ ЛОГІЧНИЙ СИГНАЛ'
+            result['explanation'] = 'Структура тексту в межах норми. Аномалій не виявлено.'
+        # --- КІНЕЦЬ БЛОКУ КАЛІБРУВАННЯ ---
 
-                result['source'] = source
-                result['title'] = title
-                result['url'] = url
-                result['mode'] = 'url_scraping'
-                # Збільшуємо прев'ю тексту для скрапінгу
-                result['extracted_text'] = text[:1500] + '...' if len(text) > 1500 else text
+            result['source'] = source
+            result['title'] = title
+            result['url'] = url
+            result['mode'] = 'url_scraping'
+        # Збільшуємо прев'ю тексту для скрапінгу
+            result['extracted_text'] = text[:1500] + '...' if len(text) > 1500 else text
