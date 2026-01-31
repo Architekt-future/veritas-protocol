@@ -2,87 +2,18 @@ from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import re
 import urllib.request
-from veritas_calibrated_core import VeritasCalibratedCore
+from veritas_calibrated_core import VeritasHyperCalibratedCore  # ← змінено ім'я класу!
 
 app = Flask(__name__, static_folder='.')
 CORS(app)
 
 # Initialize engine
-engine = VeritasCalibratedCore()
+engine = VeritasHyperCalibratedCore()  # ← створюємо нове ядро
 
 
 class SimpleExtractor:
-    """Simplified scraper without external dependencies"""
-
-    def extract_from_url(self, url: str, html: str) -> dict:
-        """Extract text from HTML"""
-        try:
-            cleaned = self._clean_html(html)
-            title = self._extract_title(html)
-            text = self._extract_paragraphs(cleaned)
-            source = self._extract_domain(url)
-
-            return {
-                'success': True,
-                'title': title,
-                'text': text,
-                'source': source,
-                'url': url
-            }
-        except Exception as e:
-            return {
-                'success': False,
-                'error': str(e),
-                'url': url
-            }
-
-    def _clean_html(self, html: str) -> str:
-        """Remove scripts, styles, nav, etc."""
-        html = re.sub(r'<script[^>]*>.*?</script>', '', html, flags=re.DOTALL | re.IGNORECASE)
-        html = re.sub(r'<style[^>]*>.*?</style>', '', html, flags=re.DOTALL | re.IGNORECASE)
-        html = re.sub(r'<nav[^>]*>.*?</nav>', '', html, flags=re.DOTALL | re.IGNORECASE)
-        html = re.sub(r'<header[^>]*>.*?</header>', '', html, flags=re.DOTALL | re.IGNORECASE)
-        html = re.sub(r'<footer[^>]*>.*?</footer>', '', html, flags=re.DOTALL | re.IGNORECASE)
-        return html
-
-    def _extract_title(self, html: str) -> str:
-        """Extract page title"""
-        match = re.search(r'<meta[^>]*property="og:title"[^>]*content="([^"]+)"', html, re.IGNORECASE)
-        if match:
-            return match.group(1)
-        match = re.search(r'<title[^>]*>([^<]+)</title>', html, re.IGNORECASE)
-        if match:
-            return match.group(1).strip()
-        return "Unknown Title"
-
-    def _extract_paragraphs(self, html: str) -> str:
-        """Extract text from <p> tags"""
-        paragraphs = re.findall(r'<p[^>]*>(.*?)</p>', html, flags=re.DOTALL | re.IGNORECASE)
-
-        if not paragraphs:
-            body_match = re.search(r'<body[^>]*>(.*?)</body>', html, flags=re.DOTALL | re.IGNORECASE)
-            if body_match:
-                text = body_match.group(1)
-                text = re.sub(r'<[^>]+>', ' ', text)
-                return self._clean_text(text)
-
-        text = ' '.join(paragraphs)
-        text = re.sub(r'<[^>]+>', ' ', text)
-        return self._clean_text(text)
-
-    def _clean_text(self, text: str) -> str:
-        """Clean extracted text"""
-        text = re.sub(r'&[a-zA-Z]+;', ' ', text)
-        text = re.sub(r'&#\d+;', ' ', text)
-        text = re.sub(r'\s+', ' ', text)
-        return text.strip()
-
-    def _extract_domain(self, url: str) -> str:
-        """Extract domain from URL"""
-        match = re.search(r'https?://(?:www\.)?([^/]+)', url)
-        if match:
-            return match.group(1)
-        return "unknown"
+    # ... (екстрактор залишається без змін)
+    # ...
 
 
 extractor = SimpleExtractor()
@@ -100,7 +31,7 @@ def analyze():
         return jsonify({}), 200
 
     if request.method == 'GET':
-        return jsonify({'status': 'online', 'version': '3.2-fixed'}), 200
+        return jsonify({'status': 'online', 'version': '3.2-hyper'}), 200  # ← версія оновлена
 
     try:
         data = request.get_json()
@@ -109,8 +40,8 @@ def analyze():
 
         url = data.get('url', '').strip()
         text = data.get('text', '').strip()
-        source = data.get('source', 'Manual Input')
-        title = 'Manual Input'
+        source = data.get('source', 'Ручний ввід')
+        title = 'Ручний ввід'
 
         # 1. Отримуємо текст (з URL або напряму)
         if url:
@@ -132,26 +63,15 @@ def analyze():
                 title = extraction['title']
                 source = extraction['source']
             except Exception as e:
-                return jsonify({'error': f'Scraping failed: {str(e)}'}), 500
+                return jsonify({'error': f'Помилка отримання даних: {str(e)}'}), 500
 
         if not text or len(text) < 10:
-            return jsonify({'error': 'Text too short'}), 400
+            return jsonify({'error': 'Текст занадто короткий'}), 400
 
-        # 2. ЗАПУСКАЄМО ЯДРО — воно рахує ВСЕ
+        # 2. ЗАПУСКАЄМО НОВЕ ГІПЕРКАЛІБРОВАНЕ ЯДРО
         result = engine.analyze(text)
 
-        # 3. ДОДАЄМО status_class на основі status з core (без перезапису verdict!)
-        status = result.get('status', 'ACCEPTABLE')
-        if status in ('CRITICAL',):
-            result['status_class'] = 'danger'
-        elif status in ('WARNING',):
-            result['status_class'] = 'warning'
-        elif status in ('TRUSTED', 'VERIFIED'):
-            result['status_class'] = 'success'
-        else:
-            result['status_class'] = 'success'
-
-        # 4. МЕТАДАННІ ПРО ДЖЕРЕЛО
+        # 3. ДОДАЄМО метадані
         result['source'] = source
         result['title'] = title
         result['url'] = url
@@ -164,7 +84,7 @@ def analyze():
         return jsonify(result), 200
 
     except Exception as e:
-        return jsonify({'error': f'Analysis failed: {str(e)}'}), 500
+        return jsonify({'error': f'Помилка аналізу: {str(e)}'}), 500
 
 
 if __name__ == '__main__':
