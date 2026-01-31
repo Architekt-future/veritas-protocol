@@ -53,7 +53,7 @@ def analyze():
         return jsonify({}), 200
 
     if request.method == 'GET':
-        return jsonify({'status': 'online', 'version': '8.3-calibrated'}), 200
+        return jsonify({'status': 'online', 'version': '8.4-metric-combined'}), 200
 
     try:
         data = request.get_json()
@@ -91,46 +91,65 @@ def analyze():
 
         diag = result.get('diagnostics', {})
         
-        # ПОКРАЩЕНИЙ РОЗРАХУНОК ІНДЕКСІВ
+        # ПОКРАЩЕНИЙ РОЗРАХУНОК ІНДЕКСІВ з урахуванням комбінацій метрик
         total_chaos_index = (
-            diag.get('chaos_markers', 0) * 1.0 +  # Збільшено
-            diag.get('semantic_void', 0) * 40 +   # Збільшено
-            diag.get('sanity_penalty', 0) * 35 +  # Збільшено
-            diag.get('semantic_gap', 0) * 30 +    # Нова метрика
-            diag.get('pattern_count', 0) * 25 +
-            diag.get('semantic_gap_markers', 0) * 20
+            diag.get('chaos_markers', 0) * 1.5 +  # Збільшено вагу
+            diag.get('semantic_void', 0) * 50 +   # Збільшено
+            diag.get('sanity_penalty', 0) * 40 +  # Збільшено
+            diag.get('metric_penalty', 0) * 35 +  # Нова метрика
+            diag.get('pattern_count', 0) * 30 +
+            (diag.get('chaos_markers', 0) / max(1, diag.get('signal_markers', 1))) * 25
         )
         
         impact_score = (
-            result['entropy'] * 90 +  # Збільшено
-            diag.get('semantic_void', 0) * 80 +   # Збільшено
-            diag.get('sanity_penalty', 0) * 70 +  # Збільшено
-            diag.get('semantic_gap', 0) * 60 +    # Нова метрика
-            diag.get('chaos_markers', 0) * 5 +
-            diag.get('pattern_count', 0) * 30 +
-            diag.get('semantic_gap_markers', 0) * 25
+            result['entropy'] * 100 +  # Основний показник
+            diag.get('semantic_void', 0) * 85 +   # Збільшено
+            diag.get('sanity_penalty', 0) * 75 +  # Збільшено
+            diag.get('metric_penalty', 0) * 65 +  # Нова метрика
+            diag.get('chaos_markers', 0) * 6 +
+            diag.get('pattern_count', 0) * 35 +
+            max(0, diag.get('chaos_markers', 0) - diag.get('signal_markers', 0)) * 20
         )
         
         # ПОКРАЩЕНИЙ АКАДЕМІЧНИЙ КОЕФІЦІЄНТ
         academic_coefficient = 1.0
-        if diag.get('academic_markers', 0) >= 4 and diag.get('signal_markers', 0) >= 3 and diag.get('chaos_markers', 0) == 0:
-            academic_coefficient = 0.2  # Дуже сильний захист для наукових текстів
-        elif diag.get('academic_markers', 0) >= 3 and diag.get('signal_markers', 0) >= 2:
+        signal_density = diag.get('signal_markers', 0) / max(1, diag.get('word_count', 1))
+        chaos_density = diag.get('chaos_markers', 0) / max(1, diag.get('word_count', 1))
+        
+        # Сильний захист для чистих наукових текстів
+        if (diag.get('academic_markers', 0) >= 3 and 
+            signal_density > 0.05 and 
+            chaos_density == 0):
+            academic_coefficient = 0.2
+        
+        # Помірний захист для політичних/економічних текстів
+        elif (diag.get('academic_markers', 0) >= 2 and 
+              signal_density > 0.03 and 
+              chaos_density < 0.02):
             academic_coefficient = 0.4
-        elif diag.get('academic_markers', 0) >= 2 and diag.get('signal_markers', 0) >= 1:
+        
+        # Слабкий захист
+        elif diag.get('academic_markers', 0) >= 1 and signal_density > 0.02:
             academic_coefficient = 0.6
         
         # НЕ застосовуємо академічний коефіцієнт до критичних випадків
-        if diag.get('sanity_penalty', 0) > 0.5 or diag.get('semantic_gap', 0) > 0.5:
-            academic_coefficient = 1.0
+        if (diag.get('sanity_penalty', 0) > 0.3 or 
+            diag.get('metric_penalty', 0) > 0.2 or
+            diag.get('semantic_void', 0) > 0.4):
+            academic_coefficient = min(1.0, academic_coefficient * 1.5)
         
         impact_score *= academic_coefficient
         total_chaos_index *= academic_coefficient
         
-        # СЕМАНТИЧНА ПУСТОТА коректор
+        # КОРЕКЦІЯ ДЛЯ СЕМАНТИЧНОЇ ПУСТОТИ
         if diag.get('semantic_void', 0) > 0.5 and diag.get('signal_markers', 0) == 0:
-            impact_score *= 1.3
-            total_chaos_index *= 1.3
+            impact_score *= 1.5
+            total_chaos_index *= 1.5
+        
+        # КОРЕКЦІЯ ДЛЯ NON-SEQUITUR
+        if diag.get('sanity_penalty', 0) > 0.4:
+            impact_score *= 1.4
+            total_chaos_index *= 1.4
         
         response = {
             'entropy': result['entropy'],
@@ -149,7 +168,7 @@ def analyze():
             'complexity': diag.get('complexity', 0),
             'semantic_void': diag.get('semantic_void', 0),
             'sanity_penalty': diag.get('sanity_penalty', 0),
-            'semantic_gap': diag.get('semantic_gap', 0),
+            'metric_penalty': diag.get('metric_penalty', 0),
             
             # МАРКЕРИ
             'chaos_markers': diag.get('chaos_markers', 0),
@@ -163,25 +182,28 @@ def analyze():
             'number_density': diag.get('number_density', 0),
             'word_count': diag.get('word_count', 0),
             'char_count': diag.get('char_count', 0),
-            'signal_noise_ratio': round(diag.get('noise_markers', 0) / max(1, diag.get('signal_markers', 1)), 3),
+            'signal_noise_ratio': round(diag.get('signal_to_noise', 0), 3),
             'pattern_count': diag.get('pattern_count', 0),
-            'semantic_gap_markers': diag.get('semantic_gap_markers', 0)
+            'signal_density': round(signal_density, 3),
+            'chaos_density': round(chaos_density, 3)
         }
         
         # ПОКРАЩЕНИЙ ЕМОЦІЙНИЙ АНАЛІЗ
         emotional_pressure = (
-            diag.get('chaos_markers', 0) > 3 or 
+            diag.get('chaos_markers', 0) > 2 or 
             diag.get('pattern_count', 0) > 0 or
-            diag.get('sanity_penalty', 0) > 0.3 or
-            diag.get('semantic_gap', 0) > 0.3 or
+            diag.get('sanity_penalty', 0) > 0.25 or
+            diag.get('metric_penalty', 0) > 0.2 or
+            diag.get('semantic_void', 0) > 0.3 or
             result['status'] == 'CRITICAL'
         )
         
         disorientation_risk = (
-            diag.get('semantic_void', 0) > 0.4 or
-            diag.get('semantic_gap', 0) > 0.4 or
-            diag.get('chaos_markers', 0) > 6 or
-            diag.get('sanity_penalty', 0) > 0.5
+            diag.get('semantic_void', 0) > 0.35 or
+            diag.get('metric_penalty', 0) > 0.25 or
+            diag.get('chaos_markers', 0) > 4 or
+            diag.get('sanity_penalty', 0) > 0.35 or
+            diag.get('signal_to_noise', 0) < 0.5
         )
         
         response['emotional_pressure'] = emotional_pressure
@@ -222,16 +244,16 @@ def generate_emotional_analysis(result, diag):
         else:
             return "КРИТИЧНИЙ СЕМАНТИЧНИЙ ХАОС: текст створює когнітивне навантаження"
     
-    elif diag.get('semantic_void', 0) > 0.4:
+    elif diag.get('metric_penalty', 0) > 0.2:
+        return "МЕТРИЧНА КОМБІНАЦІЯ: поєднання негативних метрик вказує на маніпуляцію"
+    
+    elif diag.get('semantic_void', 0) > 0.35:
         return "СЕМАНТИЧНА ПУСТОТА: високий рівень абстракції при відсутності конкретного змісту"
     
-    elif diag.get('sanity_penalty', 0) > 0.3:
+    elif diag.get('sanity_penalty', 0) > 0.25:
         return "СЕМАНТИЧНА НЕСТАБІЛЬНІСТЬ: несумісні концепції можуть викликати дезорієнтацію"
     
-    elif diag.get('semantic_gap', 0) > 0.3:
-        return "ЛОГІЧНА ДИСТАНЦІЯ: необґрунтовані зв'язки між несхожими концепціями"
-    
-    elif diag.get('academic_markers', 0) >= 4 and diag.get('chaos_markers', 0) == 0:
+    elif diag.get('academic_markers', 0) >= 3 and diag.get('chaos_markers', 0) == 0:
         return "СТАБІЛЬНИЙ АКАДЕМІЧНИЙ СИГНАЛ: текст демонструє наукову цілісність"
     
     else:
