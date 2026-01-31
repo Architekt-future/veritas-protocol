@@ -101,65 +101,82 @@ def index():
 
 @app.route('/api/analyze', methods=['GET', 'POST', 'OPTIONS'])
 def analyze():
+    """Main analysis endpoint"""
+    
+    # Handle CORS preflight
     if request.method == 'OPTIONS':
         return jsonify({}), 200
     
+    # Health check
     if request.method == 'GET':
-        return jsonify({'status': 'online', 'version': '3.1-calibrated'}), 200
+        return jsonify({
+            'status': 'online',
+            'service': 'Veritas Protocol Analysis API',
+            'version': '3.1-orpheus-calibrated'
+        }), 200
     
+    # Analysis
     try:
         data = request.get_json()
-        if not data: return jsonify({'error': 'No data'}), 400
+        
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
         
         url = data.get('url', '').strip()
         text = data.get('text', '').strip()
         source = data.get('source', 'Manual Input')
+        title = 'Manual Input'
         
-        # 1. Отримуємо текст (з URL або напряму)
+        # URL MODE: Scrape content
         if url:
             try:
-                req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+                req = urllib.request.Request(
+                    url,
+                    headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+                )
+                
                 with urllib.request.urlopen(req, timeout=10) as response:
                     html = response.read().decode('utf-8', errors='ignore')
+                
                 extraction = extractor.extract_from_url(url, html)
-                if not extraction['success']: raise Exception('Extraction failed')
+                
+                if not extraction['success']:
+                    raise Exception(extraction.get('error', 'Extraction failed'))
+                
                 text = extraction['text']
-                title = extraction['title']
                 source = extraction['source']
+                title = extraction['title']
+                
+                if not text or len(text) < 50:
+                    raise Exception('Extracted text too short')
+                    
             except Exception as e:
                 return jsonify({'error': f'Scraping failed: {str(e)}'}), 500
         
-        if not text or len(text) < 10:
-            return jsonify({'error': 'Text too short'}), 400
-
-        # 2. ЗАПУСКАЄМО ЯДРО
+        # TEXT MODE: Direct input
+        elif text:
+            if len(text) < 10:
+                return jsonify({'error': 'Text too short'}), 400
+        else:
+            return jsonify({'error': 'No URL or text provided'}), 400
+        
+        # Run analysis
         result = engine.analyze(text)
         
-        # 3. КАЛІБРУВАННЯ ТА ВЕРДИКТ (Наша нова логіка)
-        # Дістаємо показники
-        entropy = result.get('shannon_entropy', 0)
-        chaos = result.get('chaos_markers', 0)
-                
-        # Визначаємо вердикт та клас (danger/warning/success)
-        if entropy > 0.58 or chaos > 15:
-            result['status_class'] = 'danger'
-            result['verdict'] = 'КРИТИЧНИЙ РІВЕНЬ ХАОСУ'
-            result['explanation'] = 'Виявлено ознаки інтенсивного маніпулятивного впливу. Текст має аномально високу ентропію.'
-        elif entropy > 0.45 or chaos > 8:
-            result['status_class'] = 'warning'
-            result['verdict'] = 'ПІДОЗРІЛИЙ СИГНАЛ'
-            result['explanation'] = 'Текст містить специфічні маркери емоційної дестабілізації. Можлива маніпуляція.'
-        else:
-            result['status_class'] = 'success'
-            result['verdict'] = 'СТАБІЛЬНИЙ ЛОГІЧНИЙ СИГНАЛ'
-            result['explanation'] = 'Структура тексту в межах норми. Аномалій не виявлено.'
-        # --- КІНЕЦЬ БЛОКУ КАЛІБРУВАННЯ ---
-
-            result['source'] = source
-            result['title'] = title
+        # Add metadata
+        result['source'] = source
+        result['title'] = title
+        result['mode'] = 'url_scraping' if url else 'text_input'
+        
+        if url:
             result['url'] = url
-            result['mode'] = 'url_scraping'
             result['extracted_text'] = text[:1500] + '...' if len(text) > 1500 else text
+        
+        return jsonify(result), 200
+        
+    except Exception as e:
+        return jsonify({'error': f'Analysis failed: {str(e)}'}), 500
 
-        except Exception as e:
-            return jsonify({'error': f'Scraping failed: {str(e)}'}), 500
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000, debug=True)
