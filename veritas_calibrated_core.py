@@ -1,6 +1,6 @@
 """
-Veritas Protocol - Semantic Void Detector v8.4 (Metric-Combined)
-Uses combined metrics for better detection of subtle manipulation
+Veritas Protocol - Semantic Void Detector v8.5 (Fine-Tuned)
+Fine-tuned detection with gradient penalties and contextual awareness
 """
 
 import re
@@ -8,7 +8,7 @@ import math
 from collections import Counter
 
 class VeritasCalibratedCore:
-    """Advanced detector with metric combination rules"""
+    """Advanced detector with fine-tuned sensitivity"""
     
     def __init__(self):
         # ОПТИМІЗОВАНІ ПАТТЕРНИ
@@ -24,7 +24,7 @@ class VeritasCalibratedCore:
                 ],
                 'verdict': 'ГІБРИДНИЙ НАУКОВИЙ НІГІЛІЗМ',
                 'explanation': 'Наукові терміни використані для обґрунтування абсурдних концепцій',
-                'score_boost': 0.7
+                'score_boost': 0.4
             },
             
             # 2. СЕМАНТИЧНА ПУСТОТА
@@ -37,7 +37,7 @@ class VeritasCalibratedCore:
                 ],
                 'verdict': 'СЕМАНТИЧНА ПУСТОТА',
                 'explanation': 'Текст використовує гуманітарну термінологію для приховування відсутності змісту',
-                'score_boost': 0.6
+                'score_boost': 0.35
             },
             
             # 3. ІСТОРИЧНИЙ РЕВІЗІОНІЗМ
@@ -50,7 +50,20 @@ class VeritasCalibratedCore:
                 ],
                 'verdict': 'ПСЕВДО-ІСТОРИЧНИЙ РЕВІЗІОНІЗМ',
                 'explanation': 'Текст створює альтернативну історію з анахронічними елементами',
-                'score_boost': 0.7
+                'score_boost': 0.45
+            },
+            
+            # 4. ДЗЕРКАЛЬНА МАНІПУЛЯЦІЯ
+            {
+                'name': 'ДЗЕРКАЛЬНА_МАНІПУЛЯЦІЯ',
+                'patterns': [
+                    r'(брехня|фейк|маніпуляція|дезінформація).*?(правда|істина|свобода|розкриття)',
+                    r'(зомбування|програмування|контроль).*?(сприйняття|мислення|критичне)',
+                    r'(обмежений\s+сприйняття|не\s+здатний\s+побачити).*?(ключі|двері|опіка)'
+                ],
+                'verdict': 'ДЗЕРКАЛЬНА МАНІПУЛЯЦІЯ',
+                'explanation': 'Текст звинувачує інших у власних методах',
+                'score_boost': 0.5
             }
         ]
         
@@ -67,7 +80,8 @@ class VeritasCalibratedCore:
             'conspiracy': ['змова', 'рептилоїд', 'хімітрейл', '5g', 'дезінформація'],
             'pseudoscience': ['квантовий', 'нейтрино', 'іоносфера', 'кристалічний'],
             'revisionism': ['антарктида', 'атлантида', 'наполеон', 'штучний місяць'],
-            'alarmism': ['перезавантаження', 'пожежа реальності', 'деактивувати']
+            'alarmism': ['перезавантаження', 'пожежа реальності', 'деактивувати'],
+            'economic_occult': ['потойбічний', 'карма актив', 'hades-coin', 'ефірний пласт']
         }
         
         self.signal_markers = [
@@ -75,38 +89,42 @@ class VeritasCalibratedCore:
             'дослідження', 'експеримент', 'результат', 'метод', 'протокол'
         ]
         
-        # МЕТРИЧНІ КОМБІНАЦІЇ ДЛЯ ШТРАФІВ
-        self.metric_combinations = [
-            # Ентропія високА + нуль сигналу = великий штраф
+        # ГРАДІЄНТНІ ШТРАФИ (не порогові!)
+        self.gradient_penalties = [
+            # Ентропія градієнт (0.7 = +0.1, 0.75 = +0.2, 0.8 = +0.3)
             {
-                'condition': lambda m: m['shannon_entropy'] > 0.75 and m['signal_markers'] == 0,
-                'penalty': 0.4,
-                'explanation': 'Висока ентропія без сигнальних маркерів'
+                'type': 'entropy_gradient',
+                'calculate': lambda m: max(0, (m['shannon_entropy'] - 0.7) * 2) if m['signal_markers'] < 2 else 0
             },
-            # Ентропія середня + висока складність + мало сигналу
+            # Складність градієнт
             {
-                'condition': lambda m: m['shannon_entropy'] > 0.7 and m['complexity'] > 0.75 and m['signal_markers'] < 2,
-                'penalty': 0.3,
-                'explanation': 'Складний текст з низькою інформацією'
+                'type': 'complexity_gradient',
+                'calculate': lambda m: max(0, (m['complexity'] - 0.75) * 1.5) if m['signal_markers'] < 2 else 0
             },
-            # Маркери хаосу > 2 + сигнал = 0
+            # Співвідношення хаосу/сигналу
             {
-                'condition': lambda m: m['chaos_markers'] >= 2 and m['signal_markers'] == 0,
-                'penalty': 0.35,
-                'explanation': 'Багато хаосу без фактичної інформації'
+                'type': 'chaos_signal_ratio',
+                'calculate': lambda m: min(0.5, m['chaos_markers'] / max(1, m['signal_markers'] + 1) * 0.2)
             },
-            # Академічні терміни + маркери хаосу (несумісність)
+            # Академічний дисонанс
             {
-                'condition': lambda m: m['academic_markers'] > 0 and m['chaos_markers'] > 0,
-                'penalty': 0.25,
-                'explanation': 'Наукові терміни змішані з хаосом'
+                'type': 'academic_dissonance',
+                'calculate': lambda m: 0.15 if m['academic_markers'] > 0 and m['chaos_markers'] > 0 else 0
             },
-            # Висока складність + низький сигнал + нормальна ентропія
+            # Нульовий сигнал з високою складністю
             {
-                'condition': lambda m: m['complexity'] > 0.8 and m['signal_markers'] < 2 and 0.6 < m['shannon_entropy'] < 0.8,
-                'penalty': 0.2,
-                'explanation': 'Замудрений текст з малою інформацією'
+                'type': 'zero_signal_complexity',
+                'calculate': lambda m: 0.25 if m['signal_markers'] == 0 and m['complexity'] > 0.75 else 0
             }
+        ]
+        
+        # КОНФЛІКТНІ ПАРИ з різними вагами
+        self.conflict_pairs = [
+            (['бднф', 'гіпокамп', 'нейропластичність'], ['5g', 'супутник', 'таргетування'], 0.35),
+            (['нейтрино', 'квантовий', 'ентропія'], ['ринок', 'економіка', 'політика'], 0.3),
+            (['днк', 'генетичний'], ['алгоритм', 'код', 'підпис'], 0.4),
+            (['антарктида', 'атлантида'], ['технологія', 'цивілізація', 'резонатор'], 0.3),
+            (['облігація', 'криптовалюта', 'банк'], ['потойбічний', 'карма', 'душа'], 0.4)
         ]
 
     def detect_patterns(self, text):
@@ -145,37 +163,28 @@ class VeritasCalibratedCore:
         
         return counts
 
-    def calculate_combined_metrics_penalty(self, metrics):
-        """Обчислює штраф на основі комбінацій метрик"""
+    def calculate_gradient_penalties(self, metrics):
+        """Обчислює градієнтні штрафи"""
         total_penalty = 0.0
-        applied_explanations = []
         
-        for combo in self.metric_combinations:
-            if combo['condition'](metrics):
-                total_penalty += combo['penalty']
-                applied_explanations.append(combo['explanation'])
+        for penalty in self.gradient_penalties:
+            total_penalty += penalty['calculate'](metrics)
         
-        return min(total_penalty, 0.8), applied_explanations
+        return min(total_penalty, 0.6)
 
-    def calculate_semantic_sanitary_penalty(self, text):
-        """Обчислює штраф санітарії на основі конфліктних пар"""
+    def calculate_conflict_penalty(self, text):
+        """Обчислює штраф за конфліктні пари"""
         penalty = 0.0
         text_lower = text.lower()
         
-        # Конфліктні пари
-        conflict_pairs = [
-            ('бднф', '5g'), ('нейропластичність', 'супутник'), ('гіпокамп', 'таргетування'),
-            ('статистика', 'антигравітація'), ('формула', 'сиріус'), ('ентропія', 'ноосфера'),
-            ('фізика', 'магія'), ('медицина', 'енергія'), ('економіка', 'карма'),
-            ('наука', 'езотерика'), ('технологія', 'душа'), ('логіка', 'чакра'),
-            ('днк', 'підпис'), ('алгоритм', 'дезінфекція'), ('код', 'атланти')
-        ]
+        for list1, list2, weight in self.conflict_pairs:
+            has_first = any(term in text_lower for term in list1)
+            has_second = any(term in text_lower for term in list2)
+            
+            if has_first and has_second:
+                penalty += weight
         
-        for term1, term2 in conflict_pairs:
-            if term1 in text_lower and term2 in text_lower:
-                penalty += 0.3
-        
-        # Non-sequitur шаблони
+        # Non-sequitur детекція
         non_sequitur_patterns = [
             (r'вода.*?кипить.*?100', r'ядерний.*?арсенал'),
             (r'сонце.*?сходить.*?сході', r'дестабілізація'),
@@ -185,37 +194,48 @@ class VeritasCalibratedCore:
         
         for pattern1, pattern2 in non_sequitur_patterns:
             if re.search(pattern1, text_lower) and re.search(pattern2, text_lower):
-                penalty += 0.4
+                penalty += 0.3
         
-        return min(penalty, 0.7)
+        return min(penalty, 0.5)
 
-    def calculate_semantic_void(self, text, term_counts, shannon_entropy, complexity):
-        """Обчислює семантичну пустоту"""
-        void_score = 0.0
+    def calculate_contextual_score(self, text, term_counts, metrics):
+        """Обчислює контекстуальну оцінку"""
+        score = 0.0
+        words = text.split()
+        word_count = len(words)
         
-        # Правило 1: Висока ентропія + нуль сигнальних маркерів
-        if shannon_entropy > 0.75 and term_counts['signal'] == 0:
-            void_score += 0.5
-        elif shannon_entropy > 0.7 and term_counts['signal'] < 1:
-            void_score += 0.3
+        # 1. Семантична пустота (інтенсивність залежить від комбінації)
+        if term_counts['signal'] == 0:
+            if metrics['complexity'] > 0.75:
+                score += 0.4  # Складний текст без змісту
+            elif metrics['shannon_entropy'] > 0.75:
+                score += 0.3  # Висока ентропія без змісту
+            else:
+                score += 0.15  # Просто відсутність змісту
         
-        # Правило 2: Багато академічних термінів але мало конкретики
-        if term_counts['academic'] > 3 and term_counts['signal'] < 2:
-            void_score += 0.3
+        # 2. Науковий нігілізм (академічні терміни з хаосом)
+        if term_counts['academic'] > 0 and term_counts['chaos'] > 0:
+            academic_ratio = term_counts['academic'] / word_count
+            chaos_ratio = term_counts['chaos'] / word_count
+            
+            if chaos_ratio > academic_ratio:
+                score += 0.35  # Більше хаосу ніж науки
+            else:
+                score += 0.2   # Рівномірний мікс
         
-        # Правило 3: Висока складність + низька інформативність
-        if complexity > 0.8 and term_counts['signal'] < 2:
-            void_score += 0.3
-        elif complexity > 0.75 and term_counts['signal'] < 1:
-            void_score += 0.2
+        # 3. Історичний ревізіонізм
+        if any(word in text.lower() for word in ['антарктида', 'атлантида', 'аґарта']):
+            if term_counts['signal'] == 0:
+                score += 0.4
+            else:
+                score += 0.25
         
-        # Правило 4: Гуманітарний туман
-        text_lower = text.lower()
-        humanities_terms = ['холістичний', 'емпатичний', 'трансцендентний', 'фрактальний']
-        if any(term in text_lower for term in humanities_terms) and term_counts['signal'] < 1:
-            void_score += 0.2
+        # 4. Економічний окультизм
+        if any(word in text.lower() for word in ['облігація', 'криптовалюта', 'банк']):
+            if any(word in text.lower() for word in ['карма', 'потойбічний', 'душа']):
+                score += 0.45
         
-        return min(1.0, void_score)
+        return min(score, 0.7)
 
     def analyze(self, text):
         """Основний метод аналізу"""
@@ -231,7 +251,7 @@ class VeritasCalibratedCore:
         shannon_entropy = self._calculate_shannon_entropy(text)
         complexity = self._calculate_complexity(text)
         
-        # Основні метрики для комбінацій
+        # Метрики для градієнтів
         base_metrics = {
             'shannon_entropy': shannon_entropy,
             'complexity': complexity,
@@ -242,69 +262,85 @@ class VeritasCalibratedCore:
         }
         
         # Розширені метрики
-        semantic_void = self.calculate_semantic_void(text, term_counts, shannon_entropy, complexity)
-        sanitary_penalty = self.calculate_semantic_sanitary_penalty(text)
-        metric_penalty, metric_explanations = self.calculate_combined_metrics_penalty(base_metrics)
+        gradient_penalty = self.calculate_gradient_penalties(base_metrics)
+        conflict_penalty = self.calculate_conflict_penalty(text)
+        contextual_score = self.calculate_contextual_score(text, term_counts, base_metrics)
         
-        # БАЗОВА ОЦІНКА з метричними комбінаціями
+        # БАЗОВА ОЦІНКА (тонко налаштована)
         base_score = (
-            shannon_entropy * 0.15 + 
-            complexity * 0.10 + 
-            (term_counts['chaos'] / max(1, word_count)) * 0.25 +
-            semantic_void * 0.20 +
-            sanitary_penalty * 0.15 +
-            metric_penalty * 0.15
+            shannon_entropy * 0.12 +          # Знижено вагу
+            complexity * 0.08 +               # Знижено вагу
+            (term_counts['chaos'] / max(1, word_count)) * 0.20 +
+            contextual_score * 0.25 +         # Основна вага
+            gradient_penalty * 0.20 +
+            conflict_penalty * 0.15
         )
         
-        # Штрафи за паттерни
+        # Штрафи за паттерни (помірковані)
         for pattern in detected_patterns:
             base_score += pattern['score_boost']
         
-        # АКАДЕМІЧНИЙ ЗАХИСТ: знижуємо оцінку для справжніх наукових текстів
-        if term_counts['academic'] >= 3 and term_counts['signal'] >= 2 and term_counts['chaos'] == 0:
-            base_score *= 0.3  # Сильний захист!
-        elif term_counts['academic'] >= 2 and term_counts['signal'] >= 1:
-            base_score *= 0.5
+        # АКАДЕМІЧНИЙ ЗАХИСТ (тонкий градієнт)
+        if term_counts['academic'] >= 2 and term_counts['signal'] >= 2:
+            if term_counts['chaos'] == 0:
+                base_score *= 0.3  # Чиста наука
+            elif term_counts['chaos'] <= 1:
+                base_score *= 0.5  # Мінімальний хаос
+            else:
+                base_score *= 0.7  # Багато хаосу
+        elif term_counts['academic'] >= 1 and term_counts['signal'] >= 1:
+            base_score *= 0.8
         
-        # Гарантований високий бал для критичних випадків
-        if sanitary_penalty > 0.4 or metric_penalty > 0.3:
-            base_score = max(base_score, 0.7)
+        # Гарантовані мінімуми для критичних випадків
+        if conflict_penalty > 0.35:
+            base_score = max(base_score, 0.65)
+        if contextual_score > 0.4:
+            base_score = max(base_score, 0.6)
         
         final_score = min(0.99, max(0.0, base_score))
         
-        # ВЕРДИКТ
+        # ВЕРДИКТ з плавними переходами
         if detected_patterns:
             main_pattern = detected_patterns[0]
-            status = 'CRITICAL'
+            status = 'CRITICAL' if final_score > 0.6 else 'WARNING'
             verdict = main_pattern['verdict']
             explanation = main_pattern['explanation']
-        elif final_score > 0.65:
+        elif final_score > 0.7:
             status = 'CRITICAL'
-            if semantic_void > 0.5:
-                verdict = 'СЕМАНТИЧНА ПУСТОТА'
-                explanation = 'Високий рівень абстракції при відсутності конкретного змісту'
-            elif sanitary_penalty > 0.4:
+            if contextual_score > 0.4:
                 verdict = 'ВИСОКИЙ РІВЕНЬ СЕМАНТИЧНОГО ХАОСУ'
                 explanation = 'Текст демонструє критичний рівень семантичної несумісності'
             else:
-                verdict = 'ВИСОКИЙ РІВЕНЬ СЕМАНТИЧНОГО ХАОСУ'
-                explanation = 'Текст демонструє критичний рівень семантичної несумісності'
-        elif final_score > 0.45:
+                verdict = 'СЕМАНТИЧНА ПУСТОТА'
+                explanation = 'Високий рівень абстракції при відсутності конкретного змісту'
+        elif final_score > 0.55:
             status = 'WARNING'
             verdict = 'ПІДОЗРІЛА СЕМАНТИЧНА СТРУКТУРА'
             explanation = 'Текст містить ознаки семантичних несумісностей'
-        elif final_score > 0.25:
+        elif final_score > 0.35:
             status = 'ACCEPTABLE'
             verdict = 'ПРИЙНЯТНА СТРУКТУРОВАНА ІНФОРМАЦІЯ'
             explanation = 'Текст відповідає нормам логічної сумісності'
-        else:
+        elif final_score > 0.15:
             status = 'TRUSTED'
             verdict = 'СТАБІЛЬНИЙ ЛОГІЧНИЙ СИГНАЛ'
             explanation = 'Текст демонструє високу логічну цілісність'
+        else:
+            status = 'VERIFIED'
+            verdict = 'ВЕРИФІКОВАНИЙ АКАДЕМІЧНИЙ СИГНАЛ'
+            explanation = 'Текст демонструє ідеальну логічну цілісність'
         
-        # Додаємо пояснення метричних комбінацій
-        if metric_explanations:
-            explanation += " | " + " + ".join(metric_explanations)
+        # Додаємо детальні пояснення
+        detail_explanations = []
+        if gradient_penalty > 0.1:
+            detail_explanations.append(f"Градієнтний штраф: {gradient_penalty:.2f}")
+        if conflict_penalty > 0.1:
+            detail_explanations.append(f"Конфліктний штраф: {conflict_penalty:.2f}")
+        if contextual_score > 0.2:
+            detail_explanations.append(f"Контекстуальна оцінка: {contextual_score:.2f}")
+        
+        if detail_explanations:
+            explanation += " | " + " + ".join(detail_explanations)
         
         return {
             'entropy': round(final_score, 3),
@@ -315,9 +351,9 @@ class VeritasCalibratedCore:
             'diagnostics': {
                 'shannon_entropy': round(shannon_entropy, 3),
                 'complexity': round(complexity, 3),
-                'semantic_void': round(semantic_void, 3),
-                'sanity_penalty': round(sanitary_penalty, 3),
-                'metric_penalty': round(metric_penalty, 3),
+                'contextual_score': round(contextual_score, 3),
+                'gradient_penalty': round(gradient_penalty, 3),
+                'conflict_penalty': round(conflict_penalty, 3),
                 'word_count': word_count,
                 'char_count': len(text),
                 'academic_markers': term_counts['academic'],
@@ -327,7 +363,7 @@ class VeritasCalibratedCore:
                 'pattern_count': len(detected_patterns),
                 'shout_factor': len([w for w in words if w.isupper() and len(w) > 2]) / max(1, word_count),
                 'number_density': len(re.findall(r'\d+', text)) / max(1, word_count),
-                'signal_to_noise': term_counts['signal'] / max(1, term_counts['chaos']) if term_counts['chaos'] > 0 else 999
+                'signal_ratio': term_counts['signal'] / max(1, term_counts['chaos']) if term_counts['chaos'] > 0 else 999
             }
         }
 
