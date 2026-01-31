@@ -3,8 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>💠 Veritas Terminal v3.3</title>
+    <title>💠 Veritas Terminal v3.4</title>
+    <!-- CSS залишається таким самим як раніше -->
     <style>
+        /* Всі стилі залишаються без змін */
         * {
             margin: 0;
             padding: 0;
@@ -473,7 +475,7 @@
     <div class="container">
         <div class="header">
             <h1>💠 VERITAS TERMINAL</h1>
-            <div class="subtitle">Information Entropy & Influence Analyzer v3.3 Calibrated</div>
+            <div class="subtitle">Information Entropy & Influence Analyzer v3.4 Calibrated</div>
             <div class="api-status checking" id="apiStatus">⚙️ Connecting...</div>
         </div>
 
@@ -531,7 +533,7 @@
         </div>
 
         <div class="footer">
-            <p>💠 Veritas Protocol Terminal v3.3 - Orpheus Calibrated</p>
+            <p>💠 Veritas Protocol Terminal v3.4 - Orpheus Calibrated</p>
             <p>Backend: Python Flask (Weighted Scoring + Context-Aware Analysis)</p>
             <p>Co-authored by Dmytro Kholodniak & Chimeric Collective</p>
         </div>
@@ -731,9 +733,10 @@
                 `;
             }).join('');
 
-            const extractedTextHTML = data.extracted_text ? `
+            // ТЕПЕР ТЕКСТ ПОКАЗУЄТЬСЯ ТІЛЬКИ ДЛЯ URL АНАЛІЗУ
+            const extractedTextHTML = data.extracted_text && data.show_extracted_text ? `
                 <div class="extracted-text" id="extractedTextContainer">
-                    <h4>📄 Текст для аналізу:
+                    <h4>📄 Витягнутий текст з URL:
                         <span class="text-length">${data.extracted_text_length} символів</span>
                     </h4>
                     <div class="text-content">${data.extracted_text}</div>
