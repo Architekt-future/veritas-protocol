@@ -60,7 +60,7 @@ def analyze():
         return jsonify({}), 200
 
     if request.method == 'GET':
-        return jsonify({'status': 'online', 'version': '3.5-calibrated'}), 200
+        return jsonify({'status': 'online', 'version': '3.6-calibrated'}), 200
 
     try:
         data = request.get_json()
@@ -127,12 +127,12 @@ def analyze():
         is_academic = diag.get('is_academic_context', False)
         lang = result.get('language', 'UK')
 
-        # 3. Розрахунок інтегрального індексу хаосу з академічною корекцією
+        # 3. Розрахунок інтегрального індексу хаосу з контекстуальною корекцією
         total_chaos_index = (chaos_markers * 0.1) + (shout_factor * 30) + (noise_markers * 0.3)
         
-        # ПОЛІПШЕНА корекція для академічних текстів
+        # Корекція для академічних текстів
         if is_academic:
-            total_chaos_index *= 0.3  # Сильніше знижуємо для академічних текстів
+            total_chaos_index *= 0.3
             if academic_markers > 10:
                 total_chaos_index *= 0.5
 
@@ -163,21 +163,21 @@ def analyze():
         
         # Сильна корекція для академічних текстів
         if is_academic:
-            impact_score *= 0.3  # Ще сильніше знижуємо вплив для академічних текстів
-            if signal_markers > noise_markers * 5:  # Дуже високе співвідношення сигнал/шум
+            impact_score *= 0.3
+            if signal_markers > noise_markers * 5:
                 impact_score *= 0.5
         
         # Додаткова корекція на основі співвідношення сигнал/шум
         if signal_markers > 0:
             signal_noise_ratio = noise_markers / signal_markers
-            if signal_noise_ratio < 0.05:  # Дуже високий рівень сигналу
+            if signal_noise_ratio < 0.05:
                 impact_score *= 0.4
-            elif signal_noise_ratio > 1.0:  # Високий рівень шуму
+            elif signal_noise_ratio > 1.0:
                 impact_score *= 1.8
 
-        # ВИПРАВЛЕНІ пороги для вердикту
-        # Критичний стан для явної маячні
-        if sanity_penalty > 0.5:  # Якщо є явне порушення логіки (як борщ з квантовою фізикою)
+        # ВИПРАВЛЕНІ пороги для вердикту з врахуванням контексту
+        # Критичний стан тільки для явної маячні з високим sanity_penalty
+        if sanity_penalty > 0.5 and (chaos_markers > 20 or shout_factor > 0.4):
             status_class = 'critical'
             verdict = 'КРИТИЧНА НЕСУМІСНІСТЬ ЛОГІКИ'
             explanation = 'Текст містить взаємовиключні концепції та порушує базові принципи логічної сумісності.'
@@ -240,7 +240,7 @@ def analyze():
             final_result['extracted_text'] = extracted_text_for_display[:2000] + ('...' if len(extracted_text_for_display) > 2000 else '')
             final_result['extracted_text_length'] = len(extracted_text_for_display)
 
-        print(f"📊 Результат аналізу готовий: entropy={final_result['entropy']}, verdict={verdict}, academic={is_academic}")
+        print(f"📊 Результат аналізу готовий: entropy={final_result['entropy']}, verdict={verdict}, academic={is_academic}, chaos={chaos_markers}")
         return jsonify(final_result), 200
 
     except urllib.error.URLError as e:
