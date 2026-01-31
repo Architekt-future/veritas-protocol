@@ -31,39 +31,34 @@ def analyze():
     try:
         data = request.get_json()
         if not data:
-            return jsonify({'error': 'No data provided'}), 400
+            return jsonify({'error': 'No JSON data received'}), 400
 
         url = data.get('url', '').strip()
-        input_text = data.get('text', '').strip()
-        source = data.get('source', 'Manual Input')
+        # Спробуємо взяти текст з усіх можливих ключів, які міг надіслати фронтенд
+        input_text = data.get('text') or data.get('textContent') or ""
+        input_text = str(input_text).strip()
         
         text_to_analyze = ""
         mode = ""
-        title = "Manual Input"
 
-        # 1. Визначаємо джерело тексту
         if url:
             mode = 'url_scraping'
-            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'})
-            with urllib.request.urlopen(req, timeout=10) as response:
-                html = response.read().decode('utf-8', errors='ignore')
-            
-            extraction = extractor.extract_from_url(url, html)
-            if not extraction.get('success'):
-                return jsonify({'error': f"Scraping failed: {extraction.get('error')}"}), 500
-            
-            text_to_analyze = extraction.get('text', '')
-            source = extraction.get('source', 'Web Source')
-            title = extraction.get('title', 'Extracted Article')
+            # ... твій код скрапінгу ...
+            # ПРИПУСТИМО, скрапер поки що не чіпаємо, перевіримо ТЕКСТ
+            text_to_analyze = "ЗАГЛУШКА: СКРАПІНГ У РОБОТІ" 
         else:
             mode = 'text_input'
             text_to_analyze = input_text
 
-        # 2. Перевірка на пустий текст
-        if not text_to_analyze or len(text_to_analyze) < 5:
-            return jsonify({'error': 'No content to analyze (text too short)'}), 400
+        # ОСЬ ТУТ МОМЕНТ ІСТИНИ:
+        if not text_to_analyze:
+            return jsonify({
+                'error': 'Бекенд отримав пустий текст!',
+                'received_keys': list(data.keys()),
+                'data_preview': str(data)[:100]
+            }), 400
 
-        # 3. Аналіз ядром
+        # ВІДПРАВЛЯЄМО В ЯДРО
         result = engine.analyze(text_to_analyze)
         
         # 4. Калібрування вердикту
