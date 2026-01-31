@@ -88,62 +88,49 @@ def analyze():
         if not text_to_analyze or len(text_to_analyze) < 10:
             return jsonify({'error': 'Content too short'}), 400
 
-        # 1. Запуск аналізу
+       # 1. Запуск аналізу ядра
         result = engine.analyze(text_to_analyze)
         
-        # 2. Збір показників (враховуємо все, що нарахувало ядро)
-        # Витягуємо ентропію: шукаємо 'shannon', 'entropy' або 'shannon_entropy'
-        entropy = result.get('shannon') or result.get('entropy') or result.get('shannon_entropy', 0)
-        
-        # Витягуємо маркери хаосу та інші штрафи
-        chaos = result.get('chaos_markers', 0) or result.get('markers', 0)
+        # 2. Витягуємо всі показники (використовуємо твої назви з ядра)
+        # Якщо в ядрі вони під іншими іменами, .get() підстрахує
+        entropy = result.get('shannon') or result.get('shannon_entropy', 0)
+        complexity = result.get('complexity', 0)
+        markers = result.get('markers', 0) or result.get('chaos_markers', 0)
         sanity = result.get('sanity_penalty', 0)
+        density = result.get('number_density', 0)
         shout = result.get('shout_factor', 0)
-        
-        # Сумарний індекс аномалій (комбінуємо маркери, крик та штрафи за "адекватність")
-        total_chaos_score = chaos + (sanity * 10) + (shout * 5)
+        lang = result.get('language', 'uk')
 
-        # 3. Калібрування вердикту за новими правилами
-        if entropy > 0.58 or total_chaos_score > 15:
+        # 3. Розрахунок підсумкового Хаосу (з урахуванням усіх факторів)
+        # Ентропія 0.33 + високий Shout Factor = вже підозріло
+        total_chaos = markers + (sanity * 5) + (shout * 2)
+
+        # 4. Формуємо розширений словник для фронтенду
+        # Додаємо ВСІ поля, які ти хочеш бачити
+        result.update({
+            'shannon_entropy': entropy,
+            'complexity': complexity,
+            'chaos_markers': total_chaos,
+            'sanity_penalty': sanity,
+            'number_density': density,
+            'shout_factor': shout,
+            'language': lang,
+            'source': source,
+            'title': title,
+            'mode': 'url' if url else 'text'
+        })
+
+        # 5. Калібрування вердикту (тепер на основі комплексу факторів)
+        if entropy > 0.60 or total_chaos > 20:
             result['status_class'] = 'danger'
-            result['verdict'] = 'КРИТИЧНИЙ РІВЕНЬ ХАОСУ'
-            result['explanation'] = 'Виявлено ознаки інтенсивного маніпулятивного впливу та емоційної дестабілізації.'
-        elif entropy > 0.45 or total_chaos_score > 8:
+            result['verdict'] = 'КРИТИЧНИЙ РІВЕНЬ ВПЛИВУ'
+        elif entropy > 0.45 or total_chaos > 10 or shout > 0.5:
             result['status_class'] = 'warning'
-            result['verdict'] = 'ПІДОЗРІЛИЙ СИГНАЛ'
-            result['explanation'] = 'Текст містить маркери маніпуляції або нетипову структуру.'
+            result['verdict'] = 'ПІДОЗРІЛА СТРУКТУРА'
         else:
             result['status_class'] = 'success'
             result['verdict'] = 'СТАБІЛЬНИЙ ЛОГІЧНИЙ СИГНАЛ'
-            result['explanation'] = 'Структура тексту в межах норми. Аномалій не виявлено.'
 
-       # Додаємо ВСІ дані для відображення на фронтенді
-        result['shannon_entropy'] = entropy
-        result['chaos_markers'] = total_chaos_score # Твій сумарний бал хаосу
-        result['complexity'] = complexity
-        result['sanity_penalty'] = sanity
-        result['shout_factor'] = shout
-        result['number_density'] = density
-        result['language'] = language
-        
-        if entropy > 0.58 or chaos > 15:
-            result['status_class'] = 'danger'
-            result['verdict'] = 'КРИТИЧНИЙ РІВЕНЬ ХАОСУ'
-            result['explanation'] = 'Виявлено ознаки інтенсивного маніпулятивного впливу.'
-        elif entropy > 0.45 or chaos > 8:
-            result['status_class'] = 'warning'
-            result['verdict'] = 'ПІДОЗРІЛИЙ СИГНАЛ'
-            result['explanation'] = 'Текст містить маркери емоційної дестабілізації.'
-        else:
-            result['status_class'] = 'success'
-            result['verdict'] = 'СТАБІЛЬНИЙ ЛОГІЧНИЙ СИГНАЛ'
-            result['explanation'] = 'Структура тексту в межах норми.'
-
-        result['source'] = source
-        result['title'] = title
-        result['mode'] = 'url' if url else 'text'
-        result['extracted_text'] = text_to_analyze[:1000]
-        
         return jsonify(result), 200
         
     except Exception as e:
