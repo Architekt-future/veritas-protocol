@@ -88,12 +88,41 @@ def analyze():
         if not text_to_analyze or len(text_to_analyze) < 10:
             return jsonify({'error': 'Content too short'}), 400
 
-        # САМЕ ТУТ МИ ВИПРАВИЛИ ПЕРЕДАЧУ ДАНИХ
+        # 1. Запуск аналізу
         result = engine.analyze(text_to_analyze)
         
-        # КАЛІБРУВАННЯ ВЕРДИКТУ
-        entropy = result.get('shannon_entropy', 0) or result.get('entropy_score', 0)
-        chaos = result.get('chaos_markers', 0)
+        # 2. Збір показників (враховуємо все, що нарахувало ядро)
+        # Витягуємо ентропію: шукаємо 'shannon', 'entropy' або 'shannon_entropy'
+        entropy = result.get('shannon') or result.get('entropy') or result.get('shannon_entropy', 0)
+        
+        # Витягуємо маркери хаосу та інші штрафи
+        chaos = result.get('chaos_markers', 0) or result.get('markers', 0)
+        sanity = result.get('sanity_penalty', 0)
+        shout = result.get('shout_factor', 0)
+        
+        # Сумарний індекс аномалій (комбінуємо маркери, крик та штрафи за "адекватність")
+        total_chaos_score = chaos + (sanity * 10) + (shout * 5)
+
+        # 3. Калібрування вердикту за новими правилами
+        if entropy > 0.58 or total_chaos_score > 15:
+            result['status_class'] = 'danger'
+            result['verdict'] = 'КРИТИЧНИЙ РІВЕНЬ ХАОСУ'
+            result['explanation'] = 'Виявлено ознаки інтенсивного маніпулятивного впливу та емоційної дестабілізації.'
+        elif entropy > 0.45 or total_chaos_score > 8:
+            result['status_class'] = 'warning'
+            result['verdict'] = 'ПІДОЗРІЛИЙ СИГНАЛ'
+            result['explanation'] = 'Текст містить маркери маніпуляції або нетипову структуру.'
+        else:
+            result['status_class'] = 'success'
+            result['verdict'] = 'СТАБІЛЬНИЙ ЛОГІЧНИЙ СИГНАЛ'
+            result['explanation'] = 'Структура тексту в межах норми. Аномалій не виявлено.'
+
+        # Додаємо дані для відображення
+        result['shannon_entropy'] = entropy
+        result['chaos_markers'] = total_chaos_score
+        result['source'] = source
+        result['title'] = title
+        result['mode'] = 'url' if url else 'text'
         
         if entropy > 0.58 or chaos > 15:
             result['status_class'] = 'danger'
