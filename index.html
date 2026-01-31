@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>💠 Veritas Terminal v3.1</title>
+    <title>💠 Veritas Terminal v3.2</title>
     <style>
         * {
             margin: 0;
@@ -226,28 +226,16 @@
             border: 3px solid;
         }
 
-        .verdict.trusted {
+        .verdict.success {
             background: rgba(0, 255, 136, 0.2);
             color: #00ff88;
             border-color: #00ff88;
         }
 
-        .verdict.acceptable {
-            background: rgba(0, 212, 255, 0.2);
-            color: #00d4ff;
-            border-color: #00d4ff;
-        }
-
-        .verdict.suspicious {
+        .verdict.warning {
             background: rgba(255, 170, 0, 0.2);
             color: #ffaa00;
             border-color: #ffaa00;
-        }
-
-        .verdict.warning {
-            background: rgba(255, 100, 100, 0.2);
-            color: #ff6464;
-            border-color: #ff6464;
         }
 
         .verdict.critical {
@@ -260,6 +248,24 @@
         @keyframes pulse {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.6; }
+        }
+
+        .explanation {
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            font-size: 1em;
+            color: #ccc;
+            line-height: 1.5;
+            border-left: 4px solid #00d4ff;
+        }
+
+        .explanation strong {
+            color: #00d4ff;
+            display: block;
+            margin-bottom: 8px;
+            font-size: 1.1em;
         }
 
         .metrics-grid {
@@ -317,7 +323,7 @@
             background: rgba(0, 0, 0, 0.7);
             border-radius: 15px;
             padding: 25px;
-            margin-top: 40px;
+            margin-top: 30px;
             border: 2px solid rgba(255, 170, 0, 0.5);
         }
 
@@ -582,15 +588,13 @@
 
         function displayResults(data) {
             const resultsPanel = document.getElementById('resultsPanel');
-            const statusClass = data.status ? data.status.toLowerCase() : 'unknown';
+            const statusClass = data.status_class || 'success';
 
             const getBarColor = (status) => {
-                switch(status.toUpperCase()) {
-                    case 'TRUSTED': return '#00ff88';
-                    case 'ACCEPTABLE': return '#00d4ff';
-                    case 'SUSPICIOUS': return '#ffaa00';
-                    case 'WARNING': return '#ff6464';
-                    case 'CRITICAL': return '#ff0000';
+                switch(status) {
+                    case 'success': return '#00ff88';
+                    case 'warning': return '#ffaa00';
+                    case 'critical': return '#ff0000';
                     default: return '#888';
                 }
             };
@@ -607,6 +611,7 @@
                 { label: 'ФАКТОР КРИКУ', value: data.shout_factor, desc: 'Використання капслоку та знаків оклику' },
                 { label: 'ЩІЛЬНІСТЬ ЧИСЕЛ', value: data.number_density, desc: 'Частота використання чисел' },
                 { label: 'ШТРАФ САНІТАРІЇ', value: data.sanity_penalty, desc: 'Порушення логічної сумісності' },
+                { label: 'ІНДЕКС ВПЛИВУ', value: data.impact_score, desc: 'Загальний індекс впливу на основі всіх метрик' },
                 { label: 'СЛІВ', value: data.word_count, desc: 'Загальна кількість слів' },
                 { label: 'СИМВОЛІВ', value: data.char_count, desc: 'Загальна кількість символів' }
             ];
@@ -624,8 +629,10 @@
             ` : '';
 
             const metricsHTML = metrics.map(metric => {
-                const isCritical = metric.label.includes('ХАОС') && metric.value > 10;
-                const isWarning = metric.label.includes('ШУМУ') && metric.value > 5;
+                const isCritical = (metric.label.includes('ІНДЕКС ХАОСУ') && metric.value > 40) || 
+                                  (metric.label.includes('ЕНТРОПІЯ') && metric.value > 0.65);
+                const isWarning = (metric.label.includes('ІНДЕКС ХАОСУ') && metric.value > 20) || 
+                                 (metric.label.includes('ЕНТРОПІЯ') && metric.value > 0.50);
                 const cardClass = isCritical ? 'critical' : (isWarning ? 'warning' : '');
                 return `
                     <div class="metric-card ${cardClass}">
@@ -639,13 +646,13 @@
             resultsPanel.innerHTML = `
                 <div class="entropy-display">
                     <h2>📊 РЕЗУЛЬТАТ АНАЛІЗУ</h2>
-                    <div class="entropy-value" style="color: ${getBarColor(data.status)}">
+                    <div class="entropy-value" style="color: ${getBarColor(statusClass)}">
                         ${data.entropy ? data.entropy.toFixed(3) : 'N/A'}
                     </div>
                     <div class="entropy-bar-container">
                         <div class="entropy-bar" 
                              style="width: ${getBarWidth(data.entropy)}%; 
-                                    background: ${getBarColor(data.status)};">
+                                    background: ${getBarColor(statusClass)};">
                             ${data.entropy ? (data.entropy * 100).toFixed(1) + '%' : ''}
                         </div>
                     </div>
@@ -653,6 +660,10 @@
 
                 <div class="verdict ${statusClass}">
                     ${data.verdict || 'Немає вердикту'}
+                </div>
+
+                <div class="explanation">
+                    <strong>📝 Пояснення:</strong> ${data.explanation || 'Немає пояснення.'}
                 </div>
 
                 ${influenceHTML}
