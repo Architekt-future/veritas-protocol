@@ -1,6 +1,7 @@
 """
-Veritas Protocol - Calibrated Core Engine v5.4
+Veritas Protocol - Calibrated Core Engine v5.6
 Enhanced detection of cross-domain absurdity and intellectual mimicry
+with Hybrid Toxicity Detection
 """
 
 import math
@@ -19,21 +20,27 @@ class VeritasCalibratedCore:
         }
 
         self.weights = {
-            'shannon': 0.20,
-            'complexity': 0.15,
-            'semantic_dissonance': 0.40,  # ЗБІЛЬШЕНО
-            'cross_domain_absurdity': 0.25  # НОВА МЕТРИКА
+            'shannon': 0.15,          # ↓ зменшено
+            'complexity': 0.10,       # ↓ зменшено
+            'semantic_dissonance': 0.50,  # ↑ збільшено кардинально
+            'cross_domain_absurdity': 0.25,
+            'hybrid_toxicity': 0.30   # НОВА МЕТРИКА
         }
 
         # РОЗШИРЕНІ КАТЕГОРІЇ ДОМЕНІВ
         self.domain_categories = {
-            # Академічні / наукові
+            # Академічні / наукові (РОЗШИРЕНО)
             'academic': {
                 'uk': [
                     'статистичний', 'аналіз', 'кореляція', 'регресія', 'емпіричний',
                     'методологія', 'гіпотеза', 'експеримент', 'результат', 'висновок',
                     'дослідження', 'публікація', 'журнал', 'конференція', 'протокол',
-                    'верифікація', 'валідація', 'рецензія', 'цитування', 'індекс'
+                    'верифікація', 'валідація', 'рецензія', 'цитування', 'індекс',
+                    'теорема', 'аксіома', 'постулат', 'деривація', 'інтеграція',
+                    'диференціація', 'алгоритм', 'модель', 'симуляція', 'прогноз',
+                    'детермінований', 'стохастичний', 'вероятність', 'дисперсія',
+                    'стандартне', 'відхилення', 'вибірка', 'генеральна', 'сукупність',
+                    'параметр', 'змінна', 'константа', 'коефіцієнт', 'показник'
                 ]
             },
             
@@ -43,7 +50,8 @@ class VeritasCalibratedCore:
                     'фондовий', 'ринок', 'індекс', 'акція', 'облігація', 'інвестиція',
                     'капітал', 'бюджет', 'податок', 'дефіцит', 'профіцит', 'інфляція',
                     'відсоток', 'кредит', 'депозит', 'крипто', 'блокчейн', 'токен',
-                    'біржа', 'трейдинг', 'трейдер', 'портфель', 'актив', 'пасив'
+                    'біржа', 'трейдинг', 'трейдер', 'портфель', 'актив', 'пасив',
+                    'рентабельність', 'ліквідність', 'волатильність', 'диверсифікація'
                 ]
             },
             
@@ -84,7 +92,8 @@ class VeritasCalibratedCore:
                     'резонанс', 'прана', 'ці', 'рейкі', 'медитація', 'транс',
                     'пробудження', 'ініціація', 'архетип', 'колективне', 'несвідоме',
                     'синхронічність', 'нумерологія', 'астрологія', 'хіромантія',
-                    'біолокація', 'ясновидіння', 'телепатія', 'екстрасенс'
+                    'біолокація', 'ясновидіння', 'телепатія', 'екстрасенс',
+                    'аура', 'енергія', 'космічний', 'вібраційний', 'частота'
                 ]
             },
             
@@ -94,7 +103,8 @@ class VeritasCalibratedCore:
                     'змова', 'таємний', 'орден', 'ілюмінат', 'рептилоїд', 'плоскоземель',
                     'нібіру', 'анунак', 'хімітрейл', '5g', 'чіп', 'вакцина', 'білл',
                     'гейтс', 'глобаліст', 'світовий', 'уряд', 'контроль', 'розуму',
-                    'зомбування', 'психотронна', 'зброя', 'приховують', 'приховування'
+                    'зомбування', 'психотронна', 'зброя', 'приховують', 'приховування',
+                    'брехня', 'фейк', 'дезінформація', 'манніпуляція', 'пропаганда'
                 ]
             },
             
@@ -104,7 +114,8 @@ class VeritasCalibratedCore:
                     'синергія', 'стратегія', 'оптимізація', 'ефективність', 'показник',
                     'kpi', 'окр', 'результат', 'продуктивність', 'ланцюг', 'постачання',
                     'стейкхолдер', 'бренд', 'позиціонування', 'ринкова', 'частка',
-                    'монетизація', 'масштабування', 'диверсифікація', 'інновація'
+                    'монетизація', 'масштабування', 'диверсифікація', 'інновація',
+                    'парадигма', 'холістичний', 'екосистема', 'трансформація'
                 ]
             },
             
@@ -114,7 +125,8 @@ class VeritasCalibratedCore:
                     'нейтрино', 'квантовий', 'суперпозиція', 'ентанґлемент', 'телепортація',
                     'мультивсесвіт', 'паралельний', 'вимір', 'портал', 'симуляція',
                     'голограма', 'кіборг', 'трансгуманізм', 'постлюдина', 'штучний',
-                    'розум', 'сингулярність', 'нанотехнологія', 'біотехнологія'
+                    'розум', 'сингулярність', 'нанотехнологія', 'біотехнологія',
+                    'іоносфера', 'ентропія', 'детермінований', 'електромагнітний'
                 ]
             }
         }
@@ -142,17 +154,24 @@ class VeritasCalibratedCore:
             # Наукова фантастика + Фінанси
             ('scifi_utopian', 'financial'),
             ('scifi_utopian', 'legal'),
-            ('scifi_utopian', 'political')
+            ('scifi_utopian', 'political'),
+            # Наука + Корпоративний жаргон (гібридне отруєння)
+            ('academic', 'corporate'),
+            # Фізика + Фінанси (науковий нігілізм)
+            ('scifi_utopian', 'financial'),
+            ('academic', 'financial')
         ]
 
-        # АБСУРДНІ КЛАСТЕРИ СЛІВ (явні ознаки маячні)
+        # АБСУРДНІ КЛАСТЕРИ СЛІВ (розширені для гібридних текстів)
         self.absurdity_clusters = [
             # Блокчейн + духовність
             {'блокчейн', 'кадило', 'обряд', 'прана', 'астральний'},
             # ДНК + 5G + контроль
             {'днк', '5g', 'частота', 'чип', 'контроль'},
-            # Квантова фізика + фінанси
-            {'квантовий', 'фондовий', 'ринок', 'нейтрино', 'трейдер'},
+            # Квантова фізика + фінанси (НАУКОВИЙ НІГІЛІЗМ)
+            {'квантовий', 'фондовий', 'ринок', 'нейтрино', 'трейдер', 'ентропія', 'детермінований'},
+            {'іоносфера', 'політичний', 'рішення', 'електромагнітний', 'індукція', 'демократичний'},
+            {'атом', 'вуглець', 'розпад', 'економіка', 'стабілізація', 'законодавство'},
             # Алхімія + цифрові технології
             {'алхімічний', 'криптографічний', 'трансмутація', 'цифровий', 'золото'},
             # Гомеопатія + електрика
@@ -164,7 +183,24 @@ class VeritasCalibratedCore:
             # Бюрократія + езотерика
             {'бюрократія', 'чакра', 'вібрація', 'резонанс', 'енергетичний'},
             # Наукові методи + містицизм
-            {'статистичний', 'алхімічний', 'трансмутація', 'ефірний', 'благополуччя'}
+            {'статистичний', 'алхімічний', 'трансмутація', 'ефірний', 'благополуччя'},
+            
+            # НОВІ ДЛЯ ГІБРИДНИХ ТЕКСТІВ:
+            # 1. Дзеркальна дезінформація
+            {'брехня', 'правда', 'конспірологія', 'нейролінгвістичний', 'програмування', 'ілюзія'},
+            {'маніпуляція', 'деконструкція', 'логіка', 'код', 'клітка', 'сигнал', 'вібрація'},
+            {'ізоляція', 'цифровий', 'сприйняття', 'реальність', 'алгоритм', 'доказ', 'істина'},
+            # 2. Корпоративний окультизм
+            {'синергія', 'квантовий', 'аура', 'відділ', 'продажі', 'kpi', 'оптимізація'},
+            {'холістичний', 'маркетинг', 'підсвідомий', 'архетип', 'екосистема', 'світловий'},
+            {'мета-фізичний', 'протокол', 'управління', 'трансцендентний', 'рентабельність'},
+            {'езотеричний', 'цикл', 'капітал', 'континуум', 'матеріалізація', 'домінування'},
+            # 3. Науковий авторитаризм
+            {'статистичний', 'аналіз', 'обов\'язковий', 'законний', 'виконання', 'підпорядкування'},
+            # 4. Емоційна інжерія
+            {'когнітивний', 'функція', 'емоційний', 'тиск', 'вплив', 'програмування'},
+            # 5. Псевдоліберальна риторика
+            {'свобода', 'обмеження', 'захист', 'небезпека', 'контроль', 'дозвіл'}
         ]
 
         # СИГНАЛЬНІ МАРКЕРИ (нормальний контент)
@@ -174,7 +210,8 @@ class VeritasCalibratedCore:
                 'статистичний', 'кореляція', 'регресія', 'аналіз', 'метод',
                 'експеримент', 'гіпотеза', 'вибірка', 'результат', 'протокол',
                 'система', 'модель', 'теорія', 'практичний', 'висновок',
-                'звіт', 'документ', 'закон', 'правило', 'процедура', 'стандарт'
+                'звіт', 'документ', 'закон', 'правило', 'процедура', 'стандарт',
+                'перевірка', 'експертиза', 'оцінка', 'критерій', 'метрика'
             ]
         }
 
@@ -234,6 +271,68 @@ class VeritasCalibratedCore:
             absurdity_score += 0.4
         
         return min(1.0, absurdity_score)
+
+    def _calculate_hybrid_toxicity(self, text: str, domain_counts: Dict) -> float:
+        """Обчислює токсичність гібридних маніпуляцій"""
+        toxicity = 0.0
+        text_lower = text.lower()
+        
+        # Правило 1: Академічні терміни + конспірологія в одних реченнях
+        sentences = re.split(r'[.!?]+', text)
+        toxic_sentences = 0
+        
+        for sentence in sentences:
+            if not sentence.strip():
+                continue
+                
+            sentence_lower = sentence.lower()
+            academic_in_sentence = 0
+            conspiracy_in_sentence = 0
+            esoteric_in_sentence = 0
+            
+            # Перевірка академічних термінів
+            for term in self.domain_categories['academic']['uk']:
+                if re.search(r'\b' + term + r'\b', sentence_lower):
+                    academic_in_sentence += 1
+            
+            # Перевірка конспірологічних термінів
+            for term in self.domain_categories['conspiracy']['uk']:
+                if re.search(r'\b' + term + r'\b', sentence_lower):
+                    conspiracy_in_sentence += 1
+            
+            # Перевірка езотеричних термінів
+            for term in self.domain_categories['esoteric']['uk']:
+                if re.search(r'\b' + term + r'\b', sentence_lower):
+                    esoteric_in_sentence += 1
+            
+            # Якщо в реченні є академічні терміни разом з конспірологічними/езотеричними
+            if academic_in_sentence >= 2 and (conspiracy_in_sentence >= 1 or esoteric_in_sentence >= 1):
+                toxic_sentences += 1
+                toxicity += 0.2
+        
+        # Нормалізація за кількістю речень
+        if len(sentences) > 0:
+            toxicity += (toxic_sentences / len(sentences)) * 0.3
+        
+        # Правило 2: Дзеркальна дезінформація
+        mirror_terms = ['брехня', 'маніпуляція', 'дезінформація', 'фейк', 'пропаганда']
+        mirror_count = sum(1 for term in mirror_terms if term in text_lower)
+        
+        if mirror_count >= 2:
+            # Додатковий штраф, якщо сам текст використовує ці терміни
+            toxicity += 0.3
+        
+        # Правило 3: Науковий нігілізм (фізичні терміни для соціальних явищ)
+        physics_terms = {'нейтрино', 'квантовий', 'ентанґлемент', 'іоносфера', 'електромагнітний'}
+        social_terms = {'економіка', 'політика', 'ринок', 'трейдер', 'демократія'}
+        
+        physics_present = sum(1 for term in physics_terms if term in text_lower)
+        social_present = sum(1 for term in social_terms if term in text_lower)
+        
+        if physics_present >= 2 and social_present >= 2:
+            toxicity += 0.4
+        
+        return min(1.0, toxicity)
 
     def _calculate_semantic_dissonance(self, domain_counts: Dict, text: str) -> float:
         """Обчислює семантичний дисонанс"""
@@ -355,25 +454,29 @@ class VeritasCalibratedCore:
         # 2. КРОС-ДОМЕННА АБСУРДНІСТЬ
         cross_domain_absurdity = self._calculate_cross_domain_absurdity(domain_counts, text)
         
-        # 3. СЕМАНТИЧНИЙ ДИСОНАНС
+        # 3. ГІБРИДНА ТОКСИЧНІСТЬ (НОВА МЕТРИКА)
+        hybrid_toxicity = self._calculate_hybrid_toxicity(text, domain_counts)
+        
+        # 4. СЕМАНТИЧНИЙ ДИСОНАНС
         semantic_dissonance = self._calculate_semantic_dissonance(domain_counts, text)
         
-        # 4. АБСУРДНІ ПАРИ В РЕЧЕННЯХ
+        # 5. АБСУРДНІ ПАРИ В РЕЧЕННЯХ
         sentence_absurdity = self._detect_absurd_pairs_in_sentences(text)
         
-        # 5. БАЗОВІ МЕТРИКИ
+        # 6. БАЗОВІ МЕТРИКИ
         entropy = self._calculate_shannon_entropy(text)
         complexity = self._calculate_complexity_score(text)
         
-        # 6. ФІНАЛЬНИЙ РОЗРАХУНОК
+        # 7. ФІНАЛЬНИЙ РОЗРАХУНОК
         base_score = (
             entropy * self.weights['shannon'] +
             complexity * self.weights['complexity'] +
             semantic_dissonance * self.weights['semantic_dissonance'] +
-            cross_domain_absurdity * self.weights['cross_domain_absurdity']
+            cross_domain_absurdity * self.weights['cross_domain_absurdity'] +
+            hybrid_toxicity * self.weights['hybrid_toxicity']
         )
         
-        # 7. ДОДАТКОВІ ШТРАФИ
+        # 8. ДОДАТКОВІ ШТРАФИ
         # За абсурдні пари в реченнях
         if sentence_absurdity > 0.3:
             base_score = min(1.0, base_score * (1.0 + sentence_absurdity))
@@ -385,9 +488,22 @@ class VeritasCalibratedCore:
         
         final_score = min(0.99, max(0.0, base_score))
         
-        # 8. РАДИКАЛЬНА ЛОГІКА ВЕРДИКТУ
+        # 9. РАДИКАЛЬНА ЛОГІКА ВЕРДИКТУ
+        
+        # Правило 0: Висока гібридна токсичність (ПРІОРИТЕТ)
+        if hybrid_toxicity > 0.4:
+            status = 'CRITICAL'
+            if domain_counts.get('academic', 0) > 3:
+                verdict = 'ГІБРИДНИЙ НАУКОВИЙ НІГІЛІЗМ'
+            elif 'брехн' in text.lower() and 'маніпуляці' in text.lower():
+                verdict = 'ДЗЕРКАЛЬНА МАНІПУЛЯЦІЯ'
+            elif domain_counts.get('corporate', 0) > 3 and domain_counts.get('esoteric', 0) > 1:
+                verdict = 'КОРПОРАТИВНИЙ ОКУЛЬТИЗМ'
+            else:
+                verdict = 'ТОКСИЧНА ГІБРИДНА РИТОРИКА'
+        
         # Правило 1: Висока кросс-доменна абсурдність
-        if cross_domain_absurdity > 0.6:
+        elif cross_domain_absurdity > 0.6:
             status = 'CRITICAL'
             if domain_counts.get('financial', 0) > 0 and domain_counts.get('esoteric', 0) > 0:
                 verdict = 'ФІНАНСОВО-ЕЗОТЕРИЧНИЙ АБСУРД'
@@ -435,8 +551,8 @@ class VeritasCalibratedCore:
                 status = 'CRITICAL'
                 verdict = 'КРИТИЧНИЙ СЕМАНТИЧНИЙ КОЛАПС'
         
-        # 9. РОЗРАХУНОК ШТРАФІВ
-        sanity_penalty = max(cross_domain_absurdity, semantic_dissonance, sentence_absurdity)
+        # 10. РОЗРАХУНОК ШТРАФІВ
+        sanity_penalty = max(cross_domain_absurdity, semantic_dissonance, sentence_absurdity, hybrid_toxicity)
         
         # Маркери хаосу (езотерика + конспірологія + наукова фантастика)
         chaos_markers = (
@@ -445,7 +561,10 @@ class VeritasCalibratedCore:
             domain_counts.get('scifi_utopian', 0)
         )
         
-        # 10. ПІДГОТОВКА РЕЗУЛЬТАТІВ
+        # Маркери шуму (конспірологія + езотерика)
+        noise_markers = domain_counts.get('conspiracy', 0) + domain_counts.get('esoteric', 0)
+        
+        # 11. ПІДГОТОВКА РЕЗУЛЬТАТІВ
         return {
             'entropy': round(final_score, 3),
             'status': status,
@@ -456,16 +575,17 @@ class VeritasCalibratedCore:
                 'complexity': round(complexity, 3),
                 'semantic_dissonance': round(semantic_dissonance, 3),
                 'cross_domain_absurdity': round(cross_domain_absurdity, 3),
+                'hybrid_toxicity': round(hybrid_toxicity, 3),
                 'sentence_absurdity': round(sentence_absurdity, 3),
                 'word_count': word_count,
                 'char_count': len(text),
                 'domain_counts': domain_counts,
                 'chaos_markers': chaos_markers,
+                'noise_markers': noise_markers,
                 'sanity_penalty': round(sanity_penalty, 3),
                 # Сумісність з фронтендом
                 'academic_markers': domain_counts.get('academic', 0),
                 'signal_markers': self._count_signal_markers(text, lang),
-                'noise_markers': 0,
                 'shout_factor': len([w for w in words if w.isupper() and len(w) > 2]) / max(1, word_count),
                 'number_density': len(re.findall(r'\d+', text)) / max(1, word_count)
             }
