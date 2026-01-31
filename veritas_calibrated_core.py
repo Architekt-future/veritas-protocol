@@ -1,6 +1,6 @@
 """
-Veritas Protocol - Calibrated Core Engine (FIXED v5)
-Updated for news context recognition
+Veritas Protocol - Calibrated Core Engine (FIXED v5.1)
+Enhanced schizoid pattern detection
 """
 
 import math
@@ -86,31 +86,74 @@ class VeritasCalibratedCore:
             }
         }
 
-        # ВИПРАВЛЕНІ chaos_markers - ТІЛЬКЯ ЯВНА КОНСПІРОЛОГІЯ
+        # РОЗШИРЕНІ chaos_markers - додано специфічні шизофренічні маркери
         self.chaos_markers = {
             'uk': {
+                # Класична конспірологія
                 'рептилоїд', 'плоскоземель', 'плоскоземл', 'ілюмінат',
                 'нібіру', 'анунак', 'хімітрейл', 'психотрон', 'біогенн',
                 'універсальн змов', 'теорії змов', 'прибулець', 'рептилі',
                 'змовник', 'таємн орден', 'світов правлін', 'чіпува',
-                'інопланетн', 'масон', 'глобаліст', 'світова змова'
+                'інопланетн', 'масон', 'глобаліст', 'світова змова',
+                # Шизофренічні паттерни
+                '5g', '5g-веж', 'гейтс', 'білл гейтс', 'вакцин', 'вакцинован',
+                'дельфін', 'сатурн', 'голограм', 'обам', 'хемтрейл', 'хемтрейли',
+                'синхронізація', 'тесла', 'п\'ятий вимір', 'портал', 'макдональдс',
+                'рептил', 'чип', 'днк', 'ефірн', 'енергія сатурна', 'частоти 432',
+                '432 гц', 'перехід у вимір', 'псевдонаук', 'псевдонаука',
+                'астральн', 'чакр', 'карм', 'енергет', 'біопол', 'квантов',
+                'мультивсесвіт', 'вимір', 'паралельн', 'портал', 'трансмутац',
+                'кристалізац', 'резонанс', 'частот', 'голограф', 'проекц',
+                'зомбування', 'контроль розуму', 'промислов', 'змова фарм',
+                'хімічн стеж', 'радіохвил', 'мікрохвил', 'електромагнітн',
+                'скалярн', 'торсіон', 'оргон', 'прана', 'ци', 'рейкі'
             },
             'en': {
                 'reptilian', 'flat earth', 'illuminati', 'nibiru',
                 'annunaki', 'chemtrail', 'psychotronic', 'bioweapon',
                 'universal conspiracy', 'conspiracy theory', 'alien',
                 'reptilian', 'secret order', 'world government', 'microchip',
-                'freemason', 'globalist', 'new world order'
+                'freemason', 'globalist', 'new world order',
+                # Schizoid patterns
+                '5g', '5g tower', 'gates', 'bill gates', 'vaccine', 'vaccinated',
+                'dolphin', 'saturn', 'hologram', 'obama', 'chemtrails',
+                'synchronization', 'tesla', 'fifth dimension', 'portal', 'mcdonald\'s',
+                'reptile', 'chip', 'dna', 'ether', 'saturn energy', '432 hz',
+                'frequency 432', 'dimensional shift', 'pseudoscience',
+                'astral', 'chakra', 'karma', 'energy field', 'bioplasma', 'quantum',
+                'multiverse', 'dimension', 'parallel', 'portal', 'transmutation',
+                'crystallization', 'resonance', 'frequency', 'holographic', 'projection',
+                'mind control', 'zombification', 'big pharma', 'chemical trails',
+                'radio wave', 'microwave', 'electromagnetic', 'scalar', 'torsion',
+                'orgone', 'prana', 'chi', 'reiki'
             }
         }
 
-        # СПРОЩЕНІ кластери несумісності
+        # РОЗШИРЕНІ кластери несумісності - для шизофренічних комбінацій
         self.incompatible_clusters = [
-            # Квантова фізика + кухня (явна маячня)
+            # Квантова фізика + побут (явна маячня)
             {'квантов', 'борщ', 'каструл', 'сметан', 'бульйон'},
             {'мультивсесвіт', 'суп', 'черпак', 'картопл'},
-            # Абсурдні комбінації
-            {'енерг', 'чакр', 'біопол', 'астральн', 'карм'}
+            {'енерг', 'чакр', 'біопол', 'астральн', 'карм'},
+            # Шизофренічні комбінації
+            {'рептилоїд', '5g', 'чип', 'гейтс', 'вакцин'},
+            {'сатурн', 'ефірн', 'енергія', 'дельфін', 'днк'},
+            {'тесла', 'трамп', 'маска', 'п\'ятий вимір'},
+            {'портал', 'макдональдс', 'голограм', 'обам'},
+            {'хімітрейл', 'хемтрейл', 'повітря', 'отруєн'},
+            {'синхронізація', '11:11', 'число', 'нумеролог'},
+            {'частоти', '432', 'гц', 'зуб', 'чип'},
+            {'вакцинован', 'дельфін', 'людин', 'гібрид'},
+            {'білл гейтс', 'мікрочіп', 'контроль', 'населен'},
+            {'плоскоземель', 'наса', 'приховуван', 'правда'},
+            {'ілюмінат', 'світовий уряд', 'новий світовий порядок'},
+            {'прибулець', 'рептил', 'людин', 'змішан'},
+            {'психотрон', 'зброя', 'контроль розуму', 'масова'},
+            {'нібіру', 'планета', 'зближен', 'катаклізм'},
+            {'анунак', 'інопланетн', 'цивілізац', 'стародавн'},
+            {'біоген', 'лаборатор', 'вірус', 'створен'},
+            {'універсальн', 'змов', 'все', 'контролює'},
+            {'масон', 'таємн', 'товариств', 'влада'}
         ]
 
         # Нові списки для розпізнавання контексту
@@ -142,6 +185,18 @@ class VeritasCalibratedCore:
             }
         }
 
+        # Шизофренічні контексти
+        self.schizoid_context_indicators = {
+            'uk': {
+                'зомбування', 'контроль розуму', 'зброя масового ураження',
+                'секретн технолог', 'приховують', 'не кажуть', 'правда',
+                'реальність', 'матриця', 'симуляц', 'пробуджен',
+                'освітлен', 'просвітлен', 'висші сили', 'космічн',
+                'галактичн', 'паранормальн', 'екстрасенс', 'ясновид',
+                'телепат', 'пси-зброя', 'психотронн', 'зомбі'
+            }
+        }
+
     def detect_language(self, text: str) -> str:
         ukrainian_chars = re.findall(r'[їієґ]', text.lower())
         return 'uk' if len(ukrainian_chars) > 3 else 'en'
@@ -153,6 +208,15 @@ class VeritasCalibratedCore:
             if phrase in text_lower:
                 return True
         return False
+
+    def _count_context_matches(self, text: str, lang: str, indicators: dict) -> int:
+        """Підраховує кількість збігів з контекстними індикаторами."""
+        text_lower = text.lower()
+        matches = 0
+        for phrase in indicators.get(lang, set()):
+            if phrase in text_lower:
+                matches += 1
+        return matches
 
     def _shannon_entropy(self, text: str) -> float:
         if not text:
@@ -188,18 +252,22 @@ class VeritasCalibratedCore:
 
         for word in words:
             word_lower = word.lower()
+            # Перевірка шуму
             for marker in self.noise_markers.get(lang, set()):
                 if marker in word_lower:
                     noise_count += 1
                     break
+            # Перевірка сигналу
             for marker in self.signal_markers.get(lang, set()):
                 if marker in word_lower:
                     signal_count += 1
                     break
+            # Перевірка хаосу
             for marker in self.chaos_markers.get(lang, set()):
                 if marker in word_lower:
                     chaos_count += 1
                     break
+            # Перевірка академічних
             for marker in self.academic_markers.get(lang, set()):
                 if marker in word_lower:
                     academic_count += 1
@@ -213,15 +281,20 @@ class VeritasCalibratedCore:
         }
 
     def _check_sanity(self, words: list, text: str, lang: str) -> float:
+        # Перевіряємо на шизофренічний контекст
+        schizoid_matches = self._count_context_matches(text, lang, self.schizoid_context_indicators)
+        
         # Якщо це новинний чи військовий контекст - знижуємо штраф
         has_military = self._has_context(text, lang, self.military_context_indicators)
         has_news = self._has_context(text, lang, self.news_context_indicators)
         
         if has_military or has_news:
             # Для новин та військових звітів - МІНІМАЛЬНИЙ штраф
-            return 0.05  # замість 0.9
+            return 0.05
 
         words_lower = [w.lower() for w in words]
+        
+        # Основна перевірка кластерів
         for cluster in self.incompatible_clusters:
             match_count = 0
             for word in words_lower:
@@ -231,6 +304,15 @@ class VeritasCalibratedCore:
                         break
             if match_count >= 3:
                 return 0.9
+        
+        # Додаткова перевірка: якщо багато хаос-маркерів
+        if len([w for w in words_lower if any(m in w for m in self.chaos_markers.get(lang, set()))]) >= 5:
+            return 0.8
+        
+        # Перевірка на шизофренічний контекст
+        if schizoid_matches >= 3:
+            return 0.7
+        
         return 0.0
 
     def _calculate_number_density(self, text: str, word_count: int) -> float:
@@ -242,7 +324,8 @@ class VeritasCalibratedCore:
     def _calculate_shout_factor(self, text: str, word_count: int) -> float:
         if word_count == 0:
             return 0.0
-        caps_words = len([w for w in text.split() if w.isupper() and len(w) > 5])
+        # Рахуємо слова в CAPSLOCK (більше 2 символів)
+        caps_words = len([w for w in text.split() if w.isupper() and len(w) > 2])
         exclamations = text.count('!')
         questions = text.count('?')
         shout = (exclamations * 2 + caps_words * 3 + questions) / (word_count + 1)
@@ -278,10 +361,21 @@ class VeritasCalibratedCore:
         has_military = self._has_context(text, lang, self.military_context_indicators)
         has_news = self._has_context(text, lang, self.news_context_indicators)
         
+        # ДОДАТКОВА КОРЕКЦІЯ ДЛЯ ШИЗОФРЕНІЧНИХ ТЕКСТІВ
+        schizoid_matches = self._count_context_matches(text, lang, self.schizoid_context_indicators)
+        
+        # ПІДСИЛЕННЯ для шизофренічних текстів
+        if schizoid_matches >= 2 or markers['chaos'] >= 8:
+            # Сильно підвищуємо chaos_density
+            chaos_density = min(1.0, markers['chaos'] / max(1, word_count/2))
+            # Підвищуємо shout_factor якщо є CAPSLOCK
+            if any(w.isupper() and len(w) > 2 for w in text.split()):
+                shout_factor = min(1.0, shout_factor * 2)
+        
         # КОРЕКЦІЯ ДЛЯ НОВИН
-        if has_military or has_news:
+        elif has_military or has_news:
             # ЗНИЖУЄМО chaos_density для новин
-            chaos_density *= 0.01  # з 48 до ~0.48
+            chaos_density *= 0.01
             # ЗНИЖУЄМО загальну ентропію
             shannon *= 0.7
 
@@ -305,10 +399,16 @@ class VeritasCalibratedCore:
         if is_academic:
             base_entropy *= 0.6
 
+        # ДОДАТКОВА КОРЕКЦІЯ для шизофренічних текстів
+        if schizoid_matches >= 3 or markers['chaos'] >= 10:
+            base_entropy = min(1.0, base_entropy * 1.5)
+
         final_entropy = min(0.99, max(0.0, base_entropy))
 
-        # СПРОЩЕНА ЛОГІКА ВЕРДИКТУ
-        if has_military or has_news:
+        # СПЕЦИФІЧНА ЛОГІКА ВЕРДИКТУ ДЛЯ ШИЗОФРЕНІЧНИХ ТЕКСТІВ
+        if schizoid_matches >= 3 or markers['chaos'] >= 10:
+            status, verdict = 'CRITICAL', 'КРИТИЧНА НЕСУМІСНІСТЬ ЛОГІКИ'
+        elif has_military or has_news:
             # ДЛЯ НОВИН - АВТОМАТИЧНО ПРИЙНЯТНО
             if final_entropy < 0.6:
                 status, verdict = 'ACCEPTABLE', 'НОВИННИЙ ТЕКСТ'
