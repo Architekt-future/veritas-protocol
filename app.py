@@ -1,16 +1,54 @@
-import os
-import urllib.request
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
-# Імпортуємо тільки те, що точно є в ядрі
+import re
+import urllib.request
 from veritas_calibrated_core import VeritasCalibratedCore
 
 app = Flask(__name__, static_folder='.')
 CORS(app)
 
 engine = VeritasCalibratedCore()
-# Залишаємо extractor як None, якщо він не імпортувався
-extractor = None
+
+class SimpleExtractor:
+    def extract_from_url(self, url: str, html: str) -> dict:
+        try:
+            cleaned = self._clean_html(html)
+            title = self._extract_title(html)
+            text = self._extract_paragraphs(cleaned)
+            source = self._extract_domain(url)
+            return {
+                'success': True,
+                'title': title,
+                'text': text,
+                'source': source,
+                'url': url
+            }
+        except Exception as e:
+            return {'success': False, 'error': str(e), 'url': url}
+    
+    def _clean_html(self, html: str) -> str:
+        html = re.sub(r'<script[^>]*>.*?</script>', '', html, flags=re.DOTALL | re.IGNORECASE)
+        html = re.sub(r'<style[^>]*>.*?</style>', '', html, flags=re.DOTALL | re.IGNORECASE)
+        return html
+    
+    def _extract_title(self, html: str) -> str:
+        match = re.search(r'<title[^>]*>([^<]+)</title>', html, re.IGNORECASE)
+        return match.group(1).strip() if match else "Unknown Title"
+    
+    def _extract_paragraphs(self, html: str) -> str:
+        paragraphs = re.findall(r'<p[^>]*>(.*?)</p>', html, flags=re.DOTALL | re.IGNORECASE)
+        text = ' '.join(paragraphs) if paragraphs else re.sub(r'<[^>]+>', ' ', html)
+        return self._clean_text(text)
+    
+    def _clean_text(self, text: str) -> str:
+        text = re.sub(r'\s+', ' ', text)
+        return text.strip()
+    
+    def _extract_domain(self, url: str) -> str:
+        match = re.search(r'https?://(?:www\.)?([^/]+)', url)
+        return match.group(1) if match else "unknown"
+
+extractor = SimpleExtractor()
 
 @app.route('/')
 def index():
@@ -22,74 +60,63 @@ def analyze():
         return jsonify({}), 200
     
     if request.method == 'GET':
-        return jsonify({
-            'status': 'online',
-            'service': 'Veritas Protocol Analysis API',
-            'version': '4.0-calibrated'
-        }), 200
-
+        return jsonify({'status': 'online', 'version': '3.1-calibrated'}), 200
+    
     try:
         data = request.get_json()
         if not data:
-            return jsonify({'error': 'No JSON data received'}), 400
-
-        url = data.get('url', '').strip()
-        # Спробуємо взяти текст з усіх можливих ключів, які міг надіслати фронтенд
-        input_text = data.get('text') or data.get('textContent') or ""
-        input_text = str(input_text).strip()
-        source = data.get('source', 'Manual Input') or 'Manual Input'
+            return jsonify({'error': 'No data'}), 400
         
+        url = data.get('url', '').strip()
+        raw_text = data.get('text', '').strip()
+        source = 'Manual Input'
+        title = 'Manual Input'
         text_to_analyze = ""
-        mode = ""
 
         if url:
-            mode = 'url_scraping'
-            # ... твій код скрапінгу ...
-            # ПРИПУСТИМО, скрапер поки що не чіпаємо, перевіримо ТЕКСТ
-            text_to_analyze = "ЗАГЛУШКА: СКРАПІНГ У РОБОТІ" 
+            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+            with urllib.request.urlopen(req, timeout=10) as response:
+                html = response.read().decode('utf-8', errors='ignore')
+            ext = extractor.extract_from_url(url, html)
+            if not ext['success']: raise Exception(ext['error'])
+            text_to_analyze = ext['text']
+            source = ext['source']
+            title = ext['title']
         else:
-            mode = 'text_input'
-            text_to_analyze = input_text
+            text_to_analyze = raw_text
 
-        # ОСЬ ТУТ МОМЕНТ ІСТИНИ:
-        if not text_to_analyze:
-            return jsonify({
-                'error': 'Бекенд отримав пустий текст!',
-                'received_keys': list(data.keys()),
-                'data_preview': str(data)[:100]
-            }), 400
+        if not text_to_analyze or len(text_to_analyze) < 10:
+            return jsonify({'error': 'Content too short'}), 400
 
-        # ВІДПРАВЛЯЄМО В ЯДРО
+        # САМЕ ТУТ МИ ВИПРАВИЛИ ПЕРЕДАЧУ ДАНИХ
         result = engine.analyze(text_to_analyze)
         
-        # 4. Калібрування вердикту
+        # КАЛІБРУВАННЯ ВЕРДИКТУ
         entropy = result.get('shannon_entropy', 0) or result.get('entropy_score', 0)
         chaos = result.get('chaos_markers', 0)
         
         if entropy > 0.58 or chaos > 15:
             result['status_class'] = 'danger'
             result['verdict'] = 'КРИТИЧНИЙ РІВЕНЬ ХАОСУ'
-            result['explanation'] = 'Виявлено ознаки інтенсивного маніпулятивного впливу. Текст має аномально високу ентропію.'
+            result['explanation'] = 'Виявлено ознаки інтенсивного маніпулятивного впливу.'
         elif entropy > 0.45 or chaos > 8:
             result['status_class'] = 'warning'
             result['verdict'] = 'ПІДОЗРІЛИЙ СИГНАЛ'
-            result['explanation'] = 'Текст містить специфічні маркери емоційної дестабілізації. Можлива маніпуляція.'
+            result['explanation'] = 'Текст містить маркери емоційної дестабілізації.'
         else:
             result['status_class'] = 'success'
             result['verdict'] = 'СТАБІЛЬНИЙ ЛОГІЧНИЙ СИГНАЛ'
-            result['explanation'] = 'Структура тексту в межах норми. Аномалій не виявлено.'
+            result['explanation'] = 'Структура тексту в межах норми.'
 
-        # 5. Додаємо метадані для фронтенду
-        result['mode'] = mode
         result['source'] = source
         result['title'] = title
-        result['extracted_text'] = text_to_analyze[:1500] + "..." if len(text_to_analyze) > 1500 else text_to_analyze
+        result['mode'] = 'url' if url else 'text'
+        result['extracted_text'] = text_to_analyze[:1000]
         
         return jsonify(result), 200
-
+        
     except Exception as e:
-        return jsonify({'error': f"Backend error: {str(e)}"}), 500
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=5000)
