@@ -2,14 +2,15 @@ import os
 import urllib.request
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
-from veritas_calibrated_core import VeritasCalibratedCore, VeritasExtractor
+# Імпортуємо тільки те, що точно є в ядрі
+from veritas_calibrated_core import VeritasCalibratedCore
 
 app = Flask(__name__, static_folder='.')
 CORS(app)
 
-# Ініціалізація компонентів
 engine = VeritasCalibratedCore()
-extractor = VeritasExtractor()
+# Залишаємо extractor як None, якщо він не імпортувався
+extractor = None
 
 @app.route('/')
 def index():
