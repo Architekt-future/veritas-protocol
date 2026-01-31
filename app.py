@@ -60,7 +60,7 @@ def analyze():
         return jsonify({}), 200
 
     if request.method == 'GET':
-        return jsonify({'status': 'online', 'version': '3.3-calibrated'}), 200
+        return jsonify({'status': 'online', 'version': '3.4-calibrated'}), 200
 
     try:
         data = request.get_json()
@@ -72,28 +72,43 @@ def analyze():
         source = 'Manual Input'
         title = 'Manual Input'
         text_to_analyze = ""
+        show_extracted_text = False
         extracted_text_for_display = ""
 
         if url:
+            print(f"🔗 Скрапінг URL: {url}")
             req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
             with urllib.request.urlopen(req, timeout=10) as response:
                 html = response.read().decode('utf-8', errors='ignore')
+            
+            print(f"📄 HTML отримано ({len(html)} символів)")
             ext = extractor.extract_from_url(url, html)
-            if not ext['success']: raise Exception(ext['error'])
+            
+            if not ext['success']: 
+                raise Exception(ext['error'])
+            
             text_to_analyze = ext['text']
             extracted_text_for_display = ext['text']
             source = ext['source']
             title = ext['title']
+            show_extracted_text = True  # Показувати тільки для URL
+            
+            print(f"✅ Текст витягнуто: {len(text_to_analyze)} символів, {len(text_to_analyze.split())} слів")
+            print(f"📌 Джерело: {source}, Заголовок: {title}")
+            
         else:
             text_to_analyze = raw_text
-            extracted_text_for_display = raw_text
+            # Не зберігаємо текст для відображення в режимі тексту
+            show_extracted_text = False
             if data.get('source'):
                 source = data.get('source')
+            print(f"📝 Аналіз тексту: {len(text_to_analyze)} символів, {len(text_to_analyze.split())} слів")
 
         if not text_to_analyze or len(text_to_analyze) < 10:
             return jsonify({'error': 'Content too short'}), 400
 
         # 1. Запуск аналізу ядра
+        print("🔍 Запуск аналізу ядра...")
         result = engine.analyze(text_to_analyze)
         if 'error' in result:
             return jsonify({'error': result['error']}), 400
@@ -114,14 +129,10 @@ def analyze():
         lang = result.get('language', 'UK')
 
         # 3. Розрахунок інтегрального індексу хаосу з академічною корекцією
-        # Базові ваги: chaos_markers тепер мають менший вплив
         total_chaos_index = (chaos_markers * 0.1) + (shout_factor * 30) + (noise_markers * 0.3)
         
-        # Корекція для академічних текстів
         if is_academic or academic_density > 0.02:
-            # Академічні тексти мають більш лояльну оцінку хаосу
             total_chaos_index *= 0.5
-            # Якщо багато академічних маркерів, ще більше знижуємо вплив хаосу
             if academic_markers > 10:
                 total_chaos_index *= 0.7
 
@@ -130,14 +141,11 @@ def analyze():
         disorientation_risk = False
         emotional_comment = ""
 
-        # Критерії емоційного тиску
         if shout_factor > 0.3 or noise_markers > signal_markers * 2:
             emotional_pressure = True
-        # Критерії дезорієнтації
         if entropy > 0.5 and complexity > 0.7:
             disorientation_risk = True
 
-        # Формування висновку щодо впливу
         if emotional_pressure and disorientation_risk:
             emotional_comment = "ВИСОКИЙ РІВЕНЬ ЕМОЦІЙНОГО ВПЛИВУ ТА ДЕЗОРІЄНТАЦІЇ. Текст використовує капслок, перебільшення та має високу ентропію, що може спантеличувати читача та впливати на його думку."
         elif emotional_pressure:
@@ -148,22 +156,18 @@ def analyze():
             emotional_comment = "ЕМОЦІЙНИЙ ВПЛИВ МІНІМАЛЬНИЙ. Текст зосереджений на фактах та логіці."
 
         # 5. УТОЧНЕНА логіка вердикту з контекстуальною корекцією
-        # Базова формула impact_score з більш збалансованими вагами
         impact_score = (total_chaos_index * 0.3) + (sanity_penalty * 10) + (entropy * 100 * 0.4)
         
-        # Корекція для академічних текстів
         if is_academic:
-            impact_score *= 0.4  # Значно знижуємо вплив для академічних текстів
+            impact_score *= 0.4
         
-        # Додаткова корекція на основі співвідношення сигнал/шум
         if signal_markers > 0:
             signal_noise_ratio = noise_markers / signal_markers
-            if signal_noise_ratio < 0.1:  # Дуже високий рівень сигналу
+            if signal_noise_ratio < 0.1:
                 impact_score *= 0.6
-            elif signal_noise_ratio > 2.0:  # Дуже високий рівень шуму
+            elif signal_noise_ratio > 2.0:
                 impact_score *= 1.5
 
-        # Визначення фінального вердикту з новими порогами
         if impact_score > 60 or (entropy > 0.70 and chaos_markers > 50 and not is_academic):
             status_class = 'critical'
             verdict = 'КРИТИЧНИЙ ІНФОРМАЦІЙНИЙ ХАОС'
@@ -206,9 +210,8 @@ def analyze():
             'academic_markers': academic_markers,
             'academic_density': academic_density,
             'is_academic_context': is_academic,
-            # Витягнутий текст для відображення
-            'extracted_text': extracted_text_for_display[:2000] + ('...' if len(extracted_text_for_display) > 2000 else ''),
-            'extracted_text_length': len(extracted_text_for_display),
+            # Витягнутий текст для відображення - ТІЛЬКИ ДЛЯ URL
+            'show_extracted_text': show_extracted_text,
             # Результати аналізу впливу
             'emotional_pressure': emotional_pressure,
             'disorientation_risk': disorientation_risk,
@@ -219,11 +222,19 @@ def analyze():
             'signal_noise_ratio': round(noise_markers / signal_markers, 3) if signal_markers > 0 else 0
         }
 
+        # Додаємо текст тільки для URL режиму
+        if show_extracted_text:
+            final_result['extracted_text'] = extracted_text_for_display[:2000] + ('...' if len(extracted_text_for_display) > 2000 else '')
+            final_result['extracted_text_length'] = len(extracted_text_for_display)
+
+        print(f"📊 Результат аналізу готовий: entropy={final_result['entropy']}, verdict={verdict}")
         return jsonify(final_result), 200
 
     except urllib.error.URLError as e:
+        print(f"❌ Помилка URL: {str(e)}")
         return jsonify({'error': f'URL error: {str(e)}'}), 400
     except Exception as e:
+        print(f"❌ Загальна помилка: {str(e)}")
         return jsonify({'error': f'Internal error: {str(e)}'}), 500
 
 if __name__ == '__main__':
