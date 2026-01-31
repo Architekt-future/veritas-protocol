@@ -160,6 +160,6 @@ def analyze():
             result['url'] = url
             result['mode'] = 'url_scraping'
             result['extracted_text'] = text[:1500] + '...' if len(text) > 1500 else text
-                
+
         except Exception as e:
             return jsonify({'error': f'Scraping failed: {str(e)}'}), 500
