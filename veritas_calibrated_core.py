@@ -67,7 +67,7 @@ class VeritasCalibratedCore:
                     'частота сольфеджіо', 'проекція низьких частот', 'страх',
                     'очистіть ефірний кокон', 'провідники прани', 'стіни ілюзії',
                     'пробуджений погляд', 'ініціація', 'вібраційний фон',
-                    'астральний план', 'енергетичні блоки', 'кармічні зв'язки'
+                    'астральний план', 'енергетичні блоки', 'кармічні зв\'язки'  # ВИПРАВЛЕНО
                 }
             },
             
@@ -206,8 +206,7 @@ class VeritasCalibratedCore:
             ('academic', 'conspiracy'),
             ('academic', 'esoteric'), 
             ('sovereign_citizen', 'academic'),
-            ('techno_utopian', 'sovereign_citizen'),
-            ('conspiracy', 'signal')  # конспірологія не може бути сигналом
+            ('techno_utopian', 'sovereign_citizen')
         ]
         
         for cat1, cat2 in incompatible_pairs:
@@ -234,7 +233,10 @@ class VeritasCalibratedCore:
         
         # Синтаксична складність (довжина речень)
         sentences = re.split(r'[.!?]+', text)
-        avg_sentence_length = sum(len(s.split()) for s in sentences if s.strip()) / len(sentences)
+        if sentences:
+            avg_sentence_length = sum(len(s.split()) for s in sentences if s.strip()) / len(sentences)
+        else:
+            avg_sentence_length = 10
         
         # Комбінована складність
         complexity = (unique_ratio * 0.6) + (min(1.0, avg_sentence_length / 30) * 0.4)
@@ -262,8 +264,11 @@ class VeritasCalibratedCore:
                 entropy -= p * math.log2(p)
         
         # Нормалізуємо до 0-1
-        max_entropy = math.log2(len(char_freq)) if char_freq else 0
-        normalized = entropy / max_entropy if max_entropy > 0 else 0
+        if char_freq:
+            max_entropy = math.log2(len(char_freq))
+            normalized = entropy / max_entropy if max_entropy > 0 else 0
+        else:
+            normalized = 0
         
         return min(1.0, normalized)
 
