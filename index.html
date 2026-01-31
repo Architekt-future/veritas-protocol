@@ -20,13 +20,13 @@
         }
 
         .container {
-            max-width: 1400px;
+            max-width: 900px;
             margin: 0 auto;
         }
 
         .header {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 25px;
             padding: 20px;
             background: rgba(255, 255, 255, 0.05);
             border-radius: 10px;
@@ -34,14 +34,14 @@
         }
 
         .header h1 {
-            font-size: 2.5em;
+            font-size: 2.2em;
             color: #00d4ff;
             text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
 
         .header .subtitle {
-            color: #888;
+            color: #aaa;
             font-size: 0.9em;
         }
 
@@ -69,24 +69,12 @@
             color: #000;
         }
 
-        .main-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-
-        @media (max-width: 900px) {
-            .main-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
         .panel {
             background: rgba(0, 0, 0, 0.4);
             border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 10px;
             padding: 20px;
+            margin-bottom: 20px;
         }
 
         .panel-title {
@@ -98,6 +86,49 @@
             gap: 10px;
         }
 
+        /* TABS */
+        .mode-tabs {
+            display: flex;
+            gap: 0;
+            margin-bottom: 15px;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.25);
+        }
+
+        .mode-tab {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            font-weight: bold;
+            cursor: pointer;
+            background: rgba(0,0,0,0.4);
+            color: #888;
+            border: none;
+            transition: background 0.2s, color 0.2s;
+            user-select: none;
+        }
+
+        .mode-tab:hover {
+            background: rgba(255,255,255,0.08);
+        }
+
+        .mode-tab.active {
+            background: rgba(0, 212, 255, 0.15);
+            color: #00d4ff;
+        }
+
+        .mode-panel {
+            display: none;
+        }
+
+        .mode-panel.active {
+            display: block;
+        }
+
+        /* INPUTS */
         .input-group {
             margin-bottom: 15px;
         }
@@ -109,7 +140,8 @@
             font-size: 0.9em;
         }
 
-        .input-group input {
+        .input-group input,
+        .input-group textarea {
             width: 100%;
             padding: 12px;
             background: rgba(0, 0, 0, 0.5);
@@ -120,12 +152,20 @@
             font-size: 0.95em;
         }
 
-        .input-group input:focus {
+        .input-group textarea {
+            min-height: 140px;
+            resize: vertical;
+            line-height: 1.5;
+        }
+
+        .input-group input:focus,
+        .input-group textarea:focus {
             outline: none;
             border-color: #00d4ff;
             box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
         }
 
+        /* BUTTONS */
         .btn {
             padding: 12px 30px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -138,6 +178,7 @@
             font-size: 1em;
             transition: transform 0.2s;
             width: 100%;
+            margin-top: 5px;
         }
 
         .btn:hover {
@@ -156,23 +197,29 @@
             margin-top: 10px;
         }
 
-        /* WITNESS VISUALIZER */
+        /* RESULT VISUALIZATION - RIGHT UNDER INPUT */
+        .results-container {
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.15);
+        }
+
         .witness-container {
-            margin-top: 20px;
+            margin-top: 10px;
         }
 
         .entropy-value {
             text-align: center;
-            font-size: 3em;
+            font-size: 2.8em;
             font-weight: bold;
-            margin: 20px 0;
+            margin: 15px 0;
             text-shadow: 0 0 20px currentColor;
         }
 
         .entropy-bar {
-            height: 40px;
+            height: 35px;
             background: rgba(0, 0, 0, 0.5);
-            border-radius: 20px;
+            border-radius: 18px;
             overflow: hidden;
             position: relative;
             border: 2px solid rgba(255, 255, 255, 0.3);
@@ -191,18 +238,18 @@
         .entropy-labels {
             display: flex;
             justify-content: space-between;
-            margin-top: 10px;
+            margin-top: 8px;
             font-size: 0.8em;
             color: #888;
         }
 
         .verdict {
             text-align: center;
-            font-size: 1.5em;
+            font-size: 1.3em;
             font-weight: bold;
-            margin: 20px 0;
-            padding: 15px;
-            border-radius: 10px;
+            margin: 15px 0;
+            padding: 12px;
+            border-radius: 8px;
             text-transform: uppercase;
         }
 
@@ -236,30 +283,30 @@
             50% { opacity: 0.7; }
         }
 
-        /* METRICS */
+        /* METRICS GRID - UNDER VERDICT */
         .metrics {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
             gap: 10px;
             margin-top: 20px;
         }
 
         .metric {
             background: rgba(0, 0, 0, 0.5);
-            padding: 15px;
+            padding: 12px;
             border-radius: 8px;
             border: 1px solid rgba(255, 255, 255, 0.2);
             text-align: center;
         }
 
         .metric-label {
-            font-size: 0.8em;
+            font-size: 0.75em;
             color: #888;
             margin-bottom: 5px;
         }
 
         .metric-value {
-            font-size: 1.5em;
+            font-size: 1.3em;
             font-weight: bold;
             color: #00d4ff;
         }
@@ -276,21 +323,7 @@
             color: #00ff88;
         }
 
-        /* TEXT DISPLAY */
-        .text-display {
-            background: rgba(0, 0, 0, 0.7);
-            padding: 15px;
-            border-radius: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            max-height: 300px;
-            overflow-y: auto;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            font-size: 0.9em;
-            line-height: 1.5;
-        }
-
-        /* EXPLANATION BOX */
+        /* EXPLANATION */
         .explanation-box {
             margin-top: 15px;
             padding: 12px 16px;
@@ -311,99 +344,9 @@
             margin-bottom: 4px;
         }
 
-        /* MODE TABS */
-        .mode-tabs {
-            display: flex;
-            gap: 0;
-            margin-bottom: 15px;
-            border-radius: 6px;
-            overflow: hidden;
-            border: 1px solid rgba(255,255,255,0.25);
-        }
-
-        .mode-tab {
-            flex: 1;
-            padding: 9px 10px;
-            text-align: center;
-            font-family: 'Courier New', monospace;
-            font-size: 0.85em;
-            font-weight: bold;
-            cursor: pointer;
-            background: rgba(0,0,0,0.4);
-            color: #888;
-            border: none;
-            transition: background 0.2s, color 0.2s;
-            user-select: none;
-        }
-
-        .mode-tab:hover {
-            background: rgba(255,255,255,0.08);
-        }
-
-        .mode-tab.active {
-            background: rgba(0, 212, 255, 0.15);
-            color: #00d4ff;
-        }
-
-        .mode-panel {
-            display: none;
-        }
-
-        .mode-panel.active {
-            display: block;
-        }
-
-        .input-group textarea {
-            width: 100%;
-            min-height: 140px;
-            padding: 12px;
-            background: rgba(0, 0, 0, 0.5);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            border-radius: 5px;
-            color: #fff;
-            font-family: 'Courier New', monospace;
-            font-size: 0.9em;
-            resize: vertical;
-            line-height: 1.5;
-        }
-
-        .input-group textarea:focus {
-            outline: none;
-            border-color: #00d4ff;
-            box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
-        }
-
-        .input-group textarea::placeholder {
-            color: #555;
-        }
-
-        /* LOADING */
-        .loading {
-            color: #00d4ff;
-            font-style: italic;
-            animation: blink 1.5s infinite;
-        }
-
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.3; }
-        }
-
-        .error {
-            background: rgba(255, 68, 68, 0.2);
-            border: 1px solid #ff4444;
-            padding: 15px;
-            border-radius: 8px;
-            color: #ff4444;
+        /* TEXT DISPLAY */
+        .text-display-panel {
             margin-top: 10px;
-        }
-
-        .footer {
-            text-align: center;
-            margin-top: 30px;
-            padding: 20px;
-            color: #666;
-            font-size: 0.85em;
         }
 
         .toggle-section {
@@ -430,6 +373,49 @@
         .collapsible-content.visible {
             max-height: 500px;
         }
+
+        .text-display {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+
+        /* FOOTER */
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            color: #666;
+            font-size: 0.85em;
+        }
+
+        /* LOADING & ERROR */
+        .loading {
+            color: #00d4ff;
+            font-style: italic;
+            animation: blink 1.5s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .error {
+            background: rgba(255, 68, 68, 0.2);
+            border: 1px solid #ff4444;
+            padding: 15px;
+            border-radius: 8px;
+            color: #ff4444;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -438,95 +424,63 @@
         <div class="header">
             <h1>⚡ VERITAS TERMINAL</h1>
             <div class="subtitle">Information Entropy Analyzer • Shannon Engine • The Witness</div>
-            <div class="api-status checking" id="apiStatus">⚙️ Checking API...</div>
+            <div class="api-status checking" id="apiStatus">⚙️ Перевірка API...</div>
         </div>
 
-        <!-- MAIN GRID -->
-        <div class="main-grid">
-            <!-- LEFT: INPUT & CONTROL -->
-            <div class="panel">
-                <div class="panel-title">⚡ DATA INPUT</div>
-                
-                <!-- MODE TOGGLE -->
-                <div class="mode-tabs">
-                    <button class="mode-tab active" id="tabURL" onclick="switchMode('url')">🔗 URL</button>
-                    <button class="mode-tab" id="tabManual" onclick="switchMode('manual')">✏️ Manual</button>
-                </div>
+        <!-- INPUT PANEL -->
+        <div class="panel">
+            <div class="panel-title">⚡ ВВІД ДАНИХ</div>
+            
+            <!-- MODE TABS -->
+            <div class="mode-tabs">
+                <button class="mode-tab active" id="tabURL" onclick="switchMode('url')">🔗 URL</button>
+                <button class="mode-tab" id="tabManual" onclick="switchMode('manual')">✏️ Текст</button>
+            </div>
 
-                <!-- URL MODE -->
-                <div class="mode-panel active" id="panelURL">
-                    <div class="input-group">
-                        <label for="urlInput">Target URL:</label>
-                        <input 
-                            type="text" 
-                            id="urlInput" 
-                            placeholder="https://example.com/news-article"
-                            value=""
-                        />
-                    </div>
-                </div>
-
-                <!-- MANUAL MODE -->
-                <div class="mode-panel" id="panelManual">
-                    <div class="input-group">
-                        <label for="textInput">Paste text for analysis:</label>
-                        <textarea 
-                            id="textInput" 
-                            placeholder="Введіть або вставіть текст сюда для аналізу..."
-                        ></textarea>
-                    </div>
-                </div>
-
+            <!-- URL MODE -->
+            <div class="mode-panel active" id="panelURL">
                 <div class="input-group">
-                    <label for="apiUrl">API Endpoint:</label>
+                    <label for="urlInput">URL-адреса:</label>
                     <input 
                         type="text" 
-                        id="apiUrl" 
-                        value="https://veritas-protocol-git-main-architekt-futures-projects.vercel.app"
-                        readonly
+                        id="urlInput" 
+                        placeholder="https://example.com/news-article"
+                        value=""
                     />
-                </div>
-
-                <button class="btn" id="analyzeBtn" onclick="analyzeURL()">
-                    ⚡ ANALYZE
-                </button>
-
-                <button class="btn btn-clear" onclick="clearAll()">
-                    ⚡ CLEAR
-                </button>
-
-                <!-- METRICS -->
-                <div class="metrics" id="metricsPanel" style="display: none;">
-                    <div class="metric">
-                        <div class="metric-label">Characters</div>
-                        <div class="metric-value" id="charCount">0</div>
-                    </div>
-                    <div class="metric">
-                        <div class="metric-label">Words</div>
-                        <div class="metric-value" id="wordCount">0</div>
-                    </div>
-                    <div class="metric">
-                        <div class="metric-label">Noise Markers</div>
-                        <div class="metric-value" id="noiseMarkers">0</div>
-                    </div>
-                    <div class="metric">
-                        <div class="metric-label">Chaos Index</div>
-                        <div class="metric-value" id="chaosIndex">0</div>
-                    </div>
-                    <div class="metric">
-                        <div class="metric-label">Influence Index</div>
-                        <div class="metric-value" id="influenceIndex">0</div>
-                    </div>
-                    <div class="metric">
-                        <div class="metric-label">Sanity Penalty</div>
-                        <div class="metric-value" id="sanityPenalty">0</div>
-                    </div>
                 </div>
             </div>
 
-            <!-- RIGHT: WITNESS VISUALIZER -->
-            <div class="panel">
-                <div class="panel-title">⚡ THE WITNESS</div>
+            <!-- MANUAL MODE -->
+            <div class="mode-panel" id="panelManual">
+                <div class="input-group">
+                    <label for="textInput">Введіть текст для аналізу:</label>
+                    <textarea 
+                        id="textInput" 
+                        placeholder="Вставте або введіть текст тут..."
+                    ></textarea>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label for="apiUrl">API Endpoint:</label>
+                <input 
+                    type="text" 
+                    id="apiUrl" 
+                    value="/api/analyze"
+                    readonly
+                />
+            </div>
+
+            <button class="btn" id="analyzeBtn" onclick="analyze()">
+                ⚡ АНАЛІЗУВАТИ
+            </button>
+            <button class="btn btn-clear" onclick="clearAll()">
+                ⚡ ОЧИСТИТИ
+            </button>
+
+            <!-- RESULTS VISUALIZATION - RIGHT UNDER BUTTONS -->
+            <div class="results-container" id="resultsContainer" style="display: none;">
+                <div class="panel-title">⚡ РЕЗУЛЬТАТ АНАЛІЗУ</div>
                 
                 <div class="witness-container">
                     <div class="entropy-value" id="entropyValue">---</div>
@@ -538,13 +492,13 @@
                     </div>
 
                     <div class="entropy-labels">
-                        <span>⚡ Ordered (0.0)</span>
-                        <span>⚡ Complex (0.5)</span>
-                        <span>⚡ Chaos (1.0)</span>
+                        <span>⚡ Впорядковано (0.0)</span>
+                        <span>⚡ Складно (0.5)</span>
+                        <span>⚡ Хаос (1.0)</span>
                     </div>
 
                     <div class="verdict" id="verdict" style="display: none;">
-                        AWAITING ANALYSIS
+                        ОЧІКУЄ АНАЛІЗУ
                     </div>
 
                     <!-- Explanation from backend -->
@@ -552,27 +506,55 @@
                         <div class="exp-label">Пояснення</div>
                         <div id="explanationText"></div>
                     </div>
+
+                    <!-- METRICS -->
+                    <div class="metrics" id="metricsPanel">
+                        <div class="metric">
+                            <div class="metric-label">Символи</div>
+                            <div class="metric-value" id="charCount">0</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Слова</div>
+                            <div class="metric-value" id="wordCount">0</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Шум маркери</div>
+                            <div class="metric-value" id="noiseMarkers">0</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Індекс хаосу</div>
+                            <div class="metric-value" id="chaosIndex">0</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Індекс впливу</div>
+                            <div class="metric-value" id="influenceIndex">0</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Штраф логіки</div>
+                            <div class="metric-value" id="sanityPenalty">0</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- BOTTOM: TEXT DISPLAY -->
-        <div class="panel">
+        <!-- TEXT DISPLAY -->
+        <div class="panel text-display-panel">
             <div class="panel-title toggle-section" onclick="toggleTextDisplay()">
-                <span>⚡ CLEANED TEXT</span>
+                <span>⚡ ТЕКСТ ДЛЯ ПЕРЕВІРКИ</span>
                 <span style="font-size: 0.8em; margin-left: auto;">▼</span>
             </div>
             
             <div class="collapsible-content visible" id="textDisplayContainer">
                 <div class="text-display" id="textDisplay">
-                    Waiting for analysis...
+                    Очікує аналізу...
                 </div>
             </div>
         </div>
 
         <!-- FOOTER -->
         <div class="footer">
-            <p>⚡ Veritas Protocol Terminal v3.2</p>
+            <p>⚡ Veritas Protocol Terminal v3.2 • HyperCalibrated Core</p>
             <p>Shannon Entropy Engine • Data Cleaner • Witness Visualizer</p>
             <p>Co-authored by Dmytro Kholodniak & Chimeric Collective (Claude, ChatGPT, Gemini)</p>
         </div>
@@ -590,7 +572,7 @@
 
         async function checkAPIStatus() {
             const statusEl = document.getElementById('apiStatus');
-            statusEl.textContent = '⚙️ Checking API...';
+            statusEl.textContent = '⚙️ Перевірка API...';
             statusEl.className = 'api-status checking';
 
             try {
@@ -620,28 +602,28 @@
             document.getElementById('panelManual').className = 'mode-panel' + (mode === 'manual' ? ' active' : '');
         }
 
-        // UNIFIED ANALYZE — works in both URL and Manual mode
-        async function analyzeURL() {
+        // UNIFIED ANALYZE
+        async function analyze() {
             const analyzeBtn = document.getElementById('analyzeBtn');
             const textDisplay = document.getElementById('textDisplay');
-            const metricsPanel = document.getElementById('metricsPanel');
+            const resultsContainer = document.getElementById('resultsContainer');
 
             // Build payload based on current mode
             let payload = {};
             if (currentMode === 'url') {
                 const url = document.getElementById('urlInput').value.trim();
-                if (!url) { alert('❌ Please enter a URL'); return; }
+                if (!url) { alert('❌ Будь ласка, введіть URL'); return; }
                 payload = { url: url };
             } else {
                 const text = document.getElementById('textInput').value.trim();
-                if (!text || text.length < 20) { alert('❌ Text must be at least 20 characters'); return; }
+                if (!text || text.length < 20) { alert('❌ Текст має бути не менше 20 символів'); return; }
                 payload = { text: text, source: 'Manual Input' };
             }
 
             // Disable button
             analyzeBtn.disabled = true;
-            analyzeBtn.textContent = '⏳ ANALYZING...';
-            textDisplay.innerHTML = '<div class="loading">⚙️ Sending to backend...</div>';
+            analyzeBtn.textContent = '⏳ АНАЛІЗ...';
+            textDisplay.innerHTML = '<div class="loading">⚙️ Надсилання на сервер...</div>';
 
             try {
                 const response = await fetch(API_BASE, {
@@ -656,56 +638,57 @@
                     throw new Error(data.error);
                 }
 
-                // Show extracted text only in URL mode (manual text is already visible in textarea)
+                // Show extracted text only in URL mode
                 if (currentMode === 'url') {
-                    textDisplay.textContent = data.extracted_text || 'No text extracted';
+                    textDisplay.textContent = data.extracted_text || 'Текст не витягнуто';
+                } else {
+                    textDisplay.textContent = document.getElementById('textInput').value;
                 }
 
-                // === USE BACKEND DATA FOR EVERYTHING ===
-                const entropy = data.entropy || 0;
+                // Show results container
+                resultsContainer.style.display = 'block';
+
+                // Update metrics
                 const diagnostics = data.diagnostics || {};
 
-                // Update basic metrics
                 document.getElementById('charCount').textContent = diagnostics.char_count || 0;
                 document.getElementById('wordCount').textContent = diagnostics.word_count || 0;
+                document.getElementById('noiseMarkers').textContent = diagnostics.noise_markers || 0;
 
-                // Update new metrics from backend
-                const chaosIdx = diagnostics.chaos_index || 0;
-                const influenceIdx = diagnostics.influence_index || 0;
-                const sanityPen = diagnostics.sanity_penalty || 0;
-                const noiseCount = diagnostics.noise_markers || 0;
-
+                // Chaos Index
                 const chaosEl = document.getElementById('chaosIndex');
-                chaosEl.textContent = chaosIdx;
-                chaosEl.className = 'metric-value ' + (chaosIdx > 100 ? 'danger' : chaosIdx > 30 ? 'warning' : 'safe');
+                chaosEl.textContent = diagnostics.chaos_index || 0;
+                chaosEl.className = 'metric-value ' + 
+                    (diagnostics.chaos_index > 60 ? 'danger' : 
+                     diagnostics.chaos_index > 30 ? 'warning' : 'safe');
 
+                // Influence Index
                 const influenceEl = document.getElementById('influenceIndex');
-                influenceEl.textContent = influenceIdx;
-                influenceEl.className = 'metric-value ' + (influenceIdx > 200 ? 'danger' : influenceIdx > 50 ? 'warning' : 'safe');
+                influenceEl.textContent = diagnostics.influence_index || 0;
+                influenceEl.className = 'metric-value ' + 
+                    (diagnostics.influence_index > 100 ? 'danger' : 
+                     diagnostics.influence_index > 50 ? 'warning' : 'safe');
 
+                // Sanity Penalty
                 const sanityEl = document.getElementById('sanityPenalty');
-                sanityEl.textContent = sanityPen;
-                sanityEl.className = 'metric-value ' + (sanityPen > 0.5 ? 'danger' : sanityPen > 0.2 ? 'warning' : 'safe');
+                sanityEl.textContent = diagnostics.sanity_penalty || 0;
+                sanityEl.className = 'metric-value ' + 
+                    (diagnostics.sanity_penalty > 0.5 ? 'danger' : 
+                     diagnostics.sanity_penalty > 0.2 ? 'warning' : 'safe');
 
-                const noiseEl = document.getElementById('noiseMarkers');
-                noiseEl.textContent = noiseCount;
-                noiseEl.className = 'metric-value ' + (noiseCount > 3 ? 'danger' : noiseCount > 1 ? 'warning' : 'safe');
-
-                metricsPanel.style.display = 'grid';
-
-                // Update Witness with backend entropy + verdict
-                updateWitness(entropy, data.verdict, data.explanation, data.status);
+                // Update Witness with backend data
+                updateWitness(data.entropy, data.verdict, data.explanation, data.status);
 
             } catch (error) {
-                textDisplay.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+                textDisplay.innerHTML = `<div class="error">❌ Помилка: ${error.message}</div>`;
                 console.error('Analysis failed:', error);
             } finally {
                 analyzeBtn.disabled = false;
-                analyzeBtn.textContent = '⚡ ANALYZE';
+                analyzeBtn.textContent = '⚡ АНАЛІЗУВАТИ';
             }
         }
 
-        // UPDATE WITNESS VISUALIZER — uses backend verdict, not local thresholds
+        // UPDATE WITNESS VISUALIZER
         function updateWitness(entropy, verdict, explanation, status) {
             const entropyValue = document.getElementById('entropyValue');
             const entropyFill = document.getElementById('entropyFill');
@@ -736,10 +719,13 @@
                 color = '#ffaa00';
                 bgColor = 'linear-gradient(90deg, #ffaa00 0%, #ff8800 100%)';
                 verdictClass = 'acceptable';
-            } else {
-                // TRUSTED / VERIFIED
+            } else if (status === 'TRUSTED' || status === 'VERIFIED') {
                 color = '#00ff88';
                 bgColor = 'linear-gradient(90deg, #00ff88 0%, #00cc66 100%)';
+                verdictClass = 'trusted';
+            } else {
+                color = '#00d4ff';
+                bgColor = 'linear-gradient(90deg, #00d4ff 0%, #0099cc 100%)';
                 verdictClass = 'trusted';
             }
 
@@ -747,7 +733,7 @@
             entropyFill.style.background = bgColor;
 
             // Show verdict from backend
-            verdictEl.textContent = verdict || 'АНАЛІЗ ЗАВЕРШЕНИЙ';
+            verdictEl.textContent = verdict || 'АНАЛІЗ ЗАВЕРШЕНО';
             verdictEl.className = 'verdict ' + verdictClass;
             verdictEl.style.display = 'block';
 
@@ -764,14 +750,14 @@
         function clearAll() {
             document.getElementById('urlInput').value = '';
             document.getElementById('textInput').value = '';
-            document.getElementById('textDisplay').textContent = 'Waiting for analysis...';
+            document.getElementById('textDisplay').textContent = 'Очікує аналізу...';
+            document.getElementById('resultsContainer').style.display = 'none';
             document.getElementById('entropyValue').textContent = '---';
             document.getElementById('entropyValue').style.color = '#e0e0e0';
             document.getElementById('entropyFill').style.width = '0%';
             document.getElementById('entropyFill').textContent = '0%';
             document.getElementById('verdict').style.display = 'none';
             document.getElementById('explanationBox').className = 'explanation-box';
-            document.getElementById('metricsPanel').style.display = 'none';
         }
 
         // TOGGLE TEXT DISPLAY
@@ -786,10 +772,10 @@
             }
         }
 
-        // Enter key: trigger in URL mode only (manual needs Enter for new lines)
+        // Enter key: trigger in URL mode only
         document.getElementById('urlInput').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
-                analyzeURL();
+                analyze();
             }
         });
 
@@ -797,7 +783,7 @@
         document.getElementById('textInput').addEventListener('keydown', function(e) {
             if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
                 e.preventDefault();
-                analyzeURL();
+                analyze();
             }
         });
     </script>
