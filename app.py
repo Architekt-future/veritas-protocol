@@ -60,7 +60,7 @@ def analyze():
         return jsonify({}), 200
 
     if request.method == 'GET':
-        return jsonify({'status': 'online', 'version': '3.2-calibrated'}), 200
+        return jsonify({'status': 'online', 'version': '3.3-calibrated'}), 200
 
     try:
         data = request.get_json()
@@ -108,10 +108,22 @@ def analyze():
         shout_factor = diag.get('shout_factor', 0)
         noise_markers = diag.get('noise_markers', 0)
         signal_markers = diag.get('signal_markers', 0)
+        academic_markers = diag.get('academic_markers', 0)
+        academic_density = diag.get('academic_density', 0)
+        is_academic = diag.get('is_academic_context', False)
         lang = result.get('language', 'UK')
 
-        # 3. Розрахунок інтегрального індексу хаосу (ваговий)
-        total_chaos_index = (chaos_markers * 3) + (shout_factor * 50) + (noise_markers * 0.5)
+        # 3. Розрахунок інтегрального індексу хаосу з академічною корекцією
+        # Базові ваги: chaos_markers тепер мають менший вплив
+        total_chaos_index = (chaos_markers * 0.1) + (shout_factor * 30) + (noise_markers * 0.3)
+        
+        # Корекція для академічних текстів
+        if is_academic or academic_density > 0.02:
+            # Академічні тексти мають більш лояльну оцінку хаосу
+            total_chaos_index *= 0.5
+            # Якщо багато академічних маркерів, ще більше знижуємо вплив хаосу
+            if academic_markers > 10:
+                total_chaos_index *= 0.7
 
         # 4. Аналіз емоційного впливу та дезорієнтації
         emotional_pressure = False
@@ -135,23 +147,39 @@ def analyze():
         else:
             emotional_comment = "ЕМОЦІЙНИЙ ВПЛИВ МІНІМАЛЬНИЙ. Текст зосереджений на фактах та логіці."
 
-        # 5. НОВА логіка вердикту з урахуванням ентропії та індексу хаосу
-        impact_score = (total_chaos_index * 0.7) + (sanity_penalty * 20)
-        if entropy > 0.55:
-            impact_score *= 1.5
+        # 5. УТОЧНЕНА логіка вердикту з контекстуальною корекцією
+        # Базова формула impact_score з більш збалансованими вагами
+        impact_score = (total_chaos_index * 0.3) + (sanity_penalty * 10) + (entropy * 100 * 0.4)
+        
+        # Корекція для академічних текстів
+        if is_academic:
+            impact_score *= 0.4  # Значно знижуємо вплив для академічних текстів
+        
+        # Додаткова корекція на основі співвідношення сигнал/шум
+        if signal_markers > 0:
+            signal_noise_ratio = noise_markers / signal_markers
+            if signal_noise_ratio < 0.1:  # Дуже високий рівень сигналу
+                impact_score *= 0.6
+            elif signal_noise_ratio > 2.0:  # Дуже високий рівень шуму
+                impact_score *= 1.5
 
-        if impact_score > 40 or entropy > 0.65:
+        # Визначення фінального вердикту з новими порогами
+        if impact_score > 60 or (entropy > 0.70 and chaos_markers > 50 and not is_academic):
             status_class = 'critical'
-            verdict = 'КРИТИЧНА ДЕСТАБІЛІЗАЦІЯ'
-            explanation = 'Висока ентропія та індекс хаосу вказують на пряму маніпуляцію.'
-        elif impact_score > 20 or entropy > 0.50:
+            verdict = 'КРИТИЧНИЙ ІНФОРМАЦІЙНИЙ ХАОС'
+            explanation = 'Екстремальний рівень ентропії та хаосу вказують на системну маніпуляцію.'
+        elif impact_score > 30 or entropy > 0.60:
             status_class = 'warning'
-            verdict = 'ПІДОЗРІЛИЙ СИГНАЛ'
+            verdict = 'ПІДОЗРІЛА ЕМОЦІЙНА РИТОРИКА'
             explanation = 'Виявлено структурні аномалії та ознаки інформаційного шуму.'
+        elif impact_score > 15 or entropy > 0.50:
+            status_class = 'acceptable'
+            verdict = 'ПРИЙНЯТНА СТРУКТУРОВАНА ІНФОРМАЦІЯ'
+            explanation = 'Текст має деякі особливості, але загалом відповідає нормам.'
         else:
             status_class = 'success'
             verdict = 'СТАБІЛЬНИЙ ЛОГІЧНИЙ СИГНАЛ'
-            explanation = 'Параметри тексту в межах норми.'
+            explanation = 'Параметри тексту в межах норми, високий рівень логічної цілісності.'
 
         # 6. Формуємо повний словник для фронтенду
         final_result = {
@@ -175,6 +203,9 @@ def analyze():
             'shout_factor': shout_factor,
             'noise_markers': noise_markers,
             'signal_markers': signal_markers,
+            'academic_markers': academic_markers,
+            'academic_density': academic_density,
+            'is_academic_context': is_academic,
             # Витягнутий текст для відображення
             'extracted_text': extracted_text_for_display[:2000] + ('...' if len(extracted_text_for_display) > 2000 else ''),
             'extracted_text_length': len(extracted_text_for_display),
@@ -184,7 +215,8 @@ def analyze():
             'emotional_analysis': emotional_comment,
             # Додаткові дані
             'word_count': diag.get('word_count', 0),
-            'char_count': diag.get('char_count', 0)
+            'char_count': diag.get('char_count', 0),
+            'signal_noise_ratio': round(noise_markers / signal_markers, 3) if signal_markers > 0 else 0
         }
 
         return jsonify(final_result), 200
