@@ -60,7 +60,7 @@ def analyze():
         return jsonify({}), 200
 
     if request.method == 'GET':
-        return jsonify({'status': 'online', 'version': '3.1-calibrated'}), 200
+        return jsonify({'status': 'online', 'version': '3.2-calibrated'}), 200
 
     try:
         data = request.get_json()
@@ -106,8 +106,7 @@ def analyze():
         lang = result.get('language', 'UK')
 
         # 3. Розрахунок інтегрального індексу хаосу (ваговий)
-        # chaos_markers важать більше, ніж shout_factor та noise
-        total_chaos = (chaos_markers * 3) + (shout_factor * 50) + (noise_markers * 0.5)
+        total_chaos_index = (chaos_markers * 3) + (shout_factor * 50) + (noise_markers * 0.5)
 
         # 4. Аналіз емоційного впливу та дезорієнтації
         emotional_pressure = False
@@ -131,21 +130,41 @@ def analyze():
         else:
             emotional_comment = "ЕМОЦІЙНИЙ ВПЛИВ МІНІМАЛЬНИЙ. Текст зосереджений на фактах та логіці."
 
-        # 5. Формуємо повний словник для фронтенду
+        # 5. НОВА логіка вердикту з урахуванням ентропії та індексу хаосу
+        impact_score = (total_chaos_index * 0.7) + (sanity_penalty * 20)
+        if entropy > 0.55:
+            impact_score *= 1.5
+
+        if impact_score > 40 or entropy > 0.65:
+            status_class = 'critical'
+            verdict = 'КРИТИЧНА ДЕСТАБІЛІЗАЦІЯ'
+            explanation = 'Висока ентропія та індекс хаосу вказують на пряму маніпуляцію.'
+        elif impact_score > 20 or entropy > 0.50:
+            status_class = 'warning'
+            verdict = 'ПІДОЗРІЛИЙ СИГНАЛ'
+            explanation = 'Виявлено структурні аномалії та ознаки інформаційного шуму.'
+        else:
+            status_class = 'success'
+            verdict = 'СТАБІЛЬНИЙ ЛОГІЧНИЙ СИГНАЛ'
+            explanation = 'Параметри тексту в межах норми.'
+
+        # 6. Формуємо повний словник для фронтенду
         final_result = {
             'entropy': result.get('entropy', 0),
-            'status': result.get('status', 'UNKNOWN'),
-            'verdict': result.get('verdict', 'NO VERDICT'),
+            'status': status_class.upper(),
+            'verdict': verdict,
             'language': lang,
             'source': source,
             'title': title,
             'mode': 'url' if url else 'text',
-            'status_class': result.get('status', '').lower(),
+            'status_class': status_class,
+            'explanation': explanation,
+            'impact_score': round(impact_score, 2),
             # Всі метрики для діагностики
             'shannon_entropy': entropy,
             'complexity': complexity,
             'chaos_markers': chaos_markers,
-            'total_chaos_index': round(total_chaos, 2),
+            'total_chaos_index': round(total_chaos_index, 2),
             'sanity_penalty': sanity_penalty,
             'number_density': number_density,
             'shout_factor': shout_factor,
