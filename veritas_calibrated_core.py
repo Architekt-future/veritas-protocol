@@ -1,5 +1,5 @@
 """
-Veritas Protocol - Calibrated Core Engine (FIXED v4)
+Veritas Protocol - Calibrated Core Engine (FIXED v5)
 Inspired by Orpheus LAC principles:
 - Weighted scoring (not binary)
 - Density-based detection (not count)
@@ -38,16 +38,14 @@ class VeritasCalibratedCore:
 
         self.noise_markers = {
             'uk': {
-                'етично', 'необхідно', 'важливо', 'неприпустимо', 'історично',
-                'фундаментально', 'занепокоєння', 'перемога', 'збитки', 'довіра',
                 'шокуюча', 'паніка', 'приховували', 'потрясла', 'сенсація', 'терміново',
-                'катастрофічн', 'апокаліпсис', 'крах', 'знищен', 'загиб'
+                'катастрофічн', 'апокаліпсис', 'крах', 'знищен', 'загиб', 'жахливий',
+                'небезпека', 'злочин', 'зрада', 'зрадник', 'вбивство', 'кривавий'
             },
             'en': {
-                'ethically', 'necessarily', 'important', 'unacceptable', 'historically',
-                'fundamentally', 'concern', 'victory', 'losses', 'trust',
                 'shocking', 'panic', 'hidden', 'sensational', 'must', 'urgent',
-                'catastrophic', 'apocalypse', 'collapse', 'destruction', 'perish'
+                'catastrophic', 'apocalypse', 'collapse', 'destruction', 'perish',
+                'horrible', 'danger', 'crime', 'betrayal', 'traitor', 'murder', 'bloody'
             }
         }
 
@@ -57,18 +55,20 @@ class VeritasCalibratedCore:
                 'даних', 'показник', 'вимір', 'кількість', 'дослідження',
                 'статистичний', 'кореляція', 'регресія', 'аналіз', 'респондентів',
                 'метод', 'експеримент', 'гіпотеза', 'вибірка', 'результат',
-                'протокол', 'систем', 'модель', 'теорі', 'практичн', 'висновок'
+                'протокол', 'систем', 'модель', 'теорі', 'практичн', 'висновок',
+                'звіт', 'документ', 'закон', 'правило', 'процедура', 'стандарт'
             },
             'en': {
                 'if', 'then', 'therefore', 'consequently', 'equals', 'fact',
                 'data', 'metric', 'measurement', 'quantity', 'research',
                 'statistical', 'correlation', 'regression', 'analysis', 'study',
                 'method', 'experiment', 'hypothesis', 'sample', 'respondents',
-                'result', 'protocol', 'system', 'model', 'theory', 'conclusion'
+                'result', 'protocol', 'system', 'model', 'theory', 'conclusion',
+                'report', 'document', 'law', 'rule', 'procedure', 'standard'
             }
         }
 
-        # Academic indicators - УТОЧНЕНО
+        # Academic indicators - ВИПРАВЛЕНО
         self.academic_markers = {
             'uk': {
                 'дослідження', 'аналіз', 'методолог', 'експеримент', 'гіпотеза',
@@ -91,34 +91,33 @@ class VeritasCalibratedCore:
             }
         }
 
-        # ВИПРАВЛЕНО: Тільки справжня конспірологія, без політичних/військових термінів
+        # ВИПРАВЛЕНО: Тільки справжня конспірологія, без загальних слів
         self.chaos_markers = {
             'uk': {
-                'рептилоїд', 'масон', 'чіпува', 'плоскоземель', 'плоскоземл', 
-                'ілюмінат', 'глобаліст', 'світова змова', 'заговір', 'інопланетн',
-                'нібіру', 'анунак', 'хаос', 'дезорієнтац', 'маніпуляц', 'хімітрейл',
-                'психотрон', 'біогенн', 'універсальн змов', 'теорії змов',
-                'прибулець', 'рептилі', 'змовник', 'таємн орден', 'світов правлін'
+                'рептилоїд', 'плоскоземель', 'плоскоземл', 'ілюмінат',
+                'нібіру', 'анунак', 'хімітрейл', 'психотрон', 'біогенн',
+                'універсальн змов', 'теорії змов', 'прибулець', 'рептилі',
+                'змовник', 'таємн орден', 'світов правлін', 'чіпува',
+                'інопланетн', 'масон', 'глобаліст', 'світова змова'
             },
             'en': {
-                'lizard', 'reptilian', 'freemason', 'flat earth', 'illuminati',
-                'globalist', 'new world order', 'microchip implant', 'alien',
-                'nibiru', 'annunaki', 'chaos', 'disorientation', 'manipulation',
-                'chemtrail', 'psychotronic', 'bioweapon', 'universal conspiracy',
-                'conspiracy theory', 'reptilian', 'secret order', 'world government'
+                'reptilian', 'flat earth', 'illuminati', 'nibiru',
+                'annunaki', 'chemtrail', 'psychotronic', 'bioweapon',
+                'universal conspiracy', 'conspiracy theory', 'alien',
+                'reptilian', 'secret order', 'world government', 'microchip',
+                'freemason', 'globalist', 'new world order'
             }
         }
 
-        # ВИПРАВЛЕНО: Кластери для явної маячні, без політичних/військових тем
+        # РАДИКАЛЬНО СПРОЩЕНО: тільки ОЧЕВИДНА маячня
         self.incompatible_clusters = [
             # Квантова фізика + кухня (явна маячня)
-            {'квантов', 'борщ', 'каструл', 'зажарк', 'ложк', 'кухн', 'буряк', 'сметан', 'суп', 'моркв', 'картопл'},
-            # Конспірологія без політики
-            {'рептилоїд', 'масон', 'змов', 'таємн', 'прибулець', 'інопланет', 'нібіру', 'анунак'},
-            # Езотерика + наука
-            {'астральн', 'карм', 'чакр', 'вібрац', 'енерг', 'біопол', 'мультивсесвіт', 'кристалізац'},
-            # Наука + кулінарія (маячня)
-            {'дискретн', 'вектор', 'ентропі', 'каструл', 'сметан', 'бульйон', 'термодинамік', 'черпак', 'хвильов', 'функц'}
+            {'квантов', 'борщ', 'каструл', 'сметан', 'бульйон'},
+            {'енерг', 'чакр', 'біопол', 'астральн', 'карм'},
+            {'мультивсесвіт', 'кристалізац', 'суп', 'черпак', 'картопл'},
+            # Абсурдні комбінації
+            {'планк', 'гейзенберг', 'моркв', 'шлунок', 'тунель'},
+            {'дискретн', 'вектор', 'буряк', 'резонанс', 'нелокальн'}
         ]
 
     def detect_language(self, text: str) -> str:
@@ -192,8 +191,9 @@ class VeritasCalibratedCore:
                     if pattern in word or word in pattern:
                         match_count += 1
                         break
-            if match_count >= 3:  # Підвищено з 2 до 3 для меншої чутливості
-                return 0.9  # HIGH sanity penalty for obvious nonsense
+            # Тільки при 3+ збігах з одного кластеру
+            if match_count >= 3:
+                return 0.9
         return 0.0
 
     def _calculate_number_density(self, text: str, word_count: int) -> float:
@@ -230,15 +230,14 @@ class VeritasCalibratedCore:
         # FIXED: Density-based chaos
         chaos_density = markers['chaos'] / word_count if word_count > 0 else 0
 
-        # Academic context - УТОЧНЕНО
+        # Academic context - ВИПРАВЛЕНО
         academic_density = markers['academic'] / word_count if word_count > 0 else 0
-        # Визначаємо академічність за більш строгими критеріями
         is_academic = False
-        if academic_density > 0.015 and markers['academic'] > 5:  # Вищий поріг
+        if academic_density > 0.02 and markers['academic'] > 8:
             is_academic = True
-        elif markers['academic'] > 10 and word_count > 500:  # Для довгих текстів
+        elif markers['academic'] > 15 and word_count > 1000:
             is_academic = True
-        elif markers['signal'] > 30 and markers['academic'] > 3 and complexity < 0.5:
+        elif markers['signal'] > 50 and markers['academic'] > 5 and complexity < 0.6:
             is_academic = True
 
         # Noise/signal ratio
