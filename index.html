@@ -656,11 +656,9 @@
                     throw new Error(data.error);
                 }
 
-                // Show text: extracted_text for URL mode, original input for manual
+                // Show extracted text only in URL mode (manual text is already visible in textarea)
                 if (currentMode === 'url') {
                     textDisplay.textContent = data.extracted_text || 'No text extracted';
-                } else {
-                    textDisplay.textContent = payload.text;
                 }
 
                 // === USE BACKEND DATA FOR EVERYTHING ===
