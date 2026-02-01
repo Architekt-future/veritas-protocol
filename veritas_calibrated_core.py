@@ -1,41 +1,42 @@
 """
-Veritas Protocol - Semantic Void Detector v11.3 (ULTRA SIMPLE & STRICT)
-Найпростіша версія з максимальними штрафами за абсурд
+Veritas Protocol - Semantic Void Detector v11.4
+Synth: v11.3 ultra-simple architecture + keyphrase fast-path + absurdity_keywords fallback
 """
 
 import re
 import math
 
+
 class VeritasCalibratedCore:
-    """ULTRA SIMPLE VERSION - PROTECTS SCIENCE, DESTROYS ABSURDITY"""
-    
+    """ULTRA SIMPLE — PROTECTS SCIENCE, DESTROYS ABSURDITY"""
+
     def __init__(self):
         # ============================================================
-        # КРИТИЧНІ АБСУРД-ПАТТЕРНИ (МАКСИМАЛЬНІ ШТРАФИ!)
+        # КРИТИЧНІ АБСУРД-ПАТТЕРНИ (regex + вага)
         # ============================================================
         self.critical_absurdity = [
-            # Наука + Їжа = АБСОЛЮТНИЙ АБСУРД (1.0!)
+            # Наука + Їжа
             (r'квантов(ий|а|е|і|ого|ої|ому|ій).*?(борщ|суп|їжа|сметана|картопля|буряк|каструля)', 1.0),
             (r'(ентропія|термодинаміка|фізика).*?(борщ|суп|їжа|рецепт|кухня)', 0.9),
-            
+
             # Біологія + Техно-параноя
             (r'(днк|генетичний|імунітет|вакцина).*?(5g|чип|супутник|частота|гц|радіо)', 0.9),
             (r'(нейрон|мозок|синапс).*?(програмування|контроль|зомбування)', 0.85),
-            
-            # Бізнес + Езотерика (КОРПОРАТИВНИЙ БРЕД!)
+
+            # Бізнес + Езотерика
             (r'(бізнес|ринок|менеджмент|стратегія).*?(чакра|аура|енергія|вібрація|карма)', 1.0),
             (r'(квантовий|квантова).*?(маркетинг|бізнес|продажі|лідерство)', 0.95),
             (r'(холістичний|синергетичний).*?(маркетинг|менеджмент|розвиток)', 0.8),
-            
+
             # Цифровий містицизм
             (r'(блокчейн|AI|штучний інтелект|алгоритм).*?(душа|свідомість|карма|просвітлення)', 0.9),
             (r'(NFT|метаверс|Web3).*?(енергія|чакра|астрал)', 0.95),
-            
-            # Істерія (ЕМОЦІЙНИЙ ТЕРОР!)
+
+            # Істерія (точні caps-фрагменти)
             (r'(НЕГАЙНО|ЗРАДА|ГАНЬБА|СКАНДАЛ|КАТАСТРОФА).*?(правда|істина|факт)', 0.95),
             (r'ви не готові|ви не знаєте|ви не розумієте.*?(правда|реальність)', 0.85),
             (r'(СРОЧНО|УВАГА|ВНИМАНИЕ).*?(катастрофа|кінець|загибель)', 0.9),
-            
+
             # Псевдонауковий бред
             (r'(нанодискретизація|супутникові масиви низької орбіти)', 0.8),
             (r'(квантова суперпозиція нейронів|пост-біологічне суспільство)', 0.9),
@@ -43,9 +44,9 @@ class VeritasCalibratedCore:
             (r'(мета-фізичні протоколи|квантове вирівнювання аури)', 1.0),
             (r'(світловий вузол у глобальній матриці|езотеричні цикли)', 0.95),
         ]
-        
+
         # ============================================================
-        # ЗАХИСТ НАУКИ (автоматичний VERIFIED)
+        # ЗАХИСТ НАУКИ — regex-паттерни для коротких фраз
         # ============================================================
         self.science_protection = [
             r'другий закон термодинаміки',
@@ -59,17 +60,29 @@ class VeritasCalibratedCore:
             r'p.*?value.*?<.*?\d',
             r'коефіцієнт кореляції',
         ]
-        
+
+        # FAST-PATH: точні фрази — якщо є хоча б одна, science guard срацює
+        # без дальніх перевірок (з патча)
+        self.science_keyphrases = [
+            'другий закон термодинаміки',
+            'ентропія не може зменшуватися',
+            'ізольована система',
+            'теплова смерть всесвіту',
+            'статистична фізика',
+            'найбільш імовірний розподіл',
+            'мікростанів системи',
+        ]
+
         # ============================================================
-        # НАУКОВІ ФОРМУЛИ (захист)
+        # НАУКОВІ ФОРМУЛИ (символи — fast-check)
         # ============================================================
         self.science_formulas = [
             '=', '≠', '≈', '~', '→', '⇒', '∈', '∑', '∫', '∂',
-            '∆', 'π', '∞', '√', '≈', '≡', 'α', 'β', 'γ', 'δ'
+            '∆', 'π', '∞', '√', '≡', 'α', 'β', 'γ', 'δ'
         ]
-        
+
         # ============================================================
-        # НАУКОВІ ТЕРМІНИ
+        # НАУКОВІ ТЕРМІНИ (для подсчёта)
         # ============================================================
         self.science_terms = [
             'термодинаміка', 'ентропія', 'енергія', 'фізика', 'математика',
@@ -78,104 +91,114 @@ class VeritasCalibratedCore:
             'верифікація', 'валідація', 'реплікація', 'контрольна група'
         ]
 
+        # ============================================================
+        # СЛОВА-ВИНІВКИ (з патча): якщо є хоча б одно — текст НЕ наука,
+        # і автоматично кандидат на absurd fallback
+        # ============================================================
+        self.absurdity_keywords = [
+            'чакра', 'аура', 'карма', 'енергетичний', 'вібраційний',
+            'рептилоїд', 'ілюмінат', 'масон', 'змова',
+            'нанодискретизація', 'пост-біологічний', 'мета-фізичний',
+            'холістичний', 'синергетичний', 'езотеричний'
+        ]
+
+    # ----------------------------------------------------------
+    # MAIN ENTRY
+    # ----------------------------------------------------------
     def analyze(self, text):
-        """УЛЬТРА-ПРОСТА ЛОГІКА"""
+        """
+        Логіка (порядок important!):
+          1. Science fast-path (keyphrases)  →  VERIFIED сразу
+          2. Science full-check (_is_pure_science)  →  VERIFIED
+          3. Absurd regex scan  →  score
+          4. Absurdity_keywords fallback  →  score (якщо regex не палив)
+          5. Hysteria  →  score
+          6. Pseudo-intellectual  →  score
+          7. Verdict
+        """
         if not text or len(text.strip()) < 20:
             return {'error': 'Text too short'}
-        
+
         text_lower = text.lower()
         words = text.split()
         word_count = len(words)
-        
-        # ============================================================
-        # КРОК 1: ПЕРЕВІРКА НА НАУКУ (ПЕРШОЧЕРГОВО!)
-        # ============================================================
-        is_science = self._is_pure_science(text)
-        if is_science:
+
+        # ---- КРОК 1: SCIENCE FAST-PATH ----
+        # Якщо текст містить точну science-фразу — сразу VERIFIED,
+        # без дальніх regex-сканів
+        for phrase in self.science_keyphrases:
+            if phrase.lower() in text_lower:
+                return self._create_science_result(text, word_count)
+
+        # ---- КРОК 2: SCIENCE FULL CHECK ----
+        if self._is_pure_science(text):
             return self._create_science_result(text, word_count)
-        
-        # ============================================================
-        # КРОК 2: ДЕТЕКЦІЯ АБСУРДУ (МАКСИМАЛЬНІ ШТРАФИ!)
-        # ============================================================
+
+        # ---- КРОК 3: ABSURD REGEX SCAN ----
         absurd_score = 0.0
         absurd_details = []
-        
-        # 1. Регулярні вирази для абсурду
+
         for pattern, weight in self.critical_absurdity:
             if re.search(pattern, text_lower, re.IGNORECASE):
                 absurd_score = max(absurd_score, weight)
-                # Беремо перші 20 символів знайденого патерну
-                match = re.search(pattern, text_lower[:100], re.IGNORECASE)
-                if match:
-                    absurd_details.append(f"{pattern[:30]}...")
-        
-        # 2. Істерія (капс + оклички)
+                absurd_details.append(pattern[:35] + '…')
+
+        # ---- КРОК 4: ABSURDITY KEYWORDS FALLBACK ----
+        # Якщо regex не палив, але є слова-винівки — мінімальна оцінка 0.7
+        if absurd_score == 0.0:
+            found_keywords = [kw for kw in self.absurdity_keywords if kw in text_lower]
+            if found_keywords:
+                absurd_score = 0.7
+                absurd_details.append(f"keywords: {', '.join(found_keywords[:3])}")
+
+        # ---- КРОК 5: HYSTERIA ----
         hysteria_score = self._calculate_hysteria(text)
         if hysteria_score > 0.5:
             absurd_score = max(absurd_score, 0.7 + hysteria_score * 0.3)
-            absurd_details.append("Істерія")
-        
-        # 3. Псевдоінтелектуальний бред (довгі "розумні" слова без змісту)
+            absurd_details.append('Істерія')
+
+        # ---- КРОК 6: PSEUDO-INTELLECTUAL ----
         pseudo_score = self._calculate_pseudo_intellectual(text)
         if pseudo_score > 0.6:
             absurd_score = max(absurd_score, pseudo_score)
-            absurd_details.append("Псевдоінтелектуальний стиль")
-        
-        # ============================================================
-        # КРОК 3: ФІНАЛЬНА ОЦІНКА
-        # ============================================================
-        final_score = absurd_score
-        
-        # Автоматичне підвищення для очевидного абсурду
-        if absurd_score > 0.7:
-            final_score = min(0.99, absurd_score * 1.1)
-        
-        # ============================================================
-        # КРОК 4: РОЗРАХУНОК ІНДЕКСІВ (ОБОВ'ЯЗКОВО!)
-        # ============================================================
-        chaos_index = final_score * 100 * (1 + len(absurd_details) * 0.5)
-        influence_index = final_score * 100 * (1 + hysteria_score * 0.8)
-        sanity_penalty = round(absurd_score + hysteria_score * 0.5, 3)
-        
-        # ============================================================
-        # КРОК 5: ВЕРДИКТ (ДУЖЕ ЖОРСТКО!)
-        # ============================================================
+            absurd_details.append('Псевдоінтелект')
+
+        # ---- КРОК 7: FINAL SCORE ----
+        final_score = min(0.99, absurd_score * 1.1) if absurd_score > 0.7 else absurd_score
+        # Якщо вообще ничего не найдено — тихий текст
+        if final_score == 0.0:
+            final_score = 0.05 if len(text) < 100 else 0.03
+
+        # ---- КРОК 8: ІНДЕКСИ ----
+        chaos_index   = round(final_score * 100 * (1 + len(absurd_details) * 0.5), 2)
+        influence_index = round(final_score * 100 * (1 + hysteria_score * 0.8), 2)
+        sanity_penalty  = round(absurd_score + hysteria_score * 0.5, 3)
+
+        # ---- КРОК 9: ВЕРДИКТ ----
         if final_score > 0.8:
-            status = 'CRITICAL'
-            verdict = 'АБСОЛЮТНИЙ АБСУРД'
+            status, verdict = 'CRITICAL', 'АБСОЛЮТНИЙ АБСУРД'
             explanation = 'Текст містить критичні логічні порушення'
         elif final_score > 0.6:
-            status = 'CRITICAL'
-            verdict = 'ВИСОКИЙ РІВЕНЬ АБСУРДУ'
+            status, verdict = 'CRITICAL', 'ВИСОКИЙ РІВЕНЬ АБСУРДУ'
             explanation = 'Текст демонструє значні семантичні несумісності'
         elif final_score > 0.4:
-            status = 'WARNING'
-            verdict = 'ПІДОЗРІЛИЙ ДИСКУРС'
+            status, verdict = 'WARNING', 'ПІДОЗРІЛИЙ ДИСКУРС'
             explanation = 'Текст містить ознаки логічних несумісностей'
         elif final_score > 0.2:
-            status = 'ACCEPTABLE'
-            verdict = 'ПРИЙНЯТНА ІНФОРМАЦІЯ'
+            status, verdict = 'ACCEPTABLE', 'ПРИЙНЯТНА ІНФОРМАЦІЯ'
             explanation = 'Текст відповідає нормам логічної сумісності'
         elif final_score > 0.05:
-            status = 'TRUSTED'
-            verdict = 'СТАБІЛЬНИЙ СИГНАЛ'
+            status, verdict = 'TRUSTED', 'СТАБІЛЬНИЙ СИГНАЛ'
             explanation = 'Текст демонструє логічну цілісність'
         else:
-            status = 'VERIFIED'
-            verdict = 'ВЕРИФІКОВАНИЙ КОНТЕНТ'
+            status, verdict = 'VERIFIED', 'ВЕРИФІКОВАНИЙ КОНТЕНТ'
             explanation = 'Текст демонструє ідеальну логічну цілісність'
-        
-        # Деталізація
+
         if absurd_details:
-            details = ", ".join(absurd_details[:3])
-            explanation += f" | Абсурд: {details}"
-        
+            explanation += ' | Абсурд: ' + ', '.join(absurd_details[:3])
         if hysteria_score > 0.3:
-            explanation += f" | Істерія: {hysteria_score:.1f}"
-        
-        # ============================================================
-        # КРОК 6: ПОВЕРТАЄМО РЕЗУЛЬТАТ З УСІМА ІНДЕКСАМИ!
-        # ============================================================
+            explanation += f' | Істерія: {hysteria_score:.1f}'
+
         return {
             'entropy': round(final_score, 3),
             'status': status,
@@ -183,45 +206,59 @@ class VeritasCalibratedCore:
             'language': 'UK',
             'explanation': explanation,
             'diagnostics': {
-                'absurd_score': round(absurd_score, 3),
-                'hysteria_score': round(hysteria_score, 3),
-                'pseudo_score': round(pseudo_score, 3),
-                'word_count': word_count,
-                'char_count': len(text),
-                'chaos_index': round(chaos_index, 2),
-                'influence_index': round(influence_index, 2),
-                'sanity_penalty': sanity_penalty,
-                'is_science': False,
+                'absurd_score':    round(absurd_score, 3),
+                'hysteria_score':  round(hysteria_score, 3),
+                'pseudo_score':    round(pseudo_score, 3),
+                'word_count':      word_count,
+                'char_count':      len(text),
+                'chaos_index':     chaos_index,
+                'influence_index': influence_index,
+                'sanity_penalty':  sanity_penalty,
+                'is_science':      False,
                 'absurd_patterns': len(absurd_details)
             }
         }
-    
+
+    # ----------------------------------------------------------
+    # SCIENCE GUARD
+    # ----------------------------------------------------------
     def _is_pure_science(self, text):
-        """Перевіряє, чи текст є чистою наукою"""
+        """
+        Full science check (fallback після fast-path).
+        Повертає True якщо:
+          - є формула або 3+ science_terms
+          - є хоча б один science_protection pattern
+          - НЕ має absurd regex
+          - hysteria < 0.3
+        """
         text_lower = text.lower()
-        
-        # 1. Має бути хоча б одна наукова формула або 3 наукових терміни
-        has_formula = any(formula in text for formula in self.science_formulas)
-        science_terms_count = sum(1 for term in self.science_terms if term in text_lower)
-        
-        if not has_formula and science_terms_count < 3:
+
+        has_formula = any(f in text for f in self.science_formulas)
+        sci_count   = sum(1 for t in self.science_terms if t in text_lower)
+
+        if not has_formula and sci_count < 3:
             return False
-        
-        # 2. Має бути хоча б один захисний патерн
-        has_protection = any(re.search(pattern, text_lower, re.IGNORECASE) 
-                           for pattern in self.science_protection)
-        
-        # 3. Не повинно бути абсурду
-        has_absurd = any(re.search(pattern, text_lower, re.IGNORECASE) 
-                        for pattern, _ in self.critical_absurdity)
-        
-        # 4. Не повинно бути істерії
+
+        has_protection = any(
+            re.search(p, text_lower, re.IGNORECASE)
+            for p in self.science_protection
+        )
+
+        has_absurd = any(
+            re.search(p, text_lower, re.IGNORECASE)
+            for p, _ in self.critical_absurdity
+        )
+
         hysteria = self._calculate_hysteria(text)
-        
-        return (has_protection or (has_formula and science_terms_count >= 3)) and not has_absurd and hysteria < 0.3
-    
+
+        return (has_protection or (has_formula and sci_count >= 3)) \
+               and not has_absurd \
+               and hysteria < 0.3
+
+    # ----------------------------------------------------------
+    # SCIENCE RESULT BUILDER
+    # ----------------------------------------------------------
     def _create_science_result(self, text, word_count):
-        """Створює результат для наукового тексту"""
         return {
             'entropy': 0.05,
             'status': 'VERIFIED',
@@ -229,77 +266,76 @@ class VeritasCalibratedCore:
             'language': 'UK',
             'explanation': 'Текст демонструє наукову цілісність без ознак абсурду',
             'diagnostics': {
-                'absurd_score': 0.0,
-                'hysteria_score': 0.0,
-                'pseudo_score': 0.0,
-                'word_count': word_count,
-                'char_count': len(text),
-                'chaos_index': 0.0,
-                'influence_index': round(0.05 * 100 * (1 + 0.05), 2),
-                'sanity_penalty': 0.0,
-                'is_science': True,
+                'absurd_score':    0.0,
+                'hysteria_score':  0.0,
+                'pseudo_score':    0.0,
+                'word_count':      word_count,
+                'char_count':      len(text),
+                'chaos_index':     0.0,
+                'influence_index': 5.25,
+                'sanity_penalty':  0.0,
+                'is_science':      True,
                 'absurd_patterns': 0
             }
         }
-    
+
+    # ----------------------------------------------------------
+    # HYSTERIA DETECTOR
+    # ----------------------------------------------------------
     def _calculate_hysteria(self, text):
-        """Розраховує рівень істерії"""
         score = 0.0
-        
-        # 1. КАПС-ЛОКАУТ
+
+        # CAPS слова
         caps_words = [w for w in text.split() if w.isupper() and len(w) > 2]
         score += min(0.5, len(caps_words) / 3)
-        
-        # 2. Окличні речення
-        excl_count = text.count('!')
-        score += min(0.3, excl_count / 4)
-        
-        # 3. Ключові слова істерії
-        hysteria_words = ['зрада', 'ганьба', 'скандал', 'негайно', 'пізно', 
-                         'катастрофа', 'шок', 'ужас', 'паника', 'знищення']
-        hysteria_count = sum(1 for word in hysteria_words if word in text.lower())
+
+        # Оклички
+        score += min(0.3, text.count('!') / 4)
+
+        # Hysteria-слова
+        hysteria_words = [
+            'зрада', 'ганьба', 'скандал', 'негайно', 'пізно',
+            'катастрофа', 'шок', 'ужас', 'паника', 'знищення'
+        ]
+        hysteria_count = sum(1 for w in hysteria_words if w in text.lower())
         score += min(0.4, hysteria_count / 2)
-        
-        # 4. Довжина речень (короткі = істерія)
-        sentences = re.split(r'[.!?]+', text)
+
+        # Короткі речення → hysteria flag
+        sentences = [s for s in re.split(r'[.!?]+', text) if s.strip()]
         if sentences:
-            avg_len = sum(len(s.split()) for s in sentences if s.strip()) / len(sentences)
-            if avg_len < 8:  # Дуже короткі речення
+            avg_len = sum(len(s.split()) for s in sentences) / len(sentences)
+            if avg_len < 8:
                 score += 0.2
-        
+
         return min(1.0, score)
-    
+
+    # ----------------------------------------------------------
+    # PSEUDO-INTELLECTUAL DETECTOR
+    # ----------------------------------------------------------
     def _calculate_pseudo_intellectual(self, text):
-        """Розраховує рівень псевдоінтелектуального бреду"""
         text_lower = text.lower()
         score = 0.0
-        
-        # "Розумні" слова без змісту
+
         pseudo_words = [
             'парадигма', 'дискурс', 'наратив', 'конструкт', 'семіозис',
             'трансгресивний', 'деконструкція', 'постмодерн', 'метанаратив',
             'симулякр', 'гіперреальність', 'детеріторіалізація',
             'синергетичний', 'холістичний', 'мета-фізичний'
         ]
-        
-        found_words = sum(1 for word in pseudo_words if word in text_lower)
-        
-        # Якщо багато "розумних" слів, але мало реального змісту
-        if found_words >= 3:
-            score = 0.4 + (found_words - 3) * 0.15
-        
-        # Дуже довгі речення з багатьма абстракціями
-        sentences = re.split(r'[.!?]+', text)
+
+        found = sum(1 for w in pseudo_words if w in text_lower)
+        if found >= 3:
+            score = 0.4 + (found - 3) * 0.15
+
+        # Довгі речення з 2+ pseudo-слова
+        sentences = [s for s in re.split(r'[.!?]+', text) if s.strip()]
         long_complex = 0
         for sentence in sentences:
-            words_in_sentence = sentence.split()
-            if len(words_in_sentence) > 25:  # Дуже довге речення
-                # Рахуємо абстрактні слова
-                abstract = sum(1 for word in pseudo_words if word in sentence.lower())
+            if len(sentence.split()) > 25:
+                abstract = sum(1 for w in pseudo_words if w in sentence.lower())
                 if abstract >= 2:
                     long_complex += 1
-        
         if long_complex >= 2:
             score = max(score, 0.7)
-        
+
         return min(1.0, score)
