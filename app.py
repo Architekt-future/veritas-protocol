@@ -2,13 +2,13 @@ from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import re
 import urllib.request
-from veritas_calibrated_core import VeritasUltraCalibratedCore  # ← ЗМІНА ТУТ!
+from veritas_calibrated_core import VeritasCalibratedCore  # ← ЗМІНА ТУТ!
 
 app = Flask(__name__, static_folder='.')
 CORS(app)
 
 # Initialize engine
-engine = VeritasUltraCalibratedCore()  # ← І ТУТ!
+engine = VeritasCalibratedCore()  # ← І ТУТ!
 
 
 class SimpleExtractor:
