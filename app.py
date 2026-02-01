@@ -100,7 +100,7 @@ def analyze():
         return jsonify({}), 200
 
     if request.method == 'GET':
-        return jsonify({'status': 'online', 'version': '3.2-hyper'}), 200
+        return jsonify({'status': 'online', 'version': '3.3-categorical'}), 200
 
     try:
         data = request.get_json()
@@ -137,10 +137,10 @@ def analyze():
         if not text or len(text) < 10:
             return jsonify({'error': 'Текст занадто короткий'}), 400
 
-        # 2. ЗАПУСКАЄМО НОВЕ ГІПЕРКАЛІБРОВАНЕ ЯДРО
+        # 2. ЗАПУСКАЄМО НОВЕ ЯДРО З КАТЕГОРІЯМИ
         result = engine.analyze(text)
 
-        # 3. ДОДАЄМО метадані
+        # 3. ДОДАЄМО МЕТАДАНІ
         result['source'] = source
         result['title'] = title
         result['url'] = url
@@ -149,6 +149,24 @@ def analyze():
             result['extracted_text'] = text[:1500] + '...' if len(text) > 1500 else text
         else:
             result['mode'] = 'manual'
+
+        # 4. КОНВЕРТАЦІЯ ДЛЯ ФРОНТЕНДУ (якщо є нові поля)
+        diagnostics = result.get('diagnostics', {})
+        
+        # Якщо є categories_found, конвертуємо для фронтенду
+        if 'categories_found' in diagnostics:
+            # Можна додати додаткову логіку тут
+            pass
+        
+        # Гарантуємо, що всі необхідні поля є для фронтенду
+        required_metrics = [
+            'chaos_index', 'influence_index', 'sanity_penalty',
+            'word_count', 'char_count', 'noise_markers'
+        ]
+        
+        for metric in required_metrics:
+            if metric not in diagnostics:
+                diagnostics[metric] = 0
 
         return jsonify(result), 200
 
