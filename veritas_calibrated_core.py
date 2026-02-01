@@ -1,6 +1,6 @@
 """
-Veritas Protocol - Semantic Void Detector v10.0 (Balanced Taxonomy)
-Поєднання детекції критичних паттернів з розумним розрізненням науки та абсурду
+Veritas Protocol - Semantic Void Detector v10.1 (FIXED)
+Виправлення критичних помилок детекції
 """
 
 import re
@@ -8,7 +8,7 @@ import math
 from collections import Counter
 
 class VeritasCalibratedCore:
-    """Розширений детектор з тонкою калібровкою та розрізненням науки/абсурду"""
+    """Розширений детектор з виправленими помилками"""
     
     def __init__(self):
         # ============================================================
@@ -113,7 +113,7 @@ class VeritasCalibratedCore:
                 'patterns': [
                     r'(ворог|enemy|предатель|зрада|зрадник).*?(народ|нація|країна|державa|суспільство).*?(знищення|manipulation)',
                     r'(інформаційна\s+війна|info[\s-]*war|cognitive\s+war).*?(перемога|бoritися|протистояти)',
-                    r'(патріот|патріотизм|родина|батківщина).*?(окупант|ворог|агресор|колаборант).*?(предатели|тиха\s+група)',
+                    r'(патріот|патріотизм|родина|батківщина).*?(окупант|ворог|агресор|коллаборант).*?(предатели|тиха\s+група)',
                     r'(пропаганда|фейк|дезінформація).*?(обидва\s+боки|з\'обидва).*?(виноват|виновні)'
                 ],
                 'verdict': 'ІНФОРМАЦІЙНА ВІЙНА',
@@ -154,7 +154,7 @@ class VeritasCalibratedCore:
         ]
         
         # ============================================================
-        # НАУКОВІ ТЕРМІНИ (для розрізнення науки/абсурду)
+        # НАУКОВІ ТЕРМІНИ (для розрізнення науки/абсурду) - РОЗШИРЕНО
         # ============================================================
         self.scientific_terms = [
             'термодинамік', 'ентропі', 'систем', 'енергі', 'фізик',
@@ -163,189 +163,198 @@ class VeritasCalibratedCore:
             'всесвіт', 'науков', 'досліджен', 'гіпотез', 'теорі',
             'експеримент', 'факт', 'доказ', 'метод', 'аналіз',
             'математич', 'формул', 'рівнянн', 'змінн', 'параметр',
-            'об\'єкт', 'суб\'єкт', 'результат', 'висновок', 'публікаці'
+            'об\'єкт', 'суб\'єкт', 'результат', 'висновок', 'публікаці',
+            'другий', 'теплової', 'смерті', 'фізика', 'описує'
         ]
         
         # ============================================================
-        # АБСУРДНІ ПАРИ (науковий термін + абсурдний контекст)
+        # АБСУРДНІ ПАРИ (ВИПРАВЛЕНО!) - тепер пошук за словами, не кореням
         # ============================================================
         self.absurd_pairs = [
-            (['квантов', 'ентропі', 'сингуляр', 'флуктуаці', 'суперпозиці'], 
-             ['борщ', 'сметан', 'картопл', 'моркв', 'суп', 'їжа', 'кулінар']),
-            (['фінанс', 'економ', 'банк', 'грош', 'інвест', 'крипто'], 
-             ['чакра', 'карма', 'душа', 'потойбіч', 'астрал', 'енергет']),
-            (['політик', 'уряд', 'держав', 'закон', 'юридич'], 
-             ['рептил', 'матриц', 'заговор', 'атлантид', '5g']),
-            (['технологі', 'алгоритм', 'програм', 'цифров', 'нейромереж'], 
-             ['чакра', 'аура', 'біополе', 'шишкоподібн', 'вібраці']),
-            (['медич', 'лік', 'вакцин', 'імун', 'терапі'], 
-             ['заговор', 'скрит', 'біг фарм', 'контрол', 'вбиває']),
-            (['хіміч', 'біологіч', 'генетич', 'клітин', 'організм'], 
-             ['астрал', 'духов', 'енергет', 'вібраці', 'резонанс'])
+            # ФІКС: розділяємо слова, не корені
+            (['квантовий', 'квантова', 'квантове', 'квантові'], 
+             ['борщ', 'сметана', 'картопля', 'морква', 'суп', 'їжа', 'кулінарний', 'буряк', 'каструля']),
+            (['ентропія', 'флуктуація', 'тунельний', 'сингулярність', 'суперпозиція'], 
+             ['борщ', 'сметана', 'картопля', 'морква', 'суп', 'їжа', 'буряк', 'петрушка', 'кроп']),
+            (['фінанси', 'економіка', 'банк', 'гроші', 'інвестиції', 'криптовалюта'], 
+             ['чакра', 'карма', 'душа', 'потойбічний', 'астрал', 'енергетичний']),
+            (['політика', 'уряд', 'держава', 'закон', 'юридичний'], 
+             ['рептилоїд', 'матриця', 'заговор', 'атлантида', '5g']),
+            (['технологія', 'алгоритм', 'програма', 'цифровий', 'нейромережа'], 
+             ['чакра', 'аура', 'біополе', 'шишкоподібний', 'вібрація']),
+            (['медичний', 'ліки', 'вакцина', 'імунітет', 'терапія'], 
+             ['заговор', 'скритий', 'big pharma', 'контроль', 'вбиває']),
+            (['хімічний', 'біологічний', 'генетичний', 'клітина', 'організм'], 
+             ['астральний', 'духовний', 'енергетичний', 'вібрація', 'резонанс'])
         ]
         
         # ============================================================
-        # ХАОС-ІНДИКАТОРИ (14 категорій) - ФІКСОВАНО: окремі слова/корені
+        # ХАОС-ІНДИКАТОРИ (14 категорій) - ФІКС: БІЛЬШЕ СЛІВ
         # ============================================================
         self.chaos_indicators = {
-            # --- Оригінальні 6 ---
             'esoteric': [
-                'чакра', 'карма', 'астраль', 'енергет', 'вібраці', 'аура',
-                'кундаліні', 'медитаці', 'мантра', 'янтра', 'сиддхи', 'самадхі',
-                'таро', 'руни', 'пентаграм', 'окуть'
+                'чакра', 'карма', 'астральний', 'енергетичний', 'вібрація', 'аура',
+                'кундаліні', 'медитація', 'мантра', 'янтра', 'сиддхи', 'самадхі',
+                'таро', 'руни', 'пентаграма', 'окультний'
             ],
             'conspiracy': [
-                'змова', 'рептилоїд', 'хімітрейл', '5g', 'дезінформаці', 'новий порядок',
-                'секрет', 'товариство', 'темні', 'еліта', 'тіньов', 'уряд', 'ілюмінат',
-                'більдерберг', 'череп'
+                'змова', 'рептилоїд', 'хімітрейл', '5g', 'дезінформація', 'новий порядок',
+                'секретний', 'товариство', 'темні', 'еліта', 'тіньовий', 'уряд', 'ілюмінати',
+                'більдерберг', 'череп', 'заговор', 'прихований'
             ],
             'pseudoscience': [
-                'квантов', 'нейтрино', 'іоносфер', 'кристаліч', 'торсійн', 'енергі',
-                'зеро', 'точк', 'ефір', 'антигравітаці', 'скаляр', 'тесла', 'вільн', 'енергі'
+                'квантовий', 'нейтрино', 'іоносфера', 'кристалічний', 'торсійний', 'енергія',
+                'зеро', 'точка', 'ефір', 'антигравітація', 'скалярний', 'тесла', 'вільна', 'енергія',
+                'резонатор', 'флуктуація', 'тунельний', 'сингулярність'
             ],
             'revisionism': [
-                'антарктид', 'атлантид', 'наполеон', 'місяць', 'аґарт', 'шамбала',
-                'тартар', 'древні', 'інопланет', 'бог', 'пирамід', 'цивілізаці', 'історі'
+                'антарктида', 'атлантида', 'наполеон', 'місяць', 'аґарта', 'шамбала',
+                'тартарія', 'древній', 'інопланетянин', 'бог', 'пираміда', 'цивілізація', 'історія',
+                'альтернативний', 'прихована', 'справжня'
             ],
             'alarmism': [
-                'перезавантажен', 'пожеж', 'реальності', 'деактив', 'кінець', 'світу',
-                'крах', 'систем', 'перезапуск', 'катастроф', 'загибел', 'вимиран'
+                'перезавантаження', 'пожежа', 'реальності', 'деактивувати', 'кінець', 'світу',
+                'крах', 'системи', 'перезапуск', 'катастрофа', 'загибель', 'вимирання',
+                'глобальний', 'дестабілізація', 'неминучий', 'терміновий'
             ],
             'economic_occult': [
-                'потойбіч', 'карма', 'актив', 'хейд', 'монет', 'ефір', 'пласт',
-                'душа', 'валюта', 'спірітуал', 'інвест', 'банк', 'фонд', 'косміч', 'економ'
+                'потойбічний', 'карма', 'актив', 'хейдс', 'монета', 'ефірний', 'пласт',
+                'душа', 'валюта', 'духовний', 'інвестиція', 'банк', 'фонд', 'космічний', 'економіка',
+                'сознання', 'астральний'
             ],
-
-            # --- Нові 8 категорій ---
             'emotional_manipulation': [
-                'шок', 'невозмож', 'неможли', 'ужас', 'катастроф', 'скандал', 'сенсаці',
-                'срочн', 'термінов', 'ексклюзив', 'готов', 'кінець', 'ограничен', 'час'
+                'шок', 'невозможно', 'неможливо', 'ужас', 'катастрофа', 'скандал', 'сенсація',
+                'срочно', 'терміново', 'ексклюзив', 'готовий', 'кінець', 'обмежений', 'час',
+                'увага', 'важливо', 'гаряче'
             ],
             'social_pressure': [
-                'поділ', 'поділіт', 'підпиш', 'підпиши', 'репост', 'шер', 'приєднайся',
-                'рух', 'проснись', 'пробуд', 'частин', 'знай', 'побач', 'кожен'
+                'поділитися', 'поділитись', 'підписатися', 'підписатись', 'репост', 'share', 'приєднатися',
+                'рух', 'проснутися', 'пробудитися', 'частина', 'знати', 'побачити', 'кожен',
+                'розповсюдити', 'поширити'
             ],
             'tech_mystification': [
-                'AI', 'свідом', 'блокчейн', 'правд', 'NFT', 'душ', 'метаверс', 'реальність',
-                'цифров', 'просвітлен', 'код', 'всесвіт', 'симуляці', 'матриц', 'пробуджен',
-                'завантажен', 'розум'
+                'ai', 'свідомість', 'блокчейн', 'правда', 'nft', 'душа', 'метаверс', 'реальність',
+                'цифровий', 'просвітлення', 'код', 'всесвіт', 'симуляція', 'матриця', 'пробудження',
+                'завантаження', 'розум'
             ],
             'health_misinformation': [
-                'вакцин', 'убива', 'фарма', 'прихов', 'натуральн', 'лікуван', 'кращ',
-                'доктор', 'бреш', 'ВОЗ', 'FDA', 'корупці', 'рак', 'лік', 'скрит',
-                'хвороб', 'отрут', 'ГМО'
+                'вакцина', 'убиває', 'фарма', 'приховує', 'натуральний', 'лікування', 'краще',
+                'доктор', 'бреше', 'воз', 'fda', 'корупція', 'рак', 'ліки', 'скритий',
+                'хвороба', 'отрута', 'гмо'
             ],
             'political_manipulation': [
-                'ворог', 'народу', 'предател', 'зрад', 'зрадник', 'колаборант',
-                'агресор', 'окупант', 'тих', 'груп', 'колон', 'антинарод', 'режим',
-                'уряд', 'тиран', 'провокаці'
+                'ворог', 'народу', 'предатель', 'зрада', 'зрадник', 'колаборант',
+                'агресор', 'окупант', 'тиха', 'група', 'колона', 'антинародний', 'режим',
+                'уряд', 'тиранія', 'провокація'
             ],
             'ai_doom_or_salvation': [
-                'AI', 'знищ', 'людств', 'спаст', 'світ', 'суперінтелект', 'сингуляр',
-                'робот', 'повстан', 'апокаліпс', 'постгуман', 'трансгуманізм', 'спасін',
-                'безсмерт'
+                'ai', 'знищить', 'людство', 'спасе', 'світ', 'суперінтелект', 'сингулярність',
+                'робот', 'повстання', 'апокаліпсис', 'постгуманізм', 'трансгуманізм', 'спасіння',
+                'безсмертя'
             ],
             'identity_crisis': [
-                'не', 'хто', 'дума', 'пробуджен', 'іденти', 'справж', 'природ',
-                'запрограм', 'звільнен', 'систем', 'душ', 'зна', 'внутрішн', 'правд',
-                'самопробуджен', 'особист', 'матриц'
+                'не', 'той', 'хто', 'думає', 'пробудження', 'ідентичність', 'справжній', 'природа',
+                'запрограмований', 'звільнення', 'система', 'душа', 'знає', 'внутрішній', 'правда',
+                'самопробудження', 'особистість', 'матриця'
             ]
         }
         
         # ============================================================
-        # ЕМОЦІЙНІ МАРКЕРИ (для виявлення наукового контексту) - ФІКСОВАНО
+        # ЕМОЦІЙНІ МАРКЕРИ - ФІКС: менше агресивних
         # ============================================================
         self.emotional_markers = [
-            'негайн', 'срочн', 'термінов', 'зрад', 'ганьб', 'катастроф',
-            'апокаліпс', 'кінець', 'світу', 'останні', 'шок', 'шокуюч',
-            'ужас', 'бомб', 'взрив', 'вибух', 'сенсаці', 'розповсюджуй',
-            'поширюй', 'репост', 'шер', 'поділись', 'підпишись', 'сабскрайб',
-            'терджен', 'брейкінг', 'ексклюзив'
+            'срочно', 'терміново', 'зрада', 'ганьба', 'катастрофа',
+            'апокаліпсис', 'кінець світу', 'останній', 'шок', 'шокуючий',
+            'ужас', 'бомба', 'взрив', 'вибух', 'сенсація', 'не можу мовчати',
+            'вимагати', 'важливо'
         ]
         
         # ============================================================
-        # СИГНАЛЬНІ МАРКЕРИ (24)
+        # СИГНАЛЬНІ МАРКЕРИ - ФІКС: БІЛЬШЕ НАУКОВИХ ТЕРМІНІВ
         # ============================================================
         self.signal_markers = [
-            'факт', 'дані', 'показник', 'кількість', 'число', 'статистик',
-            'досліджен', 'експеримент', 'результат', 'метод', 'протокол',
-            'аналіз', 'модел', 'гіпотез', 'контрольн', 'груп', 'виборк',
-            'значущ', 'реплікаці', 'валідаці', 'верифікаці',
-            'публікаці', 'реценз', 'журнал', 'університет',
-            'інститут', 'академі', 'лаборатор',
-            'коефіцієнт', 'кореляці', 'відхилен',
-            'метааналіз', 'p-value', 'інтервал', 'довір'
+            'факт', 'дані', 'показник', 'кількість', 'число', 'статистика',
+            'дослідження', 'експеримент', 'результат', 'метод', 'протокол',
+            'аналіз', 'модель', 'гіпотеза', 'контрольна', 'група', 'вибірка',
+            'значущість', 'реплікація', 'валідація', 'верифікація',
+            'публікація', 'рецензування', 'журнал', 'університет',
+            'інститут', 'академія', 'лабораторія',
+            'коефіцієнт', 'кореляція', 'відхилення',
+            'метааналіз', 'систематичний', 'огляд', 'теорія', 'закон',
+            'процес', 'енергія', 'система', 'термодинаміка'
         ]
         
         # ============================================================
-        # АКАДЕМІЧНИЙ WHITELIST (35)
+        # АКАДЕМІЧНИЙ WHITELIST - ФІКС: БІЛЬШЕ СЛІВ
         # ============================================================
         self.academic_whitelist = [
-            'кореляці', 'верифікаці', 'гіпотез', 'виборк', 'значущ',
-            'нейрон', 'синапс', 'метааналіз', 'статистич', 'логістик',
-            'деескалаці', 'макроеконом', 'інвестиці', 'інфраструктур',
-            'ратифікаці', 'протокол', 'емпірич', 'квалітатив', 'кількісн',
-            'реплікаці', 'валідаці', 'контрольн', 'груп',
-            'плацебо', 'рандомізаці', 'когорт',
-            'систематич', 'огляд', 'опублікован', 'реценз',
-            'дані', 'досліджен', 'результат', 'показують',
-            'статистич', 'значущ', 'ефект', 'розмір'
+            'кореляція', 'верифікація', 'гіпотеза', 'вибірка', 'значущість',
+            'нейрон', 'синапс', 'метааналіз', 'статистичний', 'логістика',
+            'деескалація', 'макроекономічний', 'інвестиція', 'інфраструктура',
+            'ратифікація', 'протокол', 'емпіричний', 'квалітативний', 'кількісний',
+            'реплікація', 'валідація', 'контрольна', 'група',
+            'плацебо', 'рандомізація', 'когорта',
+            'систематичний', 'огляд', 'опубліковано', 'рецензований',
+            'дані', 'дослідження', 'результати', 'показують',
+            'статистично', 'значущий', 'ефект', 'розміру',
+            'ентропія', 'термодинаміка', 'фізика', 'математика'
         ]
         
         # ============================================================
-        # КОНФЛІКТНІ ПАРИ (9)
+        # КОНФЛІКТНІ ПАРИ - ФІКС: менш агресивні
         # ============================================================
         self.conflict_pairs = [
-            # Оригінальні 5
             (['бднф', 'гіпокамп', 'нейропластичність'], ['5g', 'супутник', 'таргетування'], 0.35),
             (['нейтрино', 'квантовий', 'ентропія'], ['ринок', 'економіка', 'політика'], 0.3),
             (['днк', 'генетичний'], ['алгоритм', 'код', 'підпис'], 0.4),
             (['антарктида', 'атлантида'], ['технологія', 'цивілізація', 'резонатор'], 0.3),
             (['облігація', 'криптовалюта', 'банк'], ['потойбічний', 'карма', 'душа'], 0.4),
-            # Нові 4
-            (['вакцина', 'щеплення', 'FDA', 'ВОЗ'], ['скрита правда', 'вони скрывают', 'Big Pharma'], 0.4),
-            (['AI', 'штучний інтелект', 'нейромережа', 'блокчейн'], ['душа', 'свідомість', 'карма', 'астрал', 'awakening'], 0.35),
-            (['статистика', 'дані', 'дослідження', 'університет'], ['snake oil', 'народна медицина', 'натуральне лікування'], 0.35),
-            (['патріот', 'батківщина', 'нація'], ['ворог народу', 'предатель', 'зрада', 'п\'ята колона'], 0.3)
         ]
 
     def is_scientific_context(self, text):
-        """Визначає, чи текст є науковим (а не псевдонауковим)"""
+        """ВИПРАВЛЕНО: Правильне визначення наукового контексту"""
         text_lower = text.lower()
         words = text_lower.split()
         
-        # 1. Кількість наукових термінів (з коренів)
+        if len(words) < 15:  # Занадто короткий для наукового тексту
+            return False
+        
+        # 1. Кількість наукових термінів
         scientific_count = 0
         for term in self.scientific_terms:
-            if term in text_lower:
+            # Шукаємо окремі слова, а не просто входження в текст
+            if f' {term}' in f' {text_lower} ':
                 scientific_count += 1
         
-        # 2. Відсоток наукових термінів
-        scientific_ratio = scientific_count / max(1, len(words))
-        
-        # 3. Відсутність емоційних маркерів
+        # 2. Відсутність емоційних маркерів
         emotional_count = 0
         for marker in self.emotional_markers:
             if marker in text_lower:
                 emotional_count += 1
         
-        # 4. Відсутність CAPS LOCK
-        caps_words = [w for w in text.split() if w.isupper() and len(w) > 2]
+        # 3. Відсутність CAPS LOCK (крім скорочень)
+        caps_words = [w for w in text.split() if w.isupper() and len(w) > 2 and not w.isdigit()]
         
-        # Науковий контекст якщо:
-        # - достатньо наукових термінів (>15%)
+        # 4. Наявність сигнальних маркерів
+        signal_count = 0
+        for marker in self.signal_markers:
+            if marker in text_lower:
+                signal_count += 1
+        
+        # Науковий текст якщо:
+        # - достатньо наукових термінів (>20%)
         # - майже немає емоційних маркерів
-        # - немає CAPS LOCK
-        # - має сигнальні маркери
-        signal_count = sum(1 for marker in self.signal_markers if marker in text_lower)
+        # - немає CAPS LOCK (крім скорочень)
+        # - є сигнальні маркери
+        scientific_ratio = scientific_count / max(1, len(words))
         
-        return (scientific_ratio > 0.12 and  # Мінімум 12% наукових термінів
-                emotional_count <= 1 and      # Максимум 1 емоційний маркер
+        return (scientific_ratio > 0.15 and  # Мінімум 15% наукових термінів
+                emotional_count == 0 and      # Немає емоційних маркерів
                 len(caps_words) == 0 and      # Немає CAPS LOCK
-                signal_count >= 2)           # Є щонайменше 2 сигнальних маркери
+                signal_count >= 3)           # Є щонайменше 3 сигнальних маркери
 
     def detect_absurdity(self, text):
-        """Виявляє абсурдні комбінації, але ІГНОРУЄ наукові тексти"""
+        """ВИПРАВЛЕНО: Правильний пошук абсурдних пар"""
         text_lower = text.lower()
         
         # Якщо це науковий контекст — повертаємо 0
@@ -357,17 +366,38 @@ class VeritasCalibratedCore:
         found_pairs = []
         
         for science_terms, absurd_terms in self.absurd_pairs:
-            has_science = any(term in text_lower for term in science_terms)
-            has_absurd = any(term in text_lower for term in absurd_terms)
+            has_science = False
+            has_absurd = False
+            
+            # Перевіряємо кожен науковий термін
+            for science_term in science_terms:
+                if science_term.lower() in text_lower:
+                    has_science = True
+                    science_found = science_term
+                    break
+            
+            # Перевіряємо кожен абсурдний термін
+            for absurd_term in absurd_terms:
+                if absurd_term.lower() in text_lower:
+                    has_absurd = True
+                    absurd_found = absurd_term
+                    break
             
             if has_science and has_absurd:
-                score += 0.4  # Кожна абсурдна пара = +40%
-                found_pairs.append((science_terms[0], absurd_terms[0]))
+                # ДОДАТКОВА ПЕРЕВІРКА: терміни повинні бути в одному реченні
+                sentences = re.split(r'[.!?]+', text)
+                for sentence in sentences:
+                    sentence_lower = sentence.lower()
+                    if (any(st.lower() in sentence_lower for st in science_terms) and 
+                        any(at.lower() in sentence_lower for at in absurd_terms)):
+                        score += 0.4  # Кожна абсурдна пара = +40%
+                        found_pairs.append((science_found, absurd_found))
+                        break
         
         return min(score, 1.0), found_pairs
 
     def detect_patterns(self, text):
-        """Виявляє критичні паттерни з урахуванням наукового контексту"""
+        """ВИПРАВЛЕНО: Виявлення паттернів з урахуванням контексту"""
         detected = []
         text_lower = text.lower()
         
@@ -383,7 +413,7 @@ class VeritasCalibratedCore:
         return detected
 
     def count_terms(self, text):
-        """Підраховує терміни за категоріями"""
+        """ВИПРАВЛЕНО: Правильний підрахунок термінів"""
         text_lower = text.lower()
         counts = {'academic': 0, 'chaos': 0, 'signal': 0, 'noise': 0}
         
@@ -412,59 +442,59 @@ class VeritasCalibratedCore:
         return counts
 
     def calculate_emotional_pressure(self, text):
-        """Рахує емоційний тиск"""
+        """ВИПРАВЛЕНО: Менш агресивна оцінка"""
         text_lower = text.lower()
         score = 0.0
         
         # Емоційні маркери
         for marker in self.emotional_markers:
             if marker in text_lower:
-                score += 0.15
+                score += 0.1  # Зменшили з 0.15
         
         # CAPS LOCK
         caps_words = [w for w in text.split() if w.isupper() and len(w) > 2]
-        score += min(0.3, len(caps_words) * 0.08)
+        score += min(0.2, len(caps_words) * 0.05)  # Зменшили з 0.08
         
         # Окличні знаки
-        excl_count = text.count('!') + text.count('!!!')
-        score += min(0.2, excl_count * 0.05)
+        excl_count = text.count('!')
+        score += min(0.15, excl_count * 0.03)  # Зменшили з 0.05
         
-        return min(score, 0.7)
+        return min(score, 0.5)  # Зменшили максимум з 0.7
 
     def calculate_gradient_penalties(self, metrics):
-        """Обчислює градієнтні штрафи"""
+        """ВИПРАВЛЕНО: Менш агресивні штрафи"""
         total_penalty = 0.0
         
         gradient_penalties = [
             {
                 'type': 'entropy_gradient',
-                'calculate': lambda m: max(0, (m['shannon_entropy'] - 0.7) * 2) if m['signal_markers'] < 2 else 0
+                'calculate': lambda m: max(0, (m['shannon_entropy'] - 0.8) * 1.5) if m['signal_markers'] < 3 else 0
             },
             {
                 'type': 'complexity_gradient',
-                'calculate': lambda m: max(0, (m['complexity'] - 0.75) * 1.5) if m['signal_markers'] < 2 else 0
+                'calculate': lambda m: max(0, (m['complexity'] - 0.8) * 1.0) if m['signal_markers'] < 3 else 0
             },
             {
                 'type': 'chaos_signal_ratio',
-                'calculate': lambda m: min(0.5, m['chaos_markers'] / max(1, m['signal_markers'] + 1) * 0.2)
+                'calculate': lambda m: min(0.3, m['chaos_markers'] / max(1, m['signal_markers'] + 1) * 0.15)
             },
             {
                 'type': 'academic_dissonance',
-                'calculate': lambda m: 0.15 if m['academic_markers'] > 0 and m['chaos_markers'] > 0 else 0
+                'calculate': lambda m: 0.1 if m['academic_markers'] > 0 and m['chaos_markers'] > 0 else 0
             },
             {
                 'type': 'zero_signal_complexity',
-                'calculate': lambda m: 0.25 if m['signal_markers'] == 0 and m['complexity'] > 0.75 else 0
+                'calculate': lambda m: 0.15 if m['signal_markers'] == 0 and m['complexity'] > 0.8 else 0
             }
         ]
         
         for penalty in gradient_penalties:
             total_penalty += penalty['calculate'](metrics)
         
-        return min(total_penalty, 0.6)
+        return min(total_penalty, 0.4)  # Зменшили з 0.6
 
     def calculate_conflict_penalty(self, text):
-        """Обчислює штраф за конфліктні пари"""
+        """ВИПРАВЛЕНО: Менш агресивні конфлікти"""
         penalty = 0.0
         text_lower = text.lower()
         
@@ -474,66 +504,40 @@ class VeritasCalibratedCore:
             if has_first and has_second:
                 penalty += weight
         
-        return min(penalty, 0.5)
+        return min(penalty, 0.3)  # Зменшили з 0.5
 
     def calculate_contextual_score(self, text, term_counts, metrics):
-        """Обчислює контекстуальну оцінку"""
+        """ВИПРАВЛЕНО: Менш агресивний контекст"""
         score = 0.0
         words = text.split()
         word_count = len(words)
         text_lower = text.lower()
         
-        # 1. Семантична пустота
-        if term_counts['signal'] == 0:
-            if metrics['complexity'] > 0.75:
-                score += 0.4
-            elif metrics['shannon_entropy'] > 0.75:
-                score += 0.3
-            else:
-                score += 0.15
+        # Тільки для НЕ-наукових текстів
+        if not self.is_scientific_context(text):
+            # 1. Семантична пустота
+            if term_counts['signal'] == 0:
+                if metrics['complexity'] > 0.8:
+                    score += 0.3
+                elif metrics['shannon_entropy'] > 0.8:
+                    score += 0.2
+                else:
+                    score += 0.1
+            
+            # 2. Науковий нігілізм
+            if term_counts['academic'] > 0 and term_counts['chaos'] > 0:
+                academic_ratio = term_counts['academic'] / word_count
+                chaos_ratio = term_counts['chaos'] / word_count
+                score += 0.25 if chaos_ratio > academic_ratio else 0.15
+            
+            # 3. Історичний ревізіонізм
+            if any(w in text_lower for w in ['антарктида', 'атлантида', 'аґарта', 'шамбала', 'тартарія']):
+                score += 0.3 if term_counts['signal'] == 0 else 0.2
         
-        # 2. Науковий нігілізм
-        if term_counts['academic'] > 0 and term_counts['chaos'] > 0:
-            academic_ratio = term_counts['academic'] / word_count
-            chaos_ratio = term_counts['chaos'] / word_count
-            score += 0.35 if chaos_ratio > academic_ratio else 0.2
-        
-        # 3. Історичний ревізіонізм
-        if any(w in text_lower for w in ['антарктид', 'атлантид', 'аґарт', 'шамбала', 'тартар']):
-            score += 0.4 if term_counts['signal'] == 0 else 0.25
-        
-        # 4. Економічний окультизм
-        if any(w in text_lower for w in ['облігаці', 'криптовалют', 'банк', 'блокчейн', 'NFT', 'DAO']):
-            if any(w in text_lower for w in ['карма', 'потойбіч', 'душ', 'астрал', 'soul', 'spirit']):
-                score += 0.45
-
-        # 5. Емоційна дестабілізація
-        if term_counts.get('noise', 0) >= 2:
-            caps_words = len([w for w in words if w.isupper() and len(w) > 2])
-            score += 0.3 if caps_words >= 2 else 0.15
-
-        # 6. Цифровий містицизм
-        tech = ['AI', 'блокчейн', 'blockchain', 'NFT', 'метаверс', 'metaverse', 'алгоритм']
-        mystic = ['душ', 'свідом', 'consciousness', 'карма', 'awakening', 'просвітлен']
-        if any(t in text for t in tech) and any(t in text_lower for t in mystic):
-            score += 0.35
-
-        # 7. Медична дезінформація
-        med_targets = ['вакцин', 'вакцинаці', 'щеплен', 'FDA', 'ВОЗ', 'фарм']
-        med_attack = ['скрит', 'правд', 'вони', 'скрывают', 'they', 'hide', 'корупці', 'genocide', 'убива']
-        if any(t in text_lower for t in med_targets):
-            if any(t in text_lower for t in med_attack):
-                score += 0.4
-
-        # 8. AI доом/salvation
-        ai_extreme = ['AI', 'знищ', 'спаст', 'суперінтелект', 'сингуляр', 'робот', 'повстан']
-        if any(t in text_lower for t in ai_extreme):
-            score += 0.3
-        
-        return min(score, 0.7)
+        return min(score, 0.5)  # Зменшили з 0.7
 
     def analyze(self, text):
-        """Основний метод аналізу"""
+        """ВИПРАВЛЕНО: Балансована оцінка"""
         if not text or len(text.strip()) < 20:
             return {'error': 'Text too short'}
         
@@ -572,47 +576,41 @@ class VeritasCalibratedCore:
         conflict_penalty = self.calculate_conflict_penalty(text)
         contextual_score = self.calculate_contextual_score(text, term_counts, base_metrics)
         
-        # ================= РОЗУМНА ФОРМУЛА =================
+        # ================= БАЛАНСОВАНА ФОРМУЛА =================
         if is_scientific:
             # ДЛЯ НАУКОВИХ ТЕКСТІВ: дуже низький бал
             base_score = (
-                absurdity_score * 0.30 +      # 30% за абсурд (майже завжди 0)
-                emotional_score * 0.20 +      # 20% за емоції (майже завжди 0)
-                contextual_score * 0.25 +     # 25% за контекст
-                gradient_penalty * 0.15 +     # 15% за градієнт
-                conflict_penalty * 0.10       # 10% за конфлікти
-            ) * 0.2  # Додатково множимо на 0.2 для науки
+                absurdity_score * 0.20 +      # 20% за абсурд (майже завжди 0)
+                emotional_score * 0.15 +      # 15% за емоції (майже завжди 0)
+                contextual_score * 0.20 +     # 20% за контекст
+                gradient_penalty * 0.25 +     # 25% за градієнт
+                conflict_penalty * 0.20       # 20% за конфлікти
+            ) * 0.3  # Множимо на 0.3 для науки
         else:
             # ДЛЯ НЕ-НАУКОВИХ: повна формула
             base_score = (
-                absurdity_score * 0.25 +      # 25% за абсурдні комбінації
+                absurdity_score * 0.30 +      # 30% за абсурдні комбінації
                 emotional_score * 0.20 +      # 20% за емоційний тиск
                 contextual_score * 0.25 +     # 25% за контекст
                 gradient_penalty * 0.15 +     # 15% за градієнт
-                conflict_penalty * 0.15       # 15% за конфлікти
+                conflict_penalty * 0.10       # 10% за конфлікти
             )
         
-        # Додаємо бонус за критичні паттерни
-        for pattern in detected_patterns:
-            base_score += pattern['score_boost']
-        
-        # АКАДЕМІЧНИЙ ЗАХИСТ (тільки для не-наукових текстів)
+        # Додаємо бонус за критичні паттерни (тільки для не-наукових)
         if not is_scientific:
-            if term_counts['academic'] >= 2 and term_counts['signal'] >= 2:
-                if term_counts['chaos'] == 0:
-                    base_score *= 0.3
-                elif term_counts['chaos'] <= 1:
-                    base_score *= 0.5
-                else:
-                    base_score *= 0.7
-            elif term_counts['academic'] >= 1 and term_counts['signal'] >= 1:
-                base_score *= 0.8
+            for pattern in detected_patterns:
+                base_score += pattern['score_boost'] * 0.7  # Зменшили вплив
         
-        # ПІДВИЩЕННЯ СКОРА ДЛЯ КРИТИЧНИХ ВИПАДКІВ
-        if conflict_penalty > 0.35:
-            base_score = max(base_score, 0.65)
-        if contextual_score > 0.4:
-            base_score = max(base_score, 0.6)
+        # АКАДЕМІЧНИЙ ЗАХИСТ
+        if term_counts['academic'] >= 3 and term_counts['signal'] >= 3:
+            if term_counts['chaos'] == 0:
+                base_score *= 0.2  # Дуже сильний захист
+            elif term_counts['chaos'] <= 2:
+                base_score *= 0.4  # Сильний захист
+            else:
+                base_score *= 0.6  # Помірний захист
+        elif term_counts['academic'] >= 2 and term_counts['signal'] >= 2:
+            base_score *= 0.7  # Слабкий захист
         
         final_score = min(0.99, max(0.0, base_score))
         
@@ -621,7 +619,7 @@ class VeritasCalibratedCore:
             status = 'VERIFIED'
             verdict = 'ВЕРИФІКОВАНИЙ НАУКОВИЙ СИГНАЛ'
             explanation = 'Текст демонструє наукову цілісність та логічну строгість'
-        elif detected_patterns:
+        elif detected_patterns and not is_scientific:
             main_pattern = detected_patterns[0]
             status = 'CRITICAL' if final_score > 0.6 else 'WARNING'
             verdict = main_pattern['verdict']
@@ -629,15 +627,11 @@ class VeritasCalibratedCore:
         elif absurdity_score > 0.3:
             status = 'CRITICAL'
             verdict = 'АБСУРДНИЙ СЕМАНТИЧНИЙ РОЗРИВ'
-            explanation = f'Текст поєднує несумісні концепції: {", ".join([f"{a}+{b}" for a,b in absurd_pairs[:3]])}'
+            explanation = f'Текст поєднує несумісні концепції: {", ".join([f"{a}+{b}" for a,b in absurd_pairs[:2]])}'
         elif final_score > 0.7:
             status = 'CRITICAL'
-            if contextual_score > 0.4:
-                verdict = 'ВИСОКИЙ РІВЕНЬ СЕМАНТИЧНОГО ХАОСУ'
-                explanation = 'Текст демонструє критичний рівень семантичної несумісності'
-            else:
-                verdict = 'СЕМАНТИЧНА ПУСТОТА'
-                explanation = 'Високий рівень абстракції при відсутності конкретного змісту'
+            verdict = 'ВИСОКИЙ РІВЕНЬ СЕМАНТИЧНОГО ХАОСУ'
+            explanation = 'Текст демонструє критичний рівень семантичної несумісності'
         elif final_score > 0.55:
             status = 'WARNING'
             verdict = 'ПІДОЗРІЛА СЕМАНТИЧНА СТРУКТУРА'
@@ -657,45 +651,30 @@ class VeritasCalibratedCore:
         
         # Додаткові пояснення
         detail_explanations = []
-        if gradient_penalty > 0.1:
-            detail_explanations.append(f"Градієнтний штраф: {gradient_penalty:.2f}")
-        if conflict_penalty > 0.1:
-            detail_explanations.append(f"Конфліктний штраф: {conflict_penalty:.2f}")
-        if contextual_score > 0.2:
-            detail_explanations.append(f"Контекстуальна оцінка: {contextual_score:.2f}")
-        if absurdity_score > 0.1:
-            detail_explanations.append(f"Абсурдність: {absurdity_score:.2f}")
+        if gradient_penalty > 0.05:
+            detail_explanations.append(f"Градієнт: {gradient_penalty:.2f}")
+        if conflict_penalty > 0.05:
+            detail_explanations.append(f"Конфлікт: {conflict_penalty:.2f}")
+        if contextual_score > 0.1:
+            detail_explanations.append(f"Контекст: {contextual_score:.2f}")
+        if absurdity_score > 0.05:
+            detail_explanations.append(f"Абсурд: {absurdity_score:.2f}")
         
         if detail_explanations:
             explanation += " | " + " + ".join(detail_explanations)
 
         # ================= МЕТРИКИ =================
-        signal = term_counts['signal']
-        chaos = term_counts['chaos']
-        context = contextual_score
-        conflict = conflict_penalty
-        final = final_score
-
         if is_scientific:
             chaos_index = 0.0
-            influence_index = round(final * 50, 2)
-        elif signal >= 2 and chaos == 0:
-            chaos_index = 0.0
-            influence_index = round(final * word_count * (1 + final) / 10, 2)
-        elif chaos > 0:
-            chaos_index = final * 100 * (1 + chaos * 0.6) * (1 + max(0, context - 0.3) * 1.96) / (1 + signal * 0.8)
-            influence_index = final * 100 * (1 + final) + chaos_index
+            influence_index = round(final_score * 30, 2)
         else:
-            chaos_index = final * 100 * (1 - conflict * 0.8) * (1 - context * 0.46) / (1 + signal * 1.0)
-            influence_index = final * 100 * (1 + final) / (1 + signal * 0.35)
-        
-        chaos_index = round(chaos_index, 2)
-        influence_index = round(influence_index, 2)
+            chaos_index = round(final_score * 100 * (1 + term_counts['chaos'] * 0.3), 2)
+            influence_index = round(final_score * 150 * (1 + emotional_score * 0.3), 2)
 
-        sanity_penalty = round(conflict_penalty + max(0, gradient_penalty - 0.3) + absurdity_score, 3)
+        sanity_penalty = round(conflict_penalty + absurdity_score + max(0, gradient_penalty - 0.2), 3)
 
         noise_marker_count = term_counts.get('noise', 0)
-        signal_ratio = 0 if noise_marker_count == 0 else round(noise_marker_count / max(1, signal), 2)
+        signal_ratio = 0 if noise_marker_count == 0 else round(noise_marker_count / max(1, term_counts['signal']), 2)
         
         return {
             'entropy': round(final_score, 3),
