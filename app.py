@@ -2,13 +2,13 @@ from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import re
 import urllib.request
-from veritas_calibrated_core import VeritasHyperCalibratedCore
+from veritas_calibrated_core import VeritasUltraCalibratedCore  # ← ЗМІНА ТУТ!
 
 app = Flask(__name__, static_folder='.')
 CORS(app)
 
 # Initialize engine
-engine = VeritasHyperCalibratedCore()
+engine = VeritasUltraCalibratedCore()  # ← І ТУТ!
 
 
 class SimpleExtractor:
@@ -100,7 +100,7 @@ def analyze():
         return jsonify({}), 200
 
     if request.method == 'GET':
-        return jsonify({'status': 'online', 'version': '3.3-categorical'}), 200
+        return jsonify({'status': 'online', 'version': '3.3-ultra'}), 200  # ← Онови версію!
 
     try:
         data = request.get_json()
@@ -137,7 +137,7 @@ def analyze():
         if not text or len(text) < 10:
             return jsonify({'error': 'Текст занадто короткий'}), 400
 
-        # 2. ЗАПУСКАЄМО НОВЕ ЯДРО З КАТЕГОРІЯМИ
+        # 2. ЗАПУСКАЄМО УЛЬТРА-АГРЕСИВНЕ ЯДРО
         result = engine.analyze(text)
 
         # 3. ДОДАЄМО МЕТАДАНІ
@@ -149,24 +149,6 @@ def analyze():
             result['extracted_text'] = text[:1500] + '...' if len(text) > 1500 else text
         else:
             result['mode'] = 'manual'
-
-        # 4. КОНВЕРТАЦІЯ ДЛЯ ФРОНТЕНДУ (якщо є нові поля)
-        diagnostics = result.get('diagnostics', {})
-        
-        # Якщо є categories_found, конвертуємо для фронтенду
-        if 'categories_found' in diagnostics:
-            # Можна додати додаткову логіку тут
-            pass
-        
-        # Гарантуємо, що всі необхідні поля є для фронтенду
-        required_metrics = [
-            'chaos_index', 'influence_index', 'sanity_penalty',
-            'word_count', 'char_count', 'noise_markers'
-        ]
-        
-        for metric in required_metrics:
-            if metric not in diagnostics:
-                diagnostics[metric] = 0
 
         return jsonify(result), 200
 
