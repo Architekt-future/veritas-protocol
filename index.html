@@ -642,7 +642,7 @@
                 if (currentMode === 'url') {
                     textDisplay.textContent = data.extracted_text || 'Текст не витягнуто';
                 } else {
-                    textDisplay.textContent = document.getElementById('textInput').value;
+                    textDisplay.textContent = 'Текст аналізовано (' + data.diagnostics.word_count + ' слів)';
                 }
 
                 // Show results container
