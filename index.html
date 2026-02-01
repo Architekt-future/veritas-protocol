@@ -197,7 +197,7 @@
             margin-top: 10px;
         }
 
-        /* RESULT VISUALIZATION - RIGHT UNDER INPUT */
+        /* RESULTS VISUALIZATION */
         .results-container {
             margin-top: 25px;
             padding-top: 20px;
@@ -283,7 +283,130 @@
             50% { opacity: 0.7; }
         }
 
-        /* METRICS GRID - UNDER VERDICT */
+        /* НОВІ СТИЛІ ДЛЯ АРХІТЕКТУРНИХ МЕТРИК */
+        .system-state {
+            text-align: center;
+            font-size: 1.1em;
+            margin: 10px 0;
+            padding: 8px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+
+        .system-state.laminar {
+            background: rgba(0, 212, 255, 0.15);
+            color: #00d4ff;
+            border: 1px solid #00d4ff;
+        }
+
+        .system-state.fatigue {
+            background: rgba(255, 170, 0, 0.15);
+            color: #ffaa00;
+            border: 1px solid #ffaa00;
+        }
+
+        .system-state.witness {
+            background: rgba(255, 68, 68, 0.2);
+            color: #ff4444;
+            border: 1px solid #ff4444;
+            animation: pulse 1.5s infinite;
+        }
+
+        .entropy-type {
+            text-align: center;
+            font-size: 0.9em;
+            margin: 5px 0;
+            padding: 5px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* ARCHITECTURAL METRICS GRID */
+        .arch-metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .arch-metric {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 14px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            text-align: center;
+        }
+
+        .arch-metric-label {
+            font-size: 0.75em;
+            color: #aaa;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .arch-metric-value {
+            font-size: 1.4em;
+            font-weight: bold;
+            margin: 5px 0;
+        }
+
+        .arch-metric-value.esi {
+            color: #00d4ff;
+        }
+
+        .arch-metric-value.lambda {
+            color: #ff6b9d;
+        }
+
+        .arch-metric-value.friction {
+            color: #ffaa00;
+        }
+
+        .arch-metric-description {
+            font-size: 0.7em;
+            color: #777;
+            margin-top: 4px;
+        }
+
+        /* ДОМЕННІ МЕТРИКИ */
+        .domain-metrics {
+            margin-top: 15px;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .domain-metric-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+            padding: 4px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .domain-metric-label {
+            color: #aaa;
+            font-size: 0.85em;
+        }
+
+        .domain-metric-value {
+            color: #fff;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        .domain-collapse {
+            color: #ff4444;
+            background: rgba(255, 68, 68, 0.1);
+            padding: 3px 8px;
+            border-radius: 3px;
+            margin-left: 5px;
+        }
+
+        /* BASE METRICS GRID */
         .metrics {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
@@ -422,15 +545,15 @@
     <div class="container">
         <!-- HEADER -->
         <div class="header">
-            <h1>⚡ VERITAS TERMINAL</h1>
-            <div class="subtitle">Information Entropy Analyzer • Shannon Engine • The Witness</div>
+            <h1>⚡ VERITAS TERMINAL v4.0</h1>
+            <div class="subtitle">Information Entropy Analyzer • Architectural Engine • Witness Protocol</div>
             <div class="api-status checking" id="apiStatus">⚙️ Перевірка API...</div>
         </div>
 
         <!-- INPUT PANEL -->
         <div class="panel">
             <div class="panel-title">⚡ ВВІД ДАНИХ</div>
-            
+
             <!-- MODE TABS -->
             <div class="mode-tabs">
                 <button class="mode-tab active" id="tabURL" onclick="switchMode('url')">🔗 URL</button>
@@ -472,19 +595,25 @@
             </div>
 
             <button class="btn" id="analyzeBtn" onclick="analyze()">
-                ⚡ АНАЛІЗУВАТИ
+                ⚡ АНАЛІЗУВАТИ (Architectural Engine)
             </button>
             <button class="btn btn-clear" onclick="clearAll()">
                 ⚡ ОЧИСТИТИ
             </button>
 
-            <!-- RESULTS VISUALIZATION - RIGHT UNDER BUTTONS -->
+            <!-- RESULTS VISUALIZATION -->
             <div class="results-container" id="resultsContainer" style="display: none;">
-                <div class="panel-title">⚡ РЕЗУЛЬТАТ АНАЛІЗУ</div>
-                
+                <div class="panel-title">⚡ АРХІТЕКТУРНИЙ АНАЛІЗ</div>
+
+                <!-- System State -->
+                <div class="system-state" id="systemState">---</div>
+
+                <!-- Entropy Type -->
+                <div class="entropy-type" id="entropyType">---</div>
+
                 <div class="witness-container">
                     <div class="entropy-value" id="entropyValue">---</div>
-                    
+
                     <div class="entropy-bar">
                         <div class="entropy-fill" id="entropyFill" style="width: 0%;">
                             0%
@@ -492,309 +621,437 @@
                     </div>
 
                     <div class="entropy-labels">
-                        <span>⚡ Впорядковано (0.0)</span>
-                        <span>⚡ Складно (0.5)</span>
-                        <span>⚡ Хаос (1.0)</span>
+                        <span>⚡ Laminar Flow (0.0)</span>
+                        <span>⚡ Systemic Fatigue (0.5)</span>
+                        <span>⚡ Witness Silence (1.0)</span>
                     </div>
 
-                    <div class="verdict" id="verdict" style="display: none;">
-                        ОЧІКУЄ АНАЛІЗУ
+                    <div class="verdict" id="verdict">---</div>
+
+                    <!-- Architectural Metrics -->
+                    <div class="arch-metrics" id="archMetrics">
+                        <!-- Заповнюється JavaScript -->
                     </div>
 
-                    <!-- Explanation from backend -->
+                    <!-- Domain Metrics -->
+                    <div class="domain-metrics" id="domainMetrics" style="display: none;">
+                        <!-- Заповнюється JavaScript -->
+                    </div>
+
+                    <!-- Base Metrics -->
+                    <div class="metrics" id="baseMetrics">
+                        <!-- Заповнюється JavaScript -->
+                    </div>
+
+                    <!-- Explanation -->
                     <div class="explanation-box" id="explanationBox">
-                        <div class="exp-label">Пояснення</div>
-                        <div id="explanationText"></div>
+                        <div class="exp-label">ПОЯСНЕННЯ</div>
+                        <span id="explanationText">---</span>
                     </div>
 
-                    <!-- METRICS -->
-                    <div class="metrics" id="metricsPanel">
-                        <div class="metric">
-                            <div class="metric-label">Символи</div>
-                            <div class="metric-value" id="charCount">0</div>
+                    <!-- Text Display -->
+                    <div class="text-display-panel" id="textDisplayPanel" style="display: none;">
+                        <div class="toggle-section" onclick="toggleTextDisplay()">
+                            <span>📄</span>
+                            <span id="toggleTextLabel">Показати витягнутий текст</span>
                         </div>
-                        <div class="metric">
-                            <div class="metric-label">Слова</div>
-                            <div class="metric-value" id="wordCount">0</div>
-                        </div>
-                        <div class="metric">
-                            <div class="metric-label">Шум маркери</div>
-                            <div class="metric-value" id="noiseMarkers">0</div>
-                        </div>
-                        <div class="metric">
-                            <div class="metric-label">Індекс хаосу</div>
-                            <div class="metric-value" id="chaosIndex">0</div>
-                        </div>
-                        <div class="metric">
-                            <div class="metric-label">Індекс впливу</div>
-                            <div class="metric-value" id="influenceIndex">0</div>
-                        </div>
-                        <div class="metric">
-                            <div class="metric-label">Штраф логіки</div>
-                            <div class="metric-value" id="sanityPenalty">0</div>
+                        <div class="collapsible-content hidden" id="textDisplayContent">
+                            <div class="text-display" id="extractedText">
+                                Текст буде відображено тут...
+                            </div>
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- TEXT DISPLAY -->
-        <div class="panel text-display-panel">
-            <div class="panel-title toggle-section" onclick="toggleTextDisplay()">
-                <span>⚡ ТЕКСТ ДЛЯ ПЕРЕВІРКИ</span>
-                <span style="font-size: 0.8em; margin-left: auto;">▼</span>
-            </div>
-            
-            <div class="collapsible-content visible" id="textDisplayContainer">
-                <div class="text-display" id="textDisplay">
-                    Очікує аналізу...
                 </div>
             </div>
         </div>
 
         <!-- FOOTER -->
         <div class="footer">
-            <p>⚡ Veritas Protocol Terminal v3.2 • HyperCalibrated Core</p>
-            <p>Shannon Entropy Engine • Data Cleaner • Witness Visualizer</p>
-            <p>Architect: Dmytro Kholodniak | AI Collective: Claude, ChatGPT, Gemini, DeepSeek</p>
+            Veritas Protocol v4.0 • Architectural Divergence Engine • Witness Silence Implementation
+            <br>
+            <small>Аналізує логічну цілісність та доменну чистоту інформаційних потоків</small>
         </div>
     </div>
 
     <script>
-        // API Configuration
-        const API_BASE = '/api/analyze';
-      
-        // Current mode state
-        let currentMode = 'url';
-
-        // Check API status on load
-        window.addEventListener('load', checkAPIStatus);
-
-        async function checkAPIStatus() {
+        // API статус
+        async function checkApiStatus() {
             const statusEl = document.getElementById('apiStatus');
-            statusEl.textContent = '⚙️ Перевірка API...';
             statusEl.className = 'api-status checking';
+            statusEl.textContent = '⚙️ Перевірка API...';
 
             try {
-                const response = await fetch(API_BASE, { method: 'GET' });
-                const data = await response.json();
-                
-                if (data.status === 'online') {
-                    statusEl.textContent = '✅ API Online v' + (data.version || '?');
+                const response = await fetch('/api/analyze', { method: 'GET' });
+                if (response.ok) {
+                    const data = await response.json();
                     statusEl.className = 'api-status online';
+                    statusEl.textContent = `✅ ONLINE • ${data.version || 'v4.0'}`;
                 } else {
-                    throw new Error('API unhealthy');
+                    throw new Error('API не відповідає');
                 }
             } catch (error) {
-                statusEl.textContent = '❌ API Offline';
                 statusEl.className = 'api-status offline';
-                console.error('API check failed:', error);
+                statusEl.textContent = '❌ OFFLINE • Перевірте бекенд';
             }
         }
 
-        // MODE SWITCHER
+        // Перемикання між режимами
         function switchMode(mode) {
-            currentMode = mode;
-
-            document.getElementById('tabURL').className = 'mode-tab' + (mode === 'url' ? ' active' : '');
-            document.getElementById('tabManual').className = 'mode-tab' + (mode === 'manual' ? ' active' : '');
-            document.getElementById('panelURL').className = 'mode-panel' + (mode === 'url' ? ' active' : '');
-            document.getElementById('panelManual').className = 'mode-panel' + (mode === 'manual' ? ' active' : '');
+            // Оновлення табів
+            document.getElementById('tabURL').classList.toggle('active', mode === 'url');
+            document.getElementById('tabManual').classList.toggle('active', mode === 'manual');
+            
+            // Оновлення панелей
+            document.getElementById('panelURL').classList.toggle('active', mode === 'url');
+            document.getElementById('panelManual').classList.toggle('active', mode === 'manual');
+            
+            // Очищення результатів при зміні режиму
+            document.getElementById('resultsContainer').style.display = 'none';
         }
 
-        // UNIFIED ANALYZE
+        // Основний функціонал аналізу
         async function analyze() {
-            const analyzeBtn = document.getElementById('analyzeBtn');
-            const textDisplay = document.getElementById('textDisplay');
+            const btn = document.getElementById('analyzeBtn');
+            const originalText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = '⚙️ АНАЛІЗУЄТЬСЯ...';
+            
+            const urlInput = document.getElementById('urlInput').value.trim();
+            const textInput = document.getElementById('textInput').value.trim();
             const resultsContainer = document.getElementById('resultsContainer');
-
-            // Build payload based on current mode
-            let payload = {};
-            if (currentMode === 'url') {
-                const url = document.getElementById('urlInput').value.trim();
-                if (!url) { alert('❌ Будь ласка, введіть URL'); return; }
-                payload = { url: url };
+            const errorEl = document.getElementById('error');
+            
+            // Приховуємо попередні результати та помилки
+            resultsContainer.style.display = 'none';
+            if (errorEl) errorEl.remove();
+            
+            let requestData = {};
+            
+            if (urlInput) {
+                requestData = { url: urlInput };
+            } else if (textInput) {
+                requestData = { text: textInput };
             } else {
-                const text = document.getElementById('textInput').value.trim();
-                if (!text || text.length < 20) { alert('❌ Текст має бути не менше 20 символів'); return; }
-                payload = { text: text, source: 'Manual Input' };
+                showError('Будь ласка, введіть URL або текст для аналізу');
+                resetButton(btn, originalText);
+                return;
             }
-
-            // Disable button
-            analyzeBtn.disabled = true;
-            analyzeBtn.textContent = '⏳ АНАЛІЗ...';
-            textDisplay.innerHTML = '<div class="loading">⚙️ Надсилання на сервер...</div>';
-
+            
             try {
-                const response = await fetch(API_BASE, {
+                const response = await fetch('/api/analyze', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestData)
                 });
-
+                
                 const data = await response.json();
-
-                if (data.error) {
-                    throw new Error(data.error);
-                }
-
-                // Show extracted text only in URL mode
-                if (currentMode === 'url') {
-                    textDisplay.textContent = data.extracted_text || 'Текст не витягнуто';
-                } else {
-                    textDisplay.textContent = 'Текст аналізовано (' + data.diagnostics.word_count + ' слів)';
-                }
-
-                // ⚡ ЛОГУЄМО КАТЕГОРІЇ (якщо є)
-                if (data.diagnostics && data.diagnostics.categories_found) {
-                    console.group('🔍 Знайдені семантичні категорії:');
-                    const cats = data.diagnostics.categories_found;
-                    for (const [cat, count] of Object.entries(cats)) {
-                        console.log(`${cat}: ${count} речень`);
-                    }
-                    console.groupEnd();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || `Помилка ${response.status}`);
                 }
                 
-                // Show results container
-                resultsContainer.style.display = 'block';
-
-                // Update metrics
-                const diagnostics = data.diagnostics || {};
-
-                document.getElementById('charCount').textContent = diagnostics.char_count || 0;
-                document.getElementById('wordCount').textContent = diagnostics.word_count || 0;
-                document.getElementById('noiseMarkers').textContent = diagnostics.noise_markers || 0;
-
-                // Chaos Index
-                const chaosEl = document.getElementById('chaosIndex');
-                chaosEl.textContent = diagnostics.chaos_index || 0;
-                chaosEl.className = 'metric-value ' + 
-                    (diagnostics.chaos_index > 60 ? 'danger' : 
-                     diagnostics.chaos_index > 30 ? 'warning' : 'safe');
-
-                // Influence Index
-                const influenceEl = document.getElementById('influenceIndex');
-                influenceEl.textContent = diagnostics.influence_index || 0;
-                influenceEl.className = 'metric-value ' + 
-                    (diagnostics.influence_index > 100 ? 'danger' : 
-                     diagnostics.influence_index > 50 ? 'warning' : 'safe');
-
-                // Sanity Penalty
-                const sanityEl = document.getElementById('sanityPenalty');
-                sanityEl.textContent = diagnostics.sanity_penalty || 0;
-                sanityEl.className = 'metric-value ' + 
-                    (diagnostics.sanity_penalty > 0.5 ? 'danger' : 
-                     diagnostics.sanity_penalty > 0.2 ? 'warning' : 'safe');
-
-                // Update Witness with backend data
-                updateWitness(data.entropy, data.verdict, data.explanation, data.status);
-
+                // Відображення результатів
+                displayResults(data);
+                
             } catch (error) {
-                textDisplay.innerHTML = `<div class="error">❌ Помилка: ${error.message}</div>`;
-                console.error('Analysis failed:', error);
+                showError(`Помилка: ${error.message}`);
             } finally {
-                analyzeBtn.disabled = false;
-                analyzeBtn.textContent = '⚡ АНАЛІЗУВАТИ';
+                resetButton(btn, originalText);
             }
         }
 
-        // UPDATE WITNESS VISUALIZER
-        function updateWitness(entropy, verdict, explanation, status) {
-            const entropyValue = document.getElementById('entropyValue');
-            const entropyFill = document.getElementById('entropyFill');
-            const verdictEl = document.getElementById('verdict');
-            const explanationBox = document.getElementById('explanationBox');
-            const explanationText = document.getElementById('explanationText');
-
-            // Display entropy value
-            entropyValue.textContent = entropy.toFixed(3);
-
-            // Calculate percentage for bar
+        // Відображення результатів аналізу
+        function displayResults(data) {
+            const resultsContainer = document.getElementById('resultsContainer');
+            resultsContainer.style.display = 'block';
+            
+            // Основні метрики
+            const entropy = data.entropy || 0;
             const percentage = Math.round(entropy * 100);
-            entropyFill.style.width = percentage + '%';
-            entropyFill.textContent = percentage + '%';
-
-            // Color based on backend status
-            let color, bgColor, verdictClass;
-
-            if (status === 'CRITICAL') {
-                color = '#ff0000';
-                bgColor = 'linear-gradient(90deg, #ff0000 0%, #cc0000 100%)';
-                verdictClass = 'chaos';
-            } else if (status === 'WARNING') {
-                color = '#ff6644';
-                bgColor = 'linear-gradient(90deg, #ff6644 0%, #ff4422 100%)';
-                verdictClass = 'suspicious';
-            } else if (status === 'ACCEPTABLE') {
-                color = '#ffaa00';
-                bgColor = 'linear-gradient(90deg, #ffaa00 0%, #ff8800 100%)';
-                verdictClass = 'acceptable';
-            } else if (status === 'TRUSTED' || status === 'VERIFIED') {
-                color = '#00ff88';
-                bgColor = 'linear-gradient(90deg, #00ff88 0%, #00cc66 100%)';
-                verdictClass = 'trusted';
-            } else {
-                color = '#00d4ff';
-                bgColor = 'linear-gradient(90deg, #00d4ff 0%, #0099cc 100%)';
-                verdictClass = 'trusted';
+            
+            document.getElementById('entropyValue').textContent = entropy.toFixed(3);
+            document.getElementById('entropyValue').style.color = getEntropyColor(entropy);
+            
+            const fill = document.getElementById('entropyFill');
+            fill.style.width = `${percentage}%`;
+            fill.textContent = `${percentage}%`;
+            fill.style.background = getEntropyGradient(entropy);
+            
+            // Вердикт
+            const verdictEl = document.getElementById('verdict');
+            verdictEl.textContent = data.verdict || '---';
+            verdictEl.className = `verdict ${getVerdictClass(data.status)}`;
+            
+            // System State
+            const systemStateEl = document.getElementById('systemState');
+            systemStateEl.textContent = `System State: ${data.status || '---'}`;
+            systemStateEl.className = `system-state ${getSystemStateClass(data.status)}`;
+            
+            // Entropy Type
+            const entropyType = data.diagnostics?.entropy_type || '---';
+            document.getElementById('entropyType').textContent = `Entropy Type: ${entropyType}`;
+            
+            // Пояснення
+            document.getElementById('explanationText').textContent = data.explanation || '---';
+            document.getElementById('explanationBox').classList.add('visible');
+            
+            // Архітектурні метрики
+            displayArchitecturalMetrics(data.diagnostics);
+            
+            // Базові метрики
+            displayBaseMetrics(data);
+            
+            // Доменні метрики
+            displayDomainMetrics(data.diagnostics);
+            
+            // Відображення тексту (якщо є)
+            if (data.extracted_preview || data.mode === 'manual') {
+                const textDisplayPanel = document.getElementById('textDisplayPanel');
+                const extractedText = document.getElementById('extractedText');
+                
+                textDisplayPanel.style.display = 'block';
+                
+                if (data.extracted_preview) {
+                    extractedText.textContent = data.extracted_preview;
+                } else if (data.text_stats) {
+                    extractedText.textContent = document.getElementById('textInput').value;
+                }
             }
-
-            entropyValue.style.color = color;
-            entropyFill.style.background = bgColor;
-
-            // Show verdict from backend
-            verdictEl.textContent = verdict || 'АНАЛІЗ ЗАВЕРШЕНО';
-            verdictEl.className = 'verdict ' + verdictClass;
-            verdictEl.style.display = 'block';
-
-            // Show explanation from backend
-            if (explanation) {
-                explanationText.textContent = explanation;
-                explanationBox.className = 'explanation-box visible';
-            } else {
-                explanationBox.className = 'explanation-box';
-            }
+            
+            // Скрол до результатів
+            resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
 
-        // CLEAR ALL
+        // Відображення архітектурних метрик
+        function displayArchitecturalMetrics(diagnostics) {
+            const archMetricsEl = document.getElementById('archMetrics');
+            if (!diagnostics) return;
+            
+            const metrics = [
+                {
+                    label: 'ESI',
+                    value: diagnostics.esi?.toFixed(3) || '0.000',
+                    description: 'Entropy Stability Index',
+                    valueClass: 'esi'
+                },
+                {
+                    label: 'λ',
+                    value: diagnostics.lambda_decay?.toFixed(3) || '0.000',
+                    description: 'Linguistic Decay',
+                    valueClass: 'lambda'
+                },
+                {
+                    label: 'FRICTION',
+                    value: diagnostics.architectural_friction?.toFixed(3) || '0.000',
+                    description: 'Architectural Friction',
+                    valueClass: 'friction'
+                },
+                {
+                    label: 'PURITY',
+                    value: diagnostics.domain_purity_score?.toFixed(3) || '0.000',
+                    description: 'Domain Purity',
+                    valueClass: diagnostics.domain_purity_score > 0.7 ? 'safe' : 
+                              diagnostics.domain_purity_score > 0.4 ? 'warning' : 'danger'
+                }
+            ];
+            
+            archMetricsEl.innerHTML = metrics.map(metric => `
+                <div class="arch-metric">
+                    <div class="arch-metric-label">${metric.label}</div>
+                    <div class="arch-metric-value ${metric.valueClass}">${metric.value}</div>
+                    <div class="arch-metric-description">${metric.description}</div>
+                </div>
+            `).join('');
+        }
+
+        // Відображення доменних метрик
+        function displayDomainMetrics(diagnostics) {
+            const domainMetricsEl = document.getElementById('domainMetrics');
+            if (!diagnostics || !diagnostics.detected_domains) return;
+            
+            domainMetricsEl.style.display = 'block';
+            
+            const domains = diagnostics.detected_domains || [];
+            const collapses = diagnostics.domain_collapses || [];
+            
+            let html = `
+                <div class="domain-metric-row">
+                    <span class="domain-metric-label">Детектовані домени:</span>
+                    <span class="domain-metric-value">${domains.join(', ') || 'немає'}</span>
+                </div>
+            `;
+            
+            if (collapses.length > 0) {
+                html += `
+                    <div class="domain-metric-row">
+                        <span class="domain-metric-label">Доменні колапси:</span>
+                        <span class="domain-metric-value">
+                            ${collapses.map(c => 
+                                Array.isArray(c) ? 
+                                `<span class="domain-collapse">${c[0]}+${c[1]}</span>` : 
+                                `<span class="domain-collapse">${c}</span>`
+                            ).join(' ')}
+                        </span>
+                    </div>
+                `;
+            }
+            
+            html += `
+                <div class="domain-metric-row">
+                    <span class="domain-metric-label">Причинні якорі:</span>
+                    <span class="domain-metric-value">${diagnostics.causal_anchors || 0}</span>
+                </div>
+                <div class="domain-metric-row">
+                    <span class="domain-metric-label">Емоційний шум:</span>
+                    <span class="domain-metric-value">${(diagnostics.adjectival_density || 0).toFixed(3)}</span>
+                </div>
+            `;
+            
+            domainMetricsEl.innerHTML = html;
+        }
+
+        // Відображення базових метрик
+        function displayBaseMetrics(data) {
+            const baseMetricsEl = document.getElementById('baseMetrics');
+            
+            const metrics = [
+                {
+                    label: 'Символи',
+                    value: data.text_stats?.char_count || data.diagnostics?.char_count || 0,
+                    class: 'safe'
+                },
+                {
+                    label: 'Слова',
+                    value: data.text_stats?.word_count || data.diagnostics?.word_count || 0,
+                    class: 'safe'
+                },
+                {
+                    label: 'Порушень LAC',
+                    value: data.diagnostics?.lac_violations || 0,
+                    class: data.diagnostics?.lac_violations > 2 ? 'danger' : 
+                          data.diagnostics?.lac_violations > 0 ? 'warning' : 'safe'
+                },
+                {
+                    label: 'Індекс хаосу',
+                    value: data.diagnostics?.chaos_index?.toFixed(1) || '0.0',
+                    class: data.diagnostics?.chaos_index > 70 ? 'danger' :
+                          data.diagnostics?.chaos_index > 30 ? 'warning' : 'safe'
+                }
+            ];
+            
+            baseMetricsEl.innerHTML = metrics.map(metric => `
+                <div class="metric">
+                    <div class="metric-label">${metric.label}</div>
+                    <div class="metric-value ${metric.class}">${metric.value}</div>
+                </div>
+            `).join('');
+        }
+
+        // Допоміжні функції
+        function getEntropyColor(entropy) {
+            if (entropy < 0.3) return '#00ff88';
+            if (entropy < 0.7) return '#ffaa00';
+            return '#ff4444';
+        }
+
+        function getEntropyGradient(entropy) {
+            if (entropy < 0.3) return 'linear-gradient(90deg, #00ff88, #00d4ff)';
+            if (entropy < 0.7) return 'linear-gradient(90deg, #ffaa00, #ff6b00)';
+            return 'linear-gradient(90deg, #ff4444, #cc0000)';
+        }
+
+        function getVerdictClass(status) {
+            if (!status) return '';
+            if (status.includes('LAMINAR') || status.includes('VERIFIED')) return 'trusted';
+            if (status.includes('FATIGUE') || status.includes('WARNING')) return 'acceptable';
+            if (status.includes('SUSPICIOUS') || status.includes('DOMAIN')) return 'suspicious';
+            if (status.includes('SILENCE') || status.includes('CRITICAL')) return 'chaos';
+            return 'acceptable';
+        }
+
+        function getSystemStateClass(status) {
+            if (!status) return '';
+            if (status.includes('LAMINAR') || status.includes('VERIFIED')) return 'laminar';
+            if (status.includes('FATIGUE') || status.includes('WARNING')) return 'fatigue';
+            if (status.includes('SILENCE') || status.includes('CRITICAL')) return 'witness';
+            return '';
+        }
+
+        function showError(message) {
+            const container = document.querySelector('.panel');
+            const errorEl = document.createElement('div');
+            errorEl.className = 'error';
+            errorEl.textContent = message;
+            container.appendChild(errorEl);
+            
+            setTimeout(() => {
+                errorEl.remove();
+            }, 5000);
+        }
+
+        function resetButton(btn, originalText) {
+            btn.disabled = false;
+            btn.textContent = originalText;
+        }
+
         function clearAll() {
             document.getElementById('urlInput').value = '';
             document.getElementById('textInput').value = '';
-            document.getElementById('textDisplay').textContent = 'Очікує аналізу...';
             document.getElementById('resultsContainer').style.display = 'none';
+            
+            // Скидання всіх полів результатів
             document.getElementById('entropyValue').textContent = '---';
-            document.getElementById('entropyValue').style.color = '#e0e0e0';
             document.getElementById('entropyFill').style.width = '0%';
             document.getElementById('entropyFill').textContent = '0%';
-            document.getElementById('verdict').style.display = 'none';
-            document.getElementById('explanationBox').className = 'explanation-box';
+            document.getElementById('verdict').textContent = '---';
+            document.getElementById('systemState').textContent = '---';
+            document.getElementById('entropyType').textContent = '---';
+            document.getElementById('explanationBox').classList.remove('visible');
+            
+            // Очищення динамічного вмісту
+            document.getElementById('archMetrics').innerHTML = '';
+            document.getElementById('domainMetrics').innerHTML = '';
+            document.getElementById('domainMetrics').style.display = 'none';
+            document.getElementById('baseMetrics').innerHTML = '';
+            document.getElementById('textDisplayPanel').style.display = 'none';
         }
 
-        // TOGGLE TEXT DISPLAY
         function toggleTextDisplay() {
-            const container = document.getElementById('textDisplayContainer');
-            if (container.classList.contains('visible')) {
-                container.classList.remove('visible');
-                container.classList.add('hidden');
+            const content = document.getElementById('textDisplayContent');
+            const label = document.getElementById('toggleTextLabel');
+            
+            if (content.classList.contains('hidden')) {
+                content.classList.remove('hidden');
+                content.classList.add('visible');
+                label.textContent = 'Приховати текст';
             } else {
-                container.classList.remove('hidden');
-                container.classList.add('visible');
+                content.classList.remove('visible');
+                content.classList.add('hidden');
+                label.textContent = 'Показати витягнутий текст';
             }
         }
 
-        // Enter key: trigger in URL mode only
-        document.getElementById('urlInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                analyze();
-            }
-        });
-
-        // Ctrl+Enter in textarea triggers analyze
-        document.getElementById('textInput').addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-                e.preventDefault();
-                analyze();
-            }
+        // Ініціалізація при завантаженні
+        document.addEventListener('DOMContentLoaded', function() {
+            checkApiStatus();
+            
+            // Перевірка стану API кожні 30 секунд
+            setInterval(checkApiStatus, 30000);
+            
+            // Дозвіл на відправку форми по Enter
+            document.getElementById('textInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                    analyze();
+                }
+            });
+            
+            document.getElementById('urlInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    analyze();
+                }
+            });
         });
     </script>
 </body>
