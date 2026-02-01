@@ -645,6 +645,16 @@
                     textDisplay.textContent = 'Текст аналізовано (' + data.diagnostics.word_count + ' слів)';
                 }
 
+                // ⚡ ЛОГУЄМО КАТЕГОРІЇ (якщо є)
+                if (data.diagnostics && data.diagnostics.categories_found) {
+                    console.group('🔍 Знайдені семантичні категорії:');
+                    const cats = data.diagnostics.categories_found;
+                    for (const [cat, count] of Object.entries(cats)) {
+                        console.log(`${cat}: ${count} речень`);
+                    }
+                    console.groupEnd();
+                }
+                
                 // Show results container
                 resultsContainer.style.display = 'block';
 
