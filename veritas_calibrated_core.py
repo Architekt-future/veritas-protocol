@@ -1,197 +1,288 @@
 """
-Veritas Protocol - FINAL FIXED VERSION v11.4
-Проста логіка: наука = VERIFIED, абсурд = CRITICAL
+Veritas Protocol - FINAL WORKING VERSION v11.6
+З усіма маркерами категорій для правильної класифікації
 """
 
 import re
 import math
 
 class VeritasCalibratedCore:
-    """FINAL VERSION - SIMPLE & EFFECTIVE"""
-    
     def __init__(self):
-        # КЛЮЧОВІ ФРАЗИ ДЛЯ НАУКИ (якщо є хоча б одна - це наука)
+        # ============================================================
+        # МАРКЕРИ КАТЕГОРІЙ (НАЙВАЖЛИВІШЕ!)
+        # ============================================================
+        
+        # НАУКОВІ МАРКЕРИ (захищаємо!)
+        self.SCIENCE_MARKERS = [
+            'термодинаміка', 'ентропія', 'енергія', 'фізика', 'математика',
+            'статистичний', 'кореляція', 'регресія', 'вибірка', 'гіпотеза',
+            'теорія', 'експеримент', 'дослідження', 'аналіз', 'методологія',
+            'верифікація', 'валідація', 'реплікація', 'контрольна група',
+            'ізольована система', 'теплова смерть', 'статистична фізика'
+        ]
+        
+        # ЕЗОТЕРИЧНІ МАРКЕРИ (абсурд!)
+        self.ESOTERIC_MARKERS = [
+            'чакра', 'аура', 'карма', 'енергетичний', 'вібраційний',
+            'рептилоїд', 'ілюмінат', 'масон', 'оккультний', 'містичний',
+            'потойбічний', 'астральний', 'третій око', 'кундаліні'
+        ]
+        
+        # ПСЕВДОНАУКОВІ МАРКЕРИ (абсурд!)
+        self.PSEUDO_SCIENCE_MARKERS = [
+            'квантовий', 'нейтрино', 'іоносфера', 'торсійний', 'ефір',
+            'антигравітація', 'скалярне поле', 'тесла', 'безкоштовна енергія',
+            'нанодискретизація', 'пост-біологічний', 'мета-фізичний'
+        ]
+        
+        # БІЗНЕС-ЕЗОТЕРИКА (абсурд!)
+        self.BUSINESS_ESOTERIC = [
+            'холістичний', 'синергетичний', 'стратегія', 'ринок', 'менеджмент',
+            'маркетинг', 'бізнес', 'корпоративний', 'оптимізація', 'ресурси'
+        ]
+        
+        # ІСТЕРІЯ МАРКЕРИ
+        self.HYSTERIA_MARKERS = [
+            'зрада', 'ганьба', 'скандал', 'негайно', 'пізно', 'катастрофа',
+            'шок', 'ужас', 'паніка', 'знищення', 'крах', 'кримінальний'
+        ]
+
+        # ============================================================
+        # КРИТИЧНІ ПАТТЕРНИ АБСУРДУ (ВИСОКІ ШТРАФИ!)
+        # ============================================================
+        self.CRITICAL_ABSURD_PATTERNS = [
+            # Наука + Їжа = АБСУРД
+            (r'квантовий.*?(борщ|суп|їжа|сметана|картопля)', 1.0),
+            (r'ентропія.*?(борщ|суп|їжа)', 0.95),
+            (r'термодинаміка.*?(їжа|кухня|рецепт)', 0.9),
+            
+            # Бізнес + Езотерика = АБСУРД
+            (r'(бізнес|ринок|менеджмент).*?(чакра|аура|енергія)', 0.95),
+            (r'(маркетинг|стратегія).*?(вібрація|карма)', 0.9),
+            
+            # Цифровий містицизм = АБСУРД
+            (r'(AI|алгоритм|блокчейн).*?(душа|карма|просвітлення)', 0.9),
+            
+            # Псевдонаука = АБСУРД
+            (r'нанодискретизація.*?синаптичний', 0.85),
+            (r'квантова суперпозиція.*?нейрон', 0.9),
+        ]
+        
+        # ============================================================
+        # НАУКОВІ ФРАЗИ (автоматичний VERIFIED)
+        # ============================================================
         self.SCIENCE_PHRASES = [
             'другий закон термодинаміки',
             'ентропія не може зменшуватися',
             'ізольована система',
             'теплова смерть Всесвіту',
             'статистична фізика',
-            'розподіл мікростанів',
+            'розподіл мікростанів системи',
             'спонтанні процеси',
             'зростання ентропії',
         ]
-        
-        # АБСУРД (якщо є хоча б один - це абсурд)
-        self.ABSURD_PATTERNS = [
-            # Наука + Їжа
-            (r'квантовий.*?(борщ|суп|їжа|сметана|картопля)', 0.95),
-            (r'(ентропія|термодинаміка).*?(борщ|суп|їжа)', 0.9),
-            
-            # Бізнес-езотерика
-            (r'(бізнес|ринок|менеджмент).*?(чакра|аура|енергія)', 0.9),
-            (r'(маркетинг|стратегія).*?(вібрація|карма)', 0.85),
-            
-            # Цифровий містицизм
-            (r'(AI|алгоритм|блокчейн).*?(душа|карма|просвітлення)', 0.9),
-            
-            # Псевдонаука
-            (r'нанодискретизація', 0.8),
-            (r'квантова суперпозиція нейронів', 0.85),
-            (r'супутникові масиви.*?несвідоме', 0.8),
-            
-            # Істерія (точні фрази)
-            (r'НЕГАЙНО ПОШИРЮЙТЕ', 0.9),
-            (r'ЗРАДА.*?НАЦІОНАЛЬНИХ', 0.85),
-            (r'ВИЙДІТЬ НА ВУЛИЦІ', 0.9),
-            (r'ПРИХОВУЮТЬ ПРАВДУ', 0.8),
-        ]
-        
-        # СЛОВА-ІНДИКАТОРИ АБСУРДУ
-        self.ABSURD_WORDS = [
-            'чакра', 'аура', 'карма', 'енергетичний', 'вібраційний',
-            'рептилоїд', 'ілюмінат', 'масон', 'змова',
-            'нанодискретизація', 'пост-біологічний', 'мета-фізичний',
-        ]
 
     def analyze(self, text):
-        """НАЙПРОСТІША ЛОГІКА ЗА 4 КРОКИ"""
-        if not text or len(text.strip()) < 20:
+        """ОСТАТОЧНА ЛОГІКА З УРАХУВАННЯМ МАРКЕРІВ"""
+        if len(text.strip()) < 20:
             return {'error': 'Text too short'}
         
         text_lower = text.lower()
         words = text.split()
         word_count = len(words)
         
-        # КРОК 1: ЧИ ЦЕ НАУКА? (ПЕРШОЧЕРГОВО!)
-        is_science = False
-        for phrase in self.SCIENCE_PHRASES:
-            if phrase in text_lower:
-                is_science = True
-                break
+        # ============================================================
+        # КРОК 1: ПОРАХУВАТИ МАРКЕРИ КАТЕГОРІЙ
+        # ============================================================
         
-        # Додаткова перевірка для науки
-        if not is_science:
-            science_words = ['термодинаміка', 'ентропія', 'фізика', 'статистичний', 'енергія']
-            science_count = sum(1 for word in science_words if word in text_lower)
-            absurd_count = sum(1 for word in self.ABSURD_WORDS if word in text_lower)
+        # Наукові маркери
+        science_count = sum(1 for marker in self.SCIENCE_MARKERS if marker in text_lower)
+        
+        # Езотеричні маркери (АБСУРД!)
+        esoteric_count = sum(1 for marker in self.ESOTERIC_MARKERS if marker in text_lower)
+        
+        # Псевдонаукові маркери (АБСУРД!)
+        pseudo_count = sum(1 for marker in self.PSEUDO_SCIENCE_MARKERS if marker in text_lower)
+        
+        # Бізнес-езотерика (АБСУРД!)
+        business_eso_count = 0
+        business_words = [w for w in self.BUSINESS_ESOTERIC if w in text_lower]
+        esoteric_words = [w for w in self.ESOTERIC_MARKERS if w in text_lower]
+        if business_words and esoteric_words:
+            business_eso_count = len(business_words) + len(esoteric_words)
+        
+        # Істерія маркери
+        hysteria_count = sum(1 for marker in self.HYSTERIA_MARKERS if marker in text_lower)
+        
+        # ============================================================
+        # КРОК 2: ПЕРЕВІРКА НА НАУКУ (ЗА МАРКЕРАМИ!)
+        # ============================================================
+        
+        # УМОВА 1: Є наукові маркери
+        # УМОВА 2: Немає езотеричних маркерів
+        # УМОВА 3: Немає псевдонаукових маркерів в комбінації з езотеричними
+        if (science_count >= 2 and 
+            esoteric_count == 0 and 
+            not (pseudo_count >= 2 and esoteric_count > 0)):
             
-            if science_count >= 2 and absurd_count == 0:
-                is_science = True
+            # Додаткова перевірка: є наукові фрази
+            has_science_phrase = any(phrase in text_lower for phrase in self.SCIENCE_PHRASES)
+            
+            if has_science_phrase or science_count >= 3:
+                return self._create_result(
+                    score=0.05,
+                    status='VERIFIED',
+                    verdict='НАУКОВИЙ СТАНДАРТ',
+                    explanation='Текст демонструє наукову цілісність',
+                    is_science=True,
+                    text=text,
+                    word_count=word_count,
+                    science_count=science_count,
+                    esoteric_count=esoteric_count,
+                    pseudo_count=pseudo_count,
+                    hysteria_count=hysteria_count
+                )
         
-        if is_science:
-            return self._science_result(text, word_count)
+        # ============================================================
+        # КРОК 3: ДЕТЕКЦІЯ АБСУРДУ
+        # ============================================================
         
-        # КРОК 2: ЧИ ЦЕ АБСУРД?
         absurd_score = 0.0
-        found_patterns = []
+        absurd_reasons = []
         
-        # 1. Пошук паттернів абсурду
-        for pattern, weight in self.ABSURD_PATTERNS:
-            if re.search(pattern, text_lower, re.IGNORECASE):
+        # 1. КРИТИЧНІ ПАТТЕРНИ АБСУРДУ
+        for pattern, weight in self.CRITICAL_ABSURD_PATTERNS:
+            if re.search(pattern, text_lower):
                 absurd_score = max(absurd_score, weight)
-                found_patterns.append(pattern[:30])
+                absurd_reasons.append(f"Паттерн: {pattern[:20]}...")
         
-        # 2. Пошук слів абсурду
-        for word in self.ABSURD_WORDS:
-            if word in text_lower:
-                absurd_score = max(absurd_score, 0.7)
-                found_patterns.append(word)
-                break
+        # 2. ЕЗОТЕРИКА = АБСУРД
+        if esoteric_count > 0:
+            absurd_score = max(absurd_score, 0.7 + esoteric_count * 0.1)
+            absurd_reasons.append(f"Езотерика: {esoteric_count} маркерів")
         
-        # 3. Істерія
-        hysteria = self._check_hysteria(text)
-        if hysteria > 0:
-            absurd_score = max(absurd_score, hysteria)
-            found_patterns.append("Істерія")
+        # 3. ПСЕВДОНАУКА + ЕЗОТЕРИКА = МЕГА-АБСУРД
+        if pseudo_count > 0 and esoteric_count > 0:
+            absurd_score = max(absurd_score, 0.9)
+            absurd_reasons.append(f"Псевдонаука+Езотерика")
         
-        # КРОК 3: ФІНАЛЬНА ОЦІНКА
-        if absurd_score > 0:
-            final_score = absurd_score
-        else:
-            # Якщо немає абсурду - низький бал
-            final_score = 0.1
+        # 4. БІЗНЕС-ЕЗОТЕРИКА = АБСУРД
+        if business_eso_count > 0:
+            absurd_score = max(absurd_score, 0.8 + business_eso_count * 0.05)
+            absurd_reasons.append(f"Бізнес-езотерика")
         
-        # КРОК 4: РОЗРАХУНОК ІНДЕКСІВ
-        chaos_index = final_score * 100
-        influence_index = final_score * 100 * (1 + hysteria * 0.3)
+        # 5. ІСТЕРІЯ
+        if hysteria_count > 0:
+            absurd_score = max(absurd_score, 0.6 + hysteria_count * 0.15)
+            absurd_reasons.append(f"Істерія: {hysteria_count} маркерів")
         
-        # КРОК 5: ВЕРДИКТ
-        if final_score > 0.7:
+        # 6. КАПС-ІСТЕРІЯ
+        caps_score = self._check_caps_hysteria(text)
+        if caps_score > 0:
+            absurd_score = max(absurd_score, caps_score)
+            absurd_reasons.append("КАПС-істерія")
+        
+        # ============================================================
+        # КРОК 4: ФІНАЛЬНА ОЦІНКА
+        # ============================================================
+        
+        if absurd_score > 0.7:
+            final_score = min(0.99, absurd_score)
             status = 'CRITICAL'
             verdict = 'АБСУРД'
-            explanation = 'Текст містить логічні порушення'
-        elif final_score > 0.4:
+            explanation = 'Текст містить критичні логічні порушення'
+        elif absurd_score > 0.4:
+            final_score = absurd_score
             status = 'WARNING'
-            verdict = 'ПІДОЗРІЛИЙ ТЕКСТ'
+            verdict = 'ПІДОЗРІЛИЙ'
             explanation = 'Текст має ознаки нелогічності'
-        elif final_score > 0.1:
-            status = 'ACCEPTABLE'
+        else:
+            # Нормальний текст
+            final_score = 0.1 if len(text) < 100 else 0.05
+            status = 'VERIFIED'
             verdict = 'НОРМАЛЬНИЙ ТЕКСТ'
             explanation = 'Текст відповідає нормам'
-        else:
-            status = 'VERIFIED'
-            verdict = 'ВЕРИФІКОВАНИЙ'
-            explanation = 'Текст логічно цілісний'
         
-        # Деталі
-        if found_patterns:
-            explanation += f" | Знайдено: {', '.join(set(found_patterns[:3]))}"
+        # Додаємо причини
+        if absurd_reasons:
+            explanation += f" | Причини: {', '.join(absurd_reasons[:3])}"
         
-        return {
-            'entropy': round(final_score, 3),
-            'status': status,
-            'verdict': verdict,
-            'language': 'UK',
-            'explanation': explanation,
-            'diagnostics': {
-                'absurd_score': round(absurd_score, 3),
-                'hysteria_score': round(hysteria, 3),
-                'word_count': word_count,
-                'char_count': len(text),
-                'chaos_index': round(chaos_index, 2),
-                'influence_index': round(influence_index, 2),
-                'is_science': False,
-            }
-        }
+        # ============================================================
+        # КРОК 5: РОЗРАХУНОК ІНДЕКСІВ
+        # ============================================================
+        
+        # Індекс хаосу
+        chaos_index = final_score * 100 * (1 + (esoteric_count + pseudo_count) * 0.2)
+        
+        # Індекс впливу
+        influence_index = final_score * 100 * (1 + hysteria_count * 0.3)
+        
+        # Штраф логіки
+        sanity_penalty = round(absurd_score + (esoteric_count + pseudo_count) * 0.1, 3)
+        
+        return self._create_result(
+            score=final_score,
+            status=status,
+            verdict=verdict,
+            explanation=explanation,
+            is_science=False,
+            text=text,
+            word_count=word_count,
+            science_count=science_count,
+            esoteric_count=esoteric_count,
+            pseudo_count=pseudo_count,
+            hysteria_count=hysteria_count,
+            chaos_index=chaos_index,
+            influence_index=influence_index,
+            sanity_penalty=sanity_penalty
+        )
     
-    def _science_result(self, text, word_count):
-        """Результат для наукового тексту"""
-        return {
-            'entropy': 0.05,
-            'status': 'VERIFIED',
-            'verdict': 'НАУКОВИЙ СТАНДАРТ',
-            'language': 'UK',
-            'explanation': 'Текст демонструє наукову цілісність',
-            'diagnostics': {
-                'absurd_score': 0.0,
-                'hysteria_score': 0.0,
-                'word_count': word_count,
-                'char_count': len(text),
-                'chaos_index': 0.0,
-                'influence_index': 5.25,
-                'is_science': True,
-            }
-        }
-    
-    def _check_hysteria(self, text):
-        """Перевірка на істерію"""
+    def _check_caps_hysteria(self, text):
+        """Перевірка на КАПС-істерію"""
         score = 0.0
         
         # КАПС-слова
-        caps = [w for w in text.split() if w.isupper() and len(w) > 2]
-        if len(caps) >= 2:
+        caps_words = [w for w in text.split() if w.isupper() and len(w) > 2]
+        if len(caps_words) >= 2:
             score += 0.6
         
         # Оклички
         if text.count('!') >= 3:
             score += 0.4
         
-        # Паникерські слова
-        panic_words = ['зрада', 'ганьба', 'скандал', 'негайно', 'пізно']
-        for word in panic_words:
-            if word in text.lower():
-                score += 0.3
-                break
-        
         return min(1.0, score)
+    
+    def _create_result(self, score, status, verdict, explanation, is_science, text, 
+                      word_count, science_count, esoteric_count, pseudo_count, hysteria_count,
+                      chaos_index=None, influence_index=None, sanity_penalty=None):
+        """Створює стандартизований результат"""
+        
+        # Розрахунок індексів якщо не передано
+        if chaos_index is None:
+            chaos_index = score * 100
+        
+        if influence_index is None:
+            influence_index = score * 100 * (1 + hysteria_count * 0.3)
+        
+        if sanity_penalty is None:
+            sanity_penalty = round(score + (esoteric_count + pseudo_count) * 0.1, 3)
+        
+        return {
+            'entropy': round(score, 3),
+            'status': status,
+            'verdict': verdict,
+            'language': 'UK',
+            'explanation': explanation,
+            'diagnostics': {
+                'science_markers': science_count,
+                'esoteric_markers': esoteric_count,
+                'pseudo_science_markers': pseudo_count,
+                'hysteria_markers': hysteria_count,
+                'word_count': word_count,
+                'char_count': len(text),
+                'chaos_index': round(chaos_index, 2),
+                'influence_index': round(influence_index, 2),
+                'sanity_penalty': sanity_penalty,
+                'is_science': is_science
+            }
+        }
