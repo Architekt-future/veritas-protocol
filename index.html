@@ -14,121 +14,289 @@
             min-height: 100vh;
             padding: 20px;
         }
-        .container { max-width:1400px; margin:0 auto; }
+        .container { max-width: 900px; margin: 0 auto; }
 
-        /* HEADER */
+        /* ── HEADER ── */
         .header {
-            text-align:center; margin-bottom:30px; padding:20px;
-            background:rgba(255,255,255,0.05);
-            border-radius:10px; border:1px solid rgba(255,255,255,0.1);
+            text-align: center;
+            margin-bottom: 24px;
+            padding: 22px 20px 18px;
+            background: rgba(255,255,255,0.04);
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.1);
         }
-        .header h1 { font-size:2.5em; color:#00d4ff; text-shadow:0 0 10px rgba(0,212,255,0.5); margin-bottom:10px; }
-        .header .subtitle { color:#888; font-size:0.9em; }
-
-        .api-status { display:inline-block; padding:5px 15px; border-radius:20px; font-size:0.8em; font-weight:bold; margin-top:10px; }
-        .api-status.online  { background:#00ff88; color:#000; }
-        .api-status.offline { background:#ff4444; color:#fff; }
-        .api-status.checking{ background:#ffaa00; color:#000; }
-
-        /* GRID */
-        .main-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:20px; }
-        @media (max-width:900px) { .main-grid { grid-template-columns:1fr; } }
-
-        /* PANELS */
-        .panel { background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.2); border-radius:10px; padding:20px; }
-        .panel-title { font-size:1.2em; color:#00d4ff; margin-bottom:15px; display:flex; align-items:center; gap:10px; }
-
-        /* INPUTS */
-        .input-group { margin-bottom:15px; }
-        .input-group label { display:block; margin-bottom:5px; color:#aaa; font-size:0.9em; }
-        .input-group input, .input-group textarea {
-            width:100%; padding:12px;
-            background:rgba(0,0,0,0.5);
-            border:1px solid rgba(255,255,255,0.3);
-            border-radius:5px; color:#fff;
-            font-family:'Courier New',monospace; font-size:0.95em;
+        .header h1 {
+            font-size: 2.2em;
+            color: #00d4ff;
+            text-shadow: 0 0 12px rgba(0,212,255,0.45);
+            margin-bottom: 6px;
+            letter-spacing: 2px;
         }
-        .input-group input:focus, .input-group textarea:focus {
-            outline:none; border-color:#00d4ff; box-shadow:0 0 10px rgba(0,212,255,0.3);
-        }
-        .input-group textarea { min-height:120px; resize:vertical; }
+        .header .subtitle { color: #666; font-size: 0.82em; }
 
-        /* OR DIVIDER */
+        .api-status {
+            display: inline-block;
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 0.75em;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        .api-status.online  { background: #00ff88; color: #000; }
+        .api-status.offline { background: #ff4444; color: #fff; }
+        .api-status.checking{ background: #ffaa00; color: #000; }
+
+        /* ── PANEL ── */
+        .panel {
+            background: rgba(0,0,0,0.35);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 12px;
+            padding: 22px;
+            margin-bottom: 18px;
+        }
+        .panel-title {
+            font-size: 1.05em;
+            color: #00d4ff;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            letter-spacing: 1px;
+        }
+
+        /* ── INPUT ── */
+        .input-group { margin-bottom: 14px; }
+        .input-group label {
+            display: block;
+            margin-bottom: 6px;
+            color: #777;
+            font-size: 0.82em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .input-group input,
+        .input-group textarea {
+            width: 100%;
+            padding: 11px 14px;
+            background: rgba(0,0,0,0.45);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 6px;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            font-size: 0.92em;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .input-group input:focus,
+        .input-group textarea:focus {
+            outline: none;
+            border-color: #00d4ff;
+            box-shadow: 0 0 8px rgba(0,212,255,0.25);
+        }
+        .input-group textarea {
+            min-height: 110px;
+            resize: vertical;
+        }
+
+        /* ── OR DIVIDER ── */
         .or-divider {
-            text-align:center; color:#666; font-size:0.85em;
-            margin:8px 0; position:relative;
+            text-align: center;
+            color: #555;
+            font-size: 0.78em;
+            margin: 10px 0;
+            position: relative;
+            letter-spacing: 3px;
         }
         .or-divider::before, .or-divider::after {
-            content:''; position:absolute; top:50%; width:40%;
-            height:1px; background:rgba(255,255,255,0.15);
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 38%;
+            height: 1px;
+            background: rgba(255,255,255,0.1);
         }
-        .or-divider::before { left:0; }
-        .or-divider::after  { right:0; }
+        .or-divider::before { left: 0; }
+        .or-divider::after  { right: 0; }
 
-        /* BUTTONS */
+        /* ── BUTTONS ── */
+        .btn-row { display: flex; gap: 10px; }
         .btn {
-            padding:12px 30px;
-            background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);
-            border:none; border-radius:5px; color:#fff; font-weight:bold;
-            cursor:pointer; font-family:'Courier New',monospace; font-size:1em;
-            transition:transform 0.2s; width:100%;
+            flex: 1;
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 6px;
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-size: 0.95em;
+            letter-spacing: 1px;
+            transition: transform 0.15s, box-shadow 0.15s;
         }
-        .btn:hover { transform:translateY(-2px); box-shadow:0 5px 15px rgba(102,126,234,0.4); }
-        .btn:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
-        .btn-clear { background:linear-gradient(135deg,#ff4444 0%,#cc0000 100%); margin-top:10px; }
-
-        /* WITNESS */
-        .witness-container { margin-top:20px; }
-        .entropy-value { text-align:center; font-size:3em; font-weight:bold; margin:20px 0; text-shadow:0 0 20px currentColor; }
-        .entropy-bar { height:40px; background:rgba(0,0,0,0.5); border-radius:20px; overflow:hidden; position:relative; border:2px solid rgba(255,255,255,0.3); }
-        .entropy-fill { height:100%; transition:width 0.5s ease,background 0.5s ease; display:flex; align-items:center; justify-content:center; font-weight:bold; color:#000; }
-        .entropy-labels { display:flex; justify-content:space-between; margin-top:10px; font-size:0.8em; color:#888; }
-
-        .verdict { text-align:center; font-size:1.5em; font-weight:bold; margin:20px 0; padding:15px; border-radius:10px; text-transform:uppercase; }
-        .verdict.trusted    { background:rgba(0,255,136,0.2); color:#00ff88; border:2px solid #00ff88; }
-        .verdict.acceptable { background:rgba(255,170,0,0.2); color:#ffaa00; border:2px solid #ffaa00; }
-        .verdict.suspicious { background:rgba(255,68,68,0.2); color:#ff4444; border:2px solid #ff4444; }
-        .verdict.chaos      { background:rgba(139,0,0,0.3); color:#ff0000; border:2px solid #ff0000; animation:pulse 1s infinite; }
-        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.7} }
-
-        /* EXPLANATION */
-        .explanation-box {
-            margin-top:15px; padding:12px 16px;
-            background:rgba(0,0,0,0.5); border-radius:8px;
-            border:1px solid rgba(255,255,255,0.15);
-            font-size:0.85em; line-height:1.5; color:#bbb;
-            display:none;
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 14px rgba(102,126,234,0.4);
         }
-        .explanation-box .exp-label { color:#00d4ff; font-weight:bold; margin-bottom:4px; font-size:0.9em; }
+        .btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
+        .btn-clear {
+            flex: 0 0 auto;
+            background: rgba(255,68,68,0.25);
+            border: 1px solid rgba(255,68,68,0.4);
+            color: #ff6666;
+            font-size: 0.82em;
+            padding: 12px 16px;
+        }
+        .btn-clear:hover { background: rgba(255,68,68,0.4); transform: none; box-shadow: none; }
 
-        /* METRICS */
-        .metrics { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-top:20px; }
-        .metric { background:rgba(0,0,0,0.5); padding:15px; border-radius:8px; border:1px solid rgba(255,255,255,0.2); text-align:center; }
-        .metric-label { font-size:0.8em; color:#888; margin-bottom:5px; }
-        .metric-value { font-size:1.5em; font-weight:bold; color:#00d4ff; }
+        /* ── RESULTS (hidden until first run) ── */
+        #resultsSection { display: none; }
 
-        /* TEXT DISPLAY */
+        /* ── WITNESS ── */
+        .witness-row {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+        .witness-score {
+            flex: 0 0 100px;
+            text-align: center;
+        }
+        .entropy-value {
+            font-size: 3em;
+            font-weight: bold;
+            text-shadow: 0 0 18px currentColor;
+            line-height: 1;
+        }
+        .entropy-label-small {
+            font-size: 0.7em;
+            color: #555;
+            margin-top: 4px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .witness-right { flex: 1; min-width: 0; }
+
+        .entropy-bar {
+            height: 28px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 14px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.15);
+        }
+        .entropy-fill {
+            height: 100%;
+            transition: width 0.5s ease, background 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.78em;
+            color: #000;
+        }
+        .entropy-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 6px;
+            font-size: 0.7em;
+            color: #555;
+        }
+
+        /* ── VERDICT ── */
+        .verdict {
+            margin-top: 16px;
+            text-align: center;
+            font-size: 1.25em;
+            font-weight: bold;
+            padding: 12px 16px;
+            border-radius: 8px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .verdict.trusted    { background: rgba(0,255,136,0.12); color: #00ff88; border: 1px solid rgba(0,255,136,0.35); }
+        .verdict.acceptable { background: rgba(255,170,0,0.12); color: #ffaa00; border: 1px solid rgba(255,170,0,0.35); }
+        .verdict.suspicious { background: rgba(255,100,68,0.15); color: #ff6644; border: 1px solid rgba(255,100,68,0.4); }
+        .verdict.chaos      { background: rgba(200,0,0,0.2); color: #ff3333; border: 1px solid rgba(255,0,0,0.5); animation: pulse 1.4s infinite; }
+        @keyframes pulse { 0%,100%{ opacity:1; } 50%{ opacity:0.6; } }
+
+        /* ── EXPLANATION ── */
+        .explanation {
+            margin-top: 14px;
+            padding: 12px 16px;
+            background: rgba(0,0,0,0.4);
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.1);
+            font-size: 0.82em;
+            line-height: 1.6;
+            color: #999;
+        }
+        .explanation strong { color: #ccc; }
+
+        /* ── METRICS ── */
+        .metrics {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin-top: 16px;
+        }
+        .metric {
+            background: rgba(0,0,0,0.4);
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.1);
+            text-align: center;
+        }
+        .metric-label { font-size: 0.7em; color: #555; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 1px; }
+        .metric-value { font-size: 1.3em; font-weight: bold; color: #00d4ff; }
+
+        /* ── SOURCE TAG ── */
+        .source-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.75em;
+            color: #666;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+        .source-tag .tag {
+            background: rgba(0,212,255,0.12);
+            color: #00d4ff;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.9em;
+        }
+
+        /* ── SCRAPED TEXT ── */
+        .scraped-text-panel { display: none; }
         .text-display {
-            background:rgba(0,0,0,0.7); padding:15px; border-radius:8px;
-            border:1px solid rgba(255,255,255,0.2); max-height:400px;
-            overflow-y:auto; font-size:0.9em; line-height:1.6;
-            white-space:pre-wrap; word-wrap:break-word;
+            background: rgba(0,0,0,0.6);
+            padding: 14px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.1);
+            max-height: 260px;
+            overflow-y: auto;
+            font-size: 0.82em;
+            line-height: 1.7;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            color: #aaa;
         }
-        .text-display::-webkit-scrollbar       { width:10px; }
-        .text-display::-webkit-scrollbar-track  { background:rgba(0,0,0,0.5); }
-        .text-display::-webkit-scrollbar-thumb  { background:rgba(0,212,255,0.5); border-radius:5px; }
+        .text-display::-webkit-scrollbar       { width: 6px; }
+        .text-display::-webkit-scrollbar-track  { background: transparent; }
+        .text-display::-webkit-scrollbar-thumb  { background: rgba(0,212,255,0.3); border-radius: 3px; }
 
-        .loading { text-align:center; color:#00d4ff; font-size:1.2em; animation:blink 1s infinite; }
-        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
-        .error { background:rgba(255,68,68,0.2); border:1px solid #ff4444; padding:15px; border-radius:8px; color:#ff4444; margin-top:10px; }
+        /* ── ERROR ── */
+        .error {
+            background: rgba(255,68,68,0.15);
+            border: 1px solid rgba(255,68,68,0.4);
+            padding: 14px 16px;
+            border-radius: 8px;
+            color: #ff6666;
+            font-size: 0.85em;
+        }
 
-        .footer { text-align:center; margin-top:30px; padding:20px; color:#666; font-size:0.85em; }
-
-        .toggle-section { cursor:pointer; user-select:none; display:flex; align-items:center; gap:10px; }
-        .toggle-section:hover { color:#00d4ff; }
-        .collapsible-content { overflow:hidden; transition:max-height 0.3s ease; }
-        .collapsible-content.hidden  { max-height:0; }
-        .collapsible-content.visible { max-height:500px; }
+        /* ── FOOTER ── */
+        .footer { text-align: center; margin-top: 28px; padding: 16px; color: #444; font-size: 0.75em; }
     </style>
 </head>
 <body>
@@ -137,77 +305,86 @@
     <!-- HEADER -->
     <div class="header">
         <h1>💠 VERITAS TERMINAL</h1>
-        <div class="subtitle">Information Entropy Analyzer • Architectural Engine • The Witness</div>
+        <div class="subtitle">Information Entropy Analyzer · Architectural Engine · The Witness</div>
         <div class="api-status checking" id="apiStatus">⚙️ Checking API...</div>
     </div>
 
-    <!-- MAIN GRID -->
-    <div class="main-grid">
+    <!-- INPUT PANEL -->
+    <div class="panel">
+        <div class="panel-title">🔗 DATA INPUT</div>
 
-        <!-- LEFT: INPUT -->
-        <div class="panel">
-            <div class="panel-title">🔗 DATA INPUT</div>
-
-            <div class="input-group">
-                <label for="urlInput">Target URL:</label>
-                <input type="text" id="urlInput" placeholder="https://example.com/article">
-            </div>
-
-            <div class="or-divider">— OR —</div>
-
-            <div class="input-group">
-                <label for="textInput">Paste Text:</label>
-                <textarea id="textInput" placeholder="Введіть або вставіть текст для аналізу..."></textarea>
-            </div>
-
-            <button class="btn" id="analyzeBtn" onclick="analyze()">🔍 ANALYZE</button>
-            <button class="btn btn-clear" onclick="clearAll()">🗑️ CLEAR</button>
-
-            <!-- METRICS -->
-            <div class="metrics" id="metricsPanel" style="display:none;">
-                <div class="metric"><div class="metric-label">Characters</div><div class="metric-value" id="charCount">0</div></div>
-                <div class="metric"><div class="metric-label">Words</div><div class="metric-value" id="wordCount">0</div></div>
-                <div class="metric"><div class="metric-label">Unique Chars</div><div class="metric-value" id="uniqueChars">0</div></div>
-            </div>
+        <div class="input-group">
+            <label for="urlInput">Target URL</label>
+            <input type="text" id="urlInput" placeholder="https://example.com/article">
         </div>
 
-        <!-- RIGHT: WITNESS -->
-        <div class="panel">
-            <div class="panel-title">👁️ THE WITNESS</div>
-            <div class="witness-container">
-                <div class="entropy-value" id="entropyValue">---</div>
-                <div class="entropy-bar">
-                    <div class="entropy-fill" id="entropyFill" style="width:0%;">0%</div>
-                </div>
-                <div class="entropy-labels">
-                    <span>🟢 Ordered (0.0)</span>
-                    <span>🟡 Complex (0.5)</span>
-                    <span>🔴 Chaos (1.0)</span>
-                </div>
-                <div class="verdict" id="verdict" style="display:none;">AWAITING ANALYSIS</div>
-                <div class="explanation-box" id="explanationBox">
-                    <div class="exp-label">📋 DETAILS</div>
-                    <div id="explanationText"></div>
-                </div>
-            </div>
+        <div class="or-divider">OR</div>
+
+        <div class="input-group">
+            <label for="textInput">Paste Text</label>
+            <textarea id="textInput" placeholder="Введіть або вставіть текст для аналізу..."></textarea>
+        </div>
+
+        <div class="btn-row">
+            <button class="btn" id="analyzeBtn" onclick="analyze()">🔍 ANALYZE</button>
+            <button class="btn btn-clear" onclick="clearAll()">🗑️ CLEAR</button>
         </div>
     </div>
 
-    <!-- BOTTOM: TEXT DISPLAY -->
-    <div class="panel">
-        <div class="panel-title toggle-section" onclick="toggleTextDisplay()">
-            <span>📄 CLEANED TEXT</span>
-            <span style="font-size:0.8em; margin-left:auto;">▼</span>
+    <!-- RESULTS (appear below after first analysis) -->
+    <div id="resultsSection">
+
+        <!-- WITNESS + VERDICT + METRICS -->
+        <div class="panel">
+            <div class="panel-title">👁️ THE WITNESS</div>
+
+            <div class="witness-row">
+                <div class="witness-score">
+                    <div class="entropy-value" id="entropyValue">---</div>
+                    <div class="entropy-label-small">entropy</div>
+                </div>
+                <div class="witness-right">
+                    <div class="entropy-bar">
+                        <div class="entropy-fill" id="entropyFill" style="width:0%;"></div>
+                    </div>
+                    <div class="entropy-labels">
+                        <span>🟢 Order</span>
+                        <span>🟡 Complex</span>
+                        <span>🔴 Chaos</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="verdict" id="verdict"></div>
+            <div class="explanation" id="explanation" style="display:none;"></div>
+
+            <div class="metrics" id="metricsPanel" style="display:none;">
+                <div class="metric">
+                    <div class="metric-label">Characters</div>
+                    <div class="metric-value" id="charCount">0</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Words</div>
+                    <div class="metric-value" id="wordCount">0</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Unique</div>
+                    <div class="metric-value" id="uniqueChars">0</div>
+                </div>
+            </div>
         </div>
-        <div class="collapsible-content visible" id="textDisplayContainer">
-            <div class="text-display" id="textDisplay">Waiting for analysis...</div>
+
+        <!-- SCRAPED TEXT — only shown when mode === 'url_scraping' -->
+        <div class="panel scraped-text-panel" id="scrapedPanel">
+            <div class="panel-title">📄 SCRAPED TEXT</div>
+            <div class="source-tag" id="sourceTag"></div>
+            <div class="text-display" id="textDisplay"></div>
         </div>
     </div>
 
     <!-- FOOTER -->
     <div class="footer">
-        <p>💠 Veritas Protocol Terminal v2.0</p>
-        <p>Architectural Engine • Domain Purity • Witness Visualizer</p>
+        💠 Veritas Protocol Terminal v2.1 · Architectural Engine · Domain Purity · Witness Visualizer
     </div>
 </div>
 
@@ -227,78 +404,69 @@ async function checkAPIStatus() {
     el.textContent = '⚙️ Checking API...';
     el.className = 'api-status checking';
     try {
-        const res = await fetch(`${API_BASE}/analyze`, { method: 'GET' });
+        const res  = await fetch(`${API_BASE}/analyze`, { method: 'GET' });
         const data = await res.json();
         if (data.status === 'online') {
             el.textContent = '✅ API Online';
-            el.className = 'api-status online';
+            el.className   = 'api-status online';
         } else { throw new Error('unhealthy'); }
     } catch (e) {
         el.textContent = '❌ API Offline';
-        el.className = 'api-status offline';
-        console.error('Health check failed:', e);
+        el.className   = 'api-status offline';
+        console.error('[Veritas] Health check:', e);
     }
 }
 
 // ============================================================
-// MAIN ANALYZE — POST only
+// ANALYZE
 // ============================================================
 async function analyze() {
-    const btn        = document.getElementById('analyzeBtn');
-    const urlInput   = document.getElementById('urlInput').value.trim();
-    const textInput  = document.getElementById('textInput').value.trim();
-    const textDisplay= document.getElementById('textDisplay');
+    const btn     = document.getElementById('analyzeBtn');
+    const urlVal  = document.getElementById('urlInput').value.trim();
+    const textVal = document.getElementById('textInput').value.trim();
 
-    // Validate: need at least one
-    if (!urlInput && !textInput) {
-        showError('Введіть URL або текст для аналізу');
+    if (!urlVal && !textVal) {
+        showTopError('Введіть URL або текст для аналізу');
         return;
     }
 
-    // Build request body
+    // URL takes priority — send only ONE field so backend doesn't mix them
     const body = {};
-    if (urlInput)  body.url  = urlInput;
-    if (textInput) body.text = textInput;
+    if (urlVal)       body.url  = urlVal;
+    else if (textVal) body.text = textVal;
 
-    console.log('[Veritas] Sending POST:', body);
+    console.log('[Veritas] POST →', body);
 
-    // UI state
-    btn.disabled = true;
+    btn.disabled    = true;
     btn.textContent = '⏳ ANALYZING...';
-    textDisplay.innerHTML = '<div class="loading">⚙️ Running analysis...</div>';
+    revealResults();
+    setLoading(true);
 
     try {
         const res = await fetch(`${API_BASE}/analyze`, {
-            method: 'POST',
+            method:  'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body)
+            body:    JSON.stringify(body)
         });
 
-        console.log('[Veritas] Response status:', res.status);
-
-        // Read raw text first for debugging
         const rawText = await res.text();
-        console.log('[Veritas] Raw response:', rawText);
+        console.log('[Veritas] ← status', res.status, rawText.slice(0, 300));
 
         let data;
-        try {
-            data = JSON.parse(rawText);
-        } catch (e) {
-            throw new Error(`Invalid JSON: ${rawText.slice(0, 200)}`);
-        }
+        try { data = JSON.parse(rawText); }
+        catch (e) { throw new Error(`Bad JSON: ${rawText.slice(0,200)}`); }
 
-        if (!res.ok) {
-            throw new Error(data.error || `HTTP ${res.status}`);
-        }
+        if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
 
-        // ---- RENDER RESULTS ----
+        setLoading(false);
         renderResults(data);
 
     } catch (err) {
         console.error('[Veritas] Error:', err);
-        showError(err.message);
+        setLoading(false);
+        showTopError(err.message);
     } finally {
-        btn.disabled = false;
+        btn.disabled    = false;
         btn.textContent = '🔍 ANALYZE';
     }
 }
@@ -307,105 +475,151 @@ async function analyze() {
 // RENDER RESULTS
 // ============================================================
 function renderResults(data) {
-    const entropy = data.entropy || 0;
+    const entropy = typeof data.entropy === 'number' ? data.entropy : 0;
     const diag    = data.diagnostics || {};
+    const mode    = data.mode || 'manual_input';
 
-    // -- Cleaned text --
-    const extractedText = data.extracted_text || '';
-    document.getElementById('textDisplay').textContent = extractedText || '(no text)';
+    // ── Witness bar ──
+    updateWitness(entropy);
 
-    // -- Metrics --
-    document.getElementById('charCount').textContent  = diag.char_count  || extractedText.length || 0;
-    document.getElementById('wordCount').textContent  = diag.word_count  || 0;
-    document.getElementById('uniqueChars').textContent= new Set(extractedText).size;
+    // ── Verdict ──
+    const verdictEl  = document.getElementById('verdict');
+    verdictEl.textContent = data.verdict || '—';
+    verdictEl.className   = 'verdict ' + scoreToClass(entropy);
+
+    // ── Explanation ──
+    const expEl = document.getElementById('explanation');
+    if (data.explanation) {
+        expEl.innerHTML     = `<strong>${data.verdict || ''}</strong> — ${data.explanation}`;
+        expEl.style.display = 'block';
+    } else {
+        expEl.style.display = 'none';
+    }
+
+    // ── Metrics ──
+    const txt = data.extracted_text || '';
+    document.getElementById('charCount').textContent   = diag.char_count || txt.length || 0;
+    document.getElementById('wordCount').textContent   = diag.word_count || 0;
+    document.getElementById('uniqueChars').textContent = new Set(txt).size;
     document.getElementById('metricsPanel').style.display = 'grid';
 
-    // -- Witness visualizer --
-    updateWitness(entropy, data);
+    // ── Scraped text panel: ONLY for url_scraping ──
+    const scrapedPanel = document.getElementById('scrapedPanel');
+
+    if (mode === 'url_scraping' && txt) {
+        document.getElementById('textDisplay').textContent = txt;
+
+        // build source line
+        const parts = [];
+        if (data.title && data.title !== 'Manual Input')
+            parts.push(`<span class="tag">${escHtml(data.title)}</span>`);
+        if (data.source)
+            parts.push(escHtml(data.source));
+        if (data.url)
+            parts.push(`<a href="${escHtml(data.url)}" target="_blank" style="color:#00d4ff;text-decoration:none;">↗ open</a>`);
+        document.getElementById('sourceTag').innerHTML = parts.join(' · ');
+
+        scrapedPanel.style.display = 'block';
+    } else {
+        // manual input — panel stays hidden, no duplication
+        scrapedPanel.style.display = 'none';
+    }
 }
 
 // ============================================================
-// WITNESS VISUALIZER
+// WITNESS BAR
 // ============================================================
-function updateWitness(entropy, data) {
-    const valEl     = document.getElementById('entropyValue');
-    const fillEl    = document.getElementById('entropyFill');
-    const verdictEl = document.getElementById('verdict');
-    const expBox    = document.getElementById('explanationBox');
-    const expText   = document.getElementById('explanationText');
+function updateWitness(entropy) {
+    const valEl  = document.getElementById('entropyValue');
+    const fillEl = document.getElementById('entropyFill');
 
-    valEl.textContent = entropy.toFixed(3);
+    valEl.textContent      = entropy.toFixed(3);
+    valEl.style.color      = scoreToColor(entropy);
 
     const pct = Math.round(entropy * 100);
-    fillEl.style.width = pct + '%';
-    fillEl.textContent = pct + '%';
-
-    let color, bg, verdictText, verdictClass;
-
-    if (entropy < 0.25) {
-        color = '#00ff88';
-        bg    = 'linear-gradient(90deg,#00ff88,#00cc66)';
-        verdictText  = '🟢 LAMINAR FLOW';
-        verdictClass = 'trusted';
-    } else if (entropy < 0.5) {
-        color = '#ffaa00';
-        bg    = 'linear-gradient(90deg,#ffaa00,#ff8800)';
-        verdictText  = '🟡 SYSTEMIC FATIGUE';
-        verdictClass = 'acceptable';
-    } else if (entropy < 0.75) {
-        color = '#ff6644';
-        bg    = 'linear-gradient(90deg,#ff6644,#ff4422)';
-        verdictText  = '🟠 DOMAIN VIOLATION';
-        verdictClass = 'suspicious';
-    } else {
-        color = '#ff0000';
-        bg    = 'linear-gradient(90deg,#ff0000,#cc0000)';
-        verdictText  = '🔴 WITNESS SILENCE';
-        verdictClass = 'chaos';
-    }
-
-    valEl.style.color    = color;
-    fillEl.style.background = bg;
-    verdictEl.textContent   = verdictText;
-    verdictEl.className     = 'verdict ' + verdictClass;
-    verdictEl.style.display = 'block';
-
-    // -- Explanation box --
-    if (data.verdict || data.explanation) {
-        expText.innerHTML = `<strong>${data.verdict || ''}</strong><br>${data.explanation || ''}`;
-        expBox.style.display = 'block';
-    }
+    fillEl.style.width      = pct + '%';
+    fillEl.textContent      = pct + '%';
+    fillEl.style.background = scoreToGradient(entropy);
 }
 
 // ============================================================
-// HELPERS
+// SCORE → STYLE
 // ============================================================
-function showError(msg) {
-    document.getElementById('textDisplay').innerHTML =
-        `<div class="error">❌ ${msg}</div>`;
+function scoreToColor(e) {
+    if (e < 0.25) return '#00ff88';
+    if (e < 0.5)  return '#ffaa00';
+    if (e < 0.75) return '#ff6644';
+    return '#ff3333';
+}
+function scoreToGradient(e) {
+    if (e < 0.25) return 'linear-gradient(90deg,#00ff88,#00cc66)';
+    if (e < 0.5)  return 'linear-gradient(90deg,#ffaa00,#ff8800)';
+    if (e < 0.75) return 'linear-gradient(90deg,#ff6644,#ff4422)';
+    return 'linear-gradient(90deg,#ff3333,#cc0000)';
+}
+function scoreToClass(e) {
+    if (e < 0.25) return 'trusted';
+    if (e < 0.5)  return 'acceptable';
+    if (e < 0.75) return 'suspicious';
+    return 'chaos';
+}
+
+// ============================================================
+// UI STATE
+// ============================================================
+function revealResults() {
+    document.getElementById('resultsSection').style.display = 'block';
+}
+
+function setLoading(on) {
+    const valEl  = document.getElementById('entropyValue');
+    const fillEl = document.getElementById('entropyFill');
+    const verdict = document.getElementById('verdict');
+    const expEl   = document.getElementById('explanation');
+
+    if (on) {
+        valEl.textContent       = '...';
+        valEl.style.color       = '#555';
+        fillEl.style.width      = '0%';
+        fillEl.textContent      = '';
+        fillEl.style.background = 'transparent';
+        verdict.textContent     = '';
+        verdict.className       = 'verdict';
+        expEl.style.display     = 'none';
+        document.getElementById('metricsPanel').style.display  = 'none';
+        document.getElementById('scrapedPanel').style.display  = 'none';
+    }
+}
+
+function showTopError(msg) {
+    revealResults();
+    document.getElementById('entropyValue').textContent     = '---';
+    document.getElementById('entropyValue').style.color     = '#555';
+    document.getElementById('entropyFill').style.width      = '0%';
+    document.getElementById('entropyFill').textContent      = '';
+    document.getElementById('entropyFill').style.background = 'transparent';
+    document.getElementById('verdict').textContent          = '';
+    document.getElementById('verdict').className            = 'verdict';
+    document.getElementById('explanation').style.display    = 'block';
+    document.getElementById('explanation').innerHTML        = `<div class="error">❌ ${msg}</div>`;
+    document.getElementById('metricsPanel').style.display   = 'none';
+    document.getElementById('scrapedPanel').style.display   = 'none';
 }
 
 function clearAll() {
     document.getElementById('urlInput').value  = '';
     document.getElementById('textInput').value = '';
-    document.getElementById('textDisplay').textContent = 'Waiting for analysis...';
-    document.getElementById('entropyValue').textContent = '---';
-    document.getElementById('entropyValue').style.color = '#e0e0e0';
-    document.getElementById('entropyFill').style.width  = '0%';
-    document.getElementById('entropyFill').textContent  = '0%';
-    document.getElementById('verdict').style.display    = 'none';
-    document.getElementById('explanationBox').style.display = 'none';
-    document.getElementById('metricsPanel').style.display  = 'none';
+    document.getElementById('resultsSection').style.display = 'none';
 }
 
-function toggleTextDisplay() {
-    const c = document.getElementById('textDisplayContainer');
-    c.classList.toggle('visible');
-    c.classList.toggle('hidden');
+function escHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// Enter on URL field triggers analyze
-document.getElementById('urlInput').addEventListener('keypress', e => { if (e.key==='Enter') analyze(); });
+// Enter on URL
+document.getElementById('urlInput').addEventListener('keypress', e => {
+    if (e.key === 'Enter') analyze();
+});
 </script>
 </body>
 </html>
