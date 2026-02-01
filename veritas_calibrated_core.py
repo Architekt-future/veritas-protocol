@@ -1,6 +1,6 @@
 """
-Veritas Protocol - Semantic Void Detector v9.1 (Enhanced Chaos Penalty)
-Enhanced with high chaos index penalty and refined academic whitelist
+Veritas Protocol - Semantic Void Detector v9.2 (Absurd Pairs + Chaos Penalty)
+Enhanced with absurd pair detection and high chaos index penalty
 """
 
 import re
@@ -8,7 +8,7 @@ import math
 from collections import Counter
 
 class VeritasCalibratedCore:
-    """Advanced detector with fine-tuned sensitivity and chaos penalties"""
+    """Advanced detector with absurd pair detection and chaos penalties"""
     
     def __init__(self):
         # ============================================================
@@ -281,20 +281,17 @@ class VeritasCalibratedCore:
         ]
         
         # ============================================================
-        # АКАДЕМІЧНИЙ WHITELIST (ВИПРАВЛЕНО: видалено загальні слова)
+        # АКАДЕМІЧНИЙ WHITELIST (ВИПРАВЛЕНО)
         # ============================================================
         self.academic_whitelist = [
-            # Специфічно наукові терміни (ЗАЛИШЕНО)
+            # Специфічно наукові терміни
             'кореляція', 'верифікація', 'гіпотеза', 'вибірка', 'значущість',
             'нейрони', 'синапси', 'метааналіз', 'статистичний', 'логістика',
             'деескалація', 'макроекономічний', 'інвестиції', 'інфраструктура',
             'ратифікація', 'протокол', 'емпіричний', 'квалітативний', 'кількісний',
-            # Розширення — наука (ЗАЛИШЕНО)
             'реплікація', 'валідація', 'контрольна група',
             'плацебо', 'рандомізація', 'когорта',
-            'мета-аналіз', 'систематичний огляд',
-            # Видалено загальні слова, що міг використовувати конспіролог:
-            # 'факт', 'дані', 'доказ', 'метод', 'процес', 'система', 'аналіз'
+            'мета-аналіз', 'систематичний огляд'
         ]
         
         # ============================================================
@@ -343,6 +340,51 @@ class VeritasCalibratedCore:
              ['пінеальн', 'шишкоподібн', 'залоз', 'сни', 'нанобот', 'кристалічн', 'решітк'], 
              0.45)
         ]
+
+        # ============================================================
+        # АБСУРДНІ ПАРИ (ДОДАНО!)
+        # ============================================================
+        self.absurd_pairs_list = [
+            (['квантовий', 'квантова', 'квантове', 'квантові', 'квантової', 'квантову'], 
+             ['борщ', 'сметана', 'картопля', 'морква', 'суп', 'їжа', 'кулінарний', 'буряк', 'каструля', 'бульйон', 'черпак']),
+            (['ентропія', 'флуктуація', 'тунельний', 'сингулярність', 'суперпозиція', 'планк', 'гейзенберг', 'вакуумна'], 
+             ['борщ', 'сметана', 'картопля', 'морква', 'суп', 'їжа', 'буряк', 'петрушка', 'кроп', 'каструля', 'морква']),
+            (['хвильова функція', 'колапс хвильової', 'мультивсесвіт', 'кристалізація', 'когнітивний', 'префронтальний'], 
+             ['суп', 'борщ', 'черпак', 'картопля', 'морква', 'буряк', 'сметана']),
+            (['термодинаміка', 'термодинаміці', 'термодинаміку'], 
+             ['бульйон', 'суп', 'борщ', 'каструля', 'їжа']),
+            (['пінеальний', 'імунний', 'імунної', 'нанобот', 'наноботів'], 
+             ['5g', 'супутник', 'старлінк', 'блокчейн', 'гейтса', 'водопровідний', 'вода']),
+            (['резонанс', 'дискретний', 'нелокальний', 'спостерігач', 'дестабілізація', 'дестабілізує'], 
+             ['сметана', 'морква', 'буряк', 'шлунок', 'суп', 'борщ']),
+            (['протокол', 'блокчейн', 'верифікований'], 
+             ['гейтса', 'старлінк', 'сни', 'записувати', 'водопровідний'])
+        ]
+
+    def detect_absurd_pairs(self, text):
+        """Виявляє абсурдні пари (науковий термін + абсурдний контекст)"""
+        text_lower = text.lower()
+        found_pairs = []
+        score = 0.0
+        
+        for science_terms, absurd_terms in self.absurd_pairs_list:
+            has_science = any(term.lower() in text_lower for term in science_terms)
+            has_absurd = any(term.lower() in text_lower for term in absurd_terms)
+            
+            if has_science and has_absurd:
+                # Додаткова перевірка: терміни в одному реченні
+                sentences = re.split(r'[.!?]+', text)
+                for sentence in sentences:
+                    sentence_lower = sentence.lower()
+                    if (any(st.lower() in sentence_lower for st in science_terms) and 
+                        any(at.lower() in sentence_lower for at in absurd_terms)):
+                        score += 0.35  # +35% за кожну абсурдну пару
+                        science_found = next((st for st in science_terms if st.lower() in sentence_lower), science_terms[0])
+                        absurd_found = next((at for at in absurd_terms if at.lower() in sentence_lower), absurd_terms[0])
+                        found_pairs.append((science_found, absurd_found))
+                        break
+        
+        return min(score, 0.8), found_pairs
 
     def detect_patterns(self, text):
         """Виявляє критичні паттерни"""
@@ -496,13 +538,17 @@ class VeritasCalibratedCore:
         conflict_penalty = self.calculate_conflict_penalty(text)
         contextual_score = self.calculate_contextual_score(text, term_counts, base_metrics)
         
+        # ДЕТЕКЦІЯ АБСУРДНИХ ПАР
+        absurdity_score, absurd_pairs = self.detect_absurd_pairs(text)
+        
         base_score = (
-            shannon_entropy * 0.12 +
-            complexity * 0.08 +
-            (term_counts['chaos'] / max(1, word_count)) * 0.20 +
-            contextual_score * 0.25 +
-            gradient_penalty * 0.20 +
-            conflict_penalty * 0.15
+            shannon_entropy * 0.10 +
+            complexity * 0.07 +
+            (term_counts['chaos'] / max(1, word_count)) * 0.18 +
+            contextual_score * 0.22 +
+            gradient_penalty * 0.18 +
+            conflict_penalty * 0.13 +
+            absurdity_score * 0.12    # НОВЕ: 12% за абсурдні пари
         )
         
         for pattern in detected_patterns:
@@ -538,7 +584,7 @@ class VeritasCalibratedCore:
         if signal >= 2 and chaos == 0:
             chaos_index = 0.0
         elif chaos > 0:
-            chaos_index = final * 100 * (1 + chaos * 0.6) * (1 + max(0, context - 0.3) * 1.96) / (1 + signal * 0.8)
+            chaos_index = final * 100 * (1 + chaos * 0.8) * (1 + max(0, context - 0.3) * 2.5) / (1 + signal * 0.5)
         else:
             chaos_index = final * 100 * (1 - conflict * 0.8) * (1 - context * 0.46) / (1 + signal * 1.0)
         chaos_index = round(chaos_index, 2)
@@ -568,13 +614,17 @@ class VeritasCalibratedCore:
             # Додатковий штраф для дуже високого chaos_index
             final_score = max(final_score, 0.65)  # Мінімум 65%
         
-        sanity_penalty = round(conflict_penalty + max(0, gradient_penalty - 0.3) + chaos_penalty_added, 3)
+        sanity_penalty = round(conflict_penalty + max(0, gradient_penalty - 0.3) + chaos_penalty_added + absurdity_score * 0.5, 3)
 
         noise_marker_count = term_counts.get('noise', 0)
         signal_ratio = 0 if noise_marker_count == 0 else round(noise_marker_count / max(1, signal), 2)
         
         # ================= ВЕРДИКТ (З УРАХУВАННЯМ ШТРАФУ ХАОСУ) =================
-        if detected_patterns:
+        if absurdity_score > 0.3 and len(absurd_pairs) > 0:
+            status = 'CRITICAL'
+            verdict = 'АБСУРДНИЙ СЕМАНТИЧНИЙ РОЗРИВ'
+            explanation = f'Текст поєднує несумісні концепції: {", ".join([f"{a}+{b}" for a,b in absurd_pairs[:3]])}'
+        elif detected_patterns:
             main_pattern = detected_patterns[0]
             status = 'CRITICAL' if final_score > 0.6 else 'WARNING'
             verdict = main_pattern['verdict']
@@ -606,15 +656,15 @@ class VeritasCalibratedCore:
         
         detail_explanations = []
         if gradient_penalty > 0.1:
-            detail_explanations.append(f"Градієнтний штраф: {gradient_penalty:.2f}")
+            detail_explanations.append(f"Градієнт: {gradient_penalty:.2f}")
         if conflict_penalty > 0.1:
-            detail_explanations.append(f"Конфліктний штраф: {conflict_penalty:.2f}")
+            detail_explanations.append(f"Конфлікт: {conflict_penalty:.2f}")
         if contextual_score > 0.2:
-            detail_explanations.append(f"Контекстуальна оцінка: {contextual_score:.2f}")
+            detail_explanations.append(f"Контекст: {contextual_score:.2f}")
+        if absurdity_score > 0.1:
+            detail_explanations.append(f"Абсурд: {absurdity_score:.2f}")
         if chaos_penalty_added > 0.01:
             detail_explanations.append(f"Штраф хаосу: +{chaos_penalty_added:.2f}")
-        if chaos_index > 100:
-            detail_explanations.append(f"Індекс хаосу: {chaos_index}")
         
         if detail_explanations:
             explanation += " | " + " + ".join(detail_explanations)
@@ -631,6 +681,7 @@ class VeritasCalibratedCore:
                 'contextual_score': round(contextual_score, 3),
                 'gradient_penalty': round(gradient_penalty, 3),
                 'conflict_penalty': round(conflict_penalty, 3),
+                'absurdity_score': round(absurdity_score, 3),
                 'word_count': word_count,
                 'char_count': len(text),
                 'academic_markers': term_counts['academic'],
@@ -638,6 +689,7 @@ class VeritasCalibratedCore:
                 'signal_markers': term_counts['signal'],
                 'noise_markers': noise_marker_count,
                 'pattern_count': len(detected_patterns),
+                'absurd_pairs_found': len(absurd_pairs),
                 'shout_factor': len([w for w in words if w.isupper() and len(w) > 2]) / max(1, word_count),
                 'number_density': len(re.findall(r'\d+', text)) / max(1, word_count),
                 'signal_ratio': signal_ratio,
