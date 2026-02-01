@@ -1,5 +1,6 @@
 """
 Veritas Protocol - Semantic Void Detector v10.6 (FIXED - Conflict focus)
+Enhanced with logical absurdity detection and scientific content analysis
 """
 
 import re
@@ -494,7 +495,39 @@ class VeritasCalibratedCore:
               'ментальний', 'когнітивний', 'поведінка', 'мотивація', 'характер'],
              ['детермінізм', 'фаталізм', 'передвизначення', 'доля', 'фатум',
               'незмінний', 'неминучий', 'необхідний', 'обов\'язковий', 'приречений'], 
-             0.34)
+             0.34),
+            
+            # ============================================================
+            # ДОДАТКОВІ КОНФЛІКТНІ ПАРИ ДЛЯ ХИБНОЇ ЛОГІКИ
+            # ============================================================
+            
+            # 21. Науковий метод + псевдологіка
+            (['метод', 'методологія', 'логіка', 'раціональний', 'доказ', 'дослідження',
+              'експеримент', 'статистика', 'кореляція', 'гіпотеза', 'теорія'],
+             ['віра', 'почуття', 'інтуїція', 'очевидно', 'без доказів', 'всі знають',
+              'не потребує підтвердження', 'аксіома', 'не дискутується', 'абсолютна істина'], 
+             0.45),
+
+            # 22. Математика + містицизм
+            (['математика', 'формула', 'рівняння', 'число', 'обчислення', 'алгоритм',
+              'статистика', 'вірогідність', 'модель', 'симуляція'],
+             ['душа', 'карма', 'енергія', 'вібрація', 'чакра', 'аура', 'містичний',
+              'езотеричний', 'сакральний', 'божественний'], 
+             0.42),
+
+            # 23. Фізика + політика/соціологія
+            (['фізика', 'термодинаміка', 'ентропія', 'енергія', 'атом', 'молекула',
+              'закон', 'теорія', 'формула', 'рівняння'],
+             ['політика', 'влада', 'уряд', 'демократія', 'соціальний', 'економічний',
+              'громадянський', 'суспільний', 'вибори', 'влада'], 
+             0.38),
+
+            # 24. Бізнес-жаргон + містицизм
+            (['стратегія', 'оптимізація', 'ефективність', 'рентабельність', 'ринок',
+              'бізнес', 'корпоративний', 'управління', 'ресурси', 'інновації'],
+             ['квантовий', 'аура', 'чакра', 'енергетичний', 'вібраційний', 'трансцендентний',
+              'метафізичний', 'езотеричний', 'духовний', 'свідомість'], 
+             0.48)
         ]
 
         # ============================================================
@@ -523,9 +556,6 @@ class VeritasCalibratedCore:
             }
         ]
 
-    # ІНШІ МЕТОДИ ЗАЛИШАЮТЬСЯ ЯК БУЛО В ОРИГІНАЛІ
-    # (повні версії, без скорочень)
-    
     def detect_patterns(self, text):
         """Виявляє критичні паттерни"""
         detected = []
@@ -639,13 +669,90 @@ class VeritasCalibratedCore:
         return min(penalty, 0.8), found_conflicts  # Максимум 0.8!
 
     def calculate_contextual_score(self, text, term_counts, metrics):
-        """Обчислює контекстуальну оцінку - ФІКСОВАНО: більше категорій"""
+        """Покращена версія з фокусом на хибну логіку"""
         score = 0.0
         words = text.split()
         word_count = len(words)
         text_lower = text.lower()
         
-        # 1. Семантична пустота
+        # 1. НОВЕ: Детекція псевдологічних конструкцій
+        pseudo_logic_patterns = [
+            # Наукові терміни для обґрунтування нісенітниць
+            (['квантовий', 'ентропія', 'нейтрино', 'ізотоп', 'атом'],
+             ['любов', 'ненависть', 'щастя', 'гнів', 'емоції'], 0.4),
+            
+            # Статистика + містика
+            (['статистика', 'кореляція', 'ймовірність', 'вибірка'],
+             ['душа', 'карма', 'судьба', 'провидення'], 0.38),
+            
+            # Математика + духовність
+            (['математика', 'формула', 'рівняння', 'алгоритм'],
+             ['духовність', 'просвітлення', 'медитація', 'йога'], 0.35),
+            
+            # Фізика + соціальні явища
+            (['фізика', 'термодинаміка', 'гравітація', 'магнетизм'],
+             ['політика', 'економіка', 'соціум', 'культура'], 0.42),
+        ]
+        
+        for science_terms, nonsense_terms, weight in pseudo_logic_patterns:
+            has_science = any(term in text_lower for term in science_terms)
+            has_nonsense = any(term in text_lower for term in nonsense_terms)
+            if has_science and has_nonsense:
+                # Перевіряємо, чи в одному реченні
+                sentences = re.split(r'[.!?]+', text)
+                for sentence in sentences:
+                    sentence_lower = sentence.lower()
+                    science_in_sentence = any(term in sentence_lower for term in science_terms)
+                    nonsense_in_sentence = any(term in sentence_lower for term in nonsense_terms)
+                    if science_in_sentence and nonsense_in_sentence:
+                        score += weight * 1.2  # +20% за те саме речення
+                        break
+        
+        # 2. НОВЕ: Детекція логічних суперечностей через "якщо... то..."
+        conditional_patterns = [
+            r'якщо [^,]+ то [^,]+ (але|проте|однак) [^,]+',
+            r'хоча [^,]+ але [^,]+',
+            r'незважаючи на те що [^,]+ все ж [^,]+',
+        ]
+        
+        for pattern in conditional_patterns:
+            if re.search(pattern, text_lower):
+                score += 0.25
+        
+        # 3. НОВЕ: Витягнення висновків з не пов'язаних фактів
+        # Патерн: факт1 + факт2 → абсурдний висновок
+        conclusion_indicators = ['отже', 'значить', 'таким чином', 'звідси випливає',
+                                'ми можемо стверджувати', 'це доводить']
+        
+        for indicator in conclusion_indicators:
+            if indicator in text_lower:
+                # Шукаємо речення з цим індикатором
+                indicator_pattern = rf'{indicator}[^.!?]*[.!?]'
+                matches = re.findall(indicator_pattern, text_lower)
+                for match in matches:
+                    # Перевіряємо, чи висновок абсурдний
+                    match_words = match.split()
+                    # Якщо менше 5 слів після індикатора - підозріло
+                    if len(match_words) < 8:
+                        score += 0.15
+                    # Якщо висновок містить протиріччя
+                    if any(word in match for word in ['абсурд', 'нісенітниця', 'неможливо']):
+                        score += 0.2
+        
+        # 4. ЗАЛИШАЄМО оригінальну логіку, але знижуємо пороги для науки
+        # Якщо текст науковий (багато академічних маркерів), але має конфлікти
+        if term_counts['academic'] >= 3 and term_counts['signal'] >= 3:
+            # Наука без хаосу - не штрафуємо так сильно
+            if term_counts['chaos'] == 0:
+                # Але перевіряємо на псевдологіку
+                if score < 0.2:  # Якщо немає псевдологіки
+                    return score * 0.5  # Зменшуємо штраф для чистої науки
+            else:
+                # Наука + хаос = сильний штраф
+                score += 0.3
+        
+        # 5. Оригінальні перевірки (збережені)
+        # Семантична пустота
         if term_counts['signal'] == 0:
             if metrics['complexity'] > 0.75:
                 score += 0.4
@@ -654,54 +761,54 @@ class VeritasCalibratedCore:
             else:
                 score += 0.15
         
-        # 2. Науковий нігілізм
+        # Науковий нігілізм
         if term_counts['academic'] > 0 and term_counts['chaos'] > 0:
             academic_ratio = term_counts['academic'] / word_count
             chaos_ratio = term_counts['chaos'] / word_count
             score += 0.35 if chaos_ratio > academic_ratio else 0.2
         
-        # 3. Історичний ревізіонізм
+        # Історичний ревізіонізм
         if any(w in text_lower for w in ['антарктида', 'атлантида', 'аґарта', 'шамбала', 'тартарія']):
             score += 0.4 if term_counts['signal'] == 0 else 0.25
         
-        # 4. Економічний окультизм
+        # Економічний окультизм
         if any(w in text_lower for w in ['облігація', 'криптовалюта', 'банк', 'блокчейн', 'NFT', 'DAO']):
             if any(w in text_lower for w in ['карма', 'потойбічний', 'душа', 'астрал', 'soul', 'spirit']):
                 score += 0.45
 
-        # 5. Емоційна дестабілізація
+        # Емоційна дестабілізація
         if term_counts.get('noise', 0) >= 2:
             caps_words = len([w for w in words if w.isupper() and len(w) > 2])
             score += 0.3 if caps_words >= 2 else 0.15
 
-        # 6. Цифровий містицизм
+        # Цифровий містицизм
         tech = ['AI', 'блокчейн', 'blockchain', 'NFT', 'метаверс', 'metaverse', 'алгоритм']
         mystic = ['душа', 'свідомість', 'consciousness', 'карма', 'awakening', 'просвітлення']
         if any(t in text for t in tech) and any(t in text_lower for t in mystic):
             score += 0.35
 
-        # 7. Медична дезінформація
+        # Медична дезінформація
         med_targets = ['вакцина', 'вакцинація', 'щеплення', 'FDA', 'ВОЗ', 'Big Pharma']
         med_attack = ['скрита правда', 'вони скрывают', 'they hide', 'корупція', 'genocide', 'убиває']
         if any(t.lower() in text_lower for t in med_targets):
             if any(t.lower() in text_lower for t in med_attack):
                 score += 0.4
 
-        # 8. AI доом/salvation
+        # AI доом/salvation
         ai_extreme = ['AI знищить', 'AI спасть', 'суперінтелект', 'сингулярність', 'robot uprising', 'восстание роботів']
         if any(t.lower() in text_lower for t in ai_extreme):
             score += 0.3
         
-        # 9. Конспірологія
+        # Конспірологія
         if any(t.lower() in text_lower for t in ['рептилоїд', 'ілюмінат', 'більдерберг', 'хімітрейл', '5g']):
             score += 0.25
         
-        # 10. Псевдонаука
+        # Псевдонаука
         if any(t.lower() in text_lower for t in ['квантовий', 'торсійний', 'ефір', 'нейтрино']):
             if any(t.lower() in text_lower for t in ['чакра', 'аура', 'вібрація']):
                 score += 0.3
         
-        # 11. НОВЕ: Логічний абсурд (пошук внутрішніх суперечностей)
+        # 6. НОВЕ: Логічний абсурд (пошук внутрішніх суперечностей)
         contradiction_pairs = [
             (['так', 'згоден', 'підтверджую'], ['ні', 'не згоден', 'заперечую']),
             (['всі', 'кожен', 'завжди'], ['ніхто', 'ніколи', 'жоден']),
@@ -726,7 +833,7 @@ class VeritasCalibratedCore:
                 else:
                     score += 0.2
         
-        # 12. НОВЕ: Політична маніпуляція (додаткові перевірки)
+        # 7. НОВЕ: Політична маніпуляція (додаткові перевірки)
         if any(w in text_lower for w in ['уряд', 'влада', 'президент', 'політика']):
             # Штраф за капс
             caps_words = len([w for w in words if w.isupper() and len(w) > 1])
@@ -741,7 +848,7 @@ class VeritasCalibratedCore:
         return min(score, 0.8)
 
     def analyze(self, text):
-        """Основний метод аналізу - ОНОВЛЕНО з акцентом на конфлікти"""
+        """Фінальна версія з точнішою оцінкою науки"""
         if not text or len(text.strip()) < 20:
             return {'error': 'Text too short'}
         
@@ -801,7 +908,53 @@ class VeritasCalibratedCore:
         elif term_counts['academic'] >= 1 and term_counts['signal'] >= 1 and not academic_absurd:
             base_score *= 0.7
         
-        # 8. Критичні підвищення (частіше і жорсткіше)
+        # 8. ДОДАТКОВІ ПЕРЕВІРКИ ДЛЯ НАУКОВОГО АБСУРДУ
+        text_lower = text.lower()
+        
+        # Якщо текст науковий і без хаосу
+        if term_counts['academic'] >= 3 and term_counts['signal'] >= 3 and term_counts['chaos'] == 0:
+            # Перевіряємо на псевдонауку
+            has_pseudoscience = False
+            pseudoscience_terms = ['квантовий', 'нейтрино', 'іоносфера', 'торсійний']
+            for term in pseudoscience_terms:
+                if term in text_lower:
+                    has_pseudoscience = True
+                    break
+            
+            if not has_pseudoscience:
+                # Це чиста наука - значно знижуємо оцінку
+                base_score *= 0.3
+                conflict_penalty *= 0.5  # Зменшуємо штраф за конфлікти для науки
+        
+        # ДОДАЄМО: Спеціальну перевірку для наукових абсурдів
+        # Якщо текст науковий АЛЕ містить абсурдні висновки
+        if term_counts['academic'] >= 2:
+            # Перевіряємо на абсурдні висновки
+            absurd_conclusions = [
+                'це доводить що', 'отже ми можемо', 'таким чином',
+                'звідси випливає', 'ми можемо стверджувати'
+            ]
+            
+            has_absurd_conclusion = False
+            for phrase in absurd_conclusions:
+                if phrase in text_lower:
+                    # Дивимось що йде після висновку
+                    pattern = rf'{phrase}[^.!?]*[.!?]'
+                    matches = re.findall(pattern, text_lower)
+                    for match in matches:
+                        # Перевіряємо абсурдність висновку
+                        absurd_indicators = ['абсурд', 'нісенітниця', 'неможливо', 
+                                           'чудо', 'магія', 'енергія', 'душа']
+                        if any(indicator in match for indicator in absurd_indicators):
+                            has_absurd_conclusion = True
+                            base_score = max(base_score, 0.6)  # Мінімум 0.6 для наукового абсурду
+                            break
+            
+            if has_absurd_conclusion:
+                # Додатковий штраф за науковий абсурд
+                base_score += 0.25
+        
+        # 9. Критичні підвищення (частіше і жорсткіше)
         if conflict_penalty > 0.2:
             base_score = max(base_score, 0.45)
         if conflict_penalty > 0.3:
@@ -816,7 +969,7 @@ class VeritasCalibratedCore:
         
         final_score = min(0.99, max(0.0, base_score))
         
-        # 9. Розрахунок індексів
+        # 10. Розрахунок індексів
         signal = term_counts['signal']
         chaos = term_counts['chaos']
         context = contextual_score
@@ -839,7 +992,7 @@ class VeritasCalibratedCore:
         noise_marker_count = term_counts.get('noise', 0)
         signal_ratio = 0 if noise_marker_count == 0 else round(noise_marker_count / max(1, signal), 2)
         
-        # 10. Вердикт (ЖОРСТКІШІ ПОРОГИ!)
+        # 11. Вердикт (ЖОРСТКІШІ ПОРОГИ!)
         if detected_patterns:
             main_pattern = detected_patterns[0]
             status = 'CRITICAL' if final_score > 0.5 else 'WARNING'
@@ -873,7 +1026,7 @@ class VeritasCalibratedCore:
             verdict = 'ВЕРИФІКОВАНИЙ АКАДЕМІЧНИЙ СИГНАЛ'
             explanation = 'Текст демонструє ідеальну логічну цілісність'
         
-        # 11. Деталі
+        # 12. Деталі
         detail_explanations = []
         if gradient_penalty > 0.05:
             detail_explanations.append(f"Градієнт: {gradient_penalty:.2f}")
@@ -885,7 +1038,7 @@ class VeritasCalibratedCore:
         if detail_explanations:
             explanation += " | " + " + ".join(detail_explanations)
         
-        # 12. Конфліктні пари
+        # 13. Конфліктні пари
         if conflict_details:
             conflict_pairs = []
             for conflict in conflict_details[:3]:  # Перші 3 конфлікти
