@@ -216,10 +216,10 @@ class VeritasCalibratedCore:
         self.chaos_indicators = {
             'esoteric': ['чакра', 'карма', 'астральний', 'енергетичний', 'вібрація', 'аура'],
             'conspiracy': ['змова', 'рептилоїд', 'хімітрейл', '5g', 'ілюмінат', 'масон'],
-            'pseudoscience': ['квантовий борщ', 'торсійне поле', 'ефір', 'zero point'],
-            'revisionism': ['антарктида', 'атлантида', 'тартарія', 'штучний місяць'],
+            'pseudoscience': ['квантовий борщ', 'квантов', 'торсійне поле', 'ефір', 'zero point', 'резонатор', 'холістичн', 'емпатичн', 'фрактальн', 'пост-біологічн'],
+            'revisionism': ['антарктида', 'антарктиди', 'антарктиду', 'атлантида', 'атлантиди', 'атлант', 'атлантів', 'тартарія', 'штучний місяць', 'резонатор', 'резонаторів'],
             'alarmism': ['кінець світу', 'крах системи', 'great reset', 'масове загибель'],
-            'economic_occult': ['карма актив', 'душа-валюта', 'cosmic currency'],
+            'economic_occult': ['карма актив', 'карма', 'душа-валюта', 'душа', 'потойбічн', 'ефірн', 'cosmic currency', 'hades-coin', 'hades', 'астрал'],
             'emotional_manipulation': ['СРОЧНО', 'НЕГАЙНО', 'шок', 'ужас', 'катастрофа', 'скандал', 'сенсація', 'ганьба', 'соромно', 'ви не готові', 'останній шанс', 'пізно'],
             'social_pressure': ['поділіть', 'підпішіть', 'репост', 'поширюйте', 'wake up', 'join the movement', 'вийти на вулиці', 'зупинимо', 'кожен репост'],
             'tech_mystification': ['AI свідомість', 'blockchain truth', 'метаверс реальність'],
@@ -339,9 +339,15 @@ class VeritasCalibratedCore:
                 caps_boost = min(0.4, caps_ratio * 1.5)
                 base_score += caps_boost
 
+            # DIRECT CHAOS PENALTY (additive before multiplier)
+            if term_counts['chaos'] >= 5:
+                base_score += min(0.35, term_counts['chaos'] * 0.06)
+            elif term_counts['chaos'] >= 3:
+                base_score += term_counts['chaos'] * 0.05
+
             # CHAOS MULTIPLIER (many chaos markers = manipulation)
             if term_counts['chaos'] >= 3:
-                chaos_multiplier = 1 + (term_counts['chaos'] * 0.15)
+                chaos_multiplier = 1 + (term_counts['chaos'] * 0.1)
                 base_score *= chaos_multiplier
 
             # EMERGENCY: LAC_I zero-cost violations → auto-boost to at least 0.5
@@ -563,7 +569,8 @@ class VeritasCalibratedCore:
 
         for cat, terms in self.chaos_indicators.items():
             for term in terms:
-                if re.search(rf'\b{re.escape(term)}\b', text_lower):
+                # Try word boundary first, then substring (for stems like 'холістичн')
+                if re.search(rf'\b{re.escape(term)}\b', text_lower) or (len(term) > 5 and term in text_lower):
                     counts['chaos'] += 1
 
         for term in self.academic_whitelist:
