@@ -1,6 +1,6 @@
 """
-Veritas Protocol - Calibrated Core v12.0 (Hybrid LAC + Conflicts) (LAC + Calibrated Conflicts)
-Synthesis: Logic Authenticity Check modules + Domain/Conflict detection
+Veritas Protocol - Calibrated Core v12.0 (Hybrid LAC + Conflicts + Pattern Boost)
+Synthesis: Logic Authenticity Check modules + Domain/Conflict detection + Semantic Fingerprints
 """
 
 import re
@@ -8,6 +8,16 @@ import math
 from collections import Counter
 from dataclasses import dataclass
 from typing import List, Dict, Tuple, Set
+
+# Import pattern boost engine
+try:
+    import sys
+    import os
+    sys.path.insert(0, os.path.dirname(__file__))
+    from veritas_pattern_boost import PatternBoostEngine
+    PATTERN_BOOST_AVAILABLE = True
+except ImportError:
+    PATTERN_BOOST_AVAILABLE = False
 
 
 @dataclass
@@ -30,6 +40,12 @@ class VeritasCalibratedCore:
     """
 
     def __init__(self):
+        # Pattern boost engine (emergency layer for sophisticated pseudoscience)
+        if PATTERN_BOOST_AVAILABLE:
+            self.pattern_boost_engine = PatternBoostEngine()
+        else:
+            self.pattern_boost_engine = None
+        
         # ============================================================
         # LAC MODULE I: STRATEGIC TRADE-OFF CALCULUS (V ≠ L)
         # ============================================================
@@ -303,6 +319,11 @@ class VeritasCalibratedCore:
         shannon_entropy = self._calculate_shannon_entropy(text)
         detected_patterns = self._detect_patterns(text)
 
+        # ---- PHASE 5: PATTERN BOOST (emergency layer) ----
+        pattern_boost_result = {'boost': 0.0, 'matched_patterns': []}
+        if self.pattern_boost_engine:
+            pattern_boost_result = self.pattern_boost_engine.analyze(text)
+
         # ---- AGGREGATE VIOLATIONS ----
         all_violations = (lac_i_violations + lac_ii_violations + lac_iii_violations +
                          domain_violations + conflict_violations)
@@ -349,6 +370,10 @@ class VeritasCalibratedCore:
             if term_counts['chaos'] >= 3:
                 chaos_multiplier = 1 + (term_counts['chaos'] * 0.1)
                 base_score *= chaos_multiplier
+
+            # PATTERN BOOST (sophisticated pseudoscience fingerprints)
+            if pattern_boost_result['boost'] > 0:
+                base_score += pattern_boost_result['boost']
 
             # EMERGENCY: LAC_I zero-cost violations → auto-boost to at least 0.5
             if lac_i_violations and any(v.vtype == 'ZERO_COST_PROPOSITION' for v in lac_i_violations):
@@ -404,7 +429,9 @@ class VeritasCalibratedCore:
                 'influence_index': influence_index,
                 'is_protected_science': is_protected_science,
                 'signal_markers': term_counts['signal'],
-                'chaos_markers': term_counts['chaos']
+                'chaos_markers': term_counts['chaos'],
+                'pattern_boost': round(pattern_boost_result['boost'], 3),
+                'matched_fingerprints': [p['name'] for p in pattern_boost_result['matched_patterns']]
             }
         }
 
