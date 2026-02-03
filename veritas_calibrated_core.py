@@ -336,6 +336,10 @@ class VeritasCalibratedCore:
         # ---- ACADEMIC SHIELD ----
         is_protected_science = self._is_protected_science(text, all_violations)
 
+        # OVERRIDE: if pattern_boost > 0.5, disable shield (sophisticated pseudoscience)
+        if pattern_boost_result['boost'] > 0.5:
+            is_protected_science = False
+
         if is_protected_science:
             base_score = min(0.15, shannon_entropy * 0.5)  # strong shield
         else:
