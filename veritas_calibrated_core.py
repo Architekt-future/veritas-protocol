@@ -297,14 +297,26 @@ class VeritasCalibratedCore:
         # ACADEMIC WHITELIST (35) — з calibrated_core
         # ============================================================
         self.academic_whitelist = [
-            'дослідження', 'експеримент', 'аналіз', 'гіпотеза', 'теорія',
+            # Research methodology
+            'дослідження', 'дослідж', 'експеримент', 'аналіз', 'гіпотез', 'теорі',
             'метод', 'методологія', 'протокол', 'верифікація', 'валідація',
-            'статистика', 'кореляція', 'регресія', 'p-value', 'вибірка',
+            
+            # Statistics
+            'статистичн', 'кореляц', 'регресія', 'p-value', 'вибірк', 'значущ',
             'контрольна група', 'подвійний сліпий', 'рецензоване',
+            
+            # Institutions
             'університет', 'інститут', 'академія', 'професор', 'доктор наук',
             'монографія', 'публікація', 'журнал', 'цитування',
+            
+            # Hard sciences
             'термодинаміка', 'ентропія', 'формула', 'рівняння', 'закон',
-            'фізика', 'математика', 'хімія', 'біологія'
+            'фізика', 'математика', 'хімія', 'біологія',
+            
+            # Neuroscience (NEW)
+            'нейропластичн', 'гіпокамп', 'синапс', 'нейрон', 'кортекс',
+            'мрт', 'фмрт', 'активац', 'когнітивн', 'лонгітюдн',
+            'бднф', 'нейротрофічн', 'регенератив'
         ]
 
     # ================================================================
@@ -672,6 +684,15 @@ class VeritasCalibratedCore:
         # need 3+ academic terms
         academic_count = sum(1 for term in self.academic_whitelist if term in text_lower)
         if academic_count < 3:
+            return False
+
+        # NEW: must have concrete evidence (numbers/dates/sources)
+        has_numbers = bool(re.search(r'\d+(?:[.,]\d+)?', text))
+        has_dates = bool(re.search(r'\d{4}', text))
+        has_sources = bool(re.search(r'(дослідження|експеримент|університет|інститут|публікація)', text_lower))
+        has_concrete = has_numbers or has_dates or has_sources
+        
+        if not has_concrete:
             return False
 
         # no chaos markers
