@@ -1,7 +1,7 @@
 """
-Veritas Protocol - Calibrated Core v13.0 (Hybrid LAC + Conflicts + Patterns + Semantic Void)
-New philosophy: "Elegant lies are smooth. Truth has friction."
-Measures ABSENCE of meaning, not just presence of markers.
+Veritas Protocol - Calibrated Core v13.2 (Hybrid LAC + Conflicts + Patterns + Void + Absurdity)
+New philosophy: "When premises and conclusions live in different universes"
+Detects logical non-sequiturs and semantic collapse.
 """
 
 import re
@@ -26,6 +26,20 @@ try:
     SEMANTIC_VOID_AVAILABLE = True
 except ImportError:
     SEMANTIC_VOID_AVAILABLE = False
+
+# Import absurdity detector
+try:
+    from veritas_absurdity_detector import AbsurdityDetector
+    ABSURDITY_AVAILABLE = True
+except ImportError:
+    ABSURDITY_AVAILABLE = False
+
+# Import insight density detector
+try:
+    from veritas_insight_density import InsightDensityDetector
+    INSIGHT_DENSITY_AVAILABLE = True
+except ImportError:
+    INSIGHT_DENSITY_AVAILABLE = False
 
 
 @dataclass
@@ -59,6 +73,18 @@ class VeritasCalibratedCore:
             self.void_detector = SemanticVoidDetector()
         else:
             self.void_detector = None
+        
+        # Absurdity detector (logical non-sequiturs)
+        if ABSURDITY_AVAILABLE:
+            self.absurdity_detector = AbsurdityDetector()
+        else:
+            self.absurdity_detector = None
+        
+        # Insight density detector (casuistry / bureaucratic bullshit)
+        if INSIGHT_DENSITY_AVAILABLE:
+            self.insight_detector = InsightDensityDetector()
+        else:
+            self.insight_detector = None
         
         # ============================================================
         # LAC MODULE I: STRATEGIC TRADE-OFF CALCULUS (V ≠ L)
@@ -355,6 +381,16 @@ class VeritasCalibratedCore:
         if self.void_detector:
             void_result = self.void_detector.analyze(text)
 
+        # ---- PHASE 7: ABSURDITY (logical non-sequiturs) ----
+        absurdity_result = {'absurdity_score': 0.0, 'evidence': {}}
+        if self.absurdity_detector:
+            absurdity_result = self.absurdity_detector.analyze(text)
+
+        # ---- PHASE 8: INSIGHT DENSITY (casuistry detection) ----
+        insight_result = {'casuistry_score': 0.0, 'insight_density': 0.5}
+        if self.insight_detector:
+            insight_result = self.insight_detector.analyze(text)
+
         # ---- AGGREGATE VIOLATIONS ----
         all_violations = (lac_i_violations + lac_ii_violations + lac_iii_violations +
                          domain_violations + conflict_violations)
@@ -418,6 +454,22 @@ class VeritasCalibratedCore:
                 if void_result['void_score'] > 0.2 and void_result.get('buzzword_count', 0) >= 4:
                     base_score = max(base_score, 0.4)  # force at least WARNING
 
+            # ABSURDITY BOOST (logical non-sequiturs, fabricated authority, danger)
+            if absurdity_result['absurdity_score'] > 0:
+                base_score += absurdity_result['absurdity_score'] * 1.2  # 120% weight (HIGHEST PRIORITY)
+                
+                # CRITICAL: dangerous implications or non-sequitur
+                if absurdity_result.get('danger_count', 0) >= 1 or absurdity_result.get('has_non_sequitur', False):
+                    base_score = max(base_score, 0.6)  # force CRITICAL
+
+            # CASUISTRY BOOST (complexity without insight)
+            if insight_result.get('casuistry_score', 0) > 0:
+                base_score += insight_result['casuistry_score'] * 0.8  # 80% weight
+                
+                # If pure casuistry (high complexity, zero facts), boost to WARNING
+                if insight_result.get('is_casuistry', False):
+                    base_score = max(base_score, 0.35)  # force at least WARNING
+
             # EMERGENCY: LAC_I zero-cost violations → auto-boost to at least 0.5
             if lac_i_violations and any(v.vtype == 'ZERO_COST_PROPOSITION' for v in lac_i_violations):
                 base_score = max(base_score, 0.5)
@@ -478,6 +530,14 @@ class VeritasCalibratedCore:
                 'semantic_void_score': round(void_result['void_score'], 3),
                 'void_penalties': void_result.get('penalties', {}),
                 'buzzword_count': void_result.get('buzzword_count', 0),
+                'absurdity_score': round(absurdity_result['absurdity_score'], 3),
+                'absurdity_evidence': absurdity_result.get('evidence', {}),
+                'has_non_sequitur': absurdity_result.get('has_non_sequitur', False),
+                'danger_count': absurdity_result.get('danger_count', 0),
+                'insight_density': round(insight_result.get('insight_density', 0.5), 3),
+                'casuistry_score': round(insight_result.get('casuistry_score', 0), 3),
+                'is_casuistry': insight_result.get('is_casuistry', False),
+                'fact_count': insight_result.get('fact_count', 0),
             }
         }
 
