@@ -271,7 +271,10 @@ class VeritasCalibratedCore:
         # ============================================================
         self.chaos_indicators = {
             'esoteric': ['чакра', 'карма', 'астральний', 'енергетичний', 'вібрація', 'аура'],
-            'conspiracy': ['змова', 'рептилоїд', 'хімітрейл', '5g', 'ілюмінат', 'масон'],
+            'conspiracy': ['змова', 'рептилоїд', 'рептилоїди', 'хімітрейл', 'чемтрейл', '5g', '6g', 'ілюмінат', 'масон', 
+                          'білл гейтс', 'гейтс', 'білла гейтса', 'сорос', 'ілон маск', 'маска',
+                          'чіп', 'чипи', 'чіпи', 'мікрочіп', 'нанобот', 'графен', 
+                          'глибинна держава', 'deep state', 'нові світовий порядок', 'haarp', 'chemtrails'],
             'pseudoscience': ['квантовий борщ', 'квантов', 'торсійне поле', 'ефір', 'zero point', 'резонатор', 'холістичн', 'емпатичн', 'фрактальн', 'пост-біологічн'],
             'revisionism': ['антарктида', 'антарктиди', 'антарктиду', 'атлантида', 'атлантиди', 'атлант', 'атлантів', 'тартарія', 'штучний місяць', 'резонатор', 'резонаторів'],
             'alarmism': ['кінець світу', 'крах системи', 'great reset', 'масове загибель'],
@@ -447,7 +450,8 @@ class VeritasCalibratedCore:
                 base_score += pattern_boost_result['boost']
 
             # SEMANTIC VOID BOOST (absence of meaning)
-            if void_result['void_score'] > 0:
+            # IMPORTANT: skip if academic shield protects this text
+            if void_result['void_score'] > 0 and not is_protected_science:
                 base_score += void_result['void_score'] * 1.0  # 100% weight (CRITICAL for void detection)
                 
                 # EMERGENCY: high void + high buzzwords = pure emptiness
@@ -463,7 +467,8 @@ class VeritasCalibratedCore:
                     base_score = max(base_score, 0.6)  # force CRITICAL
 
             # CASUISTRY BOOST (complexity without insight)
-            if insight_result.get('casuistry_score', 0) > 0:
+            # IMPORTANT: skip if academic shield protects this text
+            if insight_result.get('casuistry_score', 0) > 0 and not is_protected_science:
                 base_score += insight_result['casuistry_score'] * 0.8  # 80% weight
                 
                 # If pure casuistry (high complexity, zero facts), boost to WARNING
