@@ -1,6 +1,7 @@
 """
-Veritas Protocol - Calibrated Core v12.0 (Hybrid LAC + Conflicts + Pattern Boost)
-Synthesis: Logic Authenticity Check modules + Domain/Conflict detection + Semantic Fingerprints
+Veritas Protocol - Calibrated Core v13.0 (Hybrid LAC + Conflicts + Patterns + Semantic Void)
+New philosophy: "Elegant lies are smooth. Truth has friction."
+Measures ABSENCE of meaning, not just presence of markers.
 """
 
 import re
@@ -18,6 +19,13 @@ try:
     PATTERN_BOOST_AVAILABLE = True
 except ImportError:
     PATTERN_BOOST_AVAILABLE = False
+
+# Import semantic void detector
+try:
+    from veritas_semantic_void import SemanticVoidDetector
+    SEMANTIC_VOID_AVAILABLE = True
+except ImportError:
+    SEMANTIC_VOID_AVAILABLE = False
 
 
 @dataclass
@@ -45,6 +53,12 @@ class VeritasCalibratedCore:
             self.pattern_boost_engine = PatternBoostEngine()
         else:
             self.pattern_boost_engine = None
+        
+        # Semantic void detector (measures absence of meaning)
+        if SEMANTIC_VOID_AVAILABLE:
+            self.void_detector = SemanticVoidDetector()
+        else:
+            self.void_detector = None
         
         # ============================================================
         # LAC MODULE I: STRATEGIC TRADE-OFF CALCULUS (V ≠ L)
@@ -324,6 +338,11 @@ class VeritasCalibratedCore:
         if self.pattern_boost_engine:
             pattern_boost_result = self.pattern_boost_engine.analyze(text)
 
+        # ---- PHASE 6: SEMANTIC VOID (absence of meaning) ----
+        void_result = {'void_score': 0.0, 'penalties': {}}
+        if self.void_detector:
+            void_result = self.void_detector.analyze(text)
+
         # ---- AGGREGATE VIOLATIONS ----
         all_violations = (lac_i_violations + lac_ii_violations + lac_iii_violations +
                          domain_violations + conflict_violations)
@@ -378,6 +397,14 @@ class VeritasCalibratedCore:
             # PATTERN BOOST (sophisticated pseudoscience fingerprints)
             if pattern_boost_result['boost'] > 0:
                 base_score += pattern_boost_result['boost']
+
+            # SEMANTIC VOID BOOST (absence of meaning)
+            if void_result['void_score'] > 0:
+                base_score += void_result['void_score'] * 1.0  # 100% weight (CRITICAL for void detection)
+                
+                # EMERGENCY: high void + high buzzwords = pure emptiness
+                if void_result['void_score'] > 0.2 and void_result.get('buzzword_count', 0) >= 4:
+                    base_score = max(base_score, 0.4)  # force at least WARNING
 
             # EMERGENCY: LAC_I zero-cost violations → auto-boost to at least 0.5
             if lac_i_violations and any(v.vtype == 'ZERO_COST_PROPOSITION' for v in lac_i_violations):
@@ -435,7 +462,10 @@ class VeritasCalibratedCore:
                 'signal_markers': term_counts['signal'],
                 'chaos_markers': term_counts['chaos'],
                 'pattern_boost': round(pattern_boost_result['boost'], 3),
-                'matched_fingerprints': [p['name'] for p in pattern_boost_result['matched_patterns']]
+                'matched_fingerprints': [p['name'] for p in pattern_boost_result['matched_patterns']],
+                'semantic_void_score': round(void_result['void_score'], 3),
+                'void_penalties': void_result.get('penalties', {}),
+                'buzzword_count': void_result.get('buzzword_count', 0),
             }
         }
 
