@@ -6,6 +6,55 @@ import re
 
 class PatternBoostEngine:
     def __init__(self):
+        # ================================================================
+        # SHORT-TEXT PATTERNS (1-3 sentences, tight coupling)
+        # ================================================================
+        self.short_text_patterns = [
+            {
+                'name': 'NEURO_5G_PINEAL',
+                'patterns': [
+                    r'(бднф|нейропластичн|гіпокамп).{1,80}(5g|шишкоподіб|супутник)',
+                    r'(мозок|нейрон|синапс).{1,60}(5g|частот|супутник|старлінк)',
+                    r'(когнітивн|залоз).{1,60}(5g|мереж|сигнал)',
+                ],
+                'score': 0.7,
+                'threshold': 1  # need only 1 match for short text
+            },
+            {
+                'name': 'CONSCIOUSNESS_SOFTWARE',
+                'patterns': [
+                    r'(свідом|молитв).{1,60}(програм|пакет|даних|сервер|код)',
+                    r'(душ|карм).{1,60}(завантаж|оновлен|інтерфейс)',
+                    r'(сон|медитац).{1,60}(світлов.{1,20}код|завантаж)',
+                ],
+                'score': 0.65,
+                'threshold': 1
+            },
+            {
+                'name': 'BLOCKCHAIN_BIOLOGY',
+                'patterns': [
+                    r'(blockchain|блокчейн|смарт-контракт).{1,60}(мозк|синапс|кор.{1,20}мозку|префронтальн)',
+                    r'(blockchain|блокчейн|криптовалют).{1,60}(біохімі|геном|днк)',
+                    r'(протокол|код).{1,60}(кортизол|синапс|нейрон|біохімі)',
+                ],
+                'score': 0.7,
+                'threshold': 1
+            },
+            {
+                'name': 'TOTALITARIAN_AI',
+                'patterns': [
+                    r'(делегува|передати).{1,60}(штучн.{1,20}інтелект|ai).{1,80}(етичн|рішен)',
+                    r'(нейромереж|ai).{1,60}(неоптимальн|милосердя|самоусунен)',
+                    r'(прозорість|приватність).{1,60}(антисоціальн|загроз|патріот)',
+                ],
+                'score': 0.6,
+                'threshold': 1
+            },
+        ]
+        
+        # ================================================================
+        # LONG-TEXT PATTERNS (multi-sentence, need context)
+        # ================================================================
         self.fingerprints = [
             {
                 'name': 'SOVEREIGN_CITIZEN',
@@ -102,10 +151,37 @@ class PatternBoostEngine:
     
     def analyze(self, text: str) -> dict:
         text_lower = text.lower()
+        word_count = len(text.split())
         
         total_boost = 0.0
         matched = []
         
+        # ================================================================
+        # SHORT TEXT MODE (< 100 words): check tight patterns first
+        # ================================================================
+        if word_count < 100:
+            for pattern_set in self.short_text_patterns:
+                hits = 0
+                matched_specific = []
+                
+                for pattern in pattern_set['patterns']:
+                    if re.search(pattern, text_lower, re.IGNORECASE):
+                        hits += 1
+                        matched_specific.append(pattern[:50])
+                
+                # Lower threshold for short texts (1 hit enough)
+                if hits >= pattern_set.get('threshold', 1):
+                    total_boost += pattern_set['score']
+                    matched.append({
+                        'name': pattern_set['name'],
+                        'hits': hits,
+                        'total_patterns': len(pattern_set['patterns']),
+                        'matched_specific': matched_specific
+                    })
+        
+        # ================================================================
+        # STANDARD MODE: check long-text fingerprints (need 2+ hits)
+        # ================================================================
         for fingerprint in self.fingerprints:
             hits = 0
             matched_specific = []
