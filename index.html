@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>💠 Veritas Terminal - Information Entropy Analyzer</title>
+    <title>💠 Veritas Terminal v13.3 - Information Entropy Analyzer</title>
     <style>
         * { margin:0; padding:0; box-sizing:border-box; }
 
@@ -234,7 +234,7 @@
         /* ── METRICS ── */
         .metrics {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
             gap: 10px;
             margin-top: 16px;
         }
@@ -305,7 +305,7 @@
     <!-- HEADER -->
     <div class="header">
         <h1>💠 VERITAS TERMINAL</h1>
-        <div class="subtitle">Information Entropy Analyzer · Architectural Engine · The Witness</div>
+        <div class="subtitle">Information Entropy Analyzer · v13.3 · Semantic Void · Absurdity · Insight Density</div>
         <div class="api-status checking" id="apiStatus">⚙️ Checking API...</div>
     </div>
 
@@ -371,6 +371,18 @@
                     <div class="metric-label">Unique</div>
                     <div class="metric-value" id="uniqueChars">0</div>
                 </div>
+                <div class="metric">
+                    <div class="metric-label">Void Score</div>
+                    <div class="metric-value" id="voidScore">0</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Absurdity</div>
+                    <div class="metric-value" id="absurdityScore">0</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Casuistry</div>
+                    <div class="metric-value" id="casuistryScore">0</div>
+                </div>
             </div>
         </div>
 
@@ -384,7 +396,7 @@
 
     <!-- FOOTER -->
     <div class="footer">
-        💠 Veritas Protocol Terminal v2.1 · Architectural Engine · Domain Purity · Witness Visualizer
+        💠 Veritas Protocol Terminal v13.3 · Semantic Void · Absurdity · Insight Density · The Witness
     </div>
 </div>
 
@@ -404,11 +416,13 @@ async function checkAPIStatus() {
     el.textContent = '⚙️ Checking API...';
     el.className = 'api-status checking';
     try {
-        const res  = await fetch(`${API_BASE}/analyze`, { method: 'GET' });
+        // CACHE BUSTING with timestamp
+        const res  = await fetch(`${API_BASE}/analyze?_t=${Date.now()}`, { method: 'GET' });
         const data = await res.json();
         if (data.status === 'online') {
-            el.textContent = '✅ API Online';
+            el.textContent = `✅ API Online v${data.version || '?'}`;
             el.className   = 'api-status online';
+            console.log('[Veritas] Modules:', data.modules);
         } else { throw new Error('unhealthy'); }
     } catch (e) {
         el.textContent = '❌ API Offline';
@@ -443,18 +457,29 @@ async function analyze() {
     setLoading(true);
 
     try {
-        const res = await fetch(`${API_BASE}/analyze`, {
+        // CACHE BUSTING with timestamp in URL
+        const res = await fetch(`${API_BASE}/analyze?_t=${Date.now()}`, {
             method:  'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+            },
             body:    JSON.stringify(body)
         });
 
         const rawText = await res.text();
-        console.log('[Veritas] ← status', res.status, rawText.slice(0, 300));
+        console.log('[Veritas] ← status', res.status);
+        console.log('[Veritas] Raw response:', rawText.substring(0, 500));
 
         let data;
-        try { data = JSON.parse(rawText); }
-        catch (e) { throw new Error(`Bad JSON: ${rawText.slice(0,200)}`); }
+        try { 
+            data = JSON.parse(rawText); 
+        } catch (e) { 
+            console.error('[Veritas] JSON parse error:', e);
+            throw new Error(`Invalid JSON response: ${rawText.slice(0,200)}`); 
+        }
 
         if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
 
@@ -475,43 +500,55 @@ async function analyze() {
 // RENDER RESULTS
 // ============================================================
 function renderResults(data) {
+    console.log('[Veritas] Rendering results:', data);
+    
     const entropy = typeof data.entropy === 'number' ? data.entropy : 0;
     const diag    = data.diagnostics || {};
     const mode    = data.mode || 'manual_input';
+    const status  = data.status || 'UNKNOWN';
+
+    console.log('[Veritas] Entropy:', entropy, 'Status:', status);
 
     // ── Witness bar ──
-    updateWitness(entropy);
+    updateWitness(entropy, status);
 
     // ── Verdict ──
     const verdictEl  = document.getElementById('verdict');
-    verdictEl.textContent = data.verdict || '—';
-    verdictEl.className   = 'verdict ' + scoreToClass(entropy);
+    verdictEl.textContent = data.verdict || status || '—';
+    verdictEl.className   = 'verdict ' + statusToClass(status);
 
     // ── Explanation ──
     const expEl = document.getElementById('explanation');
     if (data.explanation) {
-        expEl.innerHTML     = `<strong>${data.verdict || ''}</strong> — ${data.explanation}`;
+        expEl.innerHTML     = `<strong>${data.verdict || status}</strong> — ${data.explanation}`;
         expEl.style.display = 'block';
     } else {
         expEl.style.display = 'none';
     }
 
-    // ── Metrics ──
+    // ── Metrics (with v13.3 additions) ──
     const txt = data.extracted_text || '';
     document.getElementById('charCount').textContent   = diag.char_count || txt.length || 0;
     document.getElementById('wordCount').textContent   = diag.word_count || 0;
     document.getElementById('uniqueChars').textContent = new Set(txt).size;
+    
+    // v13.3 NEW METRICS
+    document.getElementById('voidScore').textContent = (diag.semantic_void_score || 0).toFixed(2);
+    document.getElementById('absurdityScore').textContent = (diag.absurdity_score || 0).toFixed(2);
+    document.getElementById('casuistryScore').textContent = (diag.casuistry_score || 0).toFixed(2);
+    
     document.getElementById('metricsPanel').style.display = 'grid';
 
     // ── Scraped text panel: ONLY for url_scraping ──
     const scrapedPanel = document.getElementById('scrapedPanel');
 
     if (mode === 'url_scraping' && txt) {
+        // FIX UTF-8: use textContent which handles encoding properly
         document.getElementById('textDisplay').textContent = txt;
 
         // build source line
         const parts = [];
-        if (data.title && data.title !== 'Manual Input')
+        if (data.title && data.title !== 'Manual Input' && data.title !== 'Untitled')
             parts.push(`<span class="tag">${escHtml(data.title)}</span>`);
         if (data.source)
             parts.push(escHtml(data.source));
@@ -529,39 +566,44 @@ function renderResults(data) {
 // ============================================================
 // WITNESS BAR
 // ============================================================
-function updateWitness(entropy) {
+function updateWitness(entropy, status) {
     const valEl  = document.getElementById('entropyValue');
     const fillEl = document.getElementById('entropyFill');
 
     valEl.textContent      = entropy.toFixed(3);
-    valEl.style.color      = scoreToColor(entropy);
+    valEl.style.color      = statusToColor(status);
 
     const pct = Math.round(entropy * 100);
     fillEl.style.width      = pct + '%';
     fillEl.textContent      = pct + '%';
-    fillEl.style.background = scoreToGradient(entropy);
+    fillEl.style.background = statusToGradient(status);
 }
 
 // ============================================================
-// SCORE → STYLE
+// STATUS → STYLE (using new v13.3 status values)
 // ============================================================
-function scoreToColor(e) {
-    if (e < 0.25) return '#00ff88';
-    if (e < 0.5)  return '#ffaa00';
-    if (e < 0.75) return '#ff6644';
-    return '#ff3333';
+function statusToColor(status) {
+    if (status === 'VERIFIED') return '#00ff88';
+    if (status === 'ACCEPTABLE') return '#ffaa00';
+    if (status === 'WARNING') return '#ff6644';
+    if (status === 'CRITICAL') return '#ff3333';
+    return '#888';
 }
-function scoreToGradient(e) {
-    if (e < 0.25) return 'linear-gradient(90deg,#00ff88,#00cc66)';
-    if (e < 0.5)  return 'linear-gradient(90deg,#ffaa00,#ff8800)';
-    if (e < 0.75) return 'linear-gradient(90deg,#ff6644,#ff4422)';
-    return 'linear-gradient(90deg,#ff3333,#cc0000)';
+
+function statusToGradient(status) {
+    if (status === 'VERIFIED') return 'linear-gradient(90deg,#00ff88,#00cc66)';
+    if (status === 'ACCEPTABLE') return 'linear-gradient(90deg,#ffaa00,#ff8800)';
+    if (status === 'WARNING') return 'linear-gradient(90deg,#ff6644,#ff4422)';
+    if (status === 'CRITICAL') return 'linear-gradient(90deg,#ff3333,#cc0000)';
+    return 'linear-gradient(90deg,#666,#444)';
 }
-function scoreToClass(e) {
-    if (e < 0.25) return 'trusted';
-    if (e < 0.5)  return 'acceptable';
-    if (e < 0.75) return 'suspicious';
-    return 'chaos';
+
+function statusToClass(status) {
+    if (status === 'VERIFIED') return 'trusted';
+    if (status === 'ACCEPTABLE') return 'acceptable';
+    if (status === 'WARNING') return 'suspicious';
+    if (status === 'CRITICAL') return 'chaos';
+    return 'acceptable';
 }
 
 // ============================================================
@@ -601,7 +643,7 @@ function showTopError(msg) {
     document.getElementById('verdict').textContent          = '';
     document.getElementById('verdict').className            = 'verdict';
     document.getElementById('explanation').style.display    = 'block';
-    document.getElementById('explanation').innerHTML        = `<div class="error">❌ ${msg}</div>`;
+    document.getElementById('explanation').innerHTML        = `<div class="error">❌ ${escHtml(msg)}</div>`;
     document.getElementById('metricsPanel').style.display   = 'none';
     document.getElementById('scrapedPanel').style.display   = 'none';
 }
@@ -613,7 +655,8 @@ function clearAll() {
 }
 
 function escHtml(s) {
-    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    if (!s) return '';
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 // Enter on URL
