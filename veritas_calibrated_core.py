@@ -428,8 +428,9 @@ class VeritasCalibratedCore:
                 base_score += pattern['score_boost']
 
             # CAPS HYSTERIA BOOST
-            import re as re_module
-            caps_words = re_module.findall(r'\b[А-ЯІЇЄҐЁA-Z]{2,}\b', text)
+            # Use isupper() instead of regex to avoid encoding issues
+            words = text.split()
+            caps_words = [w for w in words if len(w) >= 2 and w.isupper()]
             caps_ratio = len(caps_words) / max(1, word_count)
             if caps_ratio > 0.15:  # >15% caps words
                 caps_boost = min(0.4, caps_ratio * 1.5)
@@ -488,10 +489,13 @@ class VeritasCalibratedCore:
 
         # ---- SPECIAL CASE: SEMANTIC VOID DETECTION ----
         # If high entropy + high void + low violations = just empty fluff, not manipulation
+        # ADJUSTED: Lower buzzword threshold for shorter texts
+        min_buzzwords = 3 if word_count < 50 else 5
+        
         is_semantic_void = (
             final_score >= 0.6 and
             void_result['void_score'] >= 0.4 and
-            void_result.get('buzzword_count', 0) >= 5 and
+            void_result.get('buzzword_count', 0) >= min_buzzwords and
             violation_count <= 2 and
             not absurdity_result.get('has_non_sequitur', False) and
             absurdity_result.get('danger_count', 0) == 0
