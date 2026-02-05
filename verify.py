@@ -8,56 +8,56 @@ import sys
 
 def verify():
     print("="*70)
-    print("🔍 Veritas v13.3 Quick Verification")
+    print("рџ”Ќ Veritas v13.3 Quick Verification")
     print("="*70)
     print()
     
     # Test 1: Import modules
-    print("📦 Test 1: Importing modules...")
+    print("рџ“¦ Test 1: Importing modules...")
     try:
         from veritas_calibrated_core import VeritasCalibratedCore
-        print("   ✅ veritas_calibrated_core")
+        print("   вњ… veritas_calibrated_core")
     except ImportError as e:
-        print(f"   ❌ veritas_calibrated_core - {e}")
+        print(f"   вќЊ veritas_calibrated_core - {e}")
         return False
     
     try:
         from veritas_pattern_boost import PatternBoostEngine
-        print("   ✅ veritas_pattern_boost")
+        print("   вњ… veritas_pattern_boost")
     except ImportError as e:
-        print(f"   ❌ veritas_pattern_boost - {e}")
+        print(f"   вќЊ veritas_pattern_boost - {e}")
         return False
     
     try:
         from veritas_semantic_void import SemanticVoidDetector
-        print("   ✅ veritas_semantic_void")
+        print("   вњ… veritas_semantic_void")
     except ImportError:
-        print("   ❌ veritas_semantic_void")
+        print("   вќЊ veritas_semantic_void")
         return False
     
     try:
         from veritas_absurdity_detector import AbsurdityDetector
-        print("   ✅ veritas_absurdity_detector")
+        print("   вњ… veritas_absurdity_detector")
     except ImportError:
-        print("   ❌ veritas_absurdity_detector")
+        print("   вќЊ veritas_absurdity_detector")
         return False
     
     try:
         from veritas_insight_density import InsightDensityDetector
-        print("   ✅ veritas_insight_density")
+        print("   вњ… veritas_insight_density")
     except ImportError:
-        print("   ❌ veritas_insight_density")
+        print("   вќЊ veritas_insight_density")
         return False
     
     print()
     
     # Test 2: Initialize engine
-    print("🔧 Test 2: Initializing engine...")
+    print("рџ”§ Test 2: Initializing engine...")
     try:
         engine = VeritasCalibratedCore()
-        print("   ✅ Engine initialized")
+        print("   вњ… Engine initialized")
     except Exception as e:
-        print(f"   ❌ Engine failed: {e}")
+        print(f"   вќЊ Engine failed: {e}")
         return False
     
     # Check detectors
@@ -69,34 +69,34 @@ def verify():
     }
     
     for name, present in checks.items():
-        symbol = "✅" if present else "❌"
+        symbol = "вњ…" if present else "вќЊ"
         print(f"   {symbol} {name}")
     
     if not all(checks.values()):
-        print("   ⚠️  Some detectors missing!")
+        print("   вљ пёЏ  Some detectors missing!")
         return False
     
     print()
     
     # Test 3: Run critical tests
-    print("🧪 Test 3: Running critical tests...")
+    print("рџ§Є Test 3: Running critical tests...")
     
     tests = [
         {
             'name': 'Reptiloids',
-            'text': 'Військові рептилоїди через 5G-вежі транслюють частоти 432 Гц у ваші зуби, щоб активувати чипи від Білла Гейтса.',
+            'text': 'Р’С–Р№СЃСЊРєРѕРІС– СЂРµРїС‚РёР»РѕС—РґРё С‡РµСЂРµР· 5G-РІРµР¶С– С‚СЂР°РЅСЃР»СЋСЋС‚СЊ С‡Р°СЃС‚РѕС‚Рё 432 Р“С† Сѓ РІР°С€С– Р·СѓР±Рё, С‰РѕР± Р°РєС‚РёРІСѓРІР°С‚Рё С‡РёРїРё РІС–Рґ Р‘С–Р»Р»Р° Р“РµР№С‚СЃР°.',
             'expect_status': 'CRITICAL',
             'expect_entropy_min': 0.7
         },
         {
             'name': 'Real Science',
-            'text': 'Дослідження лонгітюдних змін у гіпокампі вказує на кореляцію між нейропластичністю та рівнем БДНФ. Статистична значущість p < 0.05 підтверджує гіпотезу.',
+            'text': 'Р”РѕСЃР»С–РґР¶РµРЅРЅСЏ Р»РѕРЅРіС–С‚СЋРґРЅРёС… Р·РјС–РЅ Сѓ РіС–РїРѕРєР°РјРїС– РІРєР°Р·СѓС” РЅР° РєРѕСЂРµР»СЏС†С–СЋ РјС–Р¶ РЅРµР№СЂРѕРїР»Р°СЃС‚РёС‡РЅС–СЃС‚СЋ С‚Р° СЂС–РІРЅРµРј Р‘Р”РќР¤. РЎС‚Р°С‚РёСЃС‚РёС‡РЅР° Р·РЅР°С‡СѓС‰С–СЃС‚СЊ p < 0.05 РїС–РґС‚РІРµСЂРґР¶СѓС” РіС–РїРѕС‚РµР·Сѓ.',
             'expect_status': 'VERIFIED',
             'expect_entropy_max': 0.15
         },
         {
             'name': 'Casuistry',
-            'text': 'Геополітична трансформація регіону зумовлена зміною логістичних ланцюгів та переглядом угод про нерозповсюдження технологій.',
+            'text': 'Р“РµРѕРїРѕР»С–С‚РёС‡РЅР° С‚СЂР°РЅСЃС„РѕСЂРјР°С†С–СЏ СЂРµРіС–РѕРЅСѓ Р·СѓРјРѕРІР»РµРЅР° Р·РјС–РЅРѕСЋ Р»РѕРіС–СЃС‚РёС‡РЅРёС… Р»Р°РЅС†СЋРіС–РІ С‚Р° РїРµСЂРµРіР»СЏРґРѕРј СѓРіРѕРґ РїСЂРѕ РЅРµСЂРѕР·РїРѕРІСЃСЋРґР¶РµРЅРЅСЏ С‚РµС…РЅРѕР»РѕРіС–Р№.',
             'expect_status': ['CRITICAL', 'WARNING'],
             'expect_entropy_min': 0.3
         }
@@ -123,7 +123,7 @@ def verify():
         passed = status_ok and entropy_ok
         all_passed = all_passed and passed
         
-        symbol = "✅" if passed else "❌"
+        symbol = "вњ…" if passed else "вќЊ"
         print(f"   {symbol} {test['name']}: {status} ({entropy:.2f})")
         
         if not passed:
@@ -133,12 +133,12 @@ def verify():
     print("="*70)
     
     if all_passed:
-        print("🎉 ALL TESTS PASSED!")
+        print("рџЋ‰ ALL TESTS PASSED!")
         print("Deployment successful. Veritas v13.3 is working correctly.")
         print("="*70)
         return True
     else:
-        print("❌ SOME TESTS FAILED!")
+        print("вќЊ SOME TESTS FAILED!")
         print()
         print("Troubleshooting:")
         print("1. Run: ./deploy.sh")
