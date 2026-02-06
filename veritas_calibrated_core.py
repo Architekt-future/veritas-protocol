@@ -42,6 +42,13 @@ try:
 except ImportError:
     INSIGHT_DENSITY_AVAILABLE = False
 
+# Import LAC Finance detector
+try:
+    from veritas_lac_finance import VeritasLACFinance
+    LAC_FINANCE_AVAILABLE = True
+except ImportError:
+    LAC_FINANCE_AVAILABLE = False
+
 
 @dataclass
 class LogicalViolation:
@@ -86,6 +93,12 @@ class VeritasCalibratedCore:
             self.insight_detector = InsightDensityDetector()
         else:
             self.insight_detector = None
+        
+        # LAC Finance detector (financial narrative logic check)
+        if LAC_FINANCE_AVAILABLE:
+            self.lac_finance = VeritasLACFinance()
+        else:
+            self.lac_finance = None
         
         # ============================================================
         # LAC MODULE I: STRATEGIC TRADE-OFF CALCULUS (V ≠ L)
@@ -394,6 +407,23 @@ class VeritasCalibratedCore:
         insight_result = {'casuistry_score': 0.0, 'insight_density': 0.5}
         if self.insight_detector:
             insight_result = self.insight_detector.analyze(text)
+        
+        # ---- PHASE 9: LAC FINANCE (financial narrative logic check) ----
+        lac_finance_result = {
+            'score': 0.0,
+            'verdict': 'N/A',
+            'missing': [],
+            'is_financial': False
+        }
+        if self.lac_finance:
+            finance_analysis = self.lac_finance.analyze(text)
+            lac_finance_result = {
+                'score': finance_analysis.score,
+                'verdict': finance_analysis.verdict,
+                'missing': finance_analysis.missing,
+                'is_financial': finance_analysis.financial_domain,
+                'evidence': finance_analysis.evidence
+            }
 
         # ---- AGGREGATE VIOLATIONS ----
         all_violations = (lac_i_violations + lac_ii_violations + lac_iii_violations +
@@ -481,6 +511,17 @@ class VeritasCalibratedCore:
                 # If pure casuistry (high complexity, zero facts), boost to WARNING
                 if insight_result.get('is_casuistry', False):
                     base_score = max(base_score, 0.35)  # force at least WARNING
+            
+            # LAC FINANCE BOOST (financial logic imitation)
+            # CRITICAL: For financial content with failed LAC checks
+            if lac_finance_result['is_financial'] and lac_finance_result['score'] < 0.5:
+                # Financial imitation of logic → boost entropy
+                imitation_penalty = (1.0 - lac_finance_result['score']) * 0.4  # up to +0.4
+                base_score += imitation_penalty
+                
+                # CRITICAL: If score is 0 (all 4 criteria failed) → force CRITICAL
+                if lac_finance_result['score'] == 0:
+                    base_score = max(base_score, 0.7)  # force CRITICAL for pure financial BS
 
             # EMERGENCY: LAC_I zero-cost violations → auto-boost to at least 0.5
             if lac_i_violations and any(v.vtype == 'ZERO_COST_PROPOSITION' for v in lac_i_violations):
@@ -569,6 +610,10 @@ class VeritasCalibratedCore:
                 'is_casuistry': insight_result.get('is_casuistry', False),
                 'fact_count': insight_result.get('fact_count', 0),
                 'is_semantic_void': is_semantic_void,
+                'lac_finance_score': round(lac_finance_result['score'], 3),
+                'lac_finance_verdict': lac_finance_result['verdict'],
+                'lac_finance_missing': lac_finance_result['missing'],
+                'is_financial_content': lac_finance_result['is_financial'],
             }
         }
 
