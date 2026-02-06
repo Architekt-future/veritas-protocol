@@ -115,6 +115,13 @@ def analyze():
         
         # Analyze text
         result = engine.analyze(text)
+        
+        # Add scraped text preview if URL was provided
+        if url:
+            result['scraped_text_preview'] = text[:1000] if len(text) > 1000 else text
+            result['scraped_text_length'] = len(text)
+            result['scraped_url'] = url
+        
         return jsonify(result)
     
     except Exception as e:
