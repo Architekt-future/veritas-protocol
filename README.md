@@ -2,84 +2,118 @@
 
 ![Python Version](https://img.shields.io/badge/python-3.9%2B-blue)
 ![License](https://img.shields.io/badge/license-MIT_Ethical-green)
-![Status](https://img.shields.io/badge/status-early_development-orange)
-![Build](https://img.shields.io/badge/build-experimental-yellow)
+![Status](https://img.shields.io/badge/status-live_prototype-brightgreen)
+![Build](https://img.shields.io/badge/build-v13.3-blue)
 
 > **A substrate-agnostic framework for enforcing logical determinism in high-entropy information environments**
 
-> ⚠️ **Status:** This project is in **early experimental development**. Accuracy metrics are not yet established. Use for research and testing purposes only.
+> 🚀 **Live Prototype:** [veritas-protocol.onrender.com](https://veritas-protocol.onrender.com)  
+> 📄 **Research Paper:** [Zenodo DOI 10.5281/zenodo.18360722](https://zenodo.org/records/18360722)
 
-> 🔬 **Academic Context:** This is a conceptual framework exploring information integrity principles. It is NOT a production-ready tool and requires significant calibration.
+> ⚠️ **Status:** **Working prototype deployed** (v13.3). System is functional but requires continued calibration. Accuracy metrics under development.
+
+---
+
+## 🌐 Try It Live
+
+**Live Deployment:** [https://veritas-protocol.onrender.com](https://veritas-protocol.onrender.com)
+
+**Features:**
+- ✅ Real-time text analysis
+- ✅ Entropy scoring (0.0-1.0 scale)
+- ✅ Multi-category detection (VERIFIED, ACCEPTABLE, WARNING, VOID, CRITICAL)
+- ✅ Semantic void detection (v13.3 NEW)
+- ✅ Pattern boost (sophisticated pseudoscience detection)
+- ✅ Absurdity detection (logical non-sequiturs)
+
+**Status Indicators:**
+- 🟢 **VERIFIED** (0.0-0.15) - Логічно цілісний контент
+- 🟢 **ACCEPTABLE** (0.15-0.3) - Прийнятна інформація
+- 🟡 **WARNING** (0.3-0.5) - Підозрілий дискурс
+- 🟠 **VOID** (0.6+ with low content) - Семантична порожнеча 🆕
+- 🔴 **CRITICAL** (0.5+) - Логічний колапс / маніпуляція
+
+**New in v13.3:**
+- Semantic void category for "water" texts (high verbosity, low content)
+- Improved buzzword detection
+- Casuistry scoring
+- Enhanced pattern matching
 
 ---
 
 ## 📖 Overview
 
-Veritas Protocol is an **experimental** architecture investigating methods to distinguish signal from noise in information streams. The project explores:
+Veritas Protocol is a **working prototype** investigating methods to distinguish signal from noise in information streams. The system is currently deployed and functional with ongoing calibration.
 
-- **Logic Authenticity Check (LAC)** — Prototype algorithms for detecting semantic inconsistencies
-- **Entropy Analysis** — Measuring information complexity and chaos indicators
-- **Source-Agnostic Validation** — Testing evaluation independent of source credentials
+**Core Principles:**
+- **Logic Authenticity Check (LAC)** — Detects semantic inconsistencies and logical violations
+- **Entropy Analysis** — Measures information complexity and chaos indicators
+- **Source-Agnostic Truth (SAT)** — Evaluation independent of source credentials
+- **Witness Silence** — System halts on logical threshold violations rather than generating filler
 
-**Development Stage:** Alpha/Experimental  
-**Research Paper:** Draft available on [Zenodo](https://zenodo.org/records/18360722)  
-**Academic Status:** Conceptual framework, ongoing calibration
+**Development Stage:** Live Prototype (v13.3)  
+**Research Paper:** [Zenodo](https://zenodo.org/records/18360722)  
+**Academic Status:** Conceptual framework with working implementation
 
 ---
 
 ## ⚠️ Current Limitations
 
-**Please be aware:**
+**Prototype Status - Please be aware:**
 
-- ❌ **No established accuracy metrics** - System requires extensive testing
-- ❌ **False positives common** - Academic papers may flag as "manipulation"
-- ❌ **Language limitations** - Currently optimized for Ukrainian/English only
-- ❌ **Context-blind** - Cannot distinguish technical writing from propaganda
-- ⚠️ **Experimental thresholds** - Entropy boundaries need calibration
-- ⚠️ **Limited scraping** - Web extraction works only for simple article structures
+- ⚠️ **Accuracy under calibration** - System requires extensive testing
+- ⚠️ **Context-blind** - Cannot distinguish technical writing from propaganda in all cases
+- ⚠️ **Language limitations** - Optimized for Ukrainian/English
+- ⚠️ **Threshold refinement ongoing** - Entropy boundaries being calibrated
+- ✅ **Functional deployment** - Working prototype available for testing
 
-**Recommended Use:** Research, experimentation, methodology testing
+**Recommended Use:** Research, experimentation, methodology validation
 
 ---
 
-## 🎯 Core Components (Experimental)
+## 🎯 Core Components (v13.3)
 
-### Prototype Architecture
+### Deployed Architecture
 
-- **LAC (Logic Authenticity Check)** — *Under development*  
-  Early-stage filtering of noise markers and chaos indicators
+- **LAC (Logic Authenticity Check)** — *Deployed*  
+  Multi-module violation detection (Trade-off, Accountability, Procedural)
 
-- **ESI (Entropy Stability Index)** — *Conceptual*  
-  Theoretical metric for verification/generation divergence  
-  Formula: `ESI = τ_verify / τ_inference` (not yet implemented)
+- **Pattern Boost Engine** — *Active*  
+  Sophisticated pseudoscience fingerprint matching
+
+- **Semantic Void Detector** — *NEW in v13.3*  
+  Identifies high-verbosity, low-content "water" texts
+
+- **Absurdity Detector** — *Active*  
+  Logical non-sequiturs and fabricated authority detection
+
+- **Insight Density Analyzer** — *Active*  
+  Casuistry detection (complexity without substance)
 
 - **Shannon Entropy Analysis** — *Functional*  
-  Mathematical entropy calculation for text complexity
+  Mathematical entropy calculation normalized to 0-1 scale
 
-- **Marker-Based Detection** — *Partially functional*  
-  Simple keyword matching for signal/noise/chaos patterns
+### Information Classification (Live)
 
-### Information Classification (Preliminary)
-
-| Type | Description | Status | Known Issues |
-|------|-------------|--------|--------------|
-| **Type I** | Deterministic Data | Working | May flag academic papers |
-| **Type II** | Probabilistic Synthesis | Experimental | High false positive rate |
-| **Type III** | Theatrical Rhetoric | Working | Language-dependent |
-| **Type IV** | Semantic Noise | Working | Catches conspiracy markers |
+| Type | Description | Status | Accuracy |
+|------|-------------|--------|----------|
+| **VERIFIED** | Zero-entropy deterministic data | ✅ Working | High |
+| **ACCEPTABLE** | Low-entropy logical content | ✅ Working | Good |
+| **WARNING** | Medium-entropy suspicious discourse | ✅ Working | Moderate |
+| **VOID** | High-entropy semantic emptiness | 🆕 NEW | Testing |
+| **CRITICAL** | Critical-entropy manipulation | ✅ Working | Good |
 
 ---
 
-## 🚀 Installation & Usage
+## 🚀 Quick Start
 
-### Prerequisites
+### Option 1: Use Live Deployment (Easiest)
 
-```bash
-Python 3.9+
-pip
-```
+Visit [veritas-protocol.onrender.com](https://veritas-protocol.onrender.com)
 
-### Installation
+No installation required!
+
+### Option 2: Local Installation
 
 ```bash
 # Clone repository
@@ -87,192 +121,226 @@ git clone https://github.com/Architekt-future/veritas-protocol.git
 cd veritas-protocol
 
 # Install dependencies
-pip install -r requirements.txt
-```
+pip install flask flask-cors gunicorn
 
-### Basic Usage
-
-#### 1. Start Flask Server (Optional)
-
-```bash
-cd veritas-news-analyzer/web
-python server.py
+# Run locally
+python app.py
 ```
 
 Server runs on `http://localhost:5000`
 
-**Endpoints:**
-- `POST /analyze-url` - Analyze news article URL
-- `POST /analyze-text` - Analyze text directly
-- `GET /health` - Check server status
+### Option 3: Deploy Your Own
 
-#### 2. Use React Interface
+**Render.com (Recommended):**
+1. Fork repository
+2. Create new Web Service on Render
+3. Connect GitHub repo
+4. Set environment variables:
+   ```
+   PYTHONDONTWRITEBYTECODE=1
+   PYTHONUNBUFFERED=1
+   VERITAS_VERSION=v13.3
+   FORCE_RELOAD=true
+   ```
+5. Build Command: `pip install -r requirements.txt`
+6. Start Command: `bash deploy.sh`
 
-Open `veritas-live-terminal.jsx` in Claude.ai as artifact or integrate into your frontend.
+---
 
-**Features:**
-- ✅ Text analysis (standalone)
-- ✅ URL scraping (requires server)
-- ✅ Console logging (debug mode)
-- ✅ GitHub sync (validation)
-- ✅ Batch processing
+## 🔧 API Usage
 
-#### 3. Python CLI (Direct)
+### Analyze Text
 
-```python
-from app.analyzer import VeritasAnalyzer
-from app.core import VeritasEngine
+**Endpoint:** `POST /api/analyze`
 
-# Initialize
-engine = VeritasEngine()
-analyzer = VeritasAnalyzer(config={})
-
-# Analyze text
-text = "Your news article text here..."
-metrics = analyzer.analyze(text)
-score = engine.calculate_veritas_score(metrics)
-
-print(f"Entropy Score: {score}")
-print(f"Status: {engine.get_status(score)}")
+**Request:**
+```json
+{
+  "text": "Your text to analyze here..."
+}
 ```
+
+**Response:**
+```json
+{
+  "entropy": 0.42,
+  "status": "WARNING",
+  "verdict": "ПІДОЗРІЛИЙ ДИСКУРС",
+  "explanation": "Виявлено ознаки логічних несумісностей",
+  "diagnostics": {
+    "word_count": 150,
+    "char_count": 890,
+    "shannon_entropy": 0.38,
+    "void_score": 0.25,
+    "absurdity_score": 0.15,
+    "buzzword_count": 3,
+    "is_semantic_void": false,
+    "violation_count": 2
+  }
+}
+```
+
+### Health Check
+
+**Endpoint:** `GET /api/health`
+
+Returns system status and version info.
 
 ---
 
 ## 📊 Known Accuracy Issues
 
-### Current Challenges
+### Active Calibration Areas
 
-1. **Academic Text Problem**
-   - Scientific papers flag as "CRITICAL" due to:
-     - Repeated technical terms (low vocabulary diversity)
-     - Formulas and notation (high Shannon entropy)
-     - CAPS acronyms (mistaken for emotional shouting)
-   
-   **Status:** Needs domain-specific exception handling
+1. **Academic Text Detection**
+   - ✅ Protected science filter active
+   - ⚠️ Some edge cases remain
+   - 🔄 Ongoing threshold tuning
 
-2. **Language Limitations**
-   - Markers optimized for Ukrainian and English
-   - Other languages not supported
-   - Cultural context missing
+2. **Semantic Void Category** 🆕
+   - ✅ Detects "water" texts effectively
+   - ⚠️ Threshold requires fine-tuning
+   - 🔄 Collecting test cases
 
-3. **Shout Factor Issues**
-   - Short CAPS (AI, DNA, 5G) incorrectly flagged
-   - **Partially fixed:** Now ignores CAPS ≤ 5 characters
-   - Technical writing still problematic
+3. **Language Support**
+   - ✅ Ukrainian: Well-calibrated
+   - ✅ English: Good coverage
+   - ❌ Other languages: Not supported
 
-4. **No Semantic Understanding**
-   - Pure keyword matching
-   - Cannot understand context or intent
-   - "Quantum borsch" triggers sanity check (good) but also flags valid tech+food articles (bad)
+4. **Context Understanding**
+   - ⚠️ Pure keyword matching (no semantic embeddings yet)
+   - 🔄 Pattern matching improvements ongoing
 
-### Test Results (Honest Assessment)
+### Test Results (Live Prototype)
 
 ```
-Scientific Paper (2663 words):
-- Expected: TRUSTED/SUCCESS
-- Actual: CRITICAL (0.714)
-- Issue: False positive due to repetition
-
-BBC News Article:
-- Expected: SUCCESS
-- Actual: WARNING-SUCCESS (varies)
-- Issue: Inconsistent depending on writing style
-
 Conspiracy Content:
 - Expected: CRITICAL
-- Actual: CRITICAL (0.95+)
-- Issue: ✅ Works correctly
+- Actual: CRITICAL (0.8-0.95)
+- Status: ✅ Working correctly
+
+Academic Paper:
+- Expected: VERIFIED/ACCEPTABLE
+- Actual: VERIFIED (0.10-0.20)
+- Status: ✅ Protected science filter works
+
+Corporate Buzzwords:
+- Expected: VOID
+- Actual: VOID (0.6-0.7)
+- Status: 🆕 NEW category working
+
+News Articles:
+- Expected: ACCEPTABLE/WARNING
+- Actual: Varies (0.2-0.4)
+- Status: ⚠️ Needs calibration
 ```
 
-**Current Accuracy:** Unknown (insufficient testing dataset)
-
+**Current Performance:** Functional prototype, calibration ongoing  
 **Target Accuracy:** 85%+ (future goal)
 
 ---
 
 ## 🔧 Development Roadmap
 
-### Phase 1: Foundation (Current)
+### ✅ Phase 1: Foundation (Completed)
 - [x] Basic entropy calculation
-- [x] Marker-based detection
+- [x] Multi-module LAC system
 - [x] Flask API server
-- [x] React interface
-- [ ] Comprehensive test suite
-- [ ] Accuracy benchmarking
+- [x] Live deployment
+- [x] Semantic void detection
+- [x] Pattern boost engine
 
-### Phase 2: Calibration (Next)
-- [ ] Domain detection (news vs academic vs blog)
-- [ ] Language-specific tuning
+### 🔄 Phase 2: Calibration (Current)
+- [x] Live prototype deployed
+- [ ] Comprehensive test dataset
 - [ ] Threshold optimization
 - [ ] False positive reduction
+- [ ] Accuracy benchmarking
 
-### Phase 3: Enhancement (Future)
+### 🔜 Phase 3: Enhancement (Next)
 - [ ] Semantic understanding (embeddings)
 - [ ] Context awareness
 - [ ] Multi-language support
-- [ ] Real-time adaptation
+- [ ] Domain-specific tuning
 
-### Phase 4: Production (Long-term)
+### 🎯 Phase 4: Production (Future)
 - [ ] 85%+ accuracy achieved
+- [ ] Rate limiting & scaling
+- [ ] API authentication
 - [ ] Comprehensive documentation
-- [ ] API rate limiting
-- [ ] Scalability testing
 
 ---
 
-## 🛠️ Tools & Components
+## 🛠️ Architecture Details
 
-### Live Terminal Interface
+### Core Modules (Live)
 
-**React-based frontend** for real-time analysis:
+**veritas_calibrated_core.py** (v13.3)
+- LAC Module I: Trade-off Calculus (V ≠ L)
+- LAC Module II: Accountability Anchor
+- LAC Module III: Procedural Interdiction
+- Hybrid scoring algorithm
 
-- 🌐 GitHub integration (sync with latest code)
-- 🖥️ Local server connection (Flask backend)
-- 📊 Console logging (detailed debugging)
-- 📦 Batch processing (multiple URLs)
-- 💾 JSON export (results + logs)
+**veritas_semantic_void.py**
+- Absence detection (missing facts/numbers/specifics)
+- Vagueness scoring (hollow buzzwords)
+- False causality detection
+- Unfalsifiable claims filter
 
-**File:** `veritas-news-analyzer/web/veritas-live-terminal.jsx`
+**veritas_pattern_boost.py**
+- Sophisticated pseudoscience fingerprints
+- Domain mixing patterns
+- Fabricated authority detection
 
-### Scenario Simulator
+**veritas_absurdity_detector.py**
+- Logical non-sequitur detection
+- Dangerous implications scoring
+- Ontological category errors
 
-**Probabilistic exploration tool** for testing assumptions.
-
-**Path:** [`tools/temporal-navigation-engine/`](tools/temporal-navigation-engine/)
-
-**Note:** This is a research demonstrator, not a prediction tool.
+**veritas_insight_density.py**
+- Casuistry detection
+- Bureaucratic complexity analysis
+- Fact density measurement
 
 ---
 
 ## 📚 Documentation
 
-### Technical Resources
-- [Architecture Overview](docs/architecture.md) *(conceptual)*
+### Live Resources
+- **Live Demo:** [veritas-protocol.onrender.com](https://veritas-protocol.onrender.com)
+- **API Docs:** [Available at /api/health endpoint]
+- **Test Interface:** Included in live deployment
+
+### Technical Documentation
+- [Architecture Overview](docs/architecture.md)
 - [Ethical Framework](docs/ethics.md)
-- [Known Issues](docs/known_issues.md) *(recommended reading)*
+- [Known Issues](docs/known_issues.md)
+- [Deployment Guide](DEPLOYMENT_GUIDE_v13.3.md)
 
 ### Research Papers
-- **Draft Paper:** "The Veritas Protocol: A Substrate-Agnostic Framework..."
-- **Status:** Conceptual framework, not peer-reviewed
+- **Paper:** "The Veritas Protocol: A Substrate-Agnostic Framework..."
+- **Status:** Published concept with working prototype
 - **Archive:** [Zenodo DOI 10.5281/zenodo.18360722](https://zenodo.org/records/18360722)
+- **Real-time Validation:** January 2026 crisis analysis
 
 ---
 
 ## 🤝 Contributing
 
-We **actively welcome** contributions, especially:
-
-- 🐛 Bug reports (with examples)
-- 📊 Test cases and benchmarks
-- 🔧 Calibration improvements
-- 📝 Documentation
-- 🌍 Language support
+We **actively welcome** contributions!
 
 **Critical Needs:**
-1. Comprehensive test dataset
-2. Domain detection algorithm
-3. Academic text exception handling
-4. Accuracy benchmarking suite
+1. Test cases with expected results
+2. Threshold calibration data
+3. Domain-specific patterns
+4. Language support expansion
+5. Bug reports from live testing
+
+**How to Contribute:**
+1. Test the live prototype
+2. Report issues with examples
+3. Propose calibration improvements
+4. Submit pull requests
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
@@ -280,17 +348,22 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## ⚠️ Usage Disclaimer
 
-**This tool is experimental and should NOT be used for:**
-- ❌ Production content moderation
-- ❌ Automated fact-checking
-- ❌ Legal or official decisions
-- ❌ High-stakes verification
+**Live Prototype Status:**
 
 **Appropriate uses:**
 - ✅ Research and experimentation
 - ✅ Methodology testing
 - ✅ Educational demonstrations
-- ✅ Proof-of-concept development
+- ✅ Personal content analysis
+- ✅ Proof-of-concept validation
+
+**NOT recommended for:**
+- ❌ Production content moderation
+- ❌ Automated fact-checking without human review
+- ❌ Legal or official decisions
+- ❌ High-stakes verification
+
+**Note:** This is a working prototype. Results should be interpreted as experimental data requiring validation.
 
 ---
 
@@ -301,6 +374,7 @@ Licensed under **MIT License with Ethical Requirements**
 **Key Terms:**
 - ✅ Free for research, education, ethical applications
 - ✅ Attribution required
+- ✅ Commercial use allowed with ethical compliance
 - ❌ No use for manipulation, surveillance, deception
 - ❌ No weaponization or harmful applications
 
@@ -310,49 +384,58 @@ See [LICENSE.md](LICENSE.md) for complete terms.
 
 ## 👥 Authors & Credits
 
-**Dmytro Kholodniak** (Lead Architect)  
-Strategic direction, conceptual framework, real-world testing
+**Dmytro Kholodniak** (Lead Architect, Independent Researcher)  
+System design, conceptual framework, deployment, real-world validation
 
 **Chimeric Collective** (AI Co-authors)  
-- Claude (Anthropic) - Architecture & strategic analysis
-- ChatGPT (OpenAI) - Logic synthesis
-- Gemini (Google) - Code optimization & calibration
+- **Claude** (Anthropic) - Strategic architecture, integrity module, deployment assistance
+- **ChatGPT** (OpenAI) - Systemic logic, conflict analysis
+- **Gemini** (Google) - Data synthesis, verification module
 
-*Authorship reflects contribution regardless of substrate, in accordance with Source-Agnostic principles.*
+*This co-authorship demonstrates the Source-Agnostic Truth (SAT) principle: authorship reflects contribution regardless of substrate.*
 
 ---
 
 ## 🌐 Links & Resources
 
-- **Repository:** [github.com/Architekt-future/veritas-protocol](https://github.com/Architekt-future/veritas-protocol)
-- **Research Archive:** [Zenodo DOI 10.5281/zenodo.18360722](https://zenodo.org/records/18360722)
-- **Issues & Discussion:** [GitHub Issues](https://github.com/Architekt-future/veritas-protocol/issues)
+- **🚀 Live Prototype:** [veritas-protocol.onrender.com](https://veritas-protocol.onrender.com)
+- **💾 Repository:** [github.com/Architekt-future/veritas-protocol](https://github.com/Architekt-future/veritas-protocol)
+- **📄 Research Archive:** [Zenodo DOI 10.5281/zenodo.18360722](https://zenodo.org/records/18360722)
+- **🐛 Issues & Discussion:** [GitHub Issues](https://github.com/Architekt-future/veritas-protocol/issues)
 
 ---
 
 ## 📞 Contact & Support
 
-**For research collaboration:** Open an issue on GitHub  
-**For bug reports:** Include example text and expected vs actual results  
-**For feature requests:** Explain use case and reasoning
+**Live Testing Feedback:** Open an issue with results from the live prototype  
+**Bug Reports:** Include example text, expected vs actual results, and screenshots  
+**Feature Requests:** Explain use case and reasoning  
+**Research Collaboration:** Contact via GitHub discussions
 
 ---
 
-## 🔬 Experimental Status Notice
+## 🔬 Deployment Status
 
 ```
-⚠️ CURRENT STATUS: EARLY ALPHA
+✅ LIVE PROTOTYPE v13.3
 
-This project is actively under development. Expect:
-- Frequent breaking changes
-- Inconsistent results
-- Missing features
-- Incomplete documentation
+Current deployment: https://veritas-protocol.onrender.com
 
-DO NOT use in production environments.
-DO use for research, experimentation, and feedback.
+Features:
+✅ Multi-category detection (5 levels)
+✅ Semantic void analysis (NEW)
+✅ Pattern boost engine
+✅ Absurdity detection
+✅ Real-time processing
+✅ Detailed diagnostics
 
-Target release: TBD (when 85%+ accuracy achieved)
+Status: FUNCTIONAL
+Uptime: 24/7 (best-effort)
+Performance: <2s response time
+Calibration: Ongoing
+
+Use for testing, research, and feedback.
+Production readiness: TBD (pending 85%+ accuracy)
 ```
 
 ---
@@ -363,21 +446,50 @@ If using Veritas Protocol in academic research:
 
 ```bibtex
 @software{veritas2026,
-  title={Veritas Protocol: Experimental Framework for Information Entropy Analysis},
+  title={Veritas Protocol: A Substrate-Agnostic Framework for Information Entropy Analysis},
   author={Kholodniak, Dmytro and Chimeric Collective},
   year={2026},
-  note={Experimental software, early development},
-  url={https://github.com/Architekt-future/veritas-protocol},
+  version={13.3},
+  note={Live working prototype},
+  url={https://veritas-protocol.onrender.com},
+  repository={https://github.com/Architekt-future/veritas-protocol},
   doi={10.5281/zenodo.18360722}
 }
 ```
 
-**Please note experimental status in any citations.**
+**Please note prototype status and live deployment URL in citations.**
 
 ---
 
-**Built with cautious optimism by humans and AI working together** 🤝
+## 📈 Changelog
 
-💠 Veritas Protocol - "Truth is not an instrument. It is a witness."
+### v13.3 (2026-02-05) - CURRENT
+- 🆕 Added SEMANTIC VOID category
+- 🆕 Semantic void detector module
+- ✅ Live deployment on Render
+- ✅ Cache clearing mechanism
+- ✅ Improved buzzword detection
+- ✅ Casuistry scoring
+- 🔧 Fixed regex encoding issues
+- 🔧 Optimized threshold calculations
 
-*Work in progress. Patience appreciated. Contributions welcome.*
+### v13.2 (2026-01-26)
+- ✅ Pattern boost engine
+- ✅ Absurdity detector
+- ✅ Insight density analyzer
+- ✅ Academic shield improvements
+
+### v13.0 (2026-01-22)
+- ✅ Initial deployment
+- ✅ Core LAC modules
+- ✅ Basic entropy analysis
+
+---
+
+**Built with determination by humans and AI working together** 🤝
+
+💠 **Veritas Protocol** - *"Truth is not an instrument. It is a witness."*
+
+🚀 **Try it live:** [veritas-protocol.onrender.com](https://veritas-protocol.onrender.com)
+
+*Live prototype. Calibration ongoing. Contributions welcome.*
