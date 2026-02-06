@@ -49,6 +49,13 @@ try:
 except ImportError:
     LAC_FINANCE_AVAILABLE = False
 
+# Import LAC Labor detector
+try:
+    from veritas_lac_labor import VeritasLACLabor
+    LAC_LABOR_AVAILABLE = True
+except ImportError:
+    LAC_LABOR_AVAILABLE = False
+
 
 @dataclass
 class LogicalViolation:
@@ -99,6 +106,12 @@ class VeritasCalibratedCore:
             self.lac_finance = VeritasLACFinance()
         else:
             self.lac_finance = None
+        
+        # LAC Labor detector (employment/contract responsibility check)
+        if LAC_LABOR_AVAILABLE:
+            self.lac_labor = VeritasLACLabor()
+        else:
+            self.lac_labor = None
         
         # ============================================================
         # LAC MODULE I: STRATEGIC TRADE-OFF CALCULUS (V ≠ L)
@@ -424,6 +437,25 @@ class VeritasCalibratedCore:
                 'is_financial': finance_analysis.financial_domain,
                 'evidence': finance_analysis.evidence
             }
+        
+        # ---- PHASE 10: LAC LABOR (employment/contract responsibility check) ----
+        lac_labor_result = {
+            'score': 0.0,
+            'verdict': 'N/A',
+            'missing': [],
+            'is_labor': False,
+            'red_flags': []
+        }
+        if self.lac_labor:
+            labor_analysis = self.lac_labor.analyze(text)
+            lac_labor_result = {
+                'score': labor_analysis.score,
+                'verdict': labor_analysis.verdict,
+                'missing': labor_analysis.missing,
+                'is_labor': labor_analysis.is_labor_content,
+                'red_flags': labor_analysis.red_flags,
+                'evidence': labor_analysis.evidence
+            }
 
         # ---- AGGREGATE VIOLATIONS ----
         all_violations = (lac_i_violations + lac_ii_violations + lac_iii_violations +
@@ -502,20 +534,6 @@ class VeritasCalibratedCore:
                 # CRITICAL: dangerous implications or non-sequitur
                 if absurdity_result.get('danger_count', 0) >= 1 or absurdity_result.get('has_non_sequitur', False):
                     base_score = max(base_score, 0.6)  # force CRITICAL
-                
-                # OVERRIDE ACADEMIC SHIELD if absurdity too high
-                # Pseudoscience with academic coating must not be protected
-                if absurdity_result['absurdity_score'] > 0.5 and is_protected_science:
-                    is_protected_science = False
-                    # Recalculate base_score without shield
-                    base_score = (
-                        conflict_penalty * 0.40 +
-                        lac_penalty * 0.25 +
-                        domain_penalty * 0.20 +
-                        shannon_entropy * 0.15
-                    )
-                    # Re-add absurdity
-                    base_score += absurdity_result['absurdity_score'] * 1.2
 
             # CASUISTRY BOOST (complexity without insight)
             # IMPORTANT: skip if academic shield protects this text
@@ -536,6 +554,22 @@ class VeritasCalibratedCore:
                 # CRITICAL: If score is 0 (all 4 criteria failed) → force CRITICAL
                 if lac_finance_result['score'] == 0:
                     base_score = max(base_score, 0.7)  # force CRITICAL for pure financial BS
+            
+            # LAC LABOR BOOST (employment/contract responsibility imitation)
+            # CRITICAL: For labor content with failed LAC checks or red flags
+            if lac_labor_result['is_labor'] and lac_labor_result['score'] < 0.5:
+                # Labor imitation of responsibility → boost entropy
+                imitation_penalty = (1.0 - lac_labor_result['score']) * 0.4  # up to +0.4
+                base_score += imitation_penalty
+                
+                # CRITICAL: If score is 0 (all 3 criteria failed) → force CRITICAL
+                if lac_labor_result['score'] == 0:
+                    base_score = max(base_score, 0.7)  # force CRITICAL for pure labor BS
+                
+                # EXTRA CRITICAL: Red flags (exploitation patterns) → additional boost
+                if lac_labor_result['red_flags']:
+                    red_flag_count = len(lac_labor_result['red_flags'])
+                    base_score += min(0.3, red_flag_count * 0.1)  # up to +0.3
 
             # EMERGENCY: LAC_I zero-cost violations → auto-boost to at least 0.5
             if lac_i_violations and any(v.vtype == 'ZERO_COST_PROPOSITION' for v in lac_i_violations):
@@ -544,6 +578,26 @@ class VeritasCalibratedCore:
             # violation multiplier
             if violation_count > 0:
                 base_score *= (1.0 + violation_count * 0.1)
+        
+        # ================================================================
+        # CRITICAL OVERRIDE: ABSURDITY KILLS ACADEMIC SHIELD
+        # ================================================================
+        # This MUST be outside the if/else block!
+        # High absurdity = pseudoscience with academic coating
+        if is_protected_science and absurdity_result['absurdity_score'] > 0.3:
+            # DISABLE SHIELD and recalculate
+            is_protected_science = False
+            base_score = (
+                conflict_penalty * 0.40 +
+                lac_penalty * 0.25 +
+                domain_penalty * 0.20 +
+                shannon_entropy * 0.15 +
+                absurdity_result['absurdity_score'] * 1.2  # Add absurdity
+            )
+            
+            # If very high absurdity (0.5+), force CRITICAL
+            if absurdity_result['absurdity_score'] >= 0.5:
+                base_score = max(base_score, 0.7)
 
         final_score = min(0.99, max(0.0, base_score))
 
@@ -628,6 +682,11 @@ class VeritasCalibratedCore:
                 'lac_finance_verdict': lac_finance_result['verdict'],
                 'lac_finance_missing': lac_finance_result['missing'],
                 'is_financial_content': lac_finance_result['is_financial'],
+                'lac_labor_score': round(lac_labor_result['score'], 3),
+                'lac_labor_verdict': lac_labor_result['verdict'],
+                'lac_labor_missing': lac_labor_result['missing'],
+                'lac_labor_red_flags': lac_labor_result['red_flags'],
+                'is_labor_content': lac_labor_result['is_labor'],
             }
         }
 
