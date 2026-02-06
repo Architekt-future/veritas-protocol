@@ -627,6 +627,28 @@ class VeritasCalibratedCore:
                     context='Анонімне джерело авторитету'
                 ))
                 break
+        
+        # GASLIGHTING patterns (NEW)
+        gaslighting_patterns = [
+            r'(тільки|лише|справжня)\s+(ми|вони)\s+(володіють|знають|розуміють)',
+            r'опір.*?(неминуч|марн|безглузд)',
+            r'справжня\s+(свобода|правда).*?(прийняття|підпорядкування|слідування)',
+            r'ви.*?(не здатні|не можете|не в змозі).*?(побачити|зрозуміти|усвідомити)',
+            r'обмежен[а-яіїє\']*\s+(сприйняття|розуміння|свідомість)',
+            r'для\s+вашого.*?(порятунку|блага|добра)',
+            r'(когнітивн|ментальн)[а-яіїє\']*\s+(деградац|обмежен)',
+        ]
+        
+        for pattern in gaslighting_patterns:
+            if re.search(pattern, text_lower):
+                violations.append(LogicalViolation(
+                    module='LAC_MODULE_II',
+                    vtype='GASLIGHTING',
+                    severity=0.8,  # HIGH severity
+                    evidence=[pattern[:40]],
+                    context='Газлайтинг та психологічна маніпуляція'
+                ))
+                break
 
         return violations
 
@@ -772,16 +794,17 @@ class VeritasCalibratedCore:
     def _is_protected_science(self, text: str, violations: List) -> bool:
         text_lower = text.lower()
 
-        # need 3+ academic terms
+        # need 2+ academic terms (lowered from 3)
         academic_count = sum(1 for term in self.academic_whitelist if term in text_lower)
-        if academic_count < 3:
+        if academic_count < 2:
             return False
 
-        # NEW: must have concrete evidence (numbers/dates/sources)
+        # must have concrete evidence (numbers/dates/sources) OR statistical terms
         has_numbers = bool(re.search(r'\d+(?:[.,]\d+)?', text))
         has_dates = bool(re.search(r'\d{4}', text))
         has_sources = bool(re.search(r'(дослідження|експеримент|університет|інститут|публікація)', text_lower))
-        has_concrete = has_numbers or has_dates or has_sources
+        has_stats = bool(re.search(r'(p\s*[<>≤≥]\s*0\.|статистичн|кореляц|вибірк)', text_lower))
+        has_concrete = has_numbers or has_dates or has_sources or has_stats
         
         if not has_concrete:
             return False
@@ -794,8 +817,8 @@ class VeritasCalibratedCore:
         if has_chaos:
             return False
 
-        # no serious violations
-        serious = [v for v in violations if v.severity > 0.4]
+        # no serious violations (increased tolerance for science)
+        serious = [v for v in violations if v.severity > 0.5]
         if serious:
             return False
 
