@@ -454,11 +454,16 @@ class VeritasCalibratedCore:
             # SEMANTIC VOID BOOST (absence of meaning)
             # IMPORTANT: skip if academic shield protects this text
             if void_result['void_score'] > 0 and not is_protected_science:
-                base_score += void_result['void_score'] * 1.0  # 100% weight (CRITICAL for void detection)
+                # CRITICAL: High weight for void detection (theatricality/mysticism)
+                base_score += void_result['void_score'] * 2.5  # 250% weight (BOOSTED for mystical texts)
                 
                 # EMERGENCY: high void + high buzzwords = pure emptiness
-                if void_result['void_score'] > 0.2 and void_result.get('buzzword_count', 0) >= 4:
-                    base_score = max(base_score, 0.4)  # force at least WARNING
+                if void_result['void_score'] > 0.1 and void_result.get('buzzword_count', 0) >= 3:
+                    base_score = max(base_score, 0.35)  # force at least WARNING
+                
+                # MYSTICAL/CONSPIRACY: even low void + mystical patterns = boost
+                if void_result['void_score'] > 0.08:
+                    base_score += 0.15  # mystical theatricality boost
 
             # ABSURDITY BOOST (logical non-sequiturs, fabricated authority, danger)
             if absurdity_result['absurdity_score'] > 0:
@@ -489,14 +494,15 @@ class VeritasCalibratedCore:
 
         # ---- SPECIAL CASE: SEMANTIC VOID DETECTION ----
         # If high entropy + high void + low violations = just empty fluff, not manipulation
-        # ADJUSTED: Lower buzzword threshold for shorter texts
-        min_buzzwords = 3 if word_count < 50 else 5
+        # ADJUSTED: Lower thresholds for mystical/theatrical texts
+        min_buzzwords = 2 if word_count < 50 else 3  # Lower threshold
         
         is_semantic_void = (
-            final_score >= 0.6 and
-            void_result['void_score'] >= 0.4 and
-            void_result.get('buzzword_count', 0) >= min_buzzwords and
-            violation_count <= 2 and
+            final_score >= 0.35 and  # Lowered from 0.6 for theatrical texts
+            void_result['void_score'] >= 0.1 and  # Lowered from 0.4 for mysticism
+            (void_result.get('buzzword_count', 0) >= min_buzzwords or 
+             void_result['void_score'] >= 0.15) and  # OR just high void
+            violation_count <= 3 and  # Increased tolerance
             not absurdity_result.get('has_non_sequitur', False) and
             absurdity_result.get('danger_count', 0) == 0
         )
