@@ -28,6 +28,7 @@ print(f"   Void detector: {engine.void_detector is not None}")
 print(f"   Absurdity detector: {engine.absurdity_detector is not None}")
 print(f"   Insight detector: {engine.insight_detector is not None}")
 print(f"   LAC Finance: {engine.lac_finance is not None}")
+print(f"   LAC Labor: {engine.lac_labor is not None}")
 
 @app.route('/')
 def home():
@@ -54,13 +55,14 @@ def analyze():
         if request.method == 'GET':
             return jsonify({
                 'status': 'online',
-                'version': 'v13.5',
+                'version': 'v13.6',
                 'modules': {
                     'pattern_boost': engine.pattern_boost_engine is not None,
                     'void_detector': engine.void_detector is not None,
                     'absurdity_detector': engine.absurdity_detector is not None,
                     'insight_detector': engine.insight_detector is not None,
                     'lac_finance': engine.lac_finance is not None,
+                    'lac_labor': engine.lac_labor is not None,
                 }
             })
         
