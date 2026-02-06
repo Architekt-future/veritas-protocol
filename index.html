@@ -637,14 +637,28 @@ function renderResults(data) {
         lacLaborPanel.style.display = 'none';
     }
 
-    // ── Scraped text panel: ONLY for url_scraping ──
+    // ── Scraped text panel: show if scraped_text_preview exists ──
     const scrapedPanel = document.getElementById('scrapedPanel');
 
-    if (mode === 'url_scraping' && txt) {
-        // FIX UTF-8: use textContent which handles encoding properly
-        document.getElementById('textDisplay').textContent = txt;
+    if (data.scraped_text_preview) {
+        // Show scraped text preview
+        document.getElementById('textDisplay').textContent = data.scraped_text_preview;
 
         // build source line
+        const parts = [];
+        if (data.scraped_url) {
+            parts.push(`<a href="${escHtml(data.scraped_url)}" target="_blank" style="color:#00d4ff;text-decoration:none;">↗ ${escHtml(data.scraped_url)}</a>`);
+        }
+        if (data.scraped_text_length) {
+            parts.push(`Total: ${data.scraped_text_length} chars`);
+        }
+        document.getElementById('sourceTag').innerHTML = parts.join(' · ');
+
+        scrapedPanel.style.display = 'block';
+    } else if (mode === 'url_scraping' && txt) {
+        // Legacy: old scraping format
+        document.getElementById('textDisplay').textContent = txt;
+
         const parts = [];
         if (data.title && data.title !== 'Manual Input' && data.title !== 'Untitled')
             parts.push(`<span class="tag">${escHtml(data.title)}</span>`);
@@ -656,7 +670,7 @@ function renderResults(data) {
 
         scrapedPanel.style.display = 'block';
     } else {
-        // manual input — panel stays hidden, no duplication
+        // manual input — panel stays hidden
         scrapedPanel.style.display = 'none';
     }
 }
