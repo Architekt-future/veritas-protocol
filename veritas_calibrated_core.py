@@ -502,6 +502,20 @@ class VeritasCalibratedCore:
                 # CRITICAL: dangerous implications or non-sequitur
                 if absurdity_result.get('danger_count', 0) >= 1 or absurdity_result.get('has_non_sequitur', False):
                     base_score = max(base_score, 0.6)  # force CRITICAL
+                
+                # OVERRIDE ACADEMIC SHIELD if absurdity too high
+                # Pseudoscience with academic coating must not be protected
+                if absurdity_result['absurdity_score'] > 0.5 and is_protected_science:
+                    is_protected_science = False
+                    # Recalculate base_score without shield
+                    base_score = (
+                        conflict_penalty * 0.40 +
+                        lac_penalty * 0.25 +
+                        domain_penalty * 0.20 +
+                        shannon_entropy * 0.15
+                    )
+                    # Re-add absurdity
+                    base_score += absurdity_result['absurdity_score'] * 1.2
 
             # CASUISTRY BOOST (complexity without insight)
             # IMPORTANT: skip if academic shield protects this text
@@ -867,4 +881,24 @@ class VeritasCalibratedCore:
         if serious:
             return False
 
+        return True
+    
+    def _override_academic_shield(self, is_protected: bool, absurdity_score: float, void_score: float) -> bool:
+        """
+        Override academic shield if absurdity or void is too high
+        
+        CRITICAL: Even if text has academic terms, high absurdity = NOT protected
+        Example: "gravity is social construct" has academic words but is absurd
+        """
+        if not is_protected:
+            return False
+        
+        # OVERRIDE if high absurdity (pseudoscience with academic coating)
+        if absurdity_score > 0.5:
+            return False
+        
+        # OVERRIDE if very high void (academic buzzwords without substance)
+        if void_score > 0.3:
+            return False
+        
         return True
