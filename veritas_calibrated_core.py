@@ -584,7 +584,7 @@ class VeritasCalibratedCore:
         # ================================================================
         # This MUST be outside the if/else block!
         # High absurdity = pseudoscience with academic coating
-        if is_protected_science and absurdity_result['absurdity_score'] > 0.3:
+        if is_protected_science and absurdity_result['absurdity_score'] > 0.25:  # Lowered from 0.3
             # DISABLE SHIELD and recalculate
             is_protected_science = False
             base_score = (
@@ -796,6 +796,12 @@ class VeritasCalibratedCore:
     def _analyze_domain_purity(self, text: str) -> List[LogicalViolation]:
         violations = []
         text_lower = text.lower()
+        
+        # Skip domain analysis for very short texts (<30 words)
+        # They don't have enough context for meaningful domain mixing
+        word_count = len(text.split())
+        if word_count < 30:
+            return violations
 
         detected_domains = set()
 
