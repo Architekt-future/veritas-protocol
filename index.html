@@ -405,6 +405,31 @@
                     </div>
                 </div>
             </div>
+            
+            <!-- LAC LABOR PANEL -->
+            <div class="panel" id="lacLaborPanel" style="display:none; margin-top: 16px; background: rgba(100,200,255,0.08); border-color: rgba(100,200,255,0.3);">
+                <div class="panel-title" style="color: #64c8ff;">
+                    ⚙️ LAC Labor Analysis
+                </div>
+                <div style="margin-top: 12px;">
+                    <div style="margin-bottom: 8px;">
+                        <span style="color: #999; font-size: 0.8em;">Responsibility Score:</span>
+                        <span style="color: #64c8ff; font-size: 1.2em; font-weight: bold; margin-left: 8px;" id="lacLaborScore">—</span>
+                    </div>
+                    <div style="margin-bottom: 8px;">
+                        <span style="color: #999; font-size: 0.8em;">Verdict:</span>
+                        <span style="color: #64c8ff; margin-left: 8px;" id="lacLaborVerdict">—</span>
+                    </div>
+                    <div id="lacLaborMissing" style="display:none; margin-top: 12px; padding: 10px; background: rgba(255,68,68,0.1); border-radius: 6px; border: 1px solid rgba(255,68,68,0.3);">
+                        <span style="color: #ff6666; font-size: 0.8em;">❌ Missing Criteria:</span>
+                        <div style="color: #ff9999; margin-top: 6px; font-size: 0.85em;" id="lacLaborMissingList"></div>
+                    </div>
+                    <div id="lacLaborRedFlags" style="display:none; margin-top: 12px; padding: 10px; background: rgba(255,0,0,0.15); border-radius: 6px; border: 1px solid rgba(255,68,68,0.4);">
+                        <span style="color: #ff4444; font-size: 0.8em;">🚩 Exploitation Patterns:</span>
+                        <div style="color: #ff6666; margin-top: 6px; font-size: 0.85em;" id="lacLaborRedFlagsList"></div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- SCRAPED TEXT — only shown when mode === 'url_scraping' -->
@@ -579,6 +604,37 @@ function renderResults(data) {
         lacPanel.style.display = 'block';
     } else {
         lacPanel.style.display = 'none';
+    }
+    
+    // v13.6 LAC LABOR PANEL
+    const lacLaborPanel = document.getElementById('lacLaborPanel');
+    if (diag.is_labor_content && diag.lac_labor_score !== undefined) {
+        document.getElementById('lacLaborScore').textContent = diag.lac_labor_score.toFixed(2);
+        document.getElementById('lacLaborVerdict').textContent = diag.lac_labor_verdict || 'N/A';
+        
+        const laborMissingPanel = document.getElementById('lacLaborMissing');
+        const laborMissingList = document.getElementById('lacLaborMissingList');
+        
+        if (diag.lac_labor_missing && diag.lac_labor_missing.length > 0) {
+            laborMissingList.textContent = diag.lac_labor_missing.join(', ');
+            laborMissingPanel.style.display = 'block';
+        } else {
+            laborMissingPanel.style.display = 'none';
+        }
+        
+        const laborRedFlagsPanel = document.getElementById('lacLaborRedFlags');
+        const laborRedFlagsList = document.getElementById('lacLaborRedFlagsList');
+        
+        if (diag.lac_labor_red_flags && diag.lac_labor_red_flags.length > 0) {
+            laborRedFlagsList.textContent = diag.lac_labor_red_flags.join(', ');
+            laborRedFlagsPanel.style.display = 'block';
+        } else {
+            laborRedFlagsPanel.style.display = 'none';
+        }
+        
+        lacLaborPanel.style.display = 'block';
+    } else {
+        lacLaborPanel.style.display = 'none';
     }
 
     // ── Scraped text panel: ONLY for url_scraping ──
