@@ -27,6 +27,7 @@ print(f"   Pattern boost: {engine.pattern_boost_engine is not None}")
 print(f"   Void detector: {engine.void_detector is not None}")
 print(f"   Absurdity detector: {engine.absurdity_detector is not None}")
 print(f"   Insight detector: {engine.insight_detector is not None}")
+print(f"   LAC Finance: {engine.lac_finance is not None}")
 
 @app.route('/')
 def home():
