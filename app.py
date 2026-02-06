@@ -53,7 +53,7 @@ def analyze():
         if request.method == 'GET':
             return jsonify({
                 'status': 'online',
-                'version': 'v13.3',
+                'version': 'v13.4',
                 'modules': {
                     'pattern_boost': engine.pattern_boost_engine is not None,
                     'void_detector': engine.void_detector is not None,
@@ -62,13 +62,50 @@ def analyze():
                 }
             })
         
-        # POST request = analyze text
+        # POST request = analyze text or URL
         data = request.get_json() or {}
         text = data.get('text', '')
+        url = data.get('url', '')
+        
+        # If URL provided, scrape it
+        if url and not text:
+            try:
+                import requests
+                from bs4 import BeautifulSoup
+                
+                headers = {'User-Agent': 'Mozilla/5.0 (compatible; VeritasBot/1.0)'}
+                response = requests.get(url, headers=headers, timeout=10)
+                response.raise_for_status()
+                
+                soup = BeautifulSoup(response.content, 'html.parser')
+                
+                # Remove script and style elements
+                for script in soup(["script", "style", "nav", "footer", "header"]):
+                    script.decompose()
+                
+                # Get text
+                text = soup.get_text()
+                
+                # Clean up whitespace
+                lines = (line.strip() for line in text.splitlines())
+                chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
+                text = ' '.join(chunk for chunk in chunks if chunk)
+                
+                if not text or len(text) < 100:
+                    return jsonify({
+                        'error': 'Could not extract enough text from URL',
+                        'status': 'error'
+                    }), 400
+                    
+            except Exception as e:
+                return jsonify({
+                    'error': f'Failed to scrape URL: {str(e)}',
+                    'status': 'error'
+                }), 400
         
         if not text:
             return jsonify({
-                'error': 'No text provided',
+                'error': 'No text or URL provided',
                 'status': 'error'
             }), 400
         
