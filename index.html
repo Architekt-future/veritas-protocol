@@ -384,6 +384,27 @@
                     <div class="metric-value" id="casuistryScore">0</div>
                 </div>
             </div>
+            
+            <!-- LAC FINANCE PANEL -->
+            <div class="panel" id="lacFinancePanel" style="display:none; margin-top: 16px; background: rgba(255,200,0,0.08); border-color: rgba(255,200,0,0.3);">
+                <div class="panel-title" style="color: #ffc800;">
+                    💰 LAC Finance Analysis
+                </div>
+                <div style="margin-top: 12px;">
+                    <div style="margin-bottom: 8px;">
+                        <span style="color: #999; font-size: 0.8em;">Logic Authenticity Score:</span>
+                        <span style="color: #ffc800; font-size: 1.2em; font-weight: bold; margin-left: 8px;" id="lacFinanceScore">—</span>
+                    </div>
+                    <div style="margin-bottom: 8px;">
+                        <span style="color: #999; font-size: 0.8em;">Verdict:</span>
+                        <span style="color: #ffc800; margin-left: 8px;" id="lacFinanceVerdict">—</span>
+                    </div>
+                    <div id="lacFinanceMissing" style="display:none; margin-top: 12px; padding: 10px; background: rgba(255,68,68,0.1); border-radius: 6px; border: 1px solid rgba(255,68,68,0.3);">
+                        <span style="color: #ff6666; font-size: 0.8em;">❌ Missing Criteria:</span>
+                        <div style="color: #ff9999; margin-top: 6px; font-size: 0.85em;" id="lacFinanceMissingList"></div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- SCRAPED TEXT — only shown when mode === 'url_scraping' -->
@@ -538,6 +559,27 @@ function renderResults(data) {
     document.getElementById('casuistryScore').textContent = (diag.casuistry_score || 0).toFixed(2);
     
     document.getElementById('metricsPanel').style.display = 'grid';
+    
+    // v13.5 LAC FINANCE PANEL
+    const lacPanel = document.getElementById('lacFinancePanel');
+    if (diag.is_financial_content && diag.lac_finance_score !== undefined) {
+        document.getElementById('lacFinanceScore').textContent = diag.lac_finance_score.toFixed(2);
+        document.getElementById('lacFinanceVerdict').textContent = diag.lac_finance_verdict || 'N/A';
+        
+        const missingPanel = document.getElementById('lacFinanceMissing');
+        const missingList = document.getElementById('lacFinanceMissingList');
+        
+        if (diag.lac_finance_missing && diag.lac_finance_missing.length > 0) {
+            missingList.textContent = diag.lac_finance_missing.join(', ');
+            missingPanel.style.display = 'block';
+        } else {
+            missingPanel.style.display = 'none';
+        }
+        
+        lacPanel.style.display = 'block';
+    } else {
+        lacPanel.style.display = 'none';
+    }
 
     // ── Scraped text panel: ONLY for url_scraping ──
     const scrapedPanel = document.getElementById('scrapedPanel');
@@ -586,6 +628,7 @@ function statusToColor(status) {
     if (status === 'VERIFIED') return '#00ff88';
     if (status === 'ACCEPTABLE') return '#ffaa00';
     if (status === 'WARNING') return '#ff6644';
+    if (status === 'VOID') return '#9966ff';
     if (status === 'CRITICAL') return '#ff3333';
     return '#888';
 }
@@ -594,6 +637,7 @@ function statusToGradient(status) {
     if (status === 'VERIFIED') return 'linear-gradient(90deg,#00ff88,#00cc66)';
     if (status === 'ACCEPTABLE') return 'linear-gradient(90deg,#ffaa00,#ff8800)';
     if (status === 'WARNING') return 'linear-gradient(90deg,#ff6644,#ff4422)';
+    if (status === 'VOID') return 'linear-gradient(90deg,#9966ff,#7744dd)';
     if (status === 'CRITICAL') return 'linear-gradient(90deg,#ff3333,#cc0000)';
     return 'linear-gradient(90deg,#666,#444)';
 }
@@ -602,6 +646,7 @@ function statusToClass(status) {
     if (status === 'VERIFIED') return 'trusted';
     if (status === 'ACCEPTABLE') return 'acceptable';
     if (status === 'WARNING') return 'suspicious';
+    if (status === 'VOID') return 'suspicious';
     if (status === 'CRITICAL') return 'chaos';
     return 'acceptable';
 }
