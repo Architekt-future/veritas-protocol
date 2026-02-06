@@ -53,12 +53,13 @@ def analyze():
         if request.method == 'GET':
             return jsonify({
                 'status': 'online',
-                'version': 'v13.4',
+                'version': 'v13.5',
                 'modules': {
                     'pattern_boost': engine.pattern_boost_engine is not None,
                     'void_detector': engine.void_detector is not None,
                     'absurdity_detector': engine.absurdity_detector is not None,
                     'insight_detector': engine.insight_detector is not None,
+                    'lac_finance': engine.lac_finance is not None,
                 }
             })
         
