@@ -13,7 +13,7 @@ for module in modules_to_clear:
     del sys.modules[module]
 print(f"✅ Cache cleared. Loading fresh Veritas v13.3 modules...")
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 from veritas_calibrated_core import VeritasCalibratedCore
 
@@ -30,17 +30,21 @@ print(f"   Insight detector: {engine.insight_detector is not None}")
 
 @app.route('/')
 def home():
-    return jsonify({
-        'status': 'online',
-        'version': 'v13.3',
-        'message': 'Veritas Protocol API is running',
-        'features': {
-            'pattern_boost': engine.pattern_boost_engine is not None,
-            'void_detector': engine.void_detector is not None,
-            'absurdity_detector': engine.absurdity_detector is not None,
-            'insight_detector': engine.insight_detector is not None,
-        }
-    })
+    """Serve the HTML interface"""
+    try:
+        return send_file('index.html')
+    except:
+        return jsonify({
+            'status': 'online',
+            'version': 'v13.3',
+            'message': 'Veritas Protocol API is running (index.html not found)',
+            'features': {
+                'pattern_boost': engine.pattern_boost_engine is not None,
+                'void_detector': engine.void_detector is not None,
+                'absurdity_detector': engine.absurdity_detector is not None,
+                'insight_detector': engine.insight_detector is not None,
+            }
+        })
 
 @app.route('/api/analyze', methods=['GET', 'POST'])
 def analyze():
