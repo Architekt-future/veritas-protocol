@@ -49,12 +49,22 @@ def home():
 @app.route('/api/analyze', methods=['GET', 'POST'])
 def analyze():
     try:
-        # Get text from query param or JSON body
+        # GET request = health check
         if request.method == 'GET':
-            text = request.args.get('text', '')
-        else:
-            data = request.get_json() or {}
-            text = data.get('text', '')
+            return jsonify({
+                'status': 'online',
+                'version': 'v13.3',
+                'modules': {
+                    'pattern_boost': engine.pattern_boost_engine is not None,
+                    'void_detector': engine.void_detector is not None,
+                    'absurdity_detector': engine.absurdity_detector is not None,
+                    'insight_detector': engine.insight_detector is not None,
+                }
+            })
+        
+        # POST request = analyze text
+        data = request.get_json() or {}
+        text = data.get('text', '')
         
         if not text:
             return jsonify({
