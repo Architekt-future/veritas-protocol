@@ -649,8 +649,8 @@ function renderResults(data) {
         if (data.scraped_url) {
             parts.push(`<a href="${escHtml(data.scraped_url)}" target="_blank" style="color:#00d4ff;text-decoration:none;">↗ ${escHtml(data.scraped_url)}</a>`);
         }
-        if (data.scraped_text_length) {
-            parts.push(`Total: ${data.scraped_text_length} chars`);
+        if (data.scraped_word_count) {
+            parts.push(`Total: ${data.scraped_word_count} words (showing first 1000)`);
         }
         document.getElementById('sourceTag').innerHTML = parts.join(' · ');
 
