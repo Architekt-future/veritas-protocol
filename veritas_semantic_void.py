@@ -176,11 +176,11 @@ class SemanticVoidDetector:
         # Penalty for absence
         missing_count = len(evidence['missing_concrete'])
         if missing_count >= 5:  # missing almost everything
-            penalties['absence'] = 0.4
+            penalties['absence'] = 0.7  # was 0.4
         elif missing_count >= 3:
-            penalties['absence'] = 0.25
+            penalties['absence'] = 0.5  # was 0.25
         elif missing_count >= 2:
-            penalties['absence'] = 0.1
+            penalties['absence'] = 0.3  # was 0.1
         
         # ================================================================
         # CHECK 2: VAGUENESS (hollow buzzwords)
@@ -201,11 +201,11 @@ class SemanticVoidDetector:
                 vague_phrase_count += 1
         
         if buzzword_ratio > 0.15 or vague_phrase_count >= 2:  # >15% buzzwords
-            penalties['vagueness'] = 0.35
+            penalties['vagueness'] = 0.6  # was 0.35
         elif buzzword_ratio > 0.1 or vague_phrase_count >= 1:
-            penalties['vagueness'] = 0.2
+            penalties['vagueness'] = 0.4  # was 0.2
         elif buzzword_ratio > 0.05:
-            penalties['vagueness'] = 0.1
+            penalties['vagueness'] = 0.2  # was 0.1
         
         # ================================================================
         # CHECK 3: FALSE CAUSALITY (domain mixing)
@@ -268,8 +268,20 @@ class SemanticVoidDetector:
         )
         
         # BONUS: if text has NO concrete markers AND high buzzwords
+        # PURE SEMANTIC VOID = intentional destruction of meaning
         if missing_count >= 4 and buzzword_count >= 5:
-            void_score += 0.2  # pure semantic void
+            void_score += 0.4  # was 0.2 - now can reach 0.9+!
+        
+        # GEMINI'S ACTIVE VOID SLASHING (NEW!)
+        # If 30+ words but NO numbers/dates → pure abstraction
+        if word_count >= 30:
+            has_numbers = concrete_found.get('numbers', 0) > 0
+            has_dates = concrete_found.get('dates', 0) > 0
+            
+            if not has_numbers and not has_dates:
+                # 30+ words of pure abstraction = semantic fraud
+                void_score += 0.3
+                evidence['missing_concrete'].append('CRITICAL: no numbers/dates in 30+ words')
         
         void_score = min(1.0, void_score)
         
