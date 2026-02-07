@@ -465,6 +465,21 @@ class VeritasCalibratedCore:
         # ---- COMPUTE PENALTIES ----
         lac_penalty    = sum(v.severity for v in lac_i_violations + lac_ii_violations + lac_iii_violations) / 3.0 if (lac_i_violations or lac_ii_violations or lac_iii_violations) else 0.0
         domain_penalty = sum(v.severity for v in domain_violations) / max(1, len(domain_violations)) if domain_violations else 0.0
+        
+        # ---- NEWS ARTICLE DETECTION ----
+        # News articles legitimately mix domains (politics+tech+military)
+        # Lower domain penalty if news markers present
+        news_markers = [
+            'повідомив', 'розповів', 'наголосив', 'зазначив',
+            'reported', 'said', 'stated', 'announced',
+            'міністр', 'minister', 'президент', 'president',
+            'в\'ячеслав', 'володимир', 'олександр',  # Ukrainian names
+        ]
+        is_news_article = any(marker in text.lower() for marker in news_markers)
+        
+        if is_news_article and domain_violations:
+            # Reduce domain penalty by 50% for news articles
+            domain_penalty *= 0.5
 
         # ---- ACADEMIC SHIELD ----
         is_protected_science = self._is_protected_science(text, all_violations)
