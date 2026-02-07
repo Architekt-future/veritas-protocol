@@ -1,8 +1,7 @@
 """
-Veritas Protocol - Calibrated Core v14.0 "The Weaver"
-Philosophy: "Logic is currency. Structure ≠ Chaos."
-Detects logical non-sequiturs, semantic collapse, and structural reasoning.
-v14.0: Added Logical Cohesion Damper (Gemini's fix for "Digital Gopnik" problem)
+Veritas Protocol - Calibrated Core v14.1 "Absolute Damper"
+Philosophy: "Logic KILLS entropy. Structure >> Chaos."
+v14.1: Aggressive damper (0.8 reduction, min 0.3) - Gemini's last stand
 """
 
 import re
@@ -122,26 +121,28 @@ def apply_entropy_damper(base_entropy: float, cohesion_score: float,
     Знижує ентропію, якщо текст має ознаки глибокої логіки,
     але ТІЛЬКИ якщо void_score та absurdity низькі.
     
-    This is THE WEAVER's core function:
-    - High logical structure + low bullshit = REDUCE entropy
-    - Low logical structure OR high bullshit = NO reduction
+    v14.1: ABSOLUTE DAMPER (Gemini's aggressive fix)
+    - Increased reduction from 0.5 to 0.8
+    - Lowered activation threshold from 0.3 to 0.2
+    - Raised minimum from 0.1 to 0.3 (logic CAN'T be chaos)
     
-    Example: Kant with 0.99 entropy and 0.8 cohesion:
-    → 0.99 - (0.8 * 0.5) = 0.59 (COMPLEX, not CHAOS!)
+    Example: Kant with 0.99 entropy and 0.7 cohesion:
+    → 0.99 - (0.7 * 0.8) = 0.99 - 0.56 = 0.43 (COMPLEX!)
     
     Returns: adjusted entropy (0.0-1.0)
     """
-    # CRITICAL: Only apply damper if text is NOT bullshit or absurd
-    if cohesion_score > 0.3 and void_score < 0.4 and absurdity_score < 0.3:
-        # Logical damper: reduce entropy proportionally to cohesion
-        # Reduction factor: 50% of cohesion score
-        reduction = cohesion_score * 0.5
+    # v14.1: Lowered threshold (0.2) and tighter void/absurdity checks
+    if cohesion_score > 0.2 and void_score < 0.35 and absurdity_score < 0.25:
+        # AGGRESSIVE damper: logic KILLS entropy
+        # v14.1: 0.8 multiplier (was 0.5)
+        reduction = cohesion_score * 0.8
         
         # Apply reduction
         new_entropy = base_entropy - reduction
         
-        # Don't make text TOO simple (min 0.1)
-        return max(new_entropy, 0.1)
+        # v14.1: If strong logic, CAN'T be chaos (min 0.3)
+        # Was 0.1, now 0.3 to prevent "ПОРОЖНЕЧА" status
+        return max(new_entropy, 0.3)
     
     # No damper if bullshit or absurd
     return base_entropy
