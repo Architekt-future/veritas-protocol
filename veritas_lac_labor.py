@@ -333,8 +333,43 @@ class VeritasLACLabor:
         )
     
     def _is_labor_content(self, text: str) -> bool:
-        """Check if text is labor/employment related"""
-        return any(term in text for term in self.labor_terms)
+        """
+        Check if text is labor/employment CONTRACT related
+        
+        IMPORTANT: Must be strict to avoid false positives on news articles
+        that merely MENTION work but aren't actual contracts/job offers
+        """
+        # Contract-specific terms (high signal)
+        contract_indicators = [
+            'договір', 'контракт', 'угода', 'умови праці',
+            'contract', 'agreement', 'terms of employment',
+            'зарплата', 'оплата праці', 'компенсація',
+            'salary', 'wage', 'compensation', 'payment terms',
+            'зобов\'язання', 'obligation', '責任',
+            'виконавець', 'замовник', 'роботодавець',
+            'contractor', 'employer', 'client',
+            'найм', 'hiring', 'recruitment',
+            'вакансія', 'vacancy', 'job offer',
+            'фріланс', 'freelance', 'gig',
+            'платформа найму', 'hiring platform',
+        ]
+        
+        # Check for contract indicators
+        has_contract_terms = any(term in text for term in contract_indicators)
+        
+        # Also check for general labor terms (lower signal)
+        has_labor_terms = any(term in text for term in self.labor_terms)
+        
+        # REQUIRE: at least 1 contract term OR 3+ labor terms
+        # This prevents news articles from triggering
+        if has_contract_terms:
+            return True
+        
+        if has_labor_terms:
+            labor_count = sum(1 for term in self.labor_terms if term in text)
+            return labor_count >= 3
+        
+        return False
     
     def _test_tradeoff(self, text: str) -> Tuple[bool, List[str]]:
         """Test for explicit mutual trade-off"""
