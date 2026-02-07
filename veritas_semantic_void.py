@@ -272,16 +272,22 @@ class SemanticVoidDetector:
         if missing_count >= 4 and buzzword_count >= 5:
             void_score += 0.4  # was 0.2 - now can reach 0.9+!
         
-        # GEMINI'S ACTIVE VOID SLASHING (NEW!)
-        # If 30+ words but NO numbers/dates → pure abstraction
+        # GEMINI'S ACTIVE VOID SLASHING (REFINED v13.9)
+        # If 30+ words but NO numbers/dates → check if also bullshit
         if word_count >= 30:
             has_numbers = concrete_found.get('numbers', 0) > 0
             has_dates = concrete_found.get('dates', 0) > 0
             
             if not has_numbers and not has_dates:
-                # 30+ words of pure abstraction = semantic fraud
-                void_score += 0.3
-                evidence['missing_concrete'].append('CRITICAL: no numbers/dates in 30+ words')
+                # REFINEMENT: Only heavy penalty if ALSO high buzzwords
+                # Philosophy/logic without numbers is OK if not bullshit
+                if buzzword_ratio > 0.1:  # >10% buzzwords = bullshit
+                    void_score += 0.3  # semantic fraud confirmed
+                    evidence['missing_concrete'].append('CRITICAL: no facts + high buzzwords')
+                else:
+                    # Gentle penalty for abstract but non-bullshit text
+                    void_score += 0.1
+                    evidence['missing_concrete'].append('Abstract: no numbers/dates but low buzzwords')
         
         void_score = min(1.0, void_score)
         
