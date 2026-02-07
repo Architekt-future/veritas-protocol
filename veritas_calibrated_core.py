@@ -77,23 +77,28 @@ def calculate_logical_cohesion(text: str) -> float:
         'внаслідок', 'незважаючи', 'навпаки', 'зокрема',
         'по-перше', 'по-друге', 'таким чином', 'а саме',
         'адже', 'тому', 'звідси', 'отож', 'проте', 'однак',
+        'щоб', 'що', 'є', 'це',  # Added common connectors
         
         # English
         'because', 'therefore', 'thus', 'hence', 'if', 'then',
         'consequently', 'however', 'nevertheless', 'moreover',
         'furthermore', 'specifically', 'namely', 'firstly',
         'secondly', 'accordingly', 'since', 'given that',
-        'whereas', 'although', 'though',
+        'whereas', 'although', 'though', 'that', 'is', 'this',
     ]
     
     text_lower = text.lower()
-    words = text_lower.split()
     
-    if not words:
+    # CRITICAL FIX: Strip punctuation from words before checking
+    import string
+    words = text_lower.split()
+    words_clean = [w.strip(string.punctuation) for w in words]
+    
+    if not words_clean:
         return 0.0
     
     # Count logical anchors
-    anchor_count = sum(1 for word in words if word in anchors)
+    anchor_count = sum(1 for word in words_clean if word in anchors)
     
     # Also check for conditional structures (if...then patterns)
     conditional_patterns = [
@@ -101,15 +106,17 @@ def calculate_logical_cohesion(text: str) -> float:
         r'if.{1,50}then',
         r'коли.{1,50}тоді',
         r'when.{1,50}then',
+        r'щоб.{1,50}став',
+        r'so that.{1,50}become',
     ]
     
     for pattern in conditional_patterns:
         if re.search(pattern, text_lower):
-            anchor_count += 1
+            anchor_count += 2  # Conditional structures are strong signals
     
     # Calculate density: 3+ anchors per 40 words = strong structure
-    # Example: 3 anchors in 40 words = 0.075 * 10 = 0.75 cohesion
-    density = anchor_count / len(words) if words else 0
+    # Example: 5 anchors in 38 words = 0.13 * 10 = 1.3 → capped at 1.0
+    density = anchor_count / len(words_clean) if words_clean else 0
     cohesion_score = min(density * 10, 1.0)  # Cap at 1.0
     
     return cohesion_score
@@ -133,9 +140,9 @@ def apply_entropy_damper(base_entropy: float, cohesion_score: float,
     """
     # v14.1: Lowered threshold (0.2) and tighter void/absurdity checks
     if cohesion_score > 0.2 and void_score < 0.35 and absurdity_score < 0.25:
-        # AGGRESSIVE damper: logic KILLS entropy
-        # v14.1: 0.8 multiplier (was 0.5)
-        reduction = cohesion_score * 0.8
+        # ULTRA AGGRESSIVE damper: logic ANNIHILATES entropy
+        # v14.1.1: 1.0 multiplier (was 0.8) - FULL COHESION REDUCTION
+        reduction = cohesion_score * 1.0
         
         # Apply reduction
         new_entropy = base_entropy - reduction
