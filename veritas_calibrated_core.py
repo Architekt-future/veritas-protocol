@@ -541,6 +541,16 @@ class VeritasCalibratedCore:
                 # MYSTICAL/CONSPIRACY: even low void + mystical patterns = boost
                 if void_result['void_score'] > 0.08:
                     base_score += 0.15  # mystical theatricality boost
+                
+                # ================================================================
+                # VOID SLASHING (NEW!)
+                # ================================================================
+                # If void_score > 0.9 → PURE SEMANTIC VACUUM
+                # This is not complexity, this is INTENTIONAL DESTRUCTION OF MEANING
+                # Apply aggressive multiplier
+                if void_result['void_score'] > 0.9:
+                    base_score *= 1.5  # 150% multiplier for pure emptiness
+                    base_score = max(base_score, 0.7)  # force CRITICAL
 
             # ABSURDITY BOOST (logical non-sequiturs, fabricated authority, danger)
             if absurdity_result['absurdity_score'] > 0:
