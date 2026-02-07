@@ -1,8 +1,8 @@
 """
-Veritas Protocol - Calibrated Core v13.3 (Hybrid LAC + Conflicts + Patterns + Void + Absurdity + SEMANTIC VOID)
-New philosophy: "When premises and conclusions live in different universes"
-Detects logical non-sequiturs and semantic collapse.
-v13.3: Added SEMANTIC VOID category for high-entropy empty fluff texts
+Veritas Protocol - Calibrated Core v14.0 "The Weaver"
+Philosophy: "Logic is currency. Structure ≠ Chaos."
+Detects logical non-sequiturs, semantic collapse, and structural reasoning.
+v14.0: Added Logical Cohesion Damper (Gemini's fix for "Digital Gopnik" problem)
 """
 
 import re
@@ -55,6 +55,99 @@ try:
     LAC_LABOR_AVAILABLE = True
 except ImportError:
     LAC_LABOR_AVAILABLE = False
+
+
+# ================================================================
+# THE WEAVER v14.0: Logical Cohesion Damper (Gemini's Solution)
+# ================================================================
+
+def calculate_logical_cohesion(text: str) -> float:
+    """
+    Визначає коефіцієнт логічної зв'язності.
+    Шукає 'якорі' аргументації, які структурують хаос.
+    
+    Returns: 0.0-1.0 (higher = more logical structure)
+    
+    Philosophy: Logic is a fact, just a connective one.
+    High cohesion + low bullshit = genuine complexity (not chaos).
+    """
+    # Logical anchors (connectors that show argumentation)
+    anchors = [
+        # Ukrainian
+        'оскільки', 'тому що', 'отже', 'якщо', 'тоді', 
+        'внаслідок', 'незважаючи', 'навпаки', 'зокрема',
+        'по-перше', 'по-друге', 'таким чином', 'а саме',
+        'адже', 'тому', 'звідси', 'отож', 'проте', 'однак',
+        
+        # English
+        'because', 'therefore', 'thus', 'hence', 'if', 'then',
+        'consequently', 'however', 'nevertheless', 'moreover',
+        'furthermore', 'specifically', 'namely', 'firstly',
+        'secondly', 'accordingly', 'since', 'given that',
+        'whereas', 'although', 'though',
+    ]
+    
+    text_lower = text.lower()
+    words = text_lower.split()
+    
+    if not words:
+        return 0.0
+    
+    # Count logical anchors
+    anchor_count = sum(1 for word in words if word in anchors)
+    
+    # Also check for conditional structures (if...then patterns)
+    conditional_patterns = [
+        r'якщо.{1,50}то',
+        r'if.{1,50}then',
+        r'коли.{1,50}тоді',
+        r'when.{1,50}then',
+    ]
+    
+    for pattern in conditional_patterns:
+        if re.search(pattern, text_lower):
+            anchor_count += 1
+    
+    # Calculate density: 3+ anchors per 40 words = strong structure
+    # Example: 3 anchors in 40 words = 0.075 * 10 = 0.75 cohesion
+    density = anchor_count / len(words) if words else 0
+    cohesion_score = min(density * 10, 1.0)  # Cap at 1.0
+    
+    return cohesion_score
+
+
+def apply_entropy_damper(base_entropy: float, cohesion_score: float, 
+                         void_score: float, absurdity_score: float) -> float:
+    """
+    Знижує ентропію, якщо текст має ознаки глибокої логіки,
+    але ТІЛЬКИ якщо void_score та absurdity низькі.
+    
+    This is THE WEAVER's core function:
+    - High logical structure + low bullshit = REDUCE entropy
+    - Low logical structure OR high bullshit = NO reduction
+    
+    Example: Kant with 0.99 entropy and 0.8 cohesion:
+    → 0.99 - (0.8 * 0.5) = 0.59 (COMPLEX, not CHAOS!)
+    
+    Returns: adjusted entropy (0.0-1.0)
+    """
+    # CRITICAL: Only apply damper if text is NOT bullshit or absurd
+    if cohesion_score > 0.3 and void_score < 0.4 and absurdity_score < 0.3:
+        # Logical damper: reduce entropy proportionally to cohesion
+        # Reduction factor: 50% of cohesion score
+        reduction = cohesion_score * 0.5
+        
+        # Apply reduction
+        new_entropy = base_entropy - reduction
+        
+        # Don't make text TOO simple (min 0.1)
+        return max(new_entropy, 0.1)
+    
+    # No damper if bullshit or absurd
+    return base_entropy
+
+
+# ================================================================
 
 
 @dataclass
@@ -456,6 +549,26 @@ class VeritasCalibratedCore:
                 'red_flags': labor_analysis.red_flags,
                 'evidence': labor_analysis.evidence
             }
+        
+        # ================================================================
+        # PHASE 11: THE WEAVER (Logical Cohesion Damper) v14.0
+        # ================================================================
+        # Gemini's fix for "Digital Gopnik" problem:
+        # - Calculate logical structure (anchors like "оскільки", "отже")
+        # - Apply entropy damper if high logic + low bullshit
+        # - This protects Kant/philosophy while still burning bullshit
+        logical_cohesion = calculate_logical_cohesion(text)
+        
+        # Apply damper BEFORE using entropy in formulas
+        adjusted_entropy = apply_entropy_damper(
+            base_entropy=shannon_entropy,
+            cohesion_score=logical_cohesion,
+            void_score=void_result['void_score'],
+            absurdity_score=absurdity_result['absurdity_score']
+        )
+        
+        # Use adjusted_entropy instead of shannon_entropy from now on
+        shannon_entropy = adjusted_entropy
 
         # ---- AGGREGATE VIOLATIONS ----
         all_violations = (lac_i_violations + lac_ii_violations + lac_iii_violations +
@@ -695,6 +808,7 @@ class VeritasCalibratedCore:
                 'matched_fingerprints': [p['name'] for p in pattern_boost_result['matched_patterns']],
                 'semantic_void_score': round(void_result['void_score'], 3),
                 'void_penalties': void_result.get('penalties', {}),
+                'logical_cohesion': round(logical_cohesion, 3),
                 'buzzword_count': void_result.get('buzzword_count', 0),
                 'absurdity_score': round(absurdity_result['absurdity_score'], 3),
                 'absurdity_evidence': absurdity_result.get('evidence', {}),
