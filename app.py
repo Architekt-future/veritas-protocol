@@ -55,7 +55,7 @@ def analyze():
         if request.method == 'GET':
             return jsonify({
                 'status': 'online',
-                'version': 'v14.0',
+                'version': 'v14.1',
                 'modules': {
                     'pattern_boost': engine.pattern_boost_engine is not None,
                     'void_detector': engine.void_detector is not None,
