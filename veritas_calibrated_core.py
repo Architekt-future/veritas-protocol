@@ -562,8 +562,9 @@ class VeritasCalibratedCore:
 
             # CASUISTRY BOOST (complexity without insight)
             # IMPORTANT: skip if academic shield protects this text
+            # GEMINI'S FIX: Increased weight from 0.8 to 1.2 (many words, zero facts = NOISE not VERIFIED)
             if insight_result.get('casuistry_score', 0) > 0 and not is_protected_science:
-                base_score += insight_result['casuistry_score'] * 0.8  # 80% weight
+                base_score += insight_result['casuistry_score'] * 1.2  # 120% weight (was 80%)
                 
                 # If pure casuistry (high complexity, zero facts), boost to WARNING
                 if insight_result.get('is_casuistry', False):
