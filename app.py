@@ -83,17 +83,39 @@ def analyze():
                 
                 soup = BeautifulSoup(response.content, 'html.parser')
                 
-                # Remove script and style elements
-                for script in soup(["script", "style", "nav", "footer", "header"]):
-                    script.decompose()
+                # Remove navigation, menus, ads, and other non-content elements
+                for element in soup([
+                    "script", "style", "nav", "footer", "header", 
+                    "aside", "menu", "form", "button",
+                    # Common class names for navigation/ads
+                    {"class": ["nav", "navigation", "menu", "sidebar", "ad", "ads", "advertisement", 
+                               "social", "share", "comment", "related", "popular", "trending"]}
+                ]):
+                    element.decompose()
                 
-                # Get text
-                text = soup.get_text()
+                # Try to find main content area first
+                main_content = None
+                for selector in ['article', 'main', '[role="main"]', '.content', '.article', '.post']:
+                    main_content = soup.select_one(selector)
+                    if main_content:
+                        break
                 
-                # Clean up whitespace
+                # Get text from main content or entire soup
+                if main_content:
+                    text = main_content.get_text()
+                else:
+                    text = soup.get_text()
+                
+                # Clean up whitespace more aggressively
                 lines = (line.strip() for line in text.splitlines())
                 chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
                 text = ' '.join(chunk for chunk in chunks if chunk)
+                
+                # Remove excessive repetition (common in navigation)
+                words = text.split()
+                if len(words) > 100:
+                    # Keep only first 1500 words to avoid navigation spam
+                    text = ' '.join(words[:1500])
                 
                 if not text or len(text) < 100:
                     return jsonify({
@@ -118,8 +140,11 @@ def analyze():
         
         # Add scraped text preview if URL was provided
         if url:
-            result['scraped_text_preview'] = text[:1000] if len(text) > 1000 else text
-            result['scraped_text_length'] = len(text)
+            # Preview: first 1000 words (not chars!)
+            words = text.split()
+            preview_words = words[:1000] if len(words) > 1000 else words
+            result['scraped_text_preview'] = ' '.join(preview_words)
+            result['scraped_word_count'] = len(words)
             result['scraped_url'] = url
         
         return jsonify(result)
