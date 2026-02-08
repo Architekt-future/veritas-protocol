@@ -782,7 +782,19 @@ class VeritasCalibratedCore:
         )
 
         # ---- VERDICT ----
-        if is_semantic_void:
+        # v14.1.3: PRIORITY - Very high void (0.3+) = VOID even if final_score > 0.7
+        # Bullshit with many buzzwords should be VOID, not CRITICAL
+        is_pure_bullshit = (
+            void_result['void_score'] >= 0.3 and
+            void_result.get('buzzword_count', 0) >= 3 and
+            logical_cohesion < 0.2 and
+            absurdity_result.get('danger_count', 0) == 0
+        )
+        
+        if is_pure_bullshit:
+            status, verdict = 'VOID', 'СЕМАНТИЧНА ПОРОЖНЕЧА'
+            explanation = 'Текст містить багато слів без конкретного змісту чи інформації'
+        elif is_semantic_void:
             status, verdict = 'VOID', 'СЕМАНТИЧНА ПОРОЖНЕЧА'
             explanation = 'Текст містить багато слів без конкретного змісту чи інформації'
         elif final_score > 0.7:
