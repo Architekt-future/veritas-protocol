@@ -1,7 +1,7 @@
 """
-Veritas Protocol - Calibrated Core v14.1.5 "Simplified Bullshit Detection"
-Philosophy: "Logic KILLS entropy. Void >= 0.32 = VOID priority."
-v14.1.5: Removed buzzword dependency, using pure void_score threshold
+Veritas Protocol - Calibrated Core v14.2 "The Real Weaver"
+Philosophy: "Logic KILLS entropy. Cohesion as CLASS METHODS."
+v14.2: GEMINI'S FIX - Functions now CLASS METHODS (not standalone!)
 """
 
 import re
@@ -57,104 +57,7 @@ except ImportError:
 
 
 # ================================================================
-# THE WEAVER v14.0: Logical Cohesion Damper (Gemini's Solution)
-# ================================================================
-
-def calculate_logical_cohesion(text: str) -> float:
-    """
-    Визначає коефіцієнт логічної зв'язності.
-    Шукає 'якорі' аргументації, які структурують хаос.
-    
-    Returns: 0.0-1.0 (higher = more logical structure)
-    
-    Philosophy: Logic is a fact, just a connective one.
-    High cohesion + low bullshit = genuine complexity (not chaos).
-    """
-    # Logical anchors (connectors that show argumentation)
-    anchors = [
-        # Ukrainian
-        'оскільки', 'тому що', 'отже', 'якщо', 'тоді', 
-        'внаслідок', 'незважаючи', 'навпаки', 'зокрема',
-        'по-перше', 'по-друге', 'таким чином', 'а саме',
-        'адже', 'тому', 'звідси', 'отож', 'проте', 'однак',
-        'щоб', 'що', 'є', 'це',  # Added common connectors
-        
-        # English
-        'because', 'therefore', 'thus', 'hence', 'if', 'then',
-        'consequently', 'however', 'nevertheless', 'moreover',
-        'furthermore', 'specifically', 'namely', 'firstly',
-        'secondly', 'accordingly', 'since', 'given that',
-        'whereas', 'although', 'though', 'that', 'is', 'this',
-    ]
-    
-    text_lower = text.lower()
-    
-    # CRITICAL FIX: Strip punctuation from words before checking
-    import string
-    words = text_lower.split()
-    words_clean = [w.strip(string.punctuation) for w in words]
-    
-    if not words_clean:
-        return 0.0
-    
-    # Count logical anchors
-    anchor_count = sum(1 for word in words_clean if word in anchors)
-    
-    # Also check for conditional structures (if...then patterns)
-    conditional_patterns = [
-        r'якщо.{1,50}то',
-        r'if.{1,50}then',
-        r'коли.{1,50}тоді',
-        r'when.{1,50}then',
-        r'щоб.{1,50}став',
-        r'so that.{1,50}become',
-    ]
-    
-    for pattern in conditional_patterns:
-        if re.search(pattern, text_lower):
-            anchor_count += 2  # Conditional structures are strong signals
-    
-    # Calculate density: 3+ anchors per 40 words = strong structure
-    # Example: 5 anchors in 38 words = 0.13 * 10 = 1.3 → capped at 1.0
-    density = anchor_count / len(words_clean) if words_clean else 0
-    cohesion_score = min(density * 10, 1.0)  # Cap at 1.0
-    
-    return cohesion_score
-
-
-def apply_entropy_damper(base_entropy: float, cohesion_score: float, 
-                         void_score: float, absurdity_score: float) -> float:
-    """
-    Знижує ентропію, якщо текст має ознаки глибокої логіки,
-    але ТІЛЬКИ якщо void_score та absurdity низькі.
-    
-    v14.1: ABSOLUTE DAMPER (Gemini's aggressive fix)
-    - Increased reduction from 0.5 to 0.8
-    - Lowered activation threshold from 0.3 to 0.2
-    - Raised minimum from 0.1 to 0.3 (logic CAN'T be chaos)
-    
-    Example: Kant with 0.99 entropy and 0.7 cohesion:
-    → 0.99 - (0.7 * 0.8) = 0.99 - 0.56 = 0.43 (COMPLEX!)
-    
-    Returns: adjusted entropy (0.0-1.0)
-    """
-    # v14.1: Lowered threshold (0.2) and tighter void/absurdity checks
-    if cohesion_score > 0.2 and void_score < 0.35 and absurdity_score < 0.25:
-        # ULTRA AGGRESSIVE damper: logic ANNIHILATES entropy
-        # v14.1.1: 1.0 multiplier (was 0.8) - FULL COHESION REDUCTION
-        reduction = cohesion_score * 1.0
-        
-        # Apply reduction
-        new_entropy = base_entropy - reduction
-        
-        # v14.1: If strong logic, CAN'T be chaos (min 0.3)
-        # Was 0.1, now 0.3 to prevent "ПОРОЖНЕЧА" status
-        return max(new_entropy, 0.3)
-    
-    # No damper if bullshit or absurd
-    return base_entropy
-
-
+# v14.2: Standalone functions REMOVED - now class methods!
 # ================================================================
 
 
@@ -477,6 +380,80 @@ class VeritasCalibratedCore:
         ]
 
     # ================================================================
+    # v14.2: LOGICAL COHESION & ENTROPY DAMPER (Gemini's final fix)
+    # ================================================================
+    
+    def calculate_logical_cohesion(self, text: str) -> float:
+        """
+        Шукає 'якорі' аргументації, які структурують хаос.
+        v14.2: Now as CLASS METHOD (was standalone - never called!)
+        
+        Returns: 0.0-1.0 (higher = more logical structure)
+        """
+        anchors = [
+            # Ukrainian
+            'оскільки', 'тому що', 'отже', 'якщо', 'тоді', 
+            'внаслідок', 'незважаючи', 'навпаки', 'зокрема',
+            'по-перше', 'по-друге', 'таким чином', 'а саме',
+            'адже', 'тому', 'звідси', 'отож', 'проте', 'однак',
+            'щоб', 'що', 'є', 'це',
+            
+            # English
+            'because', 'therefore', 'thus', 'hence', 'if', 'then',
+            'consequently', 'however', 'nevertheless', 'moreover',
+            'furthermore', 'specifically', 'namely', 'firstly',
+            'secondly', 'accordingly', 'since', 'given that',
+            'whereas', 'although', 'though', 'that', 'is', 'this',
+        ]
+        
+        text_lower = text.lower()
+        
+        # Strip punctuation from words
+        import string
+        words = text_lower.split()
+        words_clean = [w.strip(string.punctuation) for w in words]
+        
+        if not words_clean:
+            return 0.0
+        
+        # Count logical anchors
+        anchor_count = sum(1 for word in words_clean if word in anchors)
+        
+        # Also check for conditional structures
+        conditional_patterns = [
+            r'якщо.{1,50}то',
+            r'if.{1,50}then',
+            r'щоб.{1,50}став',
+        ]
+        
+        for pattern in conditional_patterns:
+            if re.search(pattern, text_lower):
+                anchor_count += 2  # Strong signal
+        
+        # Calculate density
+        density = anchor_count / len(words_clean) if words_clean else 0
+        cohesion_score = min(density * 10, 1.0)
+        
+        return cohesion_score
+    
+    def apply_entropy_damper(self, base_entropy: float, cohesion: float, 
+                            void: float, absurdity: float) -> float:
+        """
+        Агресивний демпфер: Логіка ВБИВАЄ ентропію Шеннона
+        v14.2: Now as CLASS METHOD (Gemini's fix)
+        
+        Returns: adjusted entropy (0.0-1.0)
+        """
+        # Only apply if strong logic + low bullshit
+        if cohesion > 0.2 and void < 0.35 and absurdity < 0.25:
+            # ABSOLUTE DAMPER: 0.8x reduction
+            reduction = cohesion * 0.8
+            adjusted = base_entropy - reduction
+            return max(adjusted, 0.3)  # Logic CAN'T be chaos
+        
+        return base_entropy
+
+    # ================================================================
     # CORE ANALYZE — hybrid LAC + calibrated
     # ================================================================
     def analyze(self, text: str) -> Dict:
@@ -559,23 +536,20 @@ class VeritasCalibratedCore:
             }
         
         # ================================================================
-        # PHASE 11: THE WEAVER (Logical Cohesion Damper) v14.0
+        # PHASE 11: THE WEAVER (Logical Cohesion Damper) v14.2
         # ================================================================
-        # Gemini's fix for "Digital Gopnik" problem:
-        # - Calculate logical structure (anchors like "оскільки", "отже")
-        # - Apply entropy damper if high logic + low bullshit
-        # - This protects Kant/philosophy while still burning bullshit
-        logical_cohesion = calculate_logical_cohesion(text)
+        # v14.2: Now as CLASS METHODS (was standalone - Gemini's fix!)
+        logical_cohesion = self.calculate_logical_cohesion(text)
         
-        # Apply damper BEFORE using entropy in formulas
-        adjusted_entropy = apply_entropy_damper(
+        # Apply damper BEFORE using entropy
+        adjusted_entropy = self.apply_entropy_damper(
             base_entropy=shannon_entropy,
-            cohesion_score=logical_cohesion,
-            void_score=void_result['void_score'],
-            absurdity_score=absurdity_result['absurdity_score']
+            cohesion=logical_cohesion,
+            void=void_result['void_score'],
+            absurdity=absurdity_result['absurdity_score']
         )
         
-        # Use adjusted_entropy instead of shannon_entropy from now on
+        # Use adjusted_entropy instead of shannon_entropy
         shannon_entropy = adjusted_entropy
 
         # ---- AGGREGATE VIOLATIONS ----
