@@ -754,6 +754,10 @@ class VeritasCalibratedCore:
         # ADJUSTED: Lower thresholds for mystical/theatrical texts
         min_buzzwords = 2 if word_count < 50 else 3  # Lower threshold
         
+        # v14.1.1: CRITICAL - Exclude high-cohesion texts from VOID
+        # Philosophy/science with strong logical structure is NOT void!
+        has_strong_logic = logical_cohesion > 0.6
+        
         is_semantic_void = (
             final_score >= 0.35 and  # Lowered from 0.6 for theatrical texts
             void_result['void_score'] >= 0.1 and  # Lowered from 0.4 for mysticism
@@ -761,7 +765,8 @@ class VeritasCalibratedCore:
              void_result['void_score'] >= 0.15) and  # OR just high void
             violation_count <= 3 and  # Increased tolerance
             not absurdity_result.get('has_non_sequitur', False) and
-            absurdity_result.get('danger_count', 0) == 0
+            absurdity_result.get('danger_count', 0) == 0 and
+            not has_strong_logic  # v14.1.1: Logic is NOT void!
         )
 
         # ---- VERDICT ----
