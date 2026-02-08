@@ -748,13 +748,14 @@ class VeritasCalibratedCore:
                 base_score = max(base_score, 0.7)
         
         # ================================================================
-        # v14.1.1: COHESION DISCOUNT
+        # v14.1.2: COHESION DISCOUNT
         # ================================================================
-        # If strong logical structure, reduce final_score
+        # If strong logical structure AND low void, reduce final_score
         # This prevents philosophy/science from being marked as CRITICAL
-        if logical_cohesion > 0.3 and void_result['void_score'] < 0.4:  # Lowered from 0.6
-            # Strong logic deserves discount on final score
-            cohesion_discount = logical_cohesion * 0.5  # Up to 0.5 reduction (was 0.4)
+        # CRITICAL: Only for genuinely low-void texts (not buzzword fluff)
+        if logical_cohesion > 0.3 and void_result['void_score'] < 0.3:  # Stricter: 0.3 not 0.4
+            # Strong logic + low void deserves discount on final score
+            cohesion_discount = logical_cohesion * 0.5  # Up to 0.5 reduction
             base_score = base_score - cohesion_discount
             base_score = max(base_score, 0.2)  # Don't go below 0.2
 
