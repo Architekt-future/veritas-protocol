@@ -746,6 +746,17 @@ class VeritasCalibratedCore:
             # If very high absurdity (0.5+), force CRITICAL
             if absurdity_result['absurdity_score'] >= 0.5:
                 base_score = max(base_score, 0.7)
+        
+        # ================================================================
+        # v14.1.1: COHESION DISCOUNT
+        # ================================================================
+        # If strong logical structure, reduce final_score
+        # This prevents philosophy/science from being marked as CRITICAL
+        if logical_cohesion > 0.3 and void_result['void_score'] < 0.4:  # Lowered from 0.6
+            # Strong logic deserves discount on final score
+            cohesion_discount = logical_cohesion * 0.5  # Up to 0.5 reduction (was 0.4)
+            base_score = base_score - cohesion_discount
+            base_score = max(base_score, 0.2)  # Don't go below 0.2
 
         final_score = min(0.99, max(0.0, base_score))
 
@@ -756,7 +767,7 @@ class VeritasCalibratedCore:
         
         # v14.1.1: CRITICAL - Exclude high-cohesion texts from VOID
         # Philosophy/science with strong logical structure is NOT void!
-        has_strong_logic = logical_cohesion > 0.6
+        has_strong_logic = logical_cohesion > 0.3  # Lowered from 0.6
         
         is_semantic_void = (
             final_score >= 0.35 and  # Lowered from 0.6 for theatrical texts
