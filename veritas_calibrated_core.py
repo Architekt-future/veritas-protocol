@@ -1,7 +1,7 @@
 """
-Veritas Protocol - Calibrated Core v14.1 "Absolute Damper"
-Philosophy: "Logic KILLS entropy. Structure >> Chaos."
-v14.1: Aggressive damper (0.8 reduction, min 0.3) - Gemini's last stand
+Veritas Protocol - Calibrated Core v14.1.5 "Simplified Bullshit Detection"
+Philosophy: "Logic KILLS entropy. Void >= 0.32 = VOID priority."
+v14.1.5: Removed buzzword dependency, using pure void_score threshold
 """
 
 import re
@@ -782,13 +782,13 @@ class VeritasCalibratedCore:
         )
 
         # ---- VERDICT ----
-        # v14.1.3: PRIORITY - Very high void (0.3+) = VOID even if final_score > 0.7
-        # Bullshit with many buzzwords should be VOID, not CRITICAL
+        # v14.1.5: PRIORITY - Very high void (0.32+) = VOID even if final_score > 0.7
+        # Bullshit should be VOID, not CRITICAL
+        # SIMPLIFIED: Only void_score, no buzzword dependency (Ukrainian declensions issue)
         is_pure_bullshit = (
-            void_result['void_score'] >= 0.3 and
-            void_result.get('buzzword_count', 0) >= 2 and  # Lowered from 3 (Ukrainian declensions!)
-            logical_cohesion < 0.2 and
-            absurdity_result.get('danger_count', 0) == 0
+            void_result['void_score'] >= 0.32 and  # Bullshit has 0.34
+            logical_cohesion < 0.2 and  # No logical structure
+            absurdity_result.get('danger_count', 0) == 0  # Not dangerous
         )
         
         if is_pure_bullshit:
