@@ -786,7 +786,7 @@ class VeritasCalibratedCore:
         # Bullshit with many buzzwords should be VOID, not CRITICAL
         is_pure_bullshit = (
             void_result['void_score'] >= 0.3 and
-            void_result.get('buzzword_count', 0) >= 3 and
+            void_result.get('buzzword_count', 0) >= 2 and  # Lowered from 3 (Ukrainian declensions!)
             logical_cohesion < 0.2 and
             absurdity_result.get('danger_count', 0) == 0
         )
