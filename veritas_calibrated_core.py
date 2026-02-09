@@ -1,7 +1,7 @@
 """
-Veritas Protocol - Calibrated Core v14.2 "The Real Weaver"
-Philosophy: "Logic KILLS entropy. Cohesion as CLASS METHODS."
-v14.2: GEMINI'S FIX - Functions now CLASS METHODS (not standalone!)
+Veritas Protocol - Calibrated Core v14.2.1 "Last Mile"
+Philosophy: "Logic KILLS entropy AND final_score."
+v14.2.1: Increased cohesion discount (0.5 → 0.7) - Gemini's verdict fix
 """
 
 import re
@@ -728,10 +728,11 @@ class VeritasCalibratedCore:
         # This prevents philosophy/science from being marked as CRITICAL
         # CRITICAL: Only for genuinely low-void texts (not buzzword fluff)
         if logical_cohesion > 0.3 and void_result['void_score'] < 0.3:  # Stricter: 0.3 not 0.4
-            # Strong logic + low void deserves discount on final score
-            cohesion_discount = logical_cohesion * 0.5  # Up to 0.5 reduction
+            # Strong logic + low void deserves MAJOR discount on final score
+            # v14.2.1: Increased from 0.5 to 0.7 (Gemini's "last mile" fix)
+            cohesion_discount = logical_cohesion * 0.7  # Up to 0.7 reduction (was 0.5)
             base_score = base_score - cohesion_discount
-            base_score = max(base_score, 0.2)  # Don't go below 0.2
+            base_score = max(base_score, 0.15)  # Don't go below 0.15 (was 0.2)
 
         final_score = min(0.99, max(0.0, base_score))
 
