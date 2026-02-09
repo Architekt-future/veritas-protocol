@@ -1,7 +1,7 @@
 """
-Veritas Protocol - Calibrated Core v14.5 "The Judge"
-Philosophy: "Extreme cohesion (>0.9) = cargo cult logic, not wisdom."
-v14.5: Cargo cult detection - limit damper if cohesion > 0.9
+Veritas Protocol - Calibrated Core v15.0 "The Oracle"
+Philosophy: "Syntax + Semantics. Form + Content. Code + Neural."
+v15.0: Integrated neural semantic coherence checker (Hugging Face LaBSE)
 """
 
 import re
@@ -33,6 +33,13 @@ try:
     ABSURDITY_AVAILABLE = True
 except ImportError:
     ABSURDITY_AVAILABLE = False
+
+# Import Oracle (v15.0 semantic coherence checker)
+try:
+    from veritas_oracle_api import VeritasOracle
+    ORACLE_AVAILABLE = True
+except ImportError:
+    ORACLE_AVAILABLE = False
 
 # Import insight density detector
 try:
@@ -116,6 +123,19 @@ class VeritasCalibratedCore:
             self.lac_labor = VeritasLACLabor()
         else:
             self.lac_labor = None
+        
+        # Oracle (v15.0 semantic coherence checker)
+        # NOTE: Requires HUGGINGFACE_API_TOKEN environment variable
+        # or pass api_token parameter when creating VeritasCalibratedCore
+        if ORACLE_AVAILABLE:
+            try:
+                self.oracle = VeritasOracle()  # Will try to read token from env
+            except ValueError:
+                # No token available - Oracle disabled
+                self.oracle = None
+                print("[WARNING] Oracle disabled - no API token found")
+        else:
+            self.oracle = None
         
         # ============================================================
         # LAC MODULE I: STRATEGIC TRADE-OFF CALCULUS (V ≠ L)
@@ -771,14 +791,48 @@ class VeritasCalibratedCore:
             not has_strong_logic  # v14.1.1: Logic is NOT void!
         )
 
+        # ================================================================
+        # v15.0: THE ORACLE - Semantic Coherence Check
+        # ================================================================
+        # If text passes all checks BUT has very low entropy + low void,
+        # check with neural network for semantic nonsense
+        # This catches "2+2=баклажан" problem
+        
+        oracle_verdict = None  # Will be set if Oracle detects nonsense
+        
+        if self.oracle and shannon_entropy < 0.25 and void_result['void_score'] > 0.20:
+            # Suspicious: very smooth (low entropy) but some void
+            # Ask Oracle for semantic coherence check
+            try:
+                is_nonsense = self.oracle.is_semantic_nonsense(text, threshold=0.35)
+                
+                if is_nonsense is True:
+                    # Oracle detected semantic nonsense!
+                    oracle_verdict = ('WARNING', 'СЕМАНТИЧНИЙ АБСУРД', 
+                                    'Нейромережа виявила логічно незв\'язний зміст')
+                elif is_nonsense is False:
+                    # Oracle confirmed text is coherent - let it pass
+                    pass
+                # If is_nonsense is None (API error), ignore and continue
+                
+            except Exception as e:
+                # Oracle error - continue without it
+                print(f"[Oracle] Error: {e}")
+        
+        # ================================================================
         # ---- VERDICT ----
-        # v14.1.5: PRIORITY - Very high void (0.32+) = VOID even if final_score > 0.7
-        # Bullshit should be VOID, not CRITICAL
-        # SIMPLIFIED: Only void_score, no buzzword dependency (Ukrainian declensions issue)
+        # ================================================================
+        
+        # PRIORITY 1: Oracle verdict (if semantic nonsense detected)
+        if oracle_verdict:
+            status, verdict, explanation = oracle_verdict
+            
+        # PRIORITY 2: Pure bullshit check
+        # v14.1.5: Very high void (0.32+) = VOID even if final_score > 0.7
         is_pure_bullshit = (
-            void_result['void_score'] >= 0.32 and  # Bullshit has 0.34
-            logical_cohesion < 0.2 and  # No logical structure
-            absurdity_result.get('danger_count', 0) == 0  # Not dangerous
+            void_result['void_score'] >= 0.32 and
+            logical_cohesion < 0.2 and
+            absurdity_result.get('danger_count', 0) == 0
         )
         
         if is_pure_bullshit:
