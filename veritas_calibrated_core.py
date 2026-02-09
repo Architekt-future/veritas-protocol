@@ -1,7 +1,7 @@
 """
-Veritas Protocol - Calibrated Core v14.2.1 "Last Mile"
-Philosophy: "Logic KILLS entropy AND final_score."
-v14.2.1: Increased cohesion discount (0.5 → 0.7) - Gemini's verdict fix
+Veritas Protocol - Calibrated Core v14.3 "Diplomat"
+Philosophy: "Intelligence Navigator, not Paranoid Prosecutor."
+v14.3: Gemini's rebranding - professional analytical labels
 """
 
 import re
@@ -771,22 +771,26 @@ class VeritasCalibratedCore:
             explanation = 'Текст містить багато слів без конкретного змісту чи інформації'
         elif is_semantic_void:
             status, verdict = 'VOID', 'СЕМАНТИЧНА ПОРОЖНЕЧА'
-            explanation = 'Текст містить багато слів без конкретного змісту чи інформації'
+            explanation = 'Текст містить багато слів без конкретного змісту чі інформації'
         elif final_score > 0.7:
-            status, verdict = 'CRITICAL', 'ЛОГІЧНИЙ КОЛАПС'
-            explanation = 'Множинні порушення доменних кордонів та логічних принципів'
+            # v14.3: Diplomat label (was "ЛОГІЧНИЙ КОЛАПС")
+            status, verdict = 'CRITICAL', 'СЕМАНТИЧНИЙ ШУМ'
+            explanation = 'Текст перенасичений термінами без логічного зв\'язку'
         elif final_score > 0.5:
-            status, verdict = 'CRITICAL', 'ДОМЕННЕ ПОРУШЕННЯ'
-            explanation = 'Змішування несумісних категорій знань'
+            # v14.3: Diplomat label (was "ДОМЕННЕ ПОРУШЕННЯ")
+            status, verdict = 'CRITICAL', 'КОНЦЕПТУАЛЬНЕ ЗМІШУВАННЯ'
+            explanation = 'Виявлено змішування несумісних категорій знань'
         elif final_score > 0.3:
-            status, verdict = 'WARNING', 'ПІДОЗРІЛИЙ ДИСКУРС'
-            explanation = 'Виявлено ознаки логічних несумісностей'
+            # v14.3: Diplomat label (was "ПІДОЗРІЛИЙ ДИСКУРС")
+            status, verdict = 'WARNING', 'АБСТРАКТНА СКЛАДНІСТЬ'
+            explanation = 'Виявлено високий рівень абстракції; потребує контекстуальної перевірки'
         elif final_score > 0.15:
-            status, verdict = 'ACCEPTABLE', 'ПРИЙНЯТНА ІНФОРМАЦІЯ'
-            explanation = 'Текст відповідає нормам логічної сумісності'
+            # v14.3: Diplomat label (was "ПРИЙНЯТНА ІНФОРМАЦІЯ")
+            status, verdict = 'ACCEPTABLE', 'ВЕРИФІКОВАНА ЛОГІКА'
+            explanation = 'Текст має чітку структуру та послідовну аргументацію'
         else:
-            status, verdict = 'VERIFIED', 'ВЕРИФІКОВАНИЙ КОНТЕНТ'
-            explanation = 'Текст демонструє логічну цілісність'
+            status, verdict = 'VERIFIED', 'СТРУКТУРНА ЦІЛІСНІСТЬ'
+            explanation = 'Текст демонструє високу логічну цілісність'
 
         # ---- DIAGNOSTICS ----
         chaos_index = round(final_score * 100 * (1 + len(all_violations) * 0.3), 2)
