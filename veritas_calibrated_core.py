@@ -1,7 +1,7 @@
 """
-Veritas Protocol - Calibrated Core v14.4.1 "Skeptic Fixed"
-Philosophy: "Philosophy without numbers ≠ void. Kant @ 0.28 passes!"
-v14.4.1: Raised void thresholds to 0.30 (Gemini's edge case fix)
+Veritas Protocol - Calibrated Core v14.5 "The Judge"
+Philosophy: "Extreme cohesion (>0.9) = cargo cult logic, not wisdom."
+v14.5: Cargo cult detection - limit damper if cohesion > 0.9
 """
 
 import re
@@ -440,25 +440,33 @@ class VeritasCalibratedCore:
                             void: float, absurdity: float) -> float:
         """
         Агресивний демпфер: Логіка ВБИВАЄ ентропію Шеннона
-        v14.4.1 "Skeptic Fixed": Raised void threshold to 0.30 (Gemini's fix)
+        v14.5 "The Judge": Added cargo cult logic detection
         
         Returns: adjusted entropy (0.0-1.0)
         """
         # Only apply if strong logic + low bullshit
         if cohesion > 0.2 and void < 0.35 and absurdity < 0.25:
-            # v14.4.1: SAFETY TRIGGER adjusted
-            # Gemini: "Кант має 0.28 — він має проходити!"
-            if void > 0.30:  # Raised from 0.15 to 0.30
+            # v14.5: CARGO CULT DETECTION
+            # If EXTREMELY high cohesion (>0.9) = suspicious
+            # Too many connectors = fake logic (баклажан problem)
+            if cohesion > 0.9:
+                # Reduce damper effectiveness by 50%
+                reduction = cohesion * 0.4  # Half power
+                adjusted = base_entropy - reduction
+                return max(adjusted, 0.45)  # Can't go below WARNING
+            
+            # v14.4.1: Normal safety trigger
+            elif void > 0.30:
                 # Very high void = limit reduction
                 max_reduction = 0.25
                 reduction = min(cohesion * 0.8, max_reduction)
                 adjusted = base_entropy - reduction
-                return max(adjusted, 0.4)  # Force at least WARNING
+                return max(adjusted, 0.4)
             else:
-                # void <= 0.30 (Kant, philosophy) = full damper allowed
+                # void <= 0.30 (Kant, philosophy) = full damper
                 reduction = cohesion * 0.8
                 adjusted = base_entropy - reduction
-                return max(adjusted, 0.3)  # Can be VERIFIED
+                return max(adjusted, 0.3)
         
         return base_entropy
 
