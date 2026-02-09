@@ -1,7 +1,7 @@
 """
-Veritas Protocol - Calibrated Core v14.3 "Diplomat"
-Philosophy: "Intelligence Navigator, not Paranoid Prosecutor."
-v14.3: Gemini's rebranding - professional analytical labels
+Veritas Protocol - Calibrated Core v14.4 "The Skeptic"
+Philosophy: "Logic without facts = suspicion, not verification."
+v14.4: Safety trigger - limit damper if void > 0.25 (Gemini's баклажан fix)
 """
 
 import re
@@ -440,16 +440,25 @@ class VeritasCalibratedCore:
                             void: float, absurdity: float) -> float:
         """
         Агресивний демпфер: Логіка ВБИВАЄ ентропію Шеннона
-        v14.2: Now as CLASS METHOD (Gemini's fix)
+        v14.4 "Skeptic": Added safety trigger for high void
         
         Returns: adjusted entropy (0.0-1.0)
         """
         # Only apply if strong logic + low bullshit
         if cohesion > 0.2 and void < 0.35 and absurdity < 0.25:
-            # ABSOLUTE DAMPER: 0.8x reduction
-            reduction = cohesion * 0.8
-            adjusted = base_entropy - reduction
-            return max(adjusted, 0.3)  # Logic CAN'T be chaos
+            # v14.4 SAFETY TRIGGER: Limit reduction if high void (no facts)
+            # Logic without facts = max "ABSTRACT COMPLEXITY", not "VERIFIED"
+            if void > 0.15:  # Lowered from 0.25 (local/production difference)
+                # High void = limit max reduction to prevent "баклажан" problem
+                max_reduction = 0.25  # Entropy can't go below ~0.45
+                reduction = min(cohesion * 0.8, max_reduction)
+                adjusted = base_entropy - reduction
+                return max(adjusted, 0.4)  # Force at least WARNING level
+            else:
+                # Low void (has facts) = full damper allowed
+                reduction = cohesion * 0.8
+                adjusted = base_entropy - reduction
+                return max(adjusted, 0.3)  # Can be VERIFIED
         
         return base_entropy
 
@@ -724,15 +733,13 @@ class VeritasCalibratedCore:
         # ================================================================
         # v14.1.2: COHESION DISCOUNT
         # ================================================================
-        # If strong logical structure AND low void, reduce final_score
-        # This prevents philosophy/science from being marked as CRITICAL
-        # CRITICAL: Only for genuinely low-void texts (not buzzword fluff)
-        if logical_cohesion > 0.3 and void_result['void_score'] < 0.3:  # Stricter: 0.3 not 0.4
-            # Strong logic + low void deserves MAJOR discount on final score
-            # v14.2.1: Increased from 0.5 to 0.7 (Gemini's "last mile" fix)
-            cohesion_discount = logical_cohesion * 0.7  # Up to 0.7 reduction (was 0.5)
+        # v14.4: Balanced void check
+        # Logic + some facts = discount allowed
+        if logical_cohesion > 0.3 and void_result['void_score'] < 0.20:
+            # Strong logic + reasonable void deserves MAJOR discount on final score
+            cohesion_discount = logical_cohesion * 0.7
             base_score = base_score - cohesion_discount
-            base_score = max(base_score, 0.15)  # Don't go below 0.15 (was 0.2)
+            base_score = max(base_score, 0.15)
 
         final_score = min(0.99, max(0.0, base_score))
 
