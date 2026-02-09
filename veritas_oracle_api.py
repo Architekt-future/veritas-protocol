@@ -2,7 +2,7 @@ import requests
 import time
 
 class VeritasOracle:
-    def __init__(self, api_token):
+    def __init__(self, api_token="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"):
         # Твій пароль від Hugging Face
         self.api_token = api_token
         # Адреса моделі LaBSE (та сама, що ми тестували в Colab)
