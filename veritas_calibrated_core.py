@@ -1,7 +1,7 @@
 """
-Veritas Protocol - Calibrated Core v14.4 "The Skeptic"
-Philosophy: "Logic without facts = suspicion, not verification."
-v14.4: Safety trigger - limit damper if void > 0.25 (Gemini's баклажан fix)
+Veritas Protocol - Calibrated Core v14.4.1 "Skeptic Fixed"
+Philosophy: "Philosophy without numbers ≠ void. Kant @ 0.28 passes!"
+v14.4.1: Raised void thresholds to 0.30 (Gemini's edge case fix)
 """
 
 import re
@@ -440,22 +440,22 @@ class VeritasCalibratedCore:
                             void: float, absurdity: float) -> float:
         """
         Агресивний демпфер: Логіка ВБИВАЄ ентропію Шеннона
-        v14.4 "Skeptic": Added safety trigger for high void
+        v14.4.1 "Skeptic Fixed": Raised void threshold to 0.30 (Gemini's fix)
         
         Returns: adjusted entropy (0.0-1.0)
         """
         # Only apply if strong logic + low bullshit
         if cohesion > 0.2 and void < 0.35 and absurdity < 0.25:
-            # v14.4 SAFETY TRIGGER: Limit reduction if high void (no facts)
-            # Logic without facts = max "ABSTRACT COMPLEXITY", not "VERIFIED"
-            if void > 0.15:  # Lowered from 0.25 (local/production difference)
-                # High void = limit max reduction to prevent "баклажан" problem
-                max_reduction = 0.25  # Entropy can't go below ~0.45
+            # v14.4.1: SAFETY TRIGGER adjusted
+            # Gemini: "Кант має 0.28 — він має проходити!"
+            if void > 0.30:  # Raised from 0.15 to 0.30
+                # Very high void = limit reduction
+                max_reduction = 0.25
                 reduction = min(cohesion * 0.8, max_reduction)
                 adjusted = base_entropy - reduction
-                return max(adjusted, 0.4)  # Force at least WARNING level
+                return max(adjusted, 0.4)  # Force at least WARNING
             else:
-                # Low void (has facts) = full damper allowed
+                # void <= 0.30 (Kant, philosophy) = full damper allowed
                 reduction = cohesion * 0.8
                 adjusted = base_entropy - reduction
                 return max(adjusted, 0.3)  # Can be VERIFIED
@@ -733,10 +733,10 @@ class VeritasCalibratedCore:
         # ================================================================
         # v14.1.2: COHESION DISCOUNT
         # ================================================================
-        # v14.4: Balanced void check
-        # Logic + some facts = discount allowed
-        if logical_cohesion > 0.3 and void_result['void_score'] < 0.20:
-            # Strong logic + reasonable void deserves MAJOR discount on final score
+        # v14.4.1: Raised void check to 0.30 (Gemini's fix)
+        # Logic + philosophy (void 0.28) = discount allowed
+        if logical_cohesion > 0.3 and void_result['void_score'] < 0.30:
+            # Strong logic + reasonable void deserves MAJOR discount
             cohesion_discount = logical_cohesion * 0.7
             base_score = base_score - cohesion_discount
             base_score = max(base_score, 0.15)
