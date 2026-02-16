@@ -193,8 +193,10 @@ class VeritasCalibratedCore:
         # ============================================================
         self.DOMAIN_BOUNDARIES = {
             'physics': {
-                'terms': ['термодинаміка', 'ентропія', 'енергія', 'квантовий', 'фізика',
-                         'математика', 'система', 'закон', 'формула', 'рівняння'],
+                'terms': ['термодинаміка', 'ентропія', 'квантовий', 'фізика',
+                         'математика', 'закон фізики', 'формула', 'рівняння'],
+                # REMOVED: 'система', 'енергія', 'закон' — занадто загальні слова,
+                # спрацьовують на нейтральних текстах (ВВП, статистика, право)
                 'forbidden': ['spirituality', 'esoteric', 'politics', 'business', 'food']
             },
             'medicine': {
@@ -1116,18 +1118,29 @@ class VeritasCalibratedCore:
         return counts
 
     def _calculate_shannon_entropy(self, text: str) -> float:
+        """
+        PATCHED v15.1: Word-level entropy (not character-level).
+        Character entropy is ~0.92 for ANY natural language text — useless.
+        Word entropy actually differentiates repetitive/diverse vocabulary.
+        """
         if not text:
             return 0.0
-        freq = Counter(text.lower())
+        words = text.lower().split()
+        if len(words) < 5:
+            return 0.0
+        freq = Counter(words)
         total = sum(freq.values())
         entropy = 0.0
         for count in freq.values():
             p = count / total
             if p > 0:
                 entropy -= p * math.log2(p)
-        # normalize to 0-1
+        # normalize to 0-1 relative to max possible (all unique words)
         max_entropy = math.log2(len(freq)) if len(freq) > 1 else 1.0
-        return min(1.0, entropy / max_entropy) if max_entropy > 0 else 0.0
+        normalized = entropy / max_entropy if max_entropy > 0 else 0.0
+        # High word diversity = LOW entropy (good text, many unique ideas)
+        # Invert: repetitive text = high entropy signal
+        return min(1.0, max(0.0, 1.0 - normalized))
 
     def _detect_patterns(self, text: str) -> List[Dict]:
         detected = []
