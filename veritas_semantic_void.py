@@ -176,13 +176,22 @@ class SemanticVoidDetector:
                 evidence['missing_concrete'].append(marker_type)
         
         # Penalty for absence
+        # NOTE: Factual/scientific texts often lack names/locations but have 
+        # concrete causal structure — only penalize if also high buzzwords
         missing_count = len(evidence['missing_concrete'])
-        if missing_count >= 5:  # missing almost everything
-            penalties['absence'] = 0.7  # was 0.4
+        buzzword_count_check = sum(1 for bw in self.hollow_buzzwords if bw in text_lower)
+        
+        # Only apply heavy absence penalty if ALSO high buzzwords (real emptiness)
+        if missing_count >= 5 and buzzword_count_check >= 3:
+            penalties['absence'] = 0.7
+        elif missing_count >= 5:
+            penalties['absence'] = 0.2  # factual text without metadata is OK
+        elif missing_count >= 3 and buzzword_count_check >= 2:
+            penalties['absence'] = 0.4
         elif missing_count >= 3:
-            penalties['absence'] = 0.5  # was 0.25
+            penalties['absence'] = 0.1  # factual abstract text
         elif missing_count >= 2:
-            penalties['absence'] = 0.3  # was 0.1
+            penalties['absence'] = 0.05
         
         # ================================================================
         # CHECK 2: VAGUENESS (hollow buzzwords)
@@ -274,22 +283,22 @@ class SemanticVoidDetector:
         if missing_count >= 4 and buzzword_count >= 5:
             void_score += 0.4  # was 0.2 - now can reach 0.9+!
         
-        # GEMINI'S ACTIVE VOID SLASHING (REFINED v13.9)
+        # GEMINI'S ACTIVE VOID SLASHING (REFINED v13.9 → v13.10)
         # If 30+ words but NO numbers/dates → check if also bullshit
         if word_count >= 30:
             has_numbers = concrete_found.get('numbers', 0) > 0
             has_dates = concrete_found.get('dates', 0) > 0
             
             if not has_numbers and not has_dates:
-                # REFINEMENT: Only heavy penalty if ALSO high buzzwords
-                # Philosophy/logic without numbers is OK if not bullshit
-                if buzzword_ratio > 0.1:  # >10% buzzwords = bullshit
+                # REFINEMENT v13.10: Stricter threshold
+                # Philosophy/science/logic without numbers is OK if not bullshit
+                # Only penalize if >15% buzzwords (was >10%)
+                if buzzword_ratio > 0.15:  # clearly bullshit
                     void_score += 0.3  # semantic fraud confirmed
                     evidence['missing_concrete'].append('CRITICAL: no facts + high buzzwords')
-                else:
-                    # Gentle penalty for abstract but non-bullshit text
-                    void_score += 0.1
-                    evidence['missing_concrete'].append('Abstract: no numbers/dates but low buzzwords')
+                elif buzzword_ratio > 0.08:  # marginal
+                    void_score += 0.05  # very gentle penalty
+                    evidence['missing_concrete'].append('Abstract: moderate buzzwords, no numbers')
         
         void_score = min(1.0, void_score)
         
