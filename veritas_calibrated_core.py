@@ -105,6 +105,12 @@ try:
 except ImportError:
     META_INTENT_AVAILABLE = False
 
+try:
+    from veritas_certainty_factor import CertaintyFactor
+    CERTAINTY_AVAILABLE = True
+except ImportError:
+    CERTAINTY_AVAILABLE = False
+
 
 # ================================================================
 # v14.2: Standalone functions REMOVED - now class methods!
@@ -207,6 +213,12 @@ class VeritasCalibratedCore:
             self.meta_intent_analyzer = MetaIntentAnalyzer()
         else:
             self.meta_intent_analyzer = None
+
+        # Certainty factor (v16.5 — short text detection and dynamic thresholds)
+        if CERTAINTY_AVAILABLE:
+            self.certainty_factor = CertaintyFactor()
+        else:
+            self.certainty_factor = None
         
         # Oracle (v15.0 semantic coherence checker)
         # NOTE: Requires HUGGINGFACE_API_TOKEN environment variable
@@ -586,6 +598,22 @@ class VeritasCalibratedCore:
         words = text.split()
         word_count = len(words)
 
+        # ---- PHASE 0: CERTAINTY FACTOR (v16.5) ----
+        # Must run FIRST — determines short_text_mode and adjusted_min_hits
+        certainty_result = {
+            'certainty_level': 'SUFFICIENT',
+            'certainty_label_uk': '',
+            'certainty_note_uk': '',
+            'short_text_mode': False,
+            'adjusted_min_hits': None,
+            'entropy_floor': 0.0,
+        }
+        if self.certainty_factor:
+            certainty_result = self.certainty_factor.analyze(text)
+        short_text_mode   = certainty_result['short_text_mode']
+        adjusted_min_hits = certainty_result['adjusted_min_hits']
+        entropy_floor     = certainty_result['entropy_floor']
+
         # ---- PHASE 1: LAC MODULES ----
         lac_i_violations   = self._lac_module_i_tradeoff(text)
         lac_ii_violations  = self._lac_module_ii_accountability(text)
@@ -685,7 +713,9 @@ class VeritasCalibratedCore:
             'preservation_explanation': '',
         }
         if self.self_preservation_guard:
-            preservation_result = self.self_preservation_guard.analyze(text)
+            preservation_result = self.self_preservation_guard.analyze(
+                text, min_hits_override=adjusted_min_hits
+            )
         preservation_score = preservation_result['preservation_score']
 
         # PHASE 10e: PSEUDOSCIENCE DETECTOR (v16.1)
@@ -733,7 +763,9 @@ class VeritasCalibratedCore:
             'meta_explanation': '',
         }
         if self.meta_intent_analyzer:
-            meta_intent_result = self.meta_intent_analyzer.analyze(text)
+            meta_intent_result = self.meta_intent_analyzer.analyze(
+                text, min_hits_override=adjusted_min_hits
+            )
         meta_score = meta_intent_result['meta_score']
         
         # Pre-extract axiom_score to outer scope (prevents UnboundLocalError
@@ -1008,7 +1040,7 @@ class VeritasCalibratedCore:
             base_score = base_score - cohesion_discount
             base_score = max(base_score, 0.15)
 
-        final_score = min(0.99, max(0.0, base_score))
+        final_score = min(0.99, max(entropy_floor, base_score))
 
         # ---- SPECIAL CASE: SEMANTIC VOID DETECTION ----
         # If high entropy + high void + low violations = just empty fluff, not manipulation
@@ -1277,6 +1309,16 @@ class VeritasCalibratedCore:
                 'verdict':     meta_intent_result['meta_verdict'],
                 'intents':     meta_intent_result['meta_intents'],
                 'explanation': meta_intent_result['meta_explanation'],
+            },
+            # CERTAINTY FACTOR (v16.5)
+            'certainty': {
+                'level':    certainty_result['certainty_level'],
+                'label_uk': certainty_result['certainty_label_uk'],
+                'label_en': certainty_result['certainty_label_en'],
+                'note_uk':  certainty_result['certainty_note_uk'],
+                'note_en':  certainty_result['certainty_note_en'],
+                'word_count': certainty_result['word_count'],
+                'short_text_mode': certainty_result['short_text_mode'],
             }
         }
 
