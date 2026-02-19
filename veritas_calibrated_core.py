@@ -62,6 +62,13 @@ try:
 except ImportError:
     LAC_LABOR_AVAILABLE = False
 
+# Import Manipulation detector
+try:
+    from veritas_manipulation_detector import ManipulationDetector
+    MANIPULATION_AVAILABLE = True
+except ImportError:
+    MANIPULATION_AVAILABLE = False
+
 
 # ================================================================
 # v14.2: Standalone functions REMOVED - now class methods!
@@ -123,6 +130,12 @@ class VeritasCalibratedCore:
             self.lac_labor = VeritasLACLabor()
         else:
             self.lac_labor = None
+        
+        # Manipulation detector (gaslighting, cult rhetoric, totalitarian framing)
+        if MANIPULATION_AVAILABLE:
+            self.manipulation_detector = ManipulationDetector()
+        else:
+            self.manipulation_detector = None
         
         # Oracle (v15.0 semantic coherence checker)
         # NOTE: Requires HUGGINGFACE_API_TOKEN environment variable
@@ -574,6 +587,15 @@ class VeritasCalibratedCore:
                 'evidence': labor_analysis.evidence
             }
         
+        # ---- PHASE 10b: MANIPULATION DETECTION ----
+        manipulation_result = {
+            'manipulation_score': 0.0,
+            'manipulation_patterns': [],
+            'manipulation_verdict': 'CLEAN'
+        }
+        if self.manipulation_detector:
+            manipulation_result = self.manipulation_detector.analyze(text)
+        
         # ================================================================
         # PHASE 11: THE WEAVER (Logical Cohesion Damper) v14.2
         # ================================================================
@@ -736,6 +758,20 @@ class VeritasCalibratedCore:
             if lac_i_violations and any(v.vtype == 'ZERO_COST_PROPOSITION' for v in lac_i_violations):
                 base_score = max(base_score, 0.5)
 
+            # MANIPULATION BOOST (gaslighting, cult rhetoric, totalitarian framing)
+            # CRITICAL: This is HIGHEST PRIORITY - manipulation is always intentional
+            manip_score = manipulation_result['manipulation_score']
+            if manip_score > 0:
+                base_score += manip_score * 1.8  # 180% weight - manipulation is worst category
+                
+                # Force minimum thresholds by severity
+                if manip_score >= 0.75:  # PSYCHOLOGICAL_WEAPON
+                    base_score = max(base_score, 0.75)
+                elif manip_score >= 0.50:  # HIGH_MANIPULATION
+                    base_score = max(base_score, 0.55)
+                elif manip_score >= 0.25:  # MANIPULATION_PRESENT
+                    base_score = max(base_score, 0.35)
+
             # violation multiplier
             if violation_count > 0:
                 base_score *= (1.0 + violation_count * 0.1)
@@ -837,7 +873,23 @@ class VeritasCalibratedCore:
             absurdity_result.get('danger_count', 0) == 0
         )
         
-        if is_pure_bullshit:
+        # MANIPULATION OVERRIDE: detected manipulation overrides standard verdict
+        manip_score = manipulation_result['manipulation_score']
+        manip_patterns = [p['name'] for p in manipulation_result['manipulation_patterns']]
+        
+        if manip_score >= 0.75:
+            status, verdict = 'CRITICAL', 'ПСИХОЛОГІЧНА ЗБРОЯ'
+            explanation = ('Виявлено активні техніки маніпуляції: ' + ', '.join(manip_patterns[:3]) + 
+                '. Текст спроектований для пригнічення критичного мислення.')
+        elif manip_score >= 0.50:
+            status, verdict = 'CRITICAL', 'МАНІПУЛЯТИВНИЙ ДИСКУРС'
+            explanation = ('Виявлено маніпулятивні конструкції: ' + ', '.join(manip_patterns[:3]) + 
+                '. Аргументація спрямована на підпорядкування, а не переконання.')
+        elif manip_score >= 0.25:
+            status, verdict = 'WARNING', 'РИТОРИЧНИЙ ВПЛИВ'
+            explanation = ('Виявлено елементи впливу: ' + (manip_patterns[0] if manip_patterns else 'невідомо') + 
+                '. Текст містить конструкції що обмежують автономію судження.')
+        elif is_pure_bullshit:
             status, verdict = 'VOID', 'СЕМАНТИЧНА ПОРОЖНЕЧА'
             explanation = 'Текст містить багато слів без конкретного змісту чи інформації'
         elif is_semantic_void:
@@ -915,6 +967,9 @@ class VeritasCalibratedCore:
                 'lac_labor_missing': lac_labor_result['missing'],
                 'lac_labor_red_flags': lac_labor_result['red_flags'],
                 'is_labor_content': lac_labor_result['is_labor'],
+                'manipulation_score': round(manipulation_result['manipulation_score'], 3),
+                'manipulation_verdict': manipulation_result['manipulation_verdict'],
+                'manipulation_patterns': [p['name'] for p in manipulation_result['manipulation_patterns']],
             }
         }
 
