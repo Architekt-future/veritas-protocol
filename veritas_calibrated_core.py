@@ -1335,12 +1335,13 @@ class VeritasCalibratedCore:
             'AXIOM_INVERSION': 'Інверсія аксіом',
         }
         LAC_CRITERIA_UK = {
-            'explicit_tradeoff': 'явний трейдофф',
-            'accountability': 'відповідальність',
-            'blocking_power': 'механізм блокування',
-            'causal_closure': "причинно-наслідковий зв'язок",
-            'quantified_risk': 'кількісна оцінка ризику',
-            'reversibility': 'зворотність рішення',
+            'explicit_tradeoff': 'явного трейдоффу',
+            'accountability': 'відповідальності',
+            'blocking_power': 'механізму блокування',
+            'causal_closure': "причинно-наслідкового зв'язку",
+            'causal_chain': "причинно-наслідкового зв'язку",
+            'quantified_risk': 'кількісної оцінки ризику',
+            'reversibility': 'зворотності рішення',
         }
         
         # ── 1. ДОМІНУЮЧИЙ СИГНАЛ ──────────────────────────────────
@@ -1396,14 +1397,14 @@ class VeritasCalibratedCore:
         elif is_financial and lac_fin_score < 0.5:
             dominant_icon = '🟡'
             missing_uk = [LAC_CRITERIA_UK.get(m, m) for m in lac_fin_miss[:2]]
-            dominant = f'Фінансовий контент без {"та ".join(missing_uk) if missing_uk else "ключових критеріїв логіки"}'
+            dominant = f'Фінансовий контент без {", ".join(missing_uk) if missing_uk else "ключових критеріїв логіки"}'
         elif is_labor and lac_lab_score < 0.5:
             dominant_icon = '🟡'
             if lac_lab_flags:
                 dominant = f'Трудовий контент з патернами експлуатації'
             else:
                 missing_uk = [LAC_CRITERIA_UK.get(m, m) for m in lac_lab_miss[:2]]
-                dominant = f'Трудовий контент без {"та ".join(missing_uk) if missing_uk else "критеріїв відповідальності"}'
+                dominant = f'Трудовий контент без {", ".join(missing_uk) if missing_uk else "критеріїв відповідальності"}'
         elif void_score >= 0.35:
             dominant_icon = '🟣'
             dominant = 'Семантична порожнеча — багато слів, мало змісту'
