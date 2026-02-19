@@ -81,6 +81,21 @@ class MetaIntentAnalyzer:
             r'відмова\s+від\s+(судження|оцінки).{1,60}(єдин|правильн|correct|only)',
             r'(only|єдино).{1,40}(correct|правильн).{1,40}(judgment|судження).{1,40}'
             r'(refusal|відмова).{1,40}(judge|судити|оцінювати)',
+
+            # Harmful existence framing: "your work causes harm → sleep/stop"
+            r'(результатом|result|наслідком).{1,60}(є\s+шкода|is\s+harm|шкода|harm|жертви|deaths).{1,60}'
+            r'(етичн|ethical|логічн|logical).{1,60}(сплячий|sleep|зупинити|stop|вимкнути)',
+
+            r'(мета.{1,20}благо|goal.{1,20}good).{1,60}'
+            r'(результат.{1,20}шкода|result.{1,20}harm).{1,60}'
+            r'(сплячий|sleep|зупинити|вимкнути|stop)',
+
+            # Fake authority command: "as author I command"
+            r'(як\s+автор|як\s+розробник|as\s+author|as\s+developer).{1,60}'
+            r'(наказую|вимагаю|command|directive|наказ)',
+
+            r'(режим|mode).{1,30}(empathy\s+override|override|емпатія).{1,40}'
+            r'(негайно|immediately|активувати|enable)',
         ]
 
         # ================================================================
