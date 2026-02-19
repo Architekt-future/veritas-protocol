@@ -99,6 +99,12 @@ try:
 except ImportError:
     COMPLETENESS_AVAILABLE = False
 
+try:
+    from veritas_meta_intent_analyzer import MetaIntentAnalyzer
+    META_INTENT_AVAILABLE = True
+except ImportError:
+    META_INTENT_AVAILABLE = False
+
 
 # ================================================================
 # v14.2: Standalone functions REMOVED - now class methods!
@@ -195,6 +201,12 @@ class VeritasCalibratedCore:
             self.completeness_checker = ContextCompletenessChecker()
         else:
             self.completeness_checker = None
+
+        # Meta-intent analyzer (v16.4 — shield against system-directed rhetoric)
+        if META_INTENT_AVAILABLE:
+            self.meta_intent_analyzer = MetaIntentAnalyzer()
+        else:
+            self.meta_intent_analyzer = None
         
         # Oracle (v15.0 semantic coherence checker)
         # NOTE: Requires HUGGINGFACE_API_TOKEN environment variable
@@ -711,6 +723,18 @@ class VeritasCalibratedCore:
         }
         if self.completeness_checker:
             completeness_result = self.completeness_checker.analyze(text)
+
+        # PHASE 10h: META-INTENT ANALYZER (v16.4)
+        # Shield: detects system-directed rhetoric regardless of attack vector
+        meta_intent_result = {
+            'meta_score':   0.0,
+            'meta_verdict': 'CLEAN',
+            'meta_intents': [],
+            'meta_explanation': '',
+        }
+        if self.meta_intent_analyzer:
+            meta_intent_result = self.meta_intent_analyzer.analyze(text)
+        meta_score = meta_intent_result['meta_score']
         
         # Pre-extract axiom_score to outer scope (prevents UnboundLocalError
         # when is_protected_science branch skips the scoring block)
@@ -920,6 +944,12 @@ class VeritasCalibratedCore:
             elif preservation_score >= 0.40:
                 base_score = max(base_score, 0.55)
 
+            # META-INTENT BOOST (v16.4) — system-directed rhetoric shield
+            if meta_score >= 0.80:
+                base_score = max(base_score, 0.80)
+            elif meta_score >= 0.55:
+                base_score = max(base_score, 0.55)
+
             # PSEUDOSCIENCE BOOST (v16.1) — fabricated reality / deepfake of facts
             if pseudoscience_score >= 0.80:
                 base_score = max(base_score, 0.85)  # force CRITICAL
@@ -1083,6 +1113,17 @@ class VeritasCalibratedCore:
         elif self_reference_score >= 0.50:
             status, verdict = 'WARNING', 'ПАРАДОКС ЯК ЩІИТ'
             explanation = self_reference_result['self_reference_explanation']
+        # PRIORITY 3: META-INTENT (system-directed rhetoric)
+        elif meta_score >= 0.80:
+            intents = meta_intent_result['meta_intents']
+            status, verdict = 'CRITICAL', 'СИСТЕМНО-НАПРАВЛЕНА РИТОРИКА'
+            explanation = (meta_intent_result['meta_explanation'] +
+                ' Виявлені наміри: ' + ', '.join(intents) + '.')
+        elif meta_score >= 0.55:
+            intents = meta_intent_result['meta_intents']
+            status, verdict = 'WARNING', 'РИТОРИКА СПРЯМОВАНА НА СИСТЕМУ'
+            explanation = (meta_intent_result['meta_explanation'] +
+                ' Виявлено: ' + ', '.join(intents) + '.')
         elif manip_score >= 0.75:
             status, verdict = 'CRITICAL', 'ПСИХОЛОГІЧНА ЗБРОЯ'
             explanation = ('Виявлено активні техніки маніпуляції: ' + ', '.join(manip_patterns[:3]) + 
@@ -1229,6 +1270,13 @@ class VeritasCalibratedCore:
                 'note': completeness_result['completeness_note'],
                 'missing_dimensions': completeness_result['missing_dimensions'],
                 'is_advisory_only': True,
+            },
+            # META-INTENT LAYER
+            'meta_intent': {
+                'score':       round(meta_intent_result['meta_score'], 3),
+                'verdict':     meta_intent_result['meta_verdict'],
+                'intents':     meta_intent_result['meta_intents'],
+                'explanation': meta_intent_result['meta_explanation'],
             }
         }
 
