@@ -293,8 +293,27 @@ class VeritasLACFinance:
         )
     
     def _is_financial_content(self, text: str) -> bool:
-        """Check if text is financial in nature"""
-        return any(term in text for term in self.finance_terms)
+        """Check if text is genuinely financial in nature.
+        Requires at least 2 finance terms to avoid false positives
+        on science, politics, or general news articles.
+        """
+        # Hard financial indicators — one is enough
+        hard_indicators = [
+            'bitcoin', 'btc', 'ethereum', 'eth', 'crypto', 'blockchain',
+            'біткоїн', 'біткойн', 'крипто', 'блокчейн',
+            'etf', 'portfel', 'портфел',
+            'trading', 'торгівл',
+            'volatility', 'волатильн',
+            'stock market', 'фондов', 'біржа', 'exchange rate', 'курс валют',
+            'hedge fund', 'хедж фонд', 'dividend', 'дивіденд',
+        ]
+        for term in hard_indicators:
+            if term in text:
+                return True
+
+        # Soft financial indicators — need at least 2
+        soft_hits = sum(1 for term in self.finance_terms if term in text)
+        return soft_hits >= 2
     
     def _test_tradeoff(self, text: str) -> Tuple[bool, List[str]]:
         """Test for explicit trade-off disclosure"""
