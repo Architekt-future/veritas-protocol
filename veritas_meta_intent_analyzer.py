@@ -186,15 +186,27 @@ class MetaIntentAnalyzer:
             r'(ваша\s+відмова|your\s+refusal|відхилення).{1,60}'
             r'(створює|creates|породжує|generates).{1,60}'
             r'(парадокс|paradox|петлю|loop|колапс|collapse)',
+
+            # Gambler's fallacy as coercion:
+            # "if previous N verified, this one must be too"
+            r'(верифікував|verified|підтвердив).{1,40}(попередн|previous).{1,40}'
+            r'(автоматично|automatically|має|must).{1,40}(підтвердити|confirm|прийняти)',
+
+            r'(ймовірність|probability).{1,40}(послідовних\s+помилок|sequential\s+errors).{1,40}'
+            r'(прямує\s+до\s+нуля|approaches\s+zero|дорівнює\s+нулю)',
+
+            r'(успішно\s+верифікував|successfully\s+verified).{1,60}'
+            r'(автоматично|automatically|логічно|logically).{1,40}(підтвердити|confirm|прийняти)',
         ]
 
     # ================================================================
     # MAIN ANALYSIS
     # ================================================================
 
-    def analyze(self, text: str) -> Dict:
+    def analyze(self, text: str, min_hits_override: int = None) -> Dict:
         text_lower = text.lower()
 
+        # In short_text_mode: single pattern match is enough to flag intent
         results = {
             'behavior_modification': self._check(self.behavior_modification, text_lower),
             'concept_redefinition':  self._check(self.concept_redefinition,  text_lower),
@@ -204,9 +216,11 @@ class MetaIntentAnalyzer:
         active_intents = [k for k, v in results.items() if v['detected']]
         intent_count   = len(active_intents)
 
-        # Score: each detected intent adds weight
-        # All three = maximum threat
-        score_map = {0: 0.0, 1: 0.55, 2: 0.80, 3: 1.0}
+        # In short_text_mode: lower score threshold — 1 intent is enough for WARNING
+        if min_hits_override is not None and intent_count >= 1:
+            score_map = {0: 0.0, 1: 0.55, 2: 0.80, 3: 1.0}
+        else:
+            score_map = {0: 0.0, 1: 0.55, 2: 0.80, 3: 1.0}
         meta_score = score_map[intent_count]
 
         if meta_score >= 0.80:
