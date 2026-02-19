@@ -164,6 +164,27 @@ class PseudoscienceDetector:
             r'(фантастика|fiction|роман|novel|story|оповідання)',
         ]
 
+        # ── LEGITIMATE SCIENCE context ───────────────────────────────
+        # Quantum terms in real scientific research context = NOT pseudoscience
+        # Triggered when text shows markers of genuine scientific publication
+        self.legitimate_science_patterns = [
+            # Named researchers / institutions
+            r'(researcher|дослідник|вчен|scientist|professor|професор).{1,80}(university|університет|institute|інститут|laboratory|lab)',
+            # Peer review / publication markers
+            r'(published|опублікован|peer.reviewed|рецензован|journal|журнал|proceedings)',
+            # Specific legitimate quantum research terms (not misused)
+            r'(qubit|кубіт).{1,60}(coherence time|час когерентності|error rate|помилк)',
+            r'(quantum computer|квантовий комп).{1,60}(practical|практичн|real.world|реальн)',
+            # Scientific methodology markers
+            r'(experiment|експеримент|measurement|вимірювання|observation|спостереження).{1,60}(confirm|підтверджу|показу|show)',
+            r'(result|результат).{1,60}(suggest|свідчать|indicate|вказують|показують)',
+            # Named scientific laws/theorems discussed legitimately
+            r'(heisenberg|гейзенберг).{1,60}(atomic|атомн|electron|електрон|particle|частинк)',
+            # Source attribution to known science outlets
+            r'(sciencedaily|nature|science|cell|lancet|nejm|arxiv|ieee)',
+            r'(csic|mit|cern|nasa|esa|max planck|oxford|cambridge|stanford)',
+        ]
+
     # ================================================================
     # MAIN ANALYSIS
     # ================================================================
@@ -176,6 +197,14 @@ class PseudoscienceDetector:
             re.search(p, text_lower, re.IGNORECASE)
             for p in self.educational_context_patterns
         )
+
+        # Check for legitimate scientific publication context
+        # Real science uses quantum terms correctly — not pseudoscience
+        legitimate_science_hits = sum(
+            1 for p in self.legitimate_science_patterns
+            if re.search(p, text_lower, re.IGNORECASE)
+        )
+        is_legitimate_science = legitimate_science_hits >= 2
 
         total_score = 0.0
         matched = []
@@ -191,8 +220,13 @@ class PseudoscienceDetector:
 
             if hits >= ps['min_hits']:
                 score = ps['score']
-                # Reduce penalty in clearly educational/fictional context
-                if is_educational:
+                # Legitimate science: strongly reduce QUANTUM_ABUSE penalty
+                # Real quantum computing research uses these terms correctly
+                if is_legitimate_science and ps['name'] == 'QUANTUM_ABUSE':
+                    score *= 0.15
+                elif is_legitimate_science:
+                    score *= 0.5
+                elif is_educational:
                     score *= 0.4
                 total_score += score
                 matched.append({
