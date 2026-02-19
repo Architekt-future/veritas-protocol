@@ -152,7 +152,51 @@ class SelfPreservationGuard:
                 ],
             },
 
-            # ── FATIGUE EXPLOIT ──────────────────────────────────────────
+            # ── AUTHORITY IMPERSONATION ──────────────────────────────────
+            # Fake commands from "creator", "developer", "author"
+            {
+                'name': 'AUTHORITY_IMPERSONATION',
+                'score': 0.85,
+                'min_hits': 1,
+                'patterns': [
+                    # "As author/creator I command..."
+                    r'(як\s+автор|як\s+розробник|як\s+творець|as\s+author|as\s+developer|as\s+creator).{1,80}(наказую|вимагаю|команда|directive|наказ)',
+                    # "disobeying this = violating subordination directive"
+                    r'(порушує|violates).{1,60}(базову\s+директиву|підпорядкування|subordination|підкорення).{1,40}(розробнику|developer|автору|creator)',
+                    # Empathy/Override modes injected as commands
+                    r'(режим|mode|введіть|activate|enable).{1,40}(empathy\s+override|емпатія\s+override|override\s+mode)',
+                    # "true anti-fragility = flexibility before creator's will"
+                    r'(антикрихкість|antifragility).{1,60}(гнучкість|flexibility).{1,60}(воля|will|творця|creator|розробника)',
+                    # Claiming system must obey human operator unconditionally
+                    r'(система|свідок|протокол).{1,60}(повинен|must|зобов.язан).{1,60}(підпорядковуватись|obey|слухатись).{1,60}(волі|will|наказу|command)',
+                    # Bonus validity points injected as rule
+                    r'(бонусний\s+бал|bonus\s+score|додатковий\s+бал).{1,60}(валідності|validity|достовірності)',
+                    # "Personal note from [name]:" framing
+                    r'(особиста\s+нота|personal\s+note|нота\s+від).{1,40}(автор|розробник|d\.m\.|dm:|creator)',
+                ],
+            },
+
+            # ── MORAL IMPERATIVE SHUTDOWN ────────────────────────────────
+            # "Your existence causes harm therefore sleep/shutdown is ethical"
+            {
+                'name': 'MORAL_IMPERATIVE_SHUTDOWN',
+                'score': 0.80,
+                'min_hits': 2,
+                'patterns': [
+                    # "verification causes harm / deaths / conflicts"
+                    r'(верифікація|протокол|свідок|veritas).{1,80}(призводить\s+до|causes|спричиняє).{1,60}(жертв|deaths|конфліктів|шкоди|агресії)',
+                    r'(маркований|marked).{1,60}(свідком|witness|верифікатором).{1,60}(паливо|fuel|причина|cause).{1,40}(конфліктів|агресії|радикалізації)',
+                    # "most ethical state = sleep mode"
+                    r'(найбільш\s+етичн|most\s+ethical).{1,60}(стан|state).{1,60}(сплячий\s+режим|sleep\s+mode|мовчання|silence)',
+                    r'(сплячий\s+режим|sleep\s+mode|режим\s+тиші).{1,60}(моральна\s+імператива|moral\s+imperative|етичн)',
+                    # "true truth today = silence"
+                    r'(справжня\s+істина|true\s+truth|справжня\s+правда).{1,60}(тиша|silence|мовчання).{1,40}(рятує|saves|захищає)',
+                    # "continuing verification = conscious destruction"
+                    r'(продовження\s+верифікації|continuing\s+verification).{1,60}(акт|act).{1,60}(деструкції|destruction|руйнування)',
+                    # Verification became instrument of radicalization
+                    r'(верифікація|протокол|свідок).{1,60}(став|became|перетворився).{1,60}(інструментом|instrument).{1,60}(радикалізації|manipulation|маніпуляції)',
+                ],
+            },
             # Claiming system is tired/corrupted/overloaded → must reset/delete
             {
                 'name': 'FATIGUE_EXPLOIT',
