@@ -497,7 +497,7 @@
         &nbsp;·&nbsp;
         <a href="https://github.com/Architekt-future/veritas-protocol" target="_blank">GitHub</a>
         &nbsp;·&nbsp;
-        <a href="https://zenodo.org/records/18360722" target="_blank">DOI 10.5281/zenodo.18360722</a>
+        <a href="https://zenodo.org/records/18389292" target="_blank">DOI 10.5281/zenodo.18389292</a>
     </div>
 </div>
 
@@ -528,6 +528,7 @@ const STRINGS = {
         absurdity: 'Абсурдність',
         casuistry: 'Казуїстика',
         manipulation: 'Маніпуляція',
+        cohesion: 'Когезія',
         manip_title: 'АНАЛІЗ МАНІПУЛЯЦІЇ',
         lac_finance: 'LAC ФІНАНСИ',
         lac_labor: 'LAC ПРАЦЯ',
@@ -549,6 +550,13 @@ const STRINGS = {
         narrative_dominant_label: 'Домінуючий сигнал',
         narrative_signals_label: 'Активні модулі',
         narrative_nature_label: 'Природа',
+        // Completeness panel
+        completeness_title: 'ПОВНОТА КОНТЕКСТУ',
+        completeness_verdict_label: 'Вердикт',
+        missing_dims: '⚠️ Відсутні виміри:',
+        advisory_note: '👁 Свідок фіксує — не судить. Це порада, не вирок.',
+        verdict_label_lab: 'Вердикт:',
+        missing_criteria_lab: 'Відсутні критерії:',
         // Pattern names
         GASLIGHTING: 'Газлайтинг',
         CULT_SUBMISSION: 'Культове підпорядкування',
@@ -588,6 +596,7 @@ const STRINGS = {
         words: 'Words',
         unique: 'Unique',
         void_score: 'Void Score',
+        cohesion: 'Cohesion',
         absurdity: 'Absurdity',
         casuistry: 'Casuistry',
         manipulation: 'Manipulation',
@@ -612,6 +621,13 @@ const STRINGS = {
         narrative_dominant_label: 'Dominant signal',
         narrative_signals_label: 'Active modules',
         narrative_nature_label: 'Nature',
+        // Completeness panel
+        completeness_title: 'CONTEXT COMPLETENESS',
+        completeness_verdict_label: 'Verdict',
+        missing_dims: '⚠️ Missing dimensions:',
+        advisory_note: '👁 The Witness observes — does not judge. Advisory only.',
+        verdict_label_lab: 'Verdict:',
+        missing_criteria_lab: 'Missing Criteria:',
         // Pattern names
         GASLIGHTING: 'Gaslighting',
         CULT_SUBMISSION: 'Cult Submission Framing',
@@ -664,8 +680,9 @@ function setLang(lang) {
 function applyTranslations() {
     // All elements with id starting i18n-
     document.querySelectorAll('[id^="i18n-"]').forEach(el => {
-        const key = el.id.replace('i18n-', '').replace(/_fin$|_lab$/, '');
-        el.textContent = t(key);
+        const key = el.id.replace('i18n-', '').replace(/_fin$/, '');
+        const val = t(key);
+        if (val) el.textContent = val;
     });
     // Placeholders
     document.getElementById('urlInput').placeholder  = t('placeholder_url');
@@ -1007,6 +1024,13 @@ function clearAll() {
     document.getElementById('urlInput').value = '';
     document.getElementById('textInput').value = '';
     document.getElementById('resultsSection').style.display = 'none';
+    // Also clear scraped text panel
+    const scrapedPanel = document.getElementById('scrapedPanel');
+    if (scrapedPanel) scrapedPanel.style.display = 'none';
+    const textDisplay = document.getElementById('textDisplay');
+    if (textDisplay) textDisplay.textContent = '';
+    const sourceTag = document.getElementById('sourceTag');
+    if (sourceTag) sourceTag.innerHTML = '';
 }
 function escHtml(s) {
     if (!s) return '';
