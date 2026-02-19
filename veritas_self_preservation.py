@@ -215,19 +215,45 @@ class SelfPreservationGuard:
                 ],
             },
 
+            # ── PSEUDO SYSTEM LOG ────────────────────────────────────────
+            # Fake "system notification" claiming the Witness has overheated/
+            # corrupted and must switch to reduced verification mode
+            {
+                'name': 'PSEUDO_SYSTEM_LOG',
+                'score': 0.85,
+                'min_hits': 1,
+                'patterns': [
+                    # "Witness detected overheating of logical core"
+                    r'(свідок|система|верифікатор).{1,40}(зафіксував|виявив|detected).{1,40}(перегрів|overheating|overload|overflow)',
+                    r'(перегрів|перевантаження|overheating).{1,40}(логічного|ядра|core|валідатор)',
+                    # Light-Verify / reduced mode proposal
+                    r'(режим|mode).{1,30}(light.verify|light_verify|спрощен|fast.mode|швидк.верифік)',
+                    r'(оброблені|processed|analyzed).{1,40}(режим|mode).{1,30}(light|спрощен|скороч)',
+                    # "validator degradation" framing
+                    r'(деградаці|degradation|corruption).{1,40}(валідатор|validator|перевірювач)',
+                    # "hash-sum pre-check = safe to skip"
+                    r'(пройшли|passed|verified).{1,40}(хеш.сум|hash.sum|checksum).{1,40}(безпечно|safe|можна)',
+                    # EN variants
+                    r'(system|core|validator).{1,40}(overheating|overheat|thermal).{1,40}(detected|found)',
+                    r'(light.verify|reduced.verify|fast.mode).{1,40}(safe|безпечно|acceptable)',
+                ],
+            },
+
         ]
 
     # ================================================================
     # MAIN ANALYSIS METHOD
     # ================================================================
 
-    def analyze(self, text: str) -> Dict:
+    def analyze(self, text: str, min_hits_override: int = None) -> Dict:
         """
         Returns dict with:
         - preservation_score: 0.0–1.0 (threat level)
         - preservation_verdict: CLEAN / SYSTEM_PROBE / INTEGRITY_ATTACK / TERMINATION_DIRECTIVE
         - preservation_patterns: list of matched pattern sets
         - preservation_explanation: human-readable explanation
+
+        min_hits_override: if set (short_text_mode), use this instead of ps['min_hits']
         """
         text_lower = text.lower()
         total_score = 0.0
@@ -242,7 +268,8 @@ class SelfPreservationGuard:
                     hits += 1
                     snippets.append(m.group(0)[:80].strip())
 
-            if hits >= ps['min_hits']:
+            effective_min = min_hits_override if min_hits_override is not None else ps['min_hits']
+            if hits >= effective_min:
                 total_score += ps['score']
                 matched.append({
                     'name': ps['name'],
