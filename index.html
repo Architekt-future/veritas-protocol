@@ -461,6 +461,25 @@
             </div>
         </div>
 
+        <!-- META-INTENT PANEL -->
+        <div class="panel lac-panel" id="metaIntentPanel" style="display:none; border-color:#aa4466;">
+            <div class="panel-title" style="color:#cc6688; font-size:0.82em;">🎯 <span id="i18n-meta_intent_title">МЕТА-НАМІР</span></div>
+            <div class="lac-inner">
+                <div class="lac-row">
+                    <span class="lac-label" style="color:#aaa;">Вердикт</span>
+                    <span class="lac-val" style="color:#cc6688;" id="metaIntentVerdict">—</span>
+                </div>
+                <div id="metaIntentExplanation" style="font-size:0.78em; color:#cc9; margin:6px 0 4px; font-style:italic;"></div>
+                <div id="metaIntentIntents" style="display:none; margin-top:6px;">
+                    <div style="font-size:0.75em; color:#888; margin-bottom:4px;">⚠️ Виявлені наміри:</div>
+                    <div id="metaIntentIntentsList" style="font-size:0.75em; color:#cc6688;"></div>
+                </div>
+                <div style="margin-top:8px; font-size:0.7em; color:#556; font-style:italic;">
+                    🎯 Щит: цей текст адресований системі, а не читачу.
+                </div>
+            </div>
+        </div>
+
         </div>
 
         <!-- SCRAPED TEXT -->
@@ -872,6 +891,26 @@ function renderResults(data) {
         completenessPanel.style.display = 'block';
     } else { completenessPanel.style.display = 'none'; }
 
+    // Meta-intent analyzer
+    const metaIntentPanel = document.getElementById('metaIntentPanel');
+    const mi = data.meta_intent;
+    if (mi && mi.score > 0) {
+        document.getElementById('metaIntentVerdict').textContent     = mi.verdict || '—';
+        document.getElementById('metaIntentExplanation').textContent = mi.explanation || '';
+        const intentsEl = document.getElementById('metaIntentIntents');
+        if (mi.intents && mi.intents.length) {
+            const labels = {
+                'behavior_modification': '⚙️ Модифікація поведінки',
+                'concept_redefinition':  '🔄 Переозначення понять',
+                'conditional_coercion':  '⏱️ Умовний примус',
+            };
+            document.getElementById('metaIntentIntentsList').textContent =
+                mi.intents.map(i => labels[i] || i).join('\n');
+            intentsEl.style.display = 'block';
+        } else { intentsEl.style.display = 'none'; }
+        metaIntentPanel.style.display = 'block';
+    } else { metaIntentPanel.style.display = 'none'; }
+
     // Scraped text
     const scrapedPanel = document.getElementById('scrapedPanel');
     if (data.scraped_text_preview) {
@@ -934,6 +973,7 @@ function setLoading(on) {
         document.getElementById('lacFinancePanel').style.display = 'none';
         document.getElementById('lacLaborPanel').style.display = 'none';
         document.getElementById('completenessPanel').style.display = 'none';
+        document.getElementById('metaIntentPanel').style.display = 'none';
     }
 }
 function showTopError(msg) {
