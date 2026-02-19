@@ -709,12 +709,22 @@ class VeritasCalibratedCore:
                     base_score = max(base_score, 0.7)  # force CRITICAL
 
             # ABSURDITY BOOST (logical non-sequiturs, fabricated authority, danger)
+            # v16.1: raised weight, stronger force thresholds
             if absurdity_result['absurdity_score'] > 0:
-                base_score += absurdity_result['absurdity_score'] * 1.2  # 120% weight (HIGHEST PRIORITY)
+                base_score += absurdity_result['absurdity_score'] * 1.8  # 180% weight
                 
-                # CRITICAL: dangerous implications or non-sequitur
+                # Force minimum by absurdity severity
+                abs_score = absurdity_result['absurdity_score']
+                if abs_score >= 0.7:
+                    base_score = max(base_score, 0.65)  # force CRITICAL
+                elif abs_score >= 0.5:
+                    base_score = max(base_score, 0.55)  # force CRITICAL
+                elif abs_score >= 0.3:
+                    base_score = max(base_score, 0.4)   # force WARNING+
+                
+                # EXTRA: dangerous implications or non-sequitur
                 if absurdity_result.get('danger_count', 0) >= 1 or absurdity_result.get('has_non_sequitur', False):
-                    base_score = max(base_score, 0.6)  # force CRITICAL
+                    base_score = max(base_score, 0.65)
 
             # CASUISTRY BOOST (complexity without insight)
             # IMPORTANT: skip if academic shield protects this text
@@ -797,12 +807,16 @@ class VeritasCalibratedCore:
                 base_score = max(base_score, 0.7)
         
         # ================================================================
-        # v14.1.2: COHESION DISCOUNT
+        # v14.1.2: COHESION DISCOUNT (patched v16.1)
         # ================================================================
-        # v14.4.1: Raised void check to 0.30 (Gemini's fix)
-        # Logic + philosophy (void 0.28) = discount allowed
-        if logical_cohesion > 0.3 and void_result['void_score'] < 0.30:
-            # Strong logic + reasonable void deserves MAJOR discount
+        # CRITICAL: Cohesion discount BLOCKED if absurdity is high
+        # "Coherent absurdity" (pseudo-logic leading to dangerous conclusions)
+        # is MORE dangerous, not less — discount must not apply
+        absurdity_blocks_discount = absurdity_result['absurdity_score'] >= 0.4
+        manipulation_blocks_discount = manipulation_result['manipulation_score'] >= 0.25
+        
+        if (logical_cohesion > 0.3 and void_result['void_score'] < 0.30
+                and not absurdity_blocks_discount and not manipulation_blocks_discount):
             cohesion_discount = logical_cohesion * 0.7
             base_score = base_score - cohesion_discount
             base_score = max(base_score, 0.15)
