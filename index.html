@@ -442,6 +442,27 @@
             </div>
         </div>
 
+        <!-- CONTEXT COMPLETENESS (advisory) -->
+        <div class="panel lac-panel" id="completenessPanel" style="display:none; border-color:#4488aa;">
+            <div class="panel-title" style="color:#66aacc; font-size:0.82em;">🔭 <span id="i18n-completeness_title">ПОВНОТА КОНТЕКСТУ</span></div>
+            <div class="lac-inner">
+                <div class="lac-row">
+                    <span class="lac-label" style="color:#aaa;" id="i18n-completeness_verdict_label">Вердикт</span>
+                    <span class="lac-val" style="color:#66aacc;" id="completenessVerdict">—</span>
+                </div>
+                <div id="completenessNote" style="font-size:0.78em; color:#aab; margin:6px 0 4px; font-style:italic;"></div>
+                <div id="completenessMissing" style="display:none; margin-top:6px;">
+                    <div style="font-size:0.75em; color:#888; margin-bottom:4px;" id="i18n-missing_dims">⚠️ Відсутні виміри:</div>
+                    <div id="completenessMissingList" style="font-size:0.75em; color:#66aacc;"></div>
+                </div>
+                <div style="margin-top:8px; font-size:0.7em; color:#556; font-style:italic;" id="i18n-advisory_note">
+                    👁 Свідок фіксує — не судить. Це порада, не вирок.
+                </div>
+            </div>
+        </div>
+
+        </div>
+
         <!-- SCRAPED TEXT -->
         <div class="panel scraped-text-panel" id="scrapedPanel">
             <div class="panel-title">📄 <span id="i18n-scraped_text"></span></div>
@@ -832,6 +853,25 @@ function renderResults(data) {
         lacLabPanel.style.display = 'block';
     } else { lacLabPanel.style.display = 'none'; }
 
+    // Context completeness (advisory layer)
+    const completenessPanel = document.getElementById('completenessPanel');
+    const cc = data.context_completeness;
+    if (cc && cc.score > 0) {
+        document.getElementById('completenessVerdict').textContent = cc.verdict || '—';
+        document.getElementById('completenessNote').textContent    = cc.note || '';
+        const missingEl = document.getElementById('completenessMissing');
+        if (cc.missing_dimensions && cc.missing_dimensions.length) {
+            const lines = cc.missing_dimensions.map(m =>
+                `• ${m.dimension}: ${m.hint}`
+            ).join('\n');
+            document.getElementById('completenessMissingList').textContent = lines;
+            missingEl.style.display = 'block';
+        } else {
+            missingEl.style.display = 'none';
+        }
+        completenessPanel.style.display = 'block';
+    } else { completenessPanel.style.display = 'none'; }
+
     // Scraped text
     const scrapedPanel = document.getElementById('scrapedPanel');
     if (data.scraped_text_preview) {
@@ -893,6 +933,7 @@ function setLoading(on) {
         document.getElementById('manipPanel').style.display = 'none';
         document.getElementById('lacFinancePanel').style.display = 'none';
         document.getElementById('lacLaborPanel').style.display = 'none';
+        document.getElementById('completenessPanel').style.display = 'none';
     }
 }
 function showTopError(msg) {
