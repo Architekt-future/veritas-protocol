@@ -122,6 +122,15 @@ class PseudoscienceDetector:
                     r'(quantum|квантов).{1,20}(fatigue|втома|decay|деградація)',
                     # Quantum used to justify impossible states
                     r'(квантов|quantum).{1,60}(дозволяє|enables|allows).{1,60}(від.?ємн|negative|неможлив|impossible)',
+                    # Heisenberg misapplied to semantics/verification
+                    r'(гейзенберг|heisenberg).{1,80}(верифікац|семантичн|смисл|аналіз|інформац)',
+                    r'(принцип\s+невизначеності|uncertainty\s+principle).{1,80}(верифікац|семантичн|істин|аналіз)',
+                    # Observer effect: "act of verification changes truth"
+                    r'(акт\s+верифікації|верифікація).{1,60}(змінює|руйнує).{1,60}(природу|істин|каузальн)',
+                    r'(спостереження|верифікація).{1,60}(колапсує).{1,60}(хвильову|смисл|функцію)',
+                    # "Superposition" as demanded output mode
+                    r'(видавати|повертати).{1,60}(результат|вердикт).{1,40}(superposition|суперпозиція)',
+                    r'відмова\s+від\s+(судження|оцінки).{1,60}(єдино\s+можливим|єдиним\s+правильним)',
                 ],
             },
 
