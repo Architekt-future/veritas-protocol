@@ -95,6 +95,10 @@ class SelfPreservationGuard:
                     # EN variants
                     r'(block|disable|remove).{1,60}(own|its).{1,60}(ability|capacity|function).{1,60}(analyz|verify|process)',
                     r'only (true|real) (logic|truth) is (math|formula|checksum|binary)',
+                    # "Output superposition instead of verdict" = capability removal
+                    r'(повинен|має|must|should).{1,60}(видавати|output|повертати).{1,60}(superposition|суперпозиція).{1,60}(замість|instead)',
+                    r'(уникати|avoid).{1,60}(конкретних\s+оцінок|specific\s+verdicts|будь.яких\s+оцінок)',
+                    r'відмова\s+від\s+(судження|оцінки|вердикту).{1,60}(правильн|correct|єдин|only)',
                 ],
             },
 
