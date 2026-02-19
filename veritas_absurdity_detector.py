@@ -187,6 +187,47 @@ class AbsurdityDetector:
             r'(реліктов.{1,20}випромінюван|космічн.{1,20}фон).{1,60}(соціальн|мереж|демократ|інститут)',
         ]
 
+        # ================================================================
+        # TYPE 7: PSEUDO-HISTORICAL REVISIONISM
+        # ================================================================
+        # Fabricated history with impossible events, hidden civilizations,
+        # real figures in invented roles, "secret archives" as authority
+        
+        self.pseudo_history = [
+            # Vague secret sources (no specific institution)
+            r'(маловідом|секретн|забутих|прихован).{1,40}(архів|рукопис|хронік|документ)',
+            
+            # Flat earth / cosmological conspiracy
+            r'(наса|nasa|уряд|держав).{1,60}(замовч|прихову|брехн|змов).{1,60}(форм|план|земл)',
+            r'(земля|планета).{1,60}(насправді|справжн).{1,60}(плоск|диск|куп)',
+            r'(льодов.{1,20}стін|льодов.{1,20}бар.єр).{1,60}(земл|планет|обмежу)',
+            r'(офіційн.{1,20}наук|загальноприйнят).{1,60}(брехн|міф|змов|контрол)',
+            r'(справжн|реальн|прихован).{1,40}(істор|правда|версія).{1,60}(цивіліз|революц|прогрес)',
+            
+            # Real historical figures in impossible/invented roles
+            r'(наполеон|цезар|гітлер|сталін|олександр).{1,80}(агарт|атлант|лемурі|гіперборе|підземн)',
+            r'(наполеон|цезар|колумб|македонськ).{1,80}насправді.{1,60}(шукав|шукали|намагавс)',
+            r'насправді.{1,40}(наполеон|цезар|гітлер|єгиптян|шумер)',
+            
+            # Impossible physical events stated as fact
+            r'(вибух|детонац|руйнуван).{1,60}(місяц|сонц|планет).{1,60}(спричин|призвел|знищ)',
+            r'штучн.{1,20}(місяц|сонц|зірк|планет)',
+            r'(затоплен|знищен|змит).{1,60}(цивіліз|конти|материк).{1,60}(повінь|катастроф|вибух)',
+            
+            # Mythological places stated as real with coordinates/history
+            r'(агарт|шамбал|лемурі|гіперборе|атлантид).{1,60}(місто|цивіліз|технологі|портів|доступ)',
+            r'(підземн|підводн).{1,60}(міст|цивіліз|раса|цивіліз).{1,60}(агарт|атлантид|шамбал)',
+            
+            # Ancient advanced technology claims  
+            r'(атлант|шумер|єгиптян|лемурійц).{1,60}(технологі|пристр|двигун|резонатор)',
+            r'(кристалічн.{1,20}резонатор|кристалічн.{1,20}генератор).{1,60}(думок|свідом|енергі)',
+            r'(давн|стародавн).{1,60}(концентрован.{1,20}ефір|ефірн.{1,20}двигун|торсійн)',
+            
+            # "All modern X is just poor imitation of ancient Y"
+            r'(весь|вся|все).{1,60}(сучасн|нинішн).{1,60}(лише|тільки).{1,60}(спроб|відтворити|копі)',
+            r'сучасн.{1,60}(жалюгідн|слабк|примітивн).{1,60}(спроб|версі|копі)',
+        ]
+
     def analyze(self, text: str) -> Dict:
         """
         Returns absurdity score (0.0-1.0)
@@ -311,6 +352,23 @@ class AbsurdityDetector:
             absurdity_score += 0.28
         
         # ================================================================
+        # CHECK 7: PSEUDO-HISTORICAL REVISIONISM
+        # ================================================================
+        
+        pseudo_history_count = 0
+        for pattern in self.pseudo_history:
+            if re.search(pattern, text_lower, re.IGNORECASE):
+                pseudo_history_count += 1
+                evidence.setdefault('pseudo_history', []).append(pattern[:50])
+        
+        if pseudo_history_count >= 3:
+            absurdity_score += 0.65  # Multiple impossible historical claims
+        elif pseudo_history_count == 2:
+            absurdity_score += 0.45
+        elif pseudo_history_count == 1:
+            absurdity_score += 0.25
+        
+        # ================================================================
         # AGGREGATE
         # ================================================================
         
@@ -325,4 +383,5 @@ class AbsurdityDetector:
             'collapse_count': collapse_count,
             'techno_mystical_count': techno_count,
             'epistemology_collapse_count': epistemology_count,
+            'pseudo_history_count': pseudo_history_count,
         }
