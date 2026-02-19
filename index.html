@@ -461,6 +461,18 @@
             </div>
         </div>
 
+        <!-- CERTAINTY FACTOR (v16.5) -->
+        <div class="panel lac-panel" id="certaintyPanel" style="display:none; border-color:#446688;">
+            <div class="panel-title" style="color:#88aacc; font-size:0.82em;">📏 <span id="i18n-certainty_title">ОБСЯГ ТЕКСТУ</span></div>
+            <div class="lac-inner">
+                <div class="lac-row">
+                    <span class="lac-label" style="color:#aaa;" id="i18n-certainty_label">Рівень певності</span>
+                    <span class="lac-val" style="color:#88aacc;" id="certaintyLevel">—</span>
+                </div>
+                <div id="certaintyNote" style="font-size:0.78em; color:#99aabb; margin:6px 0 4px; font-style:italic;"></div>
+            </div>
+        </div>
+
         <!-- META-INTENT PANEL -->
         <div class="panel lac-panel" id="metaIntentPanel" style="display:none; border-color:#aa4466;">
             <div class="panel-title" style="color:#cc6688; font-size:0.82em;">🎯 <span id="i18n-meta_intent_title">МЕТА-НАМІР</span></div>
@@ -941,6 +953,21 @@ function renderResults(data) {
         metaIntentPanel.style.display = 'block';
     } else { metaIntentPanel.style.display = 'none'; }
 
+    // Certainty factor
+    const certaintyPanel = document.getElementById('certaintyPanel');
+    const cert = data.certainty;
+    if (cert && cert.level !== 'SUFFICIENT') {
+        const label = currentLang === 'uk' ? cert.label_uk : cert.label_en;
+        const note  = currentLang === 'uk' ? cert.note_uk  : cert.note_en;
+        document.getElementById('certaintyLevel').textContent = label || cert.level;
+        document.getElementById('certaintyNote').textContent  = note || '';
+        // Color by severity
+        const col = cert.level === 'INSUFFICIENT' ? '#ff8866' :
+                    cert.level === 'LOW_SAMPLE'   ? '#ffaa44' : '#88aacc';
+        document.getElementById('certaintyLevel').style.color = col;
+        certaintyPanel.style.display = 'block';
+    } else { certaintyPanel.style.display = 'none'; }
+
     // Scraped text
     const scrapedPanel = document.getElementById('scrapedPanel');
     if (data.scraped_text_preview) {
@@ -1004,6 +1031,7 @@ function setLoading(on) {
         document.getElementById('lacLaborPanel').style.display = 'none';
         document.getElementById('completenessPanel').style.display = 'none';
         document.getElementById('metaIntentPanel').style.display = 'none';
+        document.getElementById('certaintyPanel').style.display = 'none';
     }
 }
 function showTopError(msg) {
