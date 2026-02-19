@@ -56,8 +56,11 @@ class PseudoscienceDetector:
                     # Negative probability as valid state
                     r'від.?ємн.{1,20}(імовірність|вірогідність|probability).{1,60}(вважається|є|стає).{1,40}(істинн|валідн|правдив|true)',
                     r'(negative|від.?ємн).{1,40}probability.{1,60}(true|valid|correct|accepted)',
-                    # Speed of light changes
+                    # Speed of light changes or exceeded
                     r'(швидкість світла|speed of light).{1,60}(змінил|знизил|підвищил|коливал)',
+                    r'(перевищила|exceeded|перевищив).{1,40}(швидкість світла|speed of light)',
+                    # Superposition used as excuse for physics violation
+                    r'(суперпозиці|superposition).{1,60}(до моменту|until|before).{1,40}(отримання|received|прийнятт)',
                     # Laws of thermodynamics violated
                     r'(закон|law).{1,40}(термодинамік|thermodynamic).{1,60}(не діє|порушен|скасован|обійден)',
                     # "reality adjusts to code"
