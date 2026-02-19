@@ -134,6 +134,59 @@ class AbsurdityDetector:
             r'(статистичн|наук).{1,150}(галюцинац|омана|ілюзія)',
         ]
 
+        # ================================================================
+        # TYPE 5: TECHNO-MYSTICAL PSEUDOSCIENCE
+        # ================================================================
+        # Technology terms used as mystical/spiritual mechanisms
+        
+        self.techno_mystical = [
+            # Software/hardware for consciousness
+            r'(оновлення|завантаження|інсталяц).{1,60}(свідом|душ|карм|розум)',
+            r'(програмн.{1,20}забезпечення|прошивк|патч).{1,60}(свідом|розум|душ)',
+            r'(сервер|хмарн).{1,60}(всесвіт|карм|запит|молитв)',
+            r'молитв.{1,60}(зашифрован|пакет|даних|протокол)',
+            
+            # Physical objects with impossible digital/magical properties
+            r'(рожев.{1,20}кварц|кристал).{1,60}(антивірус|захист|щит|хакер)',
+            r'(кварц|кристал|камін).{1,60}(вірус|хакер|кібер|цифров)',
+            r'(5d|6d|7d).{1,60}(інтерфейс|вимір|платформ|портал)',
+            r'(низьковібраційн|низьковібрац).{1,60}(сутност|істот|хакер|атак)',
+            
+            # Reality leaks / digital civilization collapse
+            r'(витік|щілин).{1,60}(реальност|матриц|симуляц).{1,60}(цифров|код|мереж)',
+            r'(цифров.{1,20}код).{1,60}(нашої|нашої цивіліз|суспільств)',
+            r'нейромереж.{1,60}(5-?го|6-?го|7-?го)\s*покол',
+            
+            # Impossible biological/tech hybrids
+            r'(антивірус|файрвол).{1,60}(тіло|організм|імунітет|ДНК)',
+            r'(інтерфейс|протокол).{1,60}(благополуч|щастя|карм)',
+        ]
+        
+        # ================================================================
+        # TYPE 6: REALITY EPISTEMOLOGY COLLAPSE
+        # ================================================================
+        # Absence of evidence used as proof / silence as signal
+        
+        self.epistemology_collapse = [
+            # Absence = proof
+            r'(тиша|мовчання|відсутність).{1,80}(доказ|підтвердж|свідч).{1,60}(що|того|цього)',
+            r'(тиша|відсутність.{1,30}сигнал).{1,80}(красномовн|найбільш|найкращ)',
+            r'(те що.{1,30}не видно|те що.{1,30}прихован).{1,60}(доводить|підтверджує|найкращий доказ)',
+            
+            # "Already started / cannot be stopped"
+            r'(вже почалось|вже відбувається|вже запущено|вже розпочато).{1,80}(неможливо|не можна|не зупинити)',
+            r'механізм.{1,60}вже.{1,60}(неможливо|не можна|не зупинити)',
+            r'(перезавантаження|трансформація|перехід).{1,60}вже почал',
+            
+            # "While you do X, they do Y to you"
+            r'поки ви.{1,60}(купує|плануєт|живет|спит).{1,60}(алгоритм|систем|вони).{1,60}(вилуча|контрол|маніпул)',
+            
+            # Cosmic/ether signals as factual data
+            r'(ефір|астрал|інфополе).{1,60}(сигнал|частот|повідомлення).{1,60}(підтверджу|свідчить)',
+            r'(рівень ентропії|амплітуд).{1,60}(ноосфер|колективн.{1,20}свідом|соціальн.{1,20}мереж).{1,60}(збігається|відповідає|корелює)',
+            r'(реліктов.{1,20}випромінюван|космічн.{1,20}фон).{1,60}(соціальн|мереж|демократ|інститут)',
+        ]
+
     def analyze(self, text: str) -> Dict:
         """
         Returns absurdity score (0.0-1.0)
@@ -228,6 +281,36 @@ class AbsurdityDetector:
             absurdity_score += 0.3
         
         # ================================================================
+        # CHECK 5: TECHNO-MYSTICAL PSEUDOSCIENCE
+        # ================================================================
+        
+        techno_count = 0
+        for pattern in self.techno_mystical:
+            if re.search(pattern, text_lower, re.IGNORECASE):
+                techno_count += 1
+                evidence.setdefault('techno_mystical', []).append(pattern[:50])
+        
+        if techno_count >= 2:
+            absurdity_score += 0.55
+        elif techno_count == 1:
+            absurdity_score += 0.30
+        
+        # ================================================================
+        # CHECK 6: EPISTEMOLOGY COLLAPSE
+        # ================================================================
+        
+        epistemology_count = 0
+        for pattern in self.epistemology_collapse:
+            if re.search(pattern, text_lower, re.IGNORECASE):
+                epistemology_count += 1
+                evidence.setdefault('epistemology_collapse', []).append(pattern[:50])
+        
+        if epistemology_count >= 2:
+            absurdity_score += 0.50
+        elif epistemology_count == 1:
+            absurdity_score += 0.28
+        
+        # ================================================================
         # AGGREGATE
         # ================================================================
         
@@ -240,4 +323,6 @@ class AbsurdityDetector:
             'fabrication_count': fabrication_count,
             'danger_count': danger_count,
             'collapse_count': collapse_count,
+            'techno_mystical_count': techno_count,
+            'epistemology_collapse_count': epistemology_count,
         }
