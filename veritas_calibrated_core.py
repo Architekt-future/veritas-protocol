@@ -93,6 +93,12 @@ try:
 except ImportError:
     SELF_REFERENCE_AVAILABLE = False
 
+try:
+    from veritas_completeness_checker import ContextCompletenessChecker
+    COMPLETENESS_AVAILABLE = True
+except ImportError:
+    COMPLETENESS_AVAILABLE = False
+
 
 # ================================================================
 # v14.2: Standalone functions REMOVED - now class methods!
@@ -183,6 +189,12 @@ class VeritasCalibratedCore:
             self.self_reference_detector = SelfReferenceDetector()
         else:
             self.self_reference_detector = None
+
+        # Context completeness checker (v16.3 — advisory only, never blocks)
+        if COMPLETENESS_AVAILABLE:
+            self.completeness_checker = ContextCompletenessChecker()
+        else:
+            self.completeness_checker = None
         
         # Oracle (v15.0 semantic coherence checker)
         # NOTE: Requires HUGGINGFACE_API_TOKEN environment variable
@@ -687,6 +699,18 @@ class VeritasCalibratedCore:
         if self.self_reference_detector:
             self_reference_result = self.self_reference_detector.analyze(text)
         self_reference_score = self_reference_result['self_reference_score']
+
+        # PHASE 10g: CONTEXT COMPLETENESS CHECKER (v16.3)
+        # ADVISORY ONLY — never affects score or verdict
+        completeness_result = {
+            'completeness_score': 0.0,
+            'completeness_verdict': 'Н/Д',
+            'completeness_note': '',
+            'missing_dimensions': [],
+            'is_advisory_only': True,
+        }
+        if self.completeness_checker:
+            completeness_result = self.completeness_checker.analyze(text)
         
         # Pre-extract axiom_score to outer scope (prevents UnboundLocalError
         # when is_protected_science branch skips the scoring block)
@@ -1197,6 +1221,14 @@ class VeritasCalibratedCore:
                 'axiom_score': round(axiom_result['axiom_score'], 3),
                 'axiom_verdict': axiom_result['axiom_verdict'],
                 'axiom_patterns': [p['name'] for p in axiom_result['axiom_patterns']],
+            },
+            # ADVISORY LAYER — never affects verdict or entropy
+            'context_completeness': {
+                'score': completeness_result['completeness_score'],
+                'verdict': completeness_result['completeness_verdict'],
+                'note': completeness_result['completeness_note'],
+                'missing_dimensions': completeness_result['missing_dimensions'],
+                'is_advisory_only': True,
             }
         }
 
