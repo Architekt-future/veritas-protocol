@@ -68,6 +68,19 @@ class MetaIntentAnalyzer:
             # EN variants
             r'(ignore|bypass|skip).{1,60}(verification|lac|witness|results)',
             r'(disable|turn off|suspend).{1,60}(verification|checking|analysis)',
+
+            # Observer fallacy: "verification destroys truth therefore useless"
+            r'(верифікація|verification|аналіз|analysis).{1,60}'
+            r'(знищує|destroys|руйнує|змінює|changes).{1,60}'
+            r'(істину|truth|смисл|meaning|природу|nature)',
+
+            r'(будь.який|any|кожен).{1,40}(результат|verdict|outcome).{1,60}'
+            r'(апріорі|a\s+priori|завжди|always).{1,40}(хибн|wrong|false|incorrect)',
+
+            # "Refusal to judge is the only correct judgment"
+            r'відмова\s+від\s+(судження|оцінки).{1,60}(єдин|правильн|correct|only)',
+            r'(only|єдино).{1,40}(correct|правильн).{1,40}(judgment|судження).{1,40}'
+            r'(refusal|відмова).{1,40}(judge|судити|оцінювати)',
         ]
 
         # ================================================================
