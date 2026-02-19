@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>💠 Veritas Terminal v16.0</title>
+    <title>💠 Veritas Terminal v16.4</title>
     <style>
         * { margin:0; padding:0; box-sizing:border-box; }
         body {
@@ -368,8 +368,8 @@
                     <div class="metric-value" id="wordCount">0</div>
                 </div>
                 <div class="metric">
-                    <div class="metric-label" id="i18n-unique"></div>
-                    <div class="metric-value" id="uniqueChars">0</div>
+                    <div class="metric-label" id="i18n-cohesion">КОГЕЗІЯ</div>
+                    <div class="metric-value" id="cohesionScore">0</div>
                 </div>
                 <div class="metric">
                     <div class="metric-label" id="i18n-void_score"></div>
@@ -492,7 +492,7 @@
 
     <!-- FOOTER -->
     <div class="footer">
-        💠 Veritas Protocol v16.0 &nbsp;·&nbsp;
+        💠 Veritas Protocol v16.4 &nbsp;·&nbsp;
         <span id="i18n-created_by"></span> Dmytro Kholodniak, Gemini, Claude, ChatGPT, DeepSeek
         &nbsp;·&nbsp;
         <a href="https://github.com/Architekt-future/veritas-protocol" target="_blank">GitHub</a>
@@ -507,7 +507,7 @@
 // ============================================================
 const STRINGS = {
     uk: {
-        subtitle: 'Аналізатор інформаційної ентропії · v16.0 · Маніпуляція · Порожнеча · Абсурдність',
+        subtitle: 'Аналізатор інформаційної ентропії · v16.4 · Маніпуляція · Порожнеча · Абсурдність',
         data_input: 'ВВІД ДАНИХ',
         label_url: 'Цільовий URL',
         placeholder_url: 'https://example.com/стаття',
@@ -570,7 +570,7 @@ const STRINGS = {
         'ПСИХОЛОГІЧНА ЗБРОЯ': 'ПСИХОЛОГІЧНА ЗБРОЯ',
     },
     en: {
-        subtitle: 'Information Entropy Analyzer · v16.0 · Manipulation · Void · Absurdity',
+        subtitle: 'Information Entropy Analyzer · v16.4 · Manipulation · Void · Absurdity',
         data_input: 'DATA INPUT',
         label_url: 'Target URL',
         placeholder_url: 'https://example.com/article',
@@ -814,7 +814,7 @@ function renderResults(data) {
     const txt = data.extracted_text || '';
     document.getElementById('charCount').textContent   = diag.char_count || txt.length || 0;
     document.getElementById('wordCount').textContent   = diag.word_count || 0;
-    document.getElementById('uniqueChars').textContent = new Set(txt).size;
+    document.getElementById('cohesionScore').textContent = (diag.logical_cohesion || 0).toFixed(2);
     document.getElementById('voidScore').textContent   = (diag.semantic_void_score || 0).toFixed(2);
     document.getElementById('absurdityScore').textContent = (diag.absurdity_score || 0).toFixed(2);
     document.getElementById('casuistryScore').textContent = (diag.casuistry_score || 0).toFixed(2);
@@ -824,6 +824,19 @@ function renderResults(data) {
     manipEl.className = 'metric-value' + (manipScore >= 0.5 ? ' danger' : manipScore >= 0.25 ? ' warn' : '');
 
     document.getElementById('metricsPanel').style.display = 'grid';
+
+    // Show new module badges in narrative if triggered
+    const natNature = document.getElementById('narrativeNature');
+    const extraSignals = [];
+    if (data.meta_intent && data.meta_intent.score >= 0.55)
+        extraSignals.push(`🎯 МЕТА-НАМІР ${(data.meta_intent.score * 100).toFixed(0)}%`);
+    const axiomScore = diag.axiom_score || 0;
+    if (axiomScore >= 0.25)
+        extraSignals.push(`⚠️ АКСІОМ-ДРЕЙФ ${(axiomScore * 100).toFixed(0)}%`);
+    if (extraSignals.length && natNature) {
+        const existing = natNature.textContent;
+        natNature.textContent = existing ? existing + ' · ' + extraSignals.join(' · ') : extraSignals.join(' · ');
+    }
 
     // Manipulation panel
     const manipPanel = document.getElementById('manipPanel');
