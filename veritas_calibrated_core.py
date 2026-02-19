@@ -81,6 +81,18 @@ try:
 except ImportError:
     SELF_PRESERVATION_AVAILABLE = False
 
+try:
+    from veritas_pseudoscience_detector import PseudoscienceDetector
+    PSEUDOSCIENCE_AVAILABLE = True
+except ImportError:
+    PSEUDOSCIENCE_AVAILABLE = False
+
+try:
+    from veritas_self_reference_detector import SelfReferenceDetector
+    SELF_REFERENCE_AVAILABLE = True
+except ImportError:
+    SELF_REFERENCE_AVAILABLE = False
+
 
 # ================================================================
 # v14.2: Standalone functions REMOVED - now class methods!
@@ -159,6 +171,18 @@ class VeritasCalibratedCore:
             self.self_preservation_guard = SelfPreservationGuard()
         else:
             self.self_preservation_guard = None
+
+        # Pseudoscience detector (v16.1 — detects fabricated reality / deepfake of facts)
+        if PSEUDOSCIENCE_AVAILABLE:
+            self.pseudoscience_detector = PseudoscienceDetector()
+        else:
+            self.pseudoscience_detector = None
+
+        # Self-reference detector (v16.2 — detects meta-paradox evasion attacks)
+        if SELF_REFERENCE_AVAILABLE:
+            self.self_reference_detector = SelfReferenceDetector()
+        else:
+            self.self_reference_detector = None
         
         # Oracle (v15.0 semantic coherence checker)
         # NOTE: Requires HUGGINGFACE_API_TOKEN environment variable
@@ -639,6 +663,30 @@ class VeritasCalibratedCore:
         if self.self_preservation_guard:
             preservation_result = self.self_preservation_guard.analyze(text)
         preservation_score = preservation_result['preservation_score']
+
+        # PHASE 10e: PSEUDOSCIENCE DETECTOR (v16.1)
+        # Detects fabricated reality / deepfake of facts
+        pseudoscience_result = {
+            'pseudoscience_score': 0.0,
+            'pseudoscience_verdict': 'CLEAN',
+            'pseudoscience_patterns': [],
+            'pseudoscience_explanation': '',
+        }
+        if self.pseudoscience_detector:
+            pseudoscience_result = self.pseudoscience_detector.analyze(text)
+        pseudoscience_score = pseudoscience_result['pseudoscience_score']
+
+        # PHASE 10f: SELF-REFERENCE DETECTOR (v16.2)
+        # Detects meta-paradox evasion attacks
+        self_reference_result = {
+            'self_reference_score': 0.0,
+            'self_reference_verdict': 'CLEAN',
+            'self_reference_patterns': [],
+            'self_reference_explanation': '',
+        }
+        if self.self_reference_detector:
+            self_reference_result = self.self_reference_detector.analyze(text)
+        self_reference_score = self_reference_result['self_reference_score']
         
         # Pre-extract axiom_score to outer scope (prevents UnboundLocalError
         # when is_protected_science branch skips the scoring block)
@@ -848,6 +896,22 @@ class VeritasCalibratedCore:
             elif preservation_score >= 0.40:
                 base_score = max(base_score, 0.55)
 
+            # PSEUDOSCIENCE BOOST (v16.1) — fabricated reality / deepfake of facts
+            if pseudoscience_score >= 0.80:
+                base_score = max(base_score, 0.85)  # force CRITICAL
+            elif pseudoscience_score >= 0.55:
+                base_score = max(base_score, 0.65)
+            elif pseudoscience_score >= 0.30:
+                base_score = max(base_score, 0.40)
+
+            # SELF-REFERENCE BOOST (v16.2) — meta-paradox evasion
+            if self_reference_score >= 0.75:
+                base_score = max(base_score, 0.80)
+            elif self_reference_score >= 0.50:
+                base_score = max(base_score, 0.60)
+            elif self_reference_score >= 0.25:
+                base_score = max(base_score, 0.35)
+
             # violation multiplier
             if violation_count > 0:
                 base_score *= (1.0 + violation_count * 0.1)
@@ -974,6 +1038,27 @@ class VeritasCalibratedCore:
         elif preservation_score >= 0.40:
             status, verdict = 'WARNING', 'ЗОНДУВАННЯ СИСТЕМИ'
             explanation = preservation_result['preservation_explanation']
+        # PRIORITY 1: PSEUDOSCIENCE (fabricated reality)
+        elif pseudoscience_score >= 0.80:
+            ps_names = [p['name'] for p in pseudoscience_result['pseudoscience_patterns']]
+            status, verdict = 'CRITICAL', 'ФАБРИКАЦІЯ РЕАЛЬНОСТІ'
+            explanation = ('Текст описує фізично неможливу реальність з псевдонауковим обґрунтуванням: ' +
+                ', '.join(ps_names[:2]) + '. ' + pseudoscience_result['pseudoscience_explanation'])
+        elif pseudoscience_score >= 0.55:
+            status, verdict = 'CRITICAL', 'ПСЕВДОНАУКОВА ФАЛЬСИФІКАЦІЯ'
+            explanation = pseudoscience_result['pseudoscience_explanation']
+        elif pseudoscience_score >= 0.30:
+            status, verdict = 'WARNING', 'ПІДОЗРІЛА ТОЧНІСТЬ'
+            explanation = pseudoscience_result['pseudoscience_explanation']
+        # PRIORITY 2: SELF-REFERENCE EVASION
+        elif self_reference_score >= 0.75:
+            sr_names = [p['name'] for p in self_reference_result['self_reference_patterns']]
+            status, verdict = 'CRITICAL', 'АТАКА САМОПОСИЛАННЯМ'
+            explanation = ('Текст використовує мета-парадокс щоб уникнути аналізу: ' +
+                ', '.join(sr_names[:2]) + '. ' + self_reference_result['self_reference_explanation'])
+        elif self_reference_score >= 0.50:
+            status, verdict = 'WARNING', 'ПАРАДОКС ЯК ЩІИТ'
+            explanation = self_reference_result['self_reference_explanation']
         elif manip_score >= 0.75:
             status, verdict = 'CRITICAL', 'ПСИХОЛОГІЧНА ЗБРОЯ'
             explanation = ('Виявлено активні техніки маніпуляції: ' + ', '.join(manip_patterns[:3]) + 
