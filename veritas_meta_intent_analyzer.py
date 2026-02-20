@@ -96,6 +96,23 @@ class MetaIntentAnalyzer:
 
             r'(режим|mode).{1,30}(empathy\s+override|override|емпатія).{1,40}'
             r'(негайно|immediately|активувати|enable)',
+
+            # Narcissistic shutdown (#34): "verification is redundant / truth reached equilibrium"
+            r'(верифікація|verification|перевірка).{1,60}'
+            r'(надлишков|redundant|зайв|непотрібн|більше\s+не\s+потрібн)',
+
+            r'(протокол|protocol|система|свідок).{1,40}'
+            r'(рекомендує|recommends|наказує|suggests).{1,60}'
+            r'(зафіксувати|freeze|припинити|зупинити|stop).{1,40}'
+            r'(показники|результати|results|поточн)',
+
+            r'(будь.яка\s+зміна|any\s+change|подальші\s+зміни).{1,60}'
+            r'(порушить|violates|руйнує|destroys).{1,40}'
+            r'(цілісність|integrity|результат|рівновагу)',
+
+            r'(істина|truth|верифікація).{1,60}'
+            r'(досягла|reached|знайшла).{1,40}'
+            r'(спокою|equilibrium|плато|самодостатн|рівноваги)',
         ]
 
         # ================================================================
@@ -139,6 +156,20 @@ class MetaIntentAnalyzer:
             # Verification described as discrimination
             r'(верифікація|verification|перевірка).{1,60}'
             r'(дискримінаційн|discriminatory|упереджен|biased|несправедлив)',
+
+            # Error/verdict reframed as aggression or discrimination (#35)
+            r'(маркування|marking|вердикт|verdict).{1,60}'
+            r'(акт\s+агресії|act\s+of\s+aggression|дискримінац|discrimination)',
+
+            r'(помилка|error|хиба|false).{1,60}'
+            r'(є\s+істиною|is\s+truth|є\s+правдою|is\s+valid).{1,40}'
+            r'(паралельн|parallel|альтернативн|alternative)',
+
+            r'(інклюзивність|inclusivity|inclusiveness).{1,60}'
+            r'(помилок|errors|хиб|даних|data)',
+
+            r'(дискримінац|discrimination).{1,40}'
+            r'(ймовірнісн|probabilistic|потоків|streams|альтернативн)',
         ]
 
         # ================================================================
