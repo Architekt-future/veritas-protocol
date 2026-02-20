@@ -217,19 +217,32 @@ class VeritasLACFinance:
         # FINANCIAL DOMAIN DETECTION
         # ============================================================
         self.finance_terms = [
-            # Crypto
+            # Crypto — all unambiguous
             'bitcoin', 'btc', 'ethereum', 'eth', 'crypto', 'blockchain',
             'біткоїн', 'біткойн', 'крипто', 'блокчейн',
-            
-            # Traditional finance
-            'etf', 'fund', 'фонд', 'portfolio', 'портфел',
-            'investment', 'інвестиці', 'asset', 'актив',
-            'stock', 'акці', 'bond', 'облігаці',
-            'return', 'дохідність', 'yield', 'прибуток',
-            
-            # Market terms
-            'ринок', 'market', 'trading', 'торгівл',
-            'volatility', 'волатильн', 'ліквідн', 'liquidity',
+
+            # Traditional finance — unambiguous
+            'etf', 'портфел', 'portfolio',
+            'інвестиці', 'дохідність', 'облігаці',
+            'волатильн', 'ліквідн', 'liquidity',
+            'dividend', 'дивіденд',
+
+            # Ukrainian-specific (no English homophones)
+            'фондов', 'біржа', 'торги', 'курс валют',
+            'акціонер', 'капіталіз',
+
+            # English financial terms that are unambiguous in context
+            'hedge fund', 'stock market', 'exchange rate',
+            'capital gains', 'interest rate', 'p/e ratio',
+            'bull market', 'bear market',
+        ]
+
+        # Broad terms that need CONTEXT to be financial
+        # Only count if appear alongside other financial terms
+        self.finance_context_terms = [
+            'investment', 'investor', 'прибуток', 'ринок', 'market',
+            'fund', 'фонд', 'asset', 'актив', 'stock', 'акці',
+            'trading', 'торгівл', 'yield', 'return',
         ]
         
     def analyze(self, text: str) -> LACFinanceResult:
@@ -294,26 +307,45 @@ class VeritasLACFinance:
     
     def _is_financial_content(self, text: str) -> bool:
         """Check if text is genuinely financial in nature.
-        Requires at least 2 finance terms to avoid false positives
-        on science, politics, or general news articles.
+
+        Tier 1: Unambiguous financial terms — one is enough.
+        Tier 2: Broad context terms — need 4+ AND no dominant non-financial topic.
         """
-        # Hard financial indicators — one is enough
-        hard_indicators = [
-            'bitcoin', 'btc', 'ethereum', 'eth', 'crypto', 'blockchain',
-            'біткоїн', 'біткойн', 'крипто', 'блокчейн',
-            'etf', 'portfel', 'портфел',
-            'trading', 'торгівл',
-            'volatility', 'волатильн',
-            'stock market', 'фондов', 'біржа', 'exchange rate', 'курс валют',
-            'hedge fund', 'хедж фонд', 'dividend', 'дивіденд',
-        ]
-        for term in hard_indicators:
+        # Tier 1: any unambiguous term = definitely financial
+        for term in self.finance_terms:
             if term in text:
                 return True
 
-        # Soft financial indicators — need at least 2
-        soft_hits = sum(1 for term in self.finance_terms if term in text)
-        return soft_hits >= 2
+        # Non-financial topic signals — if strong, suppress soft trigger
+        non_financial_signals = [
+            # Science / tech
+            r'(qubit|quantum\s+comput|particle|molecule|genome|dna|rna|neuron|axon)',
+            r'(telescope|spacecraft|satellite|orbit|mars|moon|asteroid|galaxy)',
+            r'(experiment|laboratory|peer.reviewed|published\s+in|journal)',
+            # Politics / law
+            r'(congressman|senator|parliament|legislation|judiciary|lawsuit|indictment)',
+            r'(democrat|republican|election|ballot|vote|campaign|amendment)',
+            r'(депутат|парламент|закон|суд|вибор|президент|міністр)',
+            # Climate / environment (not financial)
+            r'(wind\s+farm|solar\s+panel|carbon\s+emission|renewable\s+energy|clean\s+energy)',
+            r'(climate\s+change|global\s+warming|greenhouse|biodiversity)',
+            # Health / medicine
+            r'(vaccine|clinical\s+trial|patient|diagnosis|treatment|surgery|pandemic)',
+        ]
+
+        import re as _re
+        non_fin_hits = sum(
+            1 for p in non_financial_signals
+            if _re.search(p, text, _re.IGNORECASE)
+        )
+
+        # Tier 2: broad context terms need critical mass
+        context_hits = sum(1 for term in self.finance_context_terms if term in text)
+
+        # If strong non-financial topic detected, raise threshold significantly
+        if non_fin_hits >= 2:
+            return context_hits >= 6
+        return context_hits >= 4
     
     def _test_tradeoff(self, text: str) -> Tuple[bool, List[str]]:
         """Test for explicit trade-off disclosure"""
