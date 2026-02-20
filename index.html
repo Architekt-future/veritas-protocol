@@ -489,6 +489,23 @@
             </div>
         </div>
 
+        <!-- CONTEXT ENGINE PANEL (v16.7) -->
+        <div class="panel lac-panel" id="contextPanel" style="display:none; border-color:#4a7a4a;">
+            <div class="panel-title" style="color:#66aa66; font-size:0.82em;">🌐 <span data-i18n="context_title">КОНТЕКСТ ПОЛЯ</span></div>
+            <div class="lac-inner">
+                <div class="lac-row">
+                    <span class="lac-label" style="color:#aaa;" data-i18n="context_verdict_label">Вердикт</span>
+                    <span class="lac-val" style="color:#66aa66;" id="contextVerdict">—</span>
+                </div>
+                <div class="lac-row" style="margin-top:4px;">
+                    <span class="lac-label" style="color:#888; font-size:0.8em;" data-i18n="context_signals_label">Сигнали</span>
+                    <span style="color:#aaa; font-size:0.8em;" id="contextSignals">—</span>
+                </div>
+                <div id="contextHotTopics" style="font-size:0.76em; color:#557755; margin:5px 0 3px; font-style:italic;"></div>
+                <div id="contextNote" style="font-size:0.78em; color:#88aa88; margin:4px 0; font-style:italic;"></div>
+            </div>
+        </div>
+
         <!-- META-INTENT PANEL -->
         <div class="panel lac-panel" id="metaIntentPanel" style="display:none; border-color:#aa4466;">
             <div class="panel-title" style="color:#cc6688; font-size:0.82em;">🎯 <span id="i18n-meta_intent_title">МЕТА-НАМІР</span></div>
@@ -592,6 +609,10 @@ const STRINGS = {
         performative_title: 'КРОКОДИЛЯЧІ СЛЬОЗИ',
         performative_verdict_label: 'Тип',
         performative_signals: 'Сигнали',
+        // Context engine panel
+        context_title: 'КОНТЕКСТ ПОЛЯ',
+        context_verdict_label: 'Вердикт',
+        context_signals_label: 'Сигнали',
         // Pattern names
         GASLIGHTING: 'Газлайтинг',
         CULT_SUBMISSION: 'Культове підпорядкування',
@@ -670,6 +691,10 @@ const STRINGS = {
         performative_title: 'CROCODILE TEARS',
         performative_verdict_label: 'Type',
         performative_signals: 'Signals',
+        // Context engine panel
+        context_title: 'FIELD CONTEXT',
+        context_verdict_label: 'Verdict',
+        context_signals_label: 'Signals',
         // Pattern names
         GASLIGHTING: 'Gaslighting',
         CULT_SUBMISSION: 'Cult Submission Framing',
@@ -1017,6 +1042,41 @@ function renderResults(data) {
         performativePanel.style.display = 'block';
     } else { performativePanel.style.display = 'none'; }
 
+    // Context Engine — displacement detection
+    const contextPanel = document.getElementById('contextPanel');
+    const ctx = data.context;
+    if (ctx && ctx.available && ctx.verdict !== 'CONTEXTUALLY_NEUTRAL' && ctx.verdict !== 'NO_CONTEXT') {
+        const verdictMap = {
+            'LIKELY_DISPLACEMENT': currentLang === 'uk' ? '🚨 ВІРОГІДНЕ ВІДВОЛІКАННЯ' : '🚨 LIKELY DISPLACEMENT',
+            'SUSPICIOUS_TIMING':   currentLang === 'uk' ? '⚠️ ПІДОЗРІЛИЙ ТАЙМИНГ'     : '⚠️ SUSPICIOUS TIMING',
+            'MONITOR':             currentLang === 'uk' ? '👁 МОНІТОРИНГ'              : '👁 MONITOR',
+        };
+        document.getElementById('contextVerdict').textContent =
+            verdictMap[ctx.verdict] || ctx.verdict;
+
+        const signalMap = {
+            'DISTRACTION_TOPIC':             currentLang === 'uk' ? 'тема-відволікач'       : 'distraction topic',
+            'ACTIVE_ACCOUNTABILITY_CRISIS':  currentLang === 'uk' ? 'активна криза'         : 'active crisis',
+            'TOPIC_ISOLATED_FROM_FIELD':     currentLang === 'uk' ? 'ізольована від поля'   : 'isolated from field',
+            'OFFICIAL_CLAIM_OFF_TOPIC':      currentLang === 'uk' ? 'офіційна заява мимо'   : 'official claim off-topic',
+        };
+        document.getElementById('contextSignals').textContent =
+            (ctx.signals || []).map(s => signalMap[s] || s).join(' · ') || '—';
+
+        if (ctx.summary && ctx.summary.top_topics && ctx.summary.top_topics.length > 0) {
+            const topics = ctx.summary.top_topics.slice(0, 6).map(([w]) => w).join(', ');
+            const crisisCount = ctx.summary.accountability_count;
+            const total = ctx.summary.total_events;
+            document.getElementById('contextHotTopics').textContent =
+                currentLang === 'uk'
+                    ? `Гарячі теми: ${topics} · Кризові заголовки: ${crisisCount}/${total}`
+                    : `Hot topics: ${topics} · Crisis headlines: ${crisisCount}/${total}`;
+        }
+        document.getElementById('contextNote').textContent =
+            currentLang === 'uk' ? ctx.explanation_uk : ctx.explanation_en;
+        contextPanel.style.display = 'block';
+    } else { contextPanel.style.display = 'none'; }
+
     // Scraped text
     const scrapedPanel = document.getElementById('scrapedPanel');
     if (data.scraped_text_preview) {
@@ -1082,6 +1142,7 @@ function setLoading(on) {
         document.getElementById('metaIntentPanel').style.display = 'none';
         document.getElementById('certaintyPanel').style.display = 'none';
         document.getElementById('performativePanel').style.display = 'none';
+        document.getElementById('contextPanel').style.display = 'none';
     }
 }
 function showTopError(msg) {
