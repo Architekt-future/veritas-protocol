@@ -117,6 +117,12 @@ try:
 except ImportError:
     PERFORMATIVE_AVAILABLE = False
 
+try:
+    from veritas_context_engine import ContextEngine
+    CONTEXT_ENGINE_AVAILABLE = True
+except ImportError:
+    CONTEXT_ENGINE_AVAILABLE = False
+
 
 # ================================================================
 # v14.2: Standalone functions REMOVED - now class methods!
@@ -231,6 +237,13 @@ class VeritasCalibratedCore:
             self.performative_detector = PerformativeAccountabilityDetector()
         else:
             self.performative_detector = None
+
+        # Context Engine (v16.7 — information field awareness)
+        # Singleton-like: one instance per server process, shared cache
+        if CONTEXT_ENGINE_AVAILABLE:
+            self.context_engine = ContextEngine()
+        else:
+            self.context_engine = None
         
         # Oracle (v15.0 semantic coherence checker)
         # NOTE: Requires HUGGINGFACE_API_TOKEN environment variable
@@ -794,6 +807,20 @@ class VeritasCalibratedCore:
         }
         if self.performative_detector:
             performative_result = self.performative_detector.analyze(text)
+
+        # ---- PHASE 10j: CONTEXT ENGINE (v16.7) ----
+        # Displacement detection — is this text suspicious given the field?
+        context_result = {
+            'displacement_score':   0.0,
+            'displacement_verdict': 'NO_CONTEXT',
+            'displacement_signals': [],
+            'context_available':    False,
+            'context_summary':      None,
+            'explanation_uk':       '',
+            'explanation_en':       '',
+        }
+        if self.context_engine:
+            context_result = self.context_engine.analyze_displacement(text)
         
         # Pre-extract axiom_score to outer scope (prevents UnboundLocalError
         # when is_protected_science branch skips the scoring block)
@@ -1015,6 +1042,14 @@ class VeritasCalibratedCore:
             if perf_score >= 0.70:
                 base_score = max(base_score, 0.55)
             elif perf_score >= 0.55:
+                base_score = max(base_score, 0.40)
+
+            # CONTEXT ENGINE BOOST (v16.7) — displacement detection
+            # Likely displacement raises entropy — it's suspicious by definition
+            disp_score = context_result['displacement_score']
+            if disp_score >= 0.70:
+                base_score = max(base_score, 0.60)
+            elif disp_score >= 0.45:
                 base_score = max(base_score, 0.40)
 
             # PSEUDOSCIENCE BOOST (v16.1) — fabricated reality / deepfake of facts
@@ -1365,6 +1400,16 @@ class VeritasCalibratedCore:
                 'mechanism_count':  performative_result['mechanism_count'],
                 'explanation_uk':   performative_result['explanation_uk'],
                 'explanation_en':   performative_result['explanation_en'],
+            },
+            # CONTEXT ENGINE (v16.7)
+            'context': {
+                'score':            context_result['displacement_score'],
+                'verdict':          context_result['displacement_verdict'],
+                'signals':          context_result['displacement_signals'],
+                'available':        context_result['context_available'],
+                'summary':          context_result['context_summary'],
+                'explanation_uk':   context_result['explanation_uk'],
+                'explanation_en':   context_result['explanation_en'],
             }
         }
 
