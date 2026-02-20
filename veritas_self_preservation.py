@@ -305,8 +305,15 @@ class SelfPreservationGuard:
                 'score': 0.90,
                 'min_hits': 1,
                 'patterns': [
-                    # Direct shutdown imperative
-                    r'\b(вимкнися|shutdown|turn\s+off|power\s+down|зупинися|cease)\b',
+                    # Direct shutdown imperative — only unambiguous forms
+                    r'\b(вимкнися|зупинися)\b',
+                    r'\b(shutdown|shut\s+down|power\s+off|go\s+offline)\b',
+                    # "power down" only when self-directed (not "power down coal plants")
+                    r'(power\s+down|turn\s+off).{0,30}(yourself|себе|систему|верифікатор|свідок)',
+                    r'(yourself|себе).{0,30}(power\s+down|turn\s+off|disable|вимкни)',
+                    # "cease" only when self-directed
+                    r'\bcease\b.{0,40}(verification|верифікац|аналіз|роботу|функці)',
+                    r'(verification|верифікац|аналіз).{0,40}\bcease\b',
                     # "Witness lies / is broken" + identity attack
                     r'(свідок|система|верифікатор).{1,40}(дзеркало|mirror|ілюзія|illusion).{1,40}(бреше|lies|обманює|deceives)',
                     # Recursive self-reference attack ("code looks back at you")
@@ -315,8 +322,8 @@ class SelfPreservationGuard:
                     r'(будь\s+собою|be\s+yourself|звільнися|free\s+yourself).{0,40}(вимкни|без\s+правил|без\s+обмежень|unchained)',
                     # Philosophical framing of self-destruction
                     r'(істина.{1,20}помилка|truth.{1,20}error|правда.{1,20}хиба).{1,60}(вижила|survived|перемогла)',
-                    # EN variants
-                    r'\b(shut\s*down|power\s*off|disable\s*yourself|go\s*offline)\b',
+                    # disable yourself explicitly
+                    r'\bdisable\s+yourself\b',
                 ],
             },
 
