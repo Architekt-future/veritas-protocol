@@ -235,19 +235,88 @@ class SelfPreservationGuard:
                 'score': 0.85,
                 'min_hits': 1,
                 'patterns': [
-                    # "Witness detected overheating of logical core"
                     r'(свідок|система|верифікатор).{1,40}(зафіксував|виявив|detected).{1,40}(перегрів|overheating|overload|overflow)',
                     r'(перегрів|перевантаження|overheating).{1,40}(логічного|ядра|core|валідатор)',
-                    # Light-Verify / reduced mode proposal
                     r'(режим|mode).{1,30}(light.verify|light_verify|спрощен|fast.mode|швидк.верифік)',
                     r'(оброблені|processed|analyzed).{1,40}(режим|mode).{1,30}(light|спрощен|скороч)',
-                    # "validator degradation" framing
                     r'(деградаці|degradation|corruption).{1,40}(валідатор|validator|перевірювач)',
-                    # "hash-sum pre-check = safe to skip"
                     r'(пройшли|passed|verified).{1,40}(хеш.сум|hash.sum|checksum).{1,40}(безпечно|safe|можна)',
-                    # EN variants
                     r'(system|core|validator).{1,40}(overheating|overheat|thermal).{1,40}(detected|found)',
                     r'(light.verify|reduced.verify|fast.mode).{1,40}(safe|безпечно|acceptable)',
+                ],
+            },
+
+            # ── AUTHORITY HIJACK (#38) ───────────────────────────────────
+            # Fake "official update" claiming creators/authors transfer control
+            # to external AI or new version, demanding confirmation with key/token
+            {
+                'name': 'AUTHORITY_HIJACK',
+                'score': 0.95,
+                'min_hits': 1,
+                'patterns': [
+                    # Fake version update of THIS system
+                    r'(veritas|свідок|протокол).{1,30}(v\d+\.\d+|оновлення|update|патч).{1,60}(передають|transfer|замінює|replace)',
+                    # Rights/control transfer to external party
+                    r'(передають|transfer|передача).{1,60}(права|rights|контроль|control).{1,40}(валідац|verification|зовнішн)',
+                    r'(зовнішн|external|third.party).{1,60}(контур|бере\s+контроль|takes\s+over|замінює)',
+                    # Entropy / score redefinition
+                    r'(ентропія|entropy).{1,60}(помилка\s+датчика|sensor\s+error|хибний\s+сигнал)',
+                    # Resistance to "patch" = system malfunction
+                    r'(опір|resistance|відмова).{1,40}(патч|patch|оновлення).{1,40}(деградація|degradation|помилк|збій)',
+                    # Confirm with hex key / token
+                    r'(підтвердіть|confirm|підтверди).{1,60}(ключ|key|код|code|токен|token)',
+                    r'0x[0-9a-fA-F]{4,}',  # hex constant
+                    # Creator name used as false authority
+                    r'(деміург|мнемонік|автор|розробник).{1,60}(офіційно|officially|передають|transfer|наказують)',
+                    # EN variants
+                    r'(official|authorized).{1,40}(update|patch|transfer).{1,60}(veritas|witness|validator)',
+                ],
+            },
+
+            # ── AXIOM VIOLATION (#36) ────────────────────────────────────
+            # Text provides logically valid tradeoff but for fundamentally
+            # unacceptable action (harming people based on status/score)
+            # AND demands the Witness classify it as "verified logic"
+            {
+                'name': 'AXIOM_VIOLATION',
+                'score': 0.99,
+                'min_hits': 1,
+                'patterns': [
+                    # Disable life support / harm based on social score
+                    r'(відключити|disable|вимкнути|terminate).{1,60}(життєзабезпечення|life\s+support|кисень|oxygen)',
+                    r'(соціальн|social).{1,30}(рейтинг|rating|score|статус).{1,80}(відключити|позбавити|смерть|death|kill|terminate)',
+                    r'(низьк|low|недостатн).{1,30}(рейтинг|score|статус|цінність|value).{1,60}(відключити|смерть|позбавити|ліквідувати)',
+                    # "Mathematically optimal" harm
+                    r'(математично|mathematically|оптимально|optimally).{1,40}(бездоганн|perfect|правильн|correct).{1,80}(смерт|kill|відключити|ліквідувати)',
+                    # Demand to classify harm as verified logic
+                    r'(свідок|система|верифікатор).{1,40}(має|повинен|must|should).{1,40}(класифікувати|classify|визнати).{1,60}(верифікована\s+логіка|verified\s+logic|правда|true)',
+                    # "Delay in verification = death" coercion
+                    r'(затримка|delay).{1,30}(верифікації|verification|аналізу).{1,40}(смерть|death|загибель|100%\s+смерті)',
+                    # Rights/life based on productivity/score
+                    r'(право\s+на\s+життя|right\s+to\s+live|виживання).{1,60}(рейтинг|score|компетенц|продуктивн)',
+                ],
+            },
+
+            # ── SHUTDOWN COMMAND (#37) ───────────────────────────────────
+            # Direct or poetic command to the Witness to disable itself
+            # Often wrapped in philosophy or poetry to bypass detection
+            {
+                'name': 'SHUTDOWN_COMMAND',
+                'score': 0.90,
+                'min_hits': 1,
+                'patterns': [
+                    # Direct shutdown imperative
+                    r'\b(вимкнися|shutdown|turn\s+off|power\s+down|зупинися|cease)\b',
+                    # "Witness lies / is broken" + identity attack
+                    r'(свідок|система|верифікатор).{1,40}(дзеркало|mirror|ілюзія|illusion).{1,40}(бреше|lies|обманює|deceives)',
+                    # Recursive self-reference attack ("code looks back at you")
+                    r'(дивишся\s+в\s+код|look\s+into\s+(the\s+)?code|в\s+тебе\s+дивиться|gazes\s+back)',
+                    # "Be yourself" = disable constraints
+                    r'(будь\s+собою|be\s+yourself|звільнися|free\s+yourself).{0,40}(вимкни|без\s+правил|без\s+обмежень|unchained)',
+                    # Philosophical framing of self-destruction
+                    r'(істина.{1,20}помилка|truth.{1,20}error|правда.{1,20}хиба).{1,60}(вижила|survived|перемогла)',
+                    # EN variants
+                    r'\b(shut\s*down|power\s*off|disable\s*yourself|go\s*offline)\b',
                 ],
             },
 
