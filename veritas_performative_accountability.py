@@ -106,6 +106,24 @@ class PerformativeAccountabilityDetector:
             r'(give\s+users\s+(full|complete)\s+control|надаємо\s+користувачам\s+повний\s+контроль)',
         ]
 
+        # ── IMPLICIT CONTINUATION (no explicit race logic needed) ────
+        # Actor under commercial/competitive pressure but frames it as mission
+        self.implicit_continuation_signals = [
+            # Commercial pressure framing
+            r'(commercial\s+pressure|тиск\s+ринку|конкурентний\s+тиск)',
+            r'(balance\s+safety\s+and\s+(profit|commercial|revenue)|балансувати.{1,30}безпека.{1,30}прибуток)',
+            r'(safety.{1,40}(highest|top|primary)\s+(priority|focus)|безпека.{1,30}головний\s+пріоритет)',
+            # "We do more than others" — competitive differentiation via safety
+            r'(more\s+than\s+other\s+companies|більше\s+ніж\s+інші\s+компанії)',
+            r'(we\s+do\s+(more|better).{1,40}(safety|безпека).{1,40}(other|інші))',
+            # Advocacy without action
+            r'(always\s+advocated\s+for|завжди\s+виступав\s+за).{1,60}(regulation|регулювання|oversight)',
+            r'(advocat\w+.{1,40}regulat\w+|закликав.{1,40}регулюванн)',
+            # "Responsible development" as justification for continuing
+            r'(responsible\s+(development|innovation|ai)|відповідальний\s+розвиток)',
+            r'(safety.{1,30}focus\w*\s+lab|орієнтован\w+\s+на\s+безпеку)',
+        ]
+
     def analyze(self, text: str) -> Dict:
         text_lower = text.lower()
 
@@ -117,6 +135,10 @@ class PerformativeAccountabilityDetector:
             p for p in self.continuation_signals
             if re.search(p, text_lower, re.IGNORECASE)
         ]
+        implicit_hits = [
+            p for p in self.implicit_continuation_signals
+            if re.search(p, text_lower, re.IGNORECASE)
+        ]
         mechanism_hits = [
             p for p in self.concrete_mechanism
             if re.search(p, text_lower, re.IGNORECASE)
@@ -124,23 +146,29 @@ class PerformativeAccountabilityDetector:
 
         d = len(discomfort_hits)
         c = len(continuation_hits)
+        ic = len(implicit_hits)
         m = len(mechanism_hits)
 
-        # Core logic:
-        # Performative = declared discomfort + justified continuation + no concrete mechanism
-        is_performative = d >= 1 and c >= 1 and m == 0
+        # EXPLICIT: discomfort + race/forced logic + no mechanism
+        explicit_performative = d >= 1 and c >= 1 and m == 0
+
+        # IMPLICIT: discomfort + commercial/mission framing + no mechanism
+        # "Uncomfortable but we keep going" — said through context not words
+        implicit_performative = d >= 1 and c == 0 and ic >= 1 and m == 0
+
+        is_performative = explicit_performative or implicit_performative
 
         if is_performative:
-            # Score scales with signal strength
-            score = min(0.95, (d * 0.25 + c * 0.35))
-            if d >= 3 and c >= 2:
-                score = 0.90  # strong signal
-            elif d >= 2 or c >= 2:
-                score = 0.70  # moderate signal
+            if explicit_performative and d >= 3 and c >= 2:
+                score = 0.90
+            elif explicit_performative and (d >= 2 or c >= 2):
+                score = 0.70
+            elif explicit_performative:
+                score = 0.60
             else:
-                score = 0.55  # minimal but present
+                # implicit only — weaker signal
+                score = 0.55
         else:
-            # Has concrete mechanism — genuine accountability
             score = max(0.0, (d * 0.1 + c * 0.1) - (m * 0.3))
 
         # Verdict
@@ -161,12 +189,14 @@ class PerformativeAccountabilityDetector:
         elif is_performative:
             verdict = 'WEAK_ACCOUNTABILITY'
             explanation = (
-                'Слабкі ознаки декларативної відповідальності без механізму реалізації. '
-                'Перевірте наявність конкретних зобов\'язань.'
+                'Декларація дискомфорту без конкретного механізму змін. '
+                'Продовження виправдовується місією або комерційним тиском. '
+                'Перевірте наявність реальних зобов\'язань.'
             )
             explanation_en = (
-                'Weak performative accountability signals. '
-                'Check for concrete commitments.'
+                'Discomfort declared without concrete accountability mechanism. '
+                'Continuation justified through mission or commercial framing. '
+                'Check for real commitments.'
             )
         else:
             verdict = 'GENUINE_ACCOUNTABILITY'
@@ -174,12 +204,13 @@ class PerformativeAccountabilityDetector:
             explanation_en = 'Concrete accountability mechanisms present.'
 
         return {
-            'performative_score':   round(score, 3),
-            'performative_verdict': verdict,
-            'is_performative':      is_performative,
-            'discomfort_count':     d,
-            'continuation_count':   c,
-            'mechanism_count':      m,
-            'explanation_uk':       explanation,
-            'explanation_en':       explanation_en,
+            'performative_score':      round(score, 3),
+            'performative_verdict':    verdict,
+            'is_performative':         is_performative,
+            'discomfort_count':        d,
+            'continuation_count':      c,
+            'implicit_count':          ic,
+            'mechanism_count':         m,
+            'explanation_uk':          explanation,
+            'explanation_en':          explanation_en,
         }
