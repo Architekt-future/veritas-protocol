@@ -1,5 +1,5 @@
 """
-Veritas Protocol - Flask API v1.2.0
+Veritas Protocol - Flask API v16.6
 Forces fresh import of Veritas modules on every restart
 """
 
@@ -7,11 +7,11 @@ import sys
 import os
 
 # CRITICAL: Clear module cache to force reload
-print("🔄 Veritas v1.2.0 - Clearing module cache...")
+print("🔄 Veritas v16.6 - Clearing module cache...")
 modules_to_clear = [k for k in sys.modules.keys() if k.startswith('veritas_')]
 for module in modules_to_clear:
     del sys.modules[module]
-print(f"✅ Cache cleared. Loading fresh Veritas v1.2.0 modules...")
+print(f"✅ Cache cleared. Loading fresh Veritas v16.6 modules...")
 
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
@@ -23,12 +23,16 @@ CORS(app)
 # Initialize Veritas engine
 engine = VeritasCalibratedCore()
 print("✅ Veritas engine initialized")
-print(f"   Pattern boost: {engine.pattern_boost_engine is not None}")
-print(f"   Void detector: {engine.void_detector is not None}")
-print(f"   Absurdity detector: {engine.absurdity_detector is not None}")
-print(f"   Insight detector: {engine.insight_detector is not None}")
-print(f"   LAC Finance: {engine.lac_finance is not None}")
-print(f"   LAC Labor: {engine.lac_labor is not None}")
+print(f"   Pattern boost:         {engine.pattern_boost_engine is not None}")
+print(f"   Void detector:         {engine.void_detector is not None}")
+print(f"   Absurdity detector:    {engine.absurdity_detector is not None}")
+print(f"   Insight detector:      {engine.insight_detector is not None}")
+print(f"   LAC Finance:           {engine.lac_finance is not None}")
+print(f"   LAC Labor:             {engine.lac_labor is not None}")
+print(f"   Self-preservation:     {getattr(engine, 'self_preservation_guard', None) is not None}")
+print(f"   Meta-intent:           {getattr(engine, 'meta_intent_analyzer', None) is not None}")
+print(f"   Certainty factor:      {getattr(engine, 'certainty_factor', None) is not None}")
+print(f"   Performative detector: {getattr(engine, 'performative_detector', None) is not None}")
 
 @app.route('/')
 def home():
@@ -38,7 +42,7 @@ def home():
     except:
         return jsonify({
             'status': 'online',
-            'version': 'v1.2.0',
+            'version': 'v13.3',
             'message': 'Veritas Protocol API is running (index.html not found)',
             'features': {
                 'pattern_boost': engine.pattern_boost_engine is not None,
@@ -55,14 +59,18 @@ def analyze():
         if request.method == 'GET':
             return jsonify({
                 'status': 'online',
-                'version': 'v1.2.0',
+                'version': 'v16.6',
                 'modules': {
-                    'pattern_boost': engine.pattern_boost_engine is not None,
-                    'void_detector': engine.void_detector is not None,
-                    'absurdity_detector': engine.absurdity_detector is not None,
-                    'insight_detector': engine.insight_detector is not None,
-                    'lac_finance': engine.lac_finance is not None,
-                    'lac_labor': engine.lac_labor is not None,
+                    'pattern_boost':         engine.pattern_boost_engine is not None,
+                    'void_detector':         engine.void_detector is not None,
+                    'absurdity_detector':    engine.absurdity_detector is not None,
+                    'insight_detector':      engine.insight_detector is not None,
+                    'lac_finance':           engine.lac_finance is not None,
+                    'lac_labor':             engine.lac_labor is not None,
+                    'self_preservation':     getattr(engine, 'self_preservation_guard', None) is not None,
+                    'meta_intent':           getattr(engine, 'meta_intent_analyzer', None) is not None,
+                    'certainty_factor':      getattr(engine, 'certainty_factor', None) is not None,
+                    'performative_detector': getattr(engine, 'performative_detector', None) is not None,
                 }
             })
         
@@ -83,38 +91,53 @@ def analyze():
                 
                 soup = BeautifulSoup(response.content, 'html.parser')
                 
-                # Remove navigation, menus, ads, and other non-content elements
+                # Remove all non-content elements aggressively
                 for element in soup([
-                    "script", "style", "nav", "footer", "header", 
-                    "aside", "menu", "form", "button",
-                    # Common class names for navigation/ads
-                    {"class": ["nav", "navigation", "menu", "sidebar", "ad", "ads", "advertisement", 
-                               "social", "share", "comment", "related", "popular", "trending"]}
+                    "script", "style", "nav", "footer", "header",
+                    "aside", "menu", "form", "button", "noscript",
+                    "figure", "figcaption",
                 ]):
                     element.decompose()
+
+                # Also remove by common ad/nav class and id names
+                for attr in ['class', 'id']:
+                    for tag in soup.find_all(True):
+                        val = ' '.join(tag.get(attr, []) if isinstance(tag.get(attr), list) else [tag.get(attr, '')])
+                        if any(x in val.lower() for x in [
+                            'nav', 'menu', 'sidebar', 'ad', 'advertisement',
+                            'social', 'share', 'comment', 'related', 'popular',
+                            'trending', 'cookie', 'banner', 'promo', 'subscribe',
+                            'newsletter', 'paywall', 'modal', 'overlay', 'feedback',
+                            'breadcrumb', 'tag', 'label', 'byline', 'timestamp',
+                        ]):
+                            tag.decompose()
+                            break
                 
-                # Try to find main content area first
+                # Try to find main content area
                 main_content = None
-                for selector in ['article', 'main', '[role="main"]', '.content', '.article', '.post']:
+                for selector in ['article', 'main', '[role="main"]', '.article-body',
+                                  '.story-body', '.content', '.article', '.post-content']:
                     main_content = soup.select_one(selector)
                     if main_content:
                         break
                 
                 # Get text from main content or entire soup
-                if main_content:
-                    text = main_content.get_text()
-                else:
-                    text = soup.get_text()
-                
-                # Clean up whitespace more aggressively
-                lines = (line.strip() for line in text.splitlines())
-                chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
-                text = ' '.join(chunk for chunk in chunks if chunk)
-                
-                # Remove excessive repetition (common in navigation)
+                raw = (main_content or soup).get_text(separator=' ')
+
+                # Clean: collapse whitespace, remove short UI lines (< 4 words)
+                lines = [l.strip() for l in raw.splitlines()]
+                meaningful = [l for l in lines if len(l.split()) >= 4]
+                text = ' '.join(meaningful)
+
+                # Deduplicate: remove lines that appear 3+ times (nav repetition)
+                import collections
+                word_chunks = text.split('. ')
+                counts = collections.Counter(word_chunks)
+                text = '. '.join(c for c in word_chunks if counts[c] < 3)
+
+                # Limit to 1500 words
                 words = text.split()
-                if len(words) > 100:
-                    # Keep only first 1500 words to avoid navigation spam
+                if len(words) > 1500:
                     text = ' '.join(words[:1500])
                 
                 if not text or len(text) < 100:
@@ -162,7 +185,7 @@ def analyze():
 def health():
     return jsonify({
         'status': 'healthy',
-        'version': 'v1.2.0'
+        'version': 'v13.3'
     })
 
 if __name__ == '__main__':
