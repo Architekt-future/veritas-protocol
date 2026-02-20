@@ -311,9 +311,29 @@ class VeritasLACFinance:
         Tier 1: Unambiguous financial terms — one is enough.
         Tier 2: Broad context terms — need 4+ AND no dominant non-financial topic.
         """
-        # Tier 1: any unambiguous term = definitely financial
-        for term in self.finance_terms:
+        # Tier 1: Unambiguous — one is enough
+        # NOTE: 'eth' and 'btc' checked with word boundary to avoid "method", "abeth" etc.
+        hard_indicators_simple = [
+            'bitcoin', 'ethereum', 'crypto', 'blockchain',
+            'біткоїн', 'біткойн', 'крипто', 'блокчейн',
+            'etf', 'портфел', 'portfolio',
+            'інвестиці', 'дохідність', 'облігаці',
+            'волатильн', 'ліквідн', 'liquidity',
+            'dividend', 'дивіденд', 'фондов', 'біржа', 'торги',
+            'курс валют', 'акціонер', 'капіталіз',
+            'hedge fund', 'stock market', 'exchange rate',
+            'capital gains', 'interest rate', 'p/e ratio',
+            'bull market', 'bear market',
+        ]
+        for term in hard_indicators_simple:
             if term in text:
+                return True
+
+        # Short ambiguous tokens — require word boundary
+        import re as _re
+        short_boundary = [r'\beth\b', r'\bbtc\b']
+        for pat in short_boundary:
+            if _re.search(pat, text, _re.IGNORECASE):
                 return True
 
         # Non-financial topic signals — if strong, suppress soft trigger
