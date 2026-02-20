@@ -334,42 +334,65 @@ class VeritasLACLabor:
     
     def _is_labor_content(self, text: str) -> bool:
         """
-        Check if text is labor/employment CONTRACT related
-        
-        IMPORTANT: Must be strict to avoid false positives on news articles
-        that merely MENTION work but aren't actual contracts/job offers
+        Check if text is labor/employment CONTRACT related.
+
+        Tier 1: Unambiguous labor/contract terms — one is enough.
+        Tier 2: Broad terms — need critical mass AND no dominant non-labor topic.
         """
-        # Contract-specific terms (high signal)
-        contract_indicators = [
-            'договір', 'контракт', 'угода', 'умови праці',
-            'contract', 'agreement', 'terms of employment',
-            'зарплата', 'оплата праці', 'компенсація',
-            'salary', 'wage', 'compensation', 'payment terms',
-            'зобов\'язання', 'obligation', '責任',
-            'виконавець', 'замовник', 'роботодавець',
-            'contractor', 'employer', 'client',
-            'найм', 'hiring', 'recruitment',
-            'вакансія', 'vacancy', 'job offer',
-            'фріланс', 'freelance', 'gig',
-            'платформа найму', 'hiring platform',
+        # Tier 1: Unambiguous — one is enough
+        hard_indicators = [
+            # Ukrainian — specific enough
+            'договір про працю', 'трудовий договір', 'умови праці',
+            'оплата праці', 'зарплата', 'колективний договір',
+            'трудовий спір', 'звільнення', 'відпустка',
+            'найм на роботу', 'працевлаштування', 'вакансія',
+            'роботодавець', 'фріланс', 'підряд',
+            # English — specific enough
+            'employment contract', 'job offer', 'terms of employment',
+            'severance', 'termination clause', 'non-compete',
+            'collective bargaining', 'labor dispute', 'union contract',
+            'hiring platform', 'gig economy', 'freelance contract',
+            'wage theft', 'unpaid labor', 'wrongful termination',
         ]
-        
-        # Check for contract indicators
-        has_contract_terms = any(term in text for term in contract_indicators)
-        
-        # Also check for general labor terms (lower signal)
-        has_labor_terms = any(term in text for term in self.labor_terms)
-        
-        # REQUIRE: at least 1 contract term OR 3+ labor terms
-        # This prevents news articles from triggering
-        if has_contract_terms:
+        for term in hard_indicators:
+            if term in text:
+                return True
+
+        # Soft indicators — broad words that need context
+        soft_indicators = [
+            'contractor', 'freelance', 'gig',
+            'salary', 'wage', 'hiring', 'recruitment',
+            'виконавець', 'замовник', 'найм',
+        ]
+        soft_hits = sum(1 for term in soft_indicators if term in text)
+        if soft_hits >= 2:
             return True
-        
-        if has_labor_terms:
-            labor_count = sum(1 for term in self.labor_terms if term in text)
-            return labor_count >= 3
-        
-        return False
+
+        # Non-labor topic signals — suppress false positives
+        import re as _re
+        non_labor_signals = [
+            r'(quantum|qubit|molecule|genome|particle|telescope|spacecraft)',
+            r'(democrat|republican|congress|senate|parliament|judiciary)',
+            r'(climate|renewable|carbon|emission|wind\s+farm|solar)',
+            r'(lawsuit|indictment|criminal|prosecutor|verdict|trial)',
+            r'(депутат|парламент|суд|вибор|президент|прокурор)',
+        ]
+        non_labor_hits = sum(
+            1 for p in non_labor_signals
+            if _re.search(p, text, _re.IGNORECASE)
+        )
+
+        # General labor terms — need many AND no dominant non-labor topic
+        general_labor = [
+            'work', 'worker', 'employee', 'employer', 'job',
+            'contract', 'agreement', 'platform', 'task',
+            'робота', 'працівник', 'завдання',
+        ]
+        general_hits = sum(1 for term in general_labor if term in text)
+
+        if non_labor_hits >= 2:
+            return general_hits >= 8
+        return general_hits >= 5
     
     def _test_tradeoff(self, text: str) -> Tuple[bool, List[str]]:
         """Test for explicit mutual trade-off"""
