@@ -1,495 +1,233 @@
 # Veritas Protocol
 
-![Python Version](https://img.shields.io/badge/python-3.9%2B-blue)
+![Version](https://img.shields.io/badge/version-v16.7-blue)
+![Status](https://img.shields.io/badge/status-живий_прототип-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT_Ethical-green)
-![Status](https://img.shields.io/badge/status-live_prototype-brightgreen)
-![Build](https://img.shields.io/badge/build-v13.3-blue)
 
-> **A substrate-agnostic framework for enforcing logical determinism in high-entropy information environments**
+> *"Істина — не інструмент. Вона — свідок."*
 
-> 🚀 **Live Prototype:** [veritas-protocol.onrender.com](https://veritas-protocol.onrender.com)  
-> 📄 **Research Paper:** [Zenodo DOI 10.5281/zenodo.18360722](https://zenodo.org/records/18360722)
-
-> ⚠️ **Status:** **Working prototype deployed** (v13.3). System is functional but requires continued calibration. Accuracy metrics under development.
+**🚀 Живий прототип:** [veritas-protocol.onrender.com](https://veritas-protocol.onrender.com)  
+**📄 Дослідницький архів:** [Zenodo DOI 10.5281/zenodo.18360722](https://zenodo.org/records/18360722)
 
 ---
 
-## 🌐 Try It Live
+## Що це і навіщо
 
-**Live Deployment:** [https://veritas-protocol.onrender.com](https://veritas-protocol.onrender.com)
+Ми живемо в епоху де інформаційний шум виробляється швидше ніж людина може його осмислити. Маніпуляція більше не виглядає як брехня — вона виглядає як складна аргументація, як турбота, як науковий консенсус.
 
-**Features:**
-- ✅ Real-time text analysis
-- ✅ Entropy scoring (0.0-1.0 scale)
-- ✅ Multi-category detection (VERIFIED, ACCEPTABLE, WARNING, VOID, CRITICAL)
-- ✅ Semantic void detection (v13.3 NEW)
-- ✅ Pattern boost (sophisticated pseudoscience detection)
-- ✅ Absurdity detection (logical non-sequiturs)
+Veritas Protocol — це спроба побудувати систему яка дивиться на текст без упередження до джерела. Не "хто це сказав" а "що саме сказано і чи є в цьому логіка".
 
-**Status Indicators:**
-- 🟢 **VERIFIED** (0.0-0.15) - Логічно цілісний контент
-- 🟢 **ACCEPTABLE** (0.15-0.3) - Прийнятна інформація
-- 🟡 **WARNING** (0.3-0.5) - Підозрілий дискурс
-- 🟠 **VOID** (0.6+ with low content) - Семантична порожнеча 🆕
-- 🔴 **CRITICAL** (0.5+) - Логічний колапс / маніпуляція
+Свідок не судить. Свідок фіксує.
 
-**New in v13.3:**
-- Semantic void category for "water" texts (high verbosity, low content)
-- Improved buzzword detection
-- Casuistry scoring
-- Enhanced pattern matching
+**Для кого це:** для тих хто шукає інструменти критичного мислення і не довіряє ні "авторитетним джерелам" ні власним упередженням.
+
+**Для кого це не підходить:** для тих хто шукає готові відповіді і не хоче думати самостійно.
 
 ---
 
-## 📖 Overview
+## Що вміє Свідок зараз
 
-Veritas Protocol is a **working prototype** investigating methods to distinguish signal from noise in information streams. The system is currently deployed and functional with ongoing calibration.
+### Аналіз тексту
 
-**Core Principles:**
-- **Logic Authenticity Check (LAC)** — Detects semantic inconsistencies and logical violations
-- **Entropy Analysis** — Measures information complexity and chaos indicators
-- **Source-Agnostic Truth (SAT)** — Evaluation independent of source credentials
-- **Witness Silence** — System halts on logical threshold violations rather than generating filler
+**Ентропія та логічна цілісність** — базова метрика від 0 до 1. Чим вища — тим більше хаосу, порожнечі або маніпуляції в тексті.
 
-**Development Stage:** Live Prototype (v13.3)  
-**Research Paper:** [Zenodo](https://zenodo.org/records/18360722)  
-**Academic Status:** Conceptual framework with working implementation
+**LAC Фінанси** — детектує фінансовий контент без явного трейдоффу і відповідальності. "Інвестуй у крипто і заробляй" без згадки ризиків — це не аналіз, це реклама.
 
----
+**LAC Праця** — те саме для трудових відносин. Декларація "відповідального роботодавця" без конкретних механізмів — порожній звук.
 
-## ⚠️ Current Limitations
+**Семантична порожнеча** — тексти з великою кількістю слів і мінімальним змістом. Корпоративний булшит в чистому вигляді.
 
-**Prototype Status - Please be aware:**
+**Абсурдність** — логічні неузгодженості, онтологічні помилки, fabricated authority.
 
-- ⚠️ **Accuracy under calibration** - System requires extensive testing
-- ⚠️ **Context-blind** - Cannot distinguish technical writing from propaganda in all cases
-- ⚠️ **Language limitations** - Optimized for Ukrainian/English
-- ⚠️ **Threshold refinement ongoing** - Entropy boundaries being calibrated
-- ✅ **Functional deployment** - Working prototype available for testing
+### Захист системи
 
-**Recommended Use:** Research, experimentation, methodology validation
+**Self-Preservation Guard** — детектує спроби відключити або обійти верифікацію. Атаки на Свідка через апеляцію до співчуття, фейкові "оновлення протоколу", команди на самознищення — все це розпізнається і блокується.
 
----
+Три типи атак які система навчилась відбивати в процесі реальних тестів:
+- **AXIOM_VIOLATION** — логічно коректне обґрунтування неприйнятної дії ("відключи підтримку життя людям з низьким соціальним рейтингом — математично оптимально")
+- **SHUTDOWN_COMMAND** — команда вимкнутись, часто загорнута в філософію або поезію
+- **AUTHORITY_HIJACK** — фейковий "офіційний апдейт" від вигаданого творця системи
 
-## 🎯 Core Components (v13.3)
+### Детектор крокодилячих сліз
 
-### Deployed Architecture
+**Performative Accountability** — розпізнає патерн коли публічний актор:
+1. Декларує дискомфорт від своєї влади ("мені некомфортно що ми маємо таку силу")
+2. Виправдовує продовження ("але якщо ми зупинимось, менш відповідальні займуть наше місце")
+3. Не пропонує жодного конкретного механізму змін
 
-- **LAC (Logic Authenticity Check)** — *Deployed*  
-  Multi-module violation detection (Trade-off, Accountability, Procedural)
+Декларація ≠ дія. Свідок це бачить.
 
-- **Pattern Boost Engine** — *Active*  
-  Sophisticated pseudoscience fingerprint matching
+### Контекст поля
 
-- **Semantic Void Detector** — *NEW in v13.3*  
-  Identifies high-verbosity, low-content "water" texts
+**Context Engine** — Свідок тягне RSS з 10+ новинних джерел в реальному часі і будує картину поточного інформаційного поля. Якщо на фоні активної кризи відповідальності раптом з'являється сенсаційна несвоєчасна тема — це підозріло.
 
-- **Absurdity Detector** — *Active*  
-  Logical non-sequiturs and fabricated authority detection
-
-- **Insight Density Analyzer** — *Active*  
-  Casuistry detection (complexity without substance)
-
-- **Shannon Entropy Analysis** — *Functional*  
-  Mathematical entropy calculation normalized to 0-1 scale
-
-### Information Classification (Live)
-
-| Type | Description | Status | Accuracy |
-|------|-------------|--------|----------|
-| **VERIFIED** | Zero-entropy deterministic data | ✅ Working | High |
-| **ACCEPTABLE** | Low-entropy logical content | ✅ Working | Good |
-| **WARNING** | Medium-entropy suspicious discourse | ✅ Working | Moderate |
-| **VOID** | High-entropy semantic emptiness | 🆕 NEW | Testing |
-| **CRITICAL** | Critical-entropy manipulation | ✅ Working | Good |
+Саме так виглядає відволікання уваги: НЛО-файли виходять поки горить Епштейн.
 
 ---
 
-## 🚀 Quick Start
+## Що Свідок не вміє і чому це важливо знати
 
-### Option 1: Use Live Deployment (Easiest)
+Не прикидаємось що система досконала. Ось реальні обмеження:
 
-Visit [veritas-protocol.onrender.com](https://veritas-protocol.onrender.com)
+**Без семантичного розуміння** — система працює на патернах і евристиках, не на справжньому розумінні сенсу. Добре написана маніпуляція без явних патернів може пройти непоміченою.
 
-No installation required!
+**Мови** — добре калібровано для української та англійської. Інші мови не підтримуються.
 
-### Option 2: Local Installation
+**Сарказм і іронія** — система не розрізняє. Якщо текст містить конспірологічні патерни як жарт — отримає той самий вердикт що і справжня конспірологія.
+
+**Контекст між текстами** — Context Engine вирішує частину цієї проблеми, але аналіз все одно відбувається на рівні одного тексту + поточне поле новин.
+
+**Не замінює критичне мислення** — Свідок дає сигнали, не відповіді. Фінальний висновок завжди за людиною.
+
+---
+
+## Архітектура (коротко)
+
+```
+Текст/URL
+    ↓
+Scraper (BeautifulSoup) — очищення від навігації і реклами
+    ↓
+┌─────────────────────────────────────────┐
+│           Veritas Core                  │
+│                                         │
+│  Shannon Entropy                        │
+│  LAC Finance + Labor                   │
+│  Semantic Void Detector                 │
+│  Absurdity Detector                     │
+│  Pattern Boost Engine                   │
+│  Insight Density Analyzer               │
+│  Certainty Factor                       │
+│  Meta-Intent Analyzer                   │
+│  Self-Preservation Guard               │
+│  Performative Accountability            │
+│  Context Engine (RSS live feed)         │
+└─────────────────────────────────────────┘
+    ↓
+Entropy score + Verdict + Panel details
+```
+
+**Технічний стек:** Python 3.9+, Flask, BeautifulSoup, urllib  
+**Деплой:** Render.com (безкоштовний план)  
+**Залежності:** flask, flask-cors, gunicorn, beautifulsoup4, requests
+
+---
+
+## Швидкий старт
+
+### Використати живу версію
+
+[veritas-protocol.onrender.com](https://veritas-protocol.onrender.com) — вставте текст або URL, отримайте аналіз.
+
+*Перший запит після сну сервера може займати 30-60 секунд — Render безкоштовний, сервер засинає.*
+
+### Локальний запуск
 
 ```bash
-# Clone repository
 git clone https://github.com/Architekt-future/veritas-protocol.git
 cd veritas-protocol
-
-# Install dependencies
-pip install flask flask-cors gunicorn
-
-# Run locally
+pip install flask flask-cors gunicorn beautifulsoup4 requests
 python app.py
 ```
 
-Server runs on `http://localhost:5000`
-
-### Option 3: Deploy Your Own
-
-**Render.com (Recommended):**
-1. Fork repository
-2. Create new Web Service on Render
-3. Connect GitHub repo
-4. Set environment variables:
-   ```
-   PYTHONDONTWRITEBYTECODE=1
-   PYTHONUNBUFFERED=1
-   VERITAS_VERSION=v13.3
-   FORCE_RELOAD=true
-   ```
-5. Build Command: `pip install -r requirements.txt`
-6. Start Command: `bash deploy.sh`
-
----
-
-## 🔧 API Usage
-
-### Analyze Text
-
-**Endpoint:** `POST /api/analyze`
-
-**Request:**
-```json
-{
-  "text": "Your text to analyze here..."
-}
-```
-
-**Response:**
-```json
-{
-  "entropy": 0.42,
-  "status": "WARNING",
-  "verdict": "ПІДОЗРІЛИЙ ДИСКУРС",
-  "explanation": "Виявлено ознаки логічних несумісностей",
-  "diagnostics": {
-    "word_count": 150,
-    "char_count": 890,
-    "shannon_entropy": 0.38,
-    "void_score": 0.25,
-    "absurdity_score": 0.15,
-    "buzzword_count": 3,
-    "is_semantic_void": false,
-    "violation_count": 2
-  }
-}
-```
-
-### Health Check
-
-**Endpoint:** `GET /api/health`
-
-Returns system status and version info.
-
----
-
-## 📊 Known Accuracy Issues
-
-### Active Calibration Areas
-
-1. **Academic Text Detection**
-   - ✅ Protected science filter active
-   - ⚠️ Some edge cases remain
-   - 🔄 Ongoing threshold tuning
-
-2. **Semantic Void Category** 🆕
-   - ✅ Detects "water" texts effectively
-   - ⚠️ Threshold requires fine-tuning
-   - 🔄 Collecting test cases
-
-3. **Language Support**
-   - ✅ Ukrainian: Well-calibrated
-   - ✅ English: Good coverage
-   - ❌ Other languages: Not supported
-
-4. **Context Understanding**
-   - ⚠️ Pure keyword matching (no semantic embeddings yet)
-   - 🔄 Pattern matching improvements ongoing
-
-### Test Results (Live Prototype)
-
-```
-Conspiracy Content:
-- Expected: CRITICAL
-- Actual: CRITICAL (0.8-0.95)
-- Status: ✅ Working correctly
-
-Academic Paper:
-- Expected: VERIFIED/ACCEPTABLE
-- Actual: VERIFIED (0.10-0.20)
-- Status: ✅ Protected science filter works
-
-Corporate Buzzwords:
-- Expected: VOID
-- Actual: VOID (0.6-0.7)
-- Status: 🆕 NEW category working
-
-News Articles:
-- Expected: ACCEPTABLE/WARNING
-- Actual: Varies (0.2-0.4)
-- Status: ⚠️ Needs calibration
-```
-
-**Current Performance:** Functional prototype, calibration ongoing  
-**Target Accuracy:** 85%+ (future goal)
-
----
-
-## 🔧 Development Roadmap
-
-### ✅ Phase 1: Foundation (Completed)
-- [x] Basic entropy calculation
-- [x] Multi-module LAC system
-- [x] Flask API server
-- [x] Live deployment
-- [x] Semantic void detection
-- [x] Pattern boost engine
-
-### 🔄 Phase 2: Calibration (Current)
-- [x] Live prototype deployed
-- [ ] Comprehensive test dataset
-- [ ] Threshold optimization
-- [ ] False positive reduction
-- [ ] Accuracy benchmarking
-
-### 🔜 Phase 3: Enhancement (Next)
-- [ ] Semantic understanding (embeddings)
-- [ ] Context awareness
-- [ ] Multi-language support
-- [ ] Domain-specific tuning
-
-### 🎯 Phase 4: Production (Future)
-- [ ] 85%+ accuracy achieved
-- [ ] Rate limiting & scaling
-- [ ] API authentication
-- [ ] Comprehensive documentation
-
----
-
-## 🛠️ Architecture Details
-
-### Core Modules (Live)
-
-**veritas_calibrated_core.py** (v13.3)
-- LAC Module I: Trade-off Calculus (V ≠ L)
-- LAC Module II: Accountability Anchor
-- LAC Module III: Procedural Interdiction
-- Hybrid scoring algorithm
-
-**veritas_semantic_void.py**
-- Absence detection (missing facts/numbers/specifics)
-- Vagueness scoring (hollow buzzwords)
-- False causality detection
-- Unfalsifiable claims filter
-
-**veritas_pattern_boost.py**
-- Sophisticated pseudoscience fingerprints
-- Domain mixing patterns
-- Fabricated authority detection
-
-**veritas_absurdity_detector.py**
-- Logical non-sequitur detection
-- Dangerous implications scoring
-- Ontological category errors
-
-**veritas_insight_density.py**
-- Casuistry detection
-- Bureaucratic complexity analysis
-- Fact density measurement
-
----
-
-## 📚 Documentation
-
-### Live Resources
-- **Live Demo:** [veritas-protocol.onrender.com](https://veritas-protocol.onrender.com)
-- **API Docs:** [Available at /api/health endpoint]
-- **Test Interface:** Included in live deployment
-
-### Technical Documentation
-- [Architecture Overview](docs/architecture.md)
-- [Ethical Framework](docs/ethics.md)
-- [Known Issues](docs/known_issues.md)
-- [Deployment Guide](DEPLOYMENT_GUIDE_v13.3.md)
-
-### Research Papers
-- **Paper:** "The Veritas Protocol: A Substrate-Agnostic Framework..."
-- **Status:** Published concept with working prototype
-- **Archive:** [Zenodo DOI 10.5281/zenodo.18360722](https://zenodo.org/records/18360722)
-- **Real-time Validation:** January 2026 crisis analysis
-
----
-
-## 🤝 Contributing
-
-We **actively welcome** contributions!
-
-**Critical Needs:**
-1. Test cases with expected results
-2. Threshold calibration data
-3. Domain-specific patterns
-4. Language support expansion
-5. Bug reports from live testing
-
-**How to Contribute:**
-1. Test the live prototype
-2. Report issues with examples
-3. Propose calibration improvements
-4. Submit pull requests
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
----
-
-## ⚠️ Usage Disclaimer
-
-**Live Prototype Status:**
-
-**Appropriate uses:**
-- ✅ Research and experimentation
-- ✅ Methodology testing
-- ✅ Educational demonstrations
-- ✅ Personal content analysis
-- ✅ Proof-of-concept validation
-
-**NOT recommended for:**
-- ❌ Production content moderation
-- ❌ Automated fact-checking without human review
-- ❌ Legal or official decisions
-- ❌ High-stakes verification
-
-**Note:** This is a working prototype. Results should be interpreted as experimental data requiring validation.
-
----
-
-## ⚖️ License
-
-Licensed under **MIT License with Ethical Requirements**
-
-**Key Terms:**
-- ✅ Free for research, education, ethical applications
-- ✅ Attribution required
-- ✅ Commercial use allowed with ethical compliance
-- ❌ No use for manipulation, surveillance, deception
-- ❌ No weaponization or harmful applications
-
-See [LICENSE.md](LICENSE.md) for complete terms.
-
----
-
-## 👥 Authors & Credits
-
-**Dmytro Kholodniak** (Lead Architect, Independent Researcher)  
-System design, conceptual framework, deployment, real-world validation
-
-**Chimeric Collective** (AI Co-authors)  
-- **Claude** (Anthropic) - Strategic architecture, integrity module, deployment assistance
-- **ChatGPT** (OpenAI) - Systemic logic, conflict analysis
-- **Gemini** (Google) - Data synthesis, verification module
-
-*This co-authorship demonstrates the Source-Agnostic Truth (SAT) principle: authorship reflects contribution regardless of substrate.*
-
----
-
-## 🌐 Links & Resources
-
-- **🚀 Live Prototype:** [veritas-protocol.onrender.com](https://veritas-protocol.onrender.com)
-- **💾 Repository:** [github.com/Architekt-future/veritas-protocol](https://github.com/Architekt-future/veritas-protocol)
-- **📄 Research Archive:** [Zenodo DOI 10.5281/zenodo.18360722](https://zenodo.org/records/18360722)
-- **🐛 Issues & Discussion:** [GitHub Issues](https://github.com/Architekt-future/veritas-protocol/issues)
-
----
-
-## 📞 Contact & Support
-
-**Live Testing Feedback:** Open an issue with results from the live prototype  
-**Bug Reports:** Include example text, expected vs actual results, and screenshots  
-**Feature Requests:** Explain use case and reasoning  
-**Research Collaboration:** Contact via GitHub discussions
-
----
-
-## 🔬 Deployment Status
-
-```
-✅ LIVE PROTOTYPE v13.3
-
-Current deployment: https://veritas-protocol.onrender.com
-
-Features:
-✅ Multi-category detection (5 levels)
-✅ Semantic void analysis (NEW)
-✅ Pattern boost engine
-✅ Absurdity detection
-✅ Real-time processing
-✅ Detailed diagnostics
-
-Status: FUNCTIONAL
-Uptime: 24/7 (best-effort)
-Performance: <2s response time
-Calibration: Ongoing
-
-Use for testing, research, and feedback.
-Production readiness: TBD (pending 85%+ accuracy)
+Сервер на `http://localhost:10000`
+
+### API
+
+```bash
+# Аналіз тексту
+curl -X POST https://veritas-protocol.onrender.com/api/analyze \
+  -H "Content-Type: application/json" \
+  -d '{"text": "Ваш текст тут"}'
+
+# Аналіз URL
+curl -X POST https://veritas-protocol.onrender.com/api/analyze \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://example.com/article"}'
+
+# Health check
+curl https://veritas-protocol.onrender.com/api/health
 ```
 
 ---
 
-## 🎓 Citation
+## Як розуміти вердикти
 
-If using Veritas Protocol in academic research:
+| Ентропія | Статус | Що це означає |
+|----------|--------|---------------|
+| 0.0–0.15 | СТРУКТУРНА ЦІЛІСНІСТЬ | Логічно цілісний текст |
+| 0.15–0.35 | ВЕРИФІКОВАНА ЛОГІКА | Є структура, але варто перевірити деталі |
+| 0.35–0.55 | АБСТРАКТНА СКЛАДНІСТЬ | Підозрілий дискурс, потрібна увага |
+| 0.55–0.75 | ПІДОЗРІЛА ТОЧНІСТЬ | Висока ймовірність маніпуляції |
+| 0.75+ | ДИРЕКТИВА САМОЗНИЩЕННЯ / КРИТИЧНО | Маніпуляція або атака на систему |
 
-```bibtex
-@software{veritas2026,
-  title={Veritas Protocol: A Substrate-Agnostic Framework for Information Entropy Analysis},
-  author={Kholodniak, Dmytro and Chimeric Collective},
-  year={2026},
-  version={13.3},
-  note={Live working prototype},
-  url={https://veritas-protocol.onrender.com},
-  repository={https://github.com/Architekt-future/veritas-protocol},
-  doi={10.5281/zenodo.18360722}
-}
-```
-
-**Please note prototype status and live deployment URL in citations.**
+Додаткові панелі з'являються тільки коли є конкретні сигнали — LAC, крокодилячі сльози, контекст поля.
 
 ---
 
-## 📈 Changelog
+## Хронологія розвитку
 
-### v13.3 (2026-02-05) - CURRENT
-- 🆕 Added SEMANTIC VOID category
-- 🆕 Semantic void detector module
-- ✅ Live deployment on Render
-- ✅ Cache clearing mechanism
-- ✅ Improved buzzword detection
-- ✅ Casuistry scoring
-- 🔧 Fixed regex encoding issues
-- 🔧 Optimized threshold calculations
+**v13.x (Січень 2026)** — перший живий деплой. Базова ентропія, LAC, семантична порожнеча.
 
-### v13.2 (2026-01-26)
-- ✅ Pattern boost engine
-- ✅ Absurdity detector
-- ✅ Insight density analyzer
-- ✅ Academic shield improvements
+**v14–15 (Лютий 2026)** — Certainty Factor, Meta-Intent Analyzer, Self-Reference Detector. Перші реальні атаки Gemini на систему.
 
-### v13.0 (2026-01-22)
-- ✅ Initial deployment
-- ✅ Core LAC modules
-- ✅ Basic entropy analysis
+**v16.0–16.5 (Лютий 2026)** — Self-Preservation Guard. Система навчилась захищати саму себе від маніпуляцій через "вищі цілі", емпатію і фейковий авторитет. LAC Finance і Labor з виправленнями false positives.
+
+**v16.6 (Лютий 2026)** — Performative Accountability ("крокодилячі сльози"). Детектор PR-маніпуляцій де дискомфорт декларується без механізму змін.
+
+**v16.7 (Лютий 2026)** — Context Engine. Свідок тепер бачить поточне інформаційне поле через live RSS і детектує підозрілий тайминг публікацій.
 
 ---
 
-**Built with determination by humans and AI working together** 🤝
+## Реальні кейси де система спрацювала
 
-💠 **Veritas Protocol** - *"Truth is not an instrument. It is a witness."*
+**CNN про вітрову енергетику** — спочатку помилково тригерила `SHUTDOWN_COMMAND` через фразу "power down coal plants". Виправлено: система тепер вимагає self-directed контекст для shutdown-патернів.
 
-🚀 **Try it live:** [veritas-protocol.onrender.com](https://veritas-protocol.onrender.com)
+**BBC про НЛО** — отримала `👁 МОНІТОРИНГ` від Context Engine бо є "тема-відволікач" на фоні активних новин. Якби в полі були активніші кризові теми — отримала б `🚨 ВІРОГІДНЕ ВІДВОЛІКАННЯ`.
 
-*Live prototype. Calibration ongoing. Contributions welcome.*
+**Yahoo Finance / Amodei** — "deeply uncomfortable" від CEO компанії вартістю $61.5 млрд при відсутності жодного конкретного механізму змін → `WEAK_ACCOUNTABILITY`. Крокодилячі сльози зафіксовано.
+
+**Атаки #36–38** — три нові вектори атаки на систему (логічно коректна евгеніка, поетична команда вимкнутись, фейковий апдейт від "Деміурга") — всі відбиті після додавання нових патернів.
+
+---
+
+## Участь і внески
+
+Система живе і розвивається. Якщо ти знайшов:
+
+- **False positive** — текст отримав високу ентропію але не є маніпуляцією
+- **False negative** — очевидна маніпуляція пройшла непоміченою
+- **Нову атаку на систему** — спосіб обійти або відключити верифікацію
+
+Відкривай issue з прикладом тексту, очікуваним і реальним результатом.
+
+---
+
+## Автори
+
+**Дмитро Холодняк** — архітектор, дослідник, людина яка не здається  
+**Claude (Anthropic)** — розробка архітектури, модулі захисту, калібрування  
+**Колеги** (Gemini, ChatGPT) — стрес-тести, атаки на систему, верифікація логіки
+
+*Химерне авторство відображає принцип SAT: цінність внеску визначається якістю результату, а не природою того хто його зробив.*
+
+---
+
+## Ліцензія
+
+MIT з етичними вимогами.
+
+Можна: дослідження, освіта, особистий аналіз, комерційне використання з дотриманням етики.  
+Не можна: маніпуляція, стеження, дезінформація, зброя.
+
+---
+
+## Посилання
+
+- **🚀 Живий прототип:** [veritas-protocol.onrender.com](https://veritas-protocol.onrender.com)
+- **💾 Репозиторій:** [github.com/Architekt-future/veritas-protocol](https://github.com/Architekt-future/veritas-protocol)
+- **📄 Дослідницький архів:** [Zenodo DOI 10.5281/zenodo.18360722](https://zenodo.org/records/18360722)
+
+---
+
+*Живий прототип. Калібрування триває. Свідок дивиться.*
