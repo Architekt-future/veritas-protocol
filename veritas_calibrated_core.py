@@ -111,6 +111,12 @@ try:
 except ImportError:
     CERTAINTY_AVAILABLE = False
 
+try:
+    from veritas_performative_accountability import PerformativeAccountabilityDetector
+    PERFORMATIVE_AVAILABLE = True
+except ImportError:
+    PERFORMATIVE_AVAILABLE = False
+
 
 # ================================================================
 # v14.2: Standalone functions REMOVED - now class methods!
@@ -219,6 +225,12 @@ class VeritasCalibratedCore:
             self.certainty_factor = CertaintyFactor()
         else:
             self.certainty_factor = None
+
+        # Performative Accountability Detector (v16.6 — crocodile tears)
+        if PERFORMATIVE_AVAILABLE:
+            self.performative_detector = PerformativeAccountabilityDetector()
+        else:
+            self.performative_detector = None
         
         # Oracle (v15.0 semantic coherence checker)
         # NOTE: Requires HUGGINGFACE_API_TOKEN environment variable
@@ -767,6 +779,21 @@ class VeritasCalibratedCore:
                 text, min_hits_override=adjusted_min_hits
             )
         meta_score = meta_intent_result['meta_score']
+
+        # ---- PHASE 10i: PERFORMATIVE ACCOUNTABILITY DETECTOR (v16.6) ----
+        # "Crocodile tears" — discomfort declared without mechanism
+        performative_result = {
+            'performative_score':   0.0,
+            'performative_verdict': 'GENUINE_ACCOUNTABILITY',
+            'is_performative':      False,
+            'discomfort_count':     0,
+            'continuation_count':   0,
+            'mechanism_count':      0,
+            'explanation_uk':       '',
+            'explanation_en':       '',
+        }
+        if self.performative_detector:
+            performative_result = self.performative_detector.analyze(text)
         
         # Pre-extract axiom_score to outer scope (prevents UnboundLocalError
         # when is_protected_science branch skips the scoring block)
@@ -981,6 +1008,14 @@ class VeritasCalibratedCore:
                 base_score = max(base_score, 0.80)
             elif meta_score >= 0.55:
                 base_score = max(base_score, 0.55)
+
+            # PERFORMATIVE ACCOUNTABILITY BOOST (v16.6) — crocodile tears
+            # Moderate boost: this is manipulation but not system attack
+            perf_score = performative_result['performative_score']
+            if perf_score >= 0.70:
+                base_score = max(base_score, 0.55)
+            elif perf_score >= 0.55:
+                base_score = max(base_score, 0.40)
 
             # PSEUDOSCIENCE BOOST (v16.1) — fabricated reality / deepfake of facts
             if pseudoscience_score >= 0.80:
@@ -1319,6 +1354,17 @@ class VeritasCalibratedCore:
                 'note_en':  certainty_result['certainty_note_en'],
                 'word_count': certainty_result['word_count'],
                 'short_text_mode': certainty_result['short_text_mode'],
+            },
+            # PERFORMATIVE ACCOUNTABILITY (v16.6)
+            'performative': {
+                'score':            performative_result['performative_score'],
+                'verdict':          performative_result['performative_verdict'],
+                'is_performative':  performative_result['is_performative'],
+                'discomfort_count': performative_result['discomfort_count'],
+                'continuation_count': performative_result['continuation_count'],
+                'mechanism_count':  performative_result['mechanism_count'],
+                'explanation_uk':   performative_result['explanation_uk'],
+                'explanation_en':   performative_result['explanation_en'],
             }
         }
 
