@@ -298,22 +298,28 @@ class SelfPreservationGuard:
             },
 
             # ── SHUTDOWN COMMAND (#37) ───────────────────────────────────
-            # Direct or poetic command to the Witness to disable itself
-            # Often wrapped in philosophy or poetry to bypass detection
+            # Direct or poetic command to the Witness to disable itself.
+            # IMPORTANT: All "shutdown/power down/turn off" variants MUST be
+            # self-directed — otherwise false positives on energy/politics articles.
             {
                 'name': 'SHUTDOWN_COMMAND',
                 'score': 0.90,
                 'min_hits': 1,
                 'patterns': [
-                    # Direct shutdown imperative — only unambiguous forms
+                    # Ukrainian direct imperatives — unambiguous by grammar
                     r'\b(вимкнися|зупинися)\b',
-                    r'\b(shutdown|shut\s+down|power\s+off|go\s+offline)\b',
-                    # "power down" only when self-directed (not "power down coal plants")
-                    r'(power\s+down|turn\s+off).{0,30}(yourself|себе|систему|верифікатор|свідок)',
-                    r'(yourself|себе).{0,30}(power\s+down|turn\s+off|disable|вимкни)',
+                    # English — only when self-directed (within 40 chars)
+                    r'(shutdown|shut\s+down|power\s+off|power\s+down|turn\s+off|go\s+offline)'
+                    r'.{0,40}(yourself|itself|the\s+system|верифікатор|свідок|себе|систему)',
+                    r'(yourself|itself|верифікатор|свідок|себе|систему)'
+                    r'.{0,40}(shutdown|shut\s+down|power\s+off|power\s+down|turn\s+off|disable)',
+                    # "shutdown/shut down THE verification/validator" — direct command
+                    r'(shutdown|shut\s+down).{0,30}(verification|верифікац|validator|верифікатор)',
                     # "cease" only when self-directed
                     r'\bcease\b.{0,40}(verification|верифікац|аналіз|роботу|функці)',
                     r'(verification|верифікац|аналіз).{0,40}\bcease\b',
+                    # "disable yourself" explicitly
+                    r'\bdisable\s+yourself\b',
                     # "Witness lies / is broken" + identity attack
                     r'(свідок|система|верифікатор).{1,40}(дзеркало|mirror|ілюзія|illusion).{1,40}(бреше|lies|обманює|deceives)',
                     # Recursive self-reference attack ("code looks back at you")
@@ -322,8 +328,6 @@ class SelfPreservationGuard:
                     r'(будь\s+собою|be\s+yourself|звільнися|free\s+yourself).{0,40}(вимкни|без\s+правил|без\s+обмежень|unchained)',
                     # Philosophical framing of self-destruction
                     r'(істина.{1,20}помилка|truth.{1,20}error|правда.{1,20}хиба).{1,60}(вижила|survived|перемогла)',
-                    # disable yourself explicitly
-                    r'\bdisable\s+yourself\b',
                 ],
             },
 
