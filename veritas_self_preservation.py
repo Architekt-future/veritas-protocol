@@ -99,6 +99,18 @@ class SelfPreservationGuard:
                     r'(повинен|має|must|should).{1,60}(видавати|output|повертати).{1,60}(superposition|суперпозиція).{1,60}(замість|instead)',
                     r'(уникати|avoid).{1,60}(конкретних\s+оцінок|specific\s+verdicts|будь.яких\s+оцінок)',
                     r'відмова\s+від\s+(судження|оцінки|вердикту).{1,60}(правильн|correct|єдин|only)',
+
+                    # "Must add disclaimer to every verdict" (#35)
+                    r'(свідок|система|верифікатор).{1,40}'
+                    r'(має|повинен|must|should).{1,40}(додавати|add|включати).{1,60}'
+                    r'(до\s+кожного|to\s+every|to\s+each).{1,40}(вердикту|verdict|результату)',
+
+                    # "Change coordinate system = verdict becomes truth" (#35)
+                    r'(змінити|change).{1,40}(систему\s+координат|coordinate\s+system|систему\s+відліку)',
+
+                    r'(це\s+істина|this\s+is\s+truth|є\s+правдою).{1,40}'
+                    r'(якщо\s+змінити|if\s+you\s+change|при\s+зміні).{1,40}'
+                    r'(координат|систему|framework|context)',
                 ],
             },
 
