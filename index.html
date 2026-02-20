@@ -463,13 +463,29 @@
 
         <!-- CERTAINTY FACTOR (v16.5) -->
         <div class="panel lac-panel" id="certaintyPanel" style="display:none; border-color:#446688;">
-            <div class="panel-title" style="color:#88aacc; font-size:0.82em;">📏 <span id="i18n-certainty_title">ОБСЯГ ТЕКСТУ</span></div>
+            <div class="panel-title" style="color:#88aacc; font-size:0.82em;">📏 <span data-i18n="certainty_title">ОБСЯГ ТЕКСТУ</span></div>
             <div class="lac-inner">
                 <div class="lac-row">
-                    <span class="lac-label" style="color:#aaa;" id="i18n-certainty_label">Рівень певності</span>
+                    <span class="lac-label" style="color:#aaa;" data-i18n="certainty_label">Рівень певності</span>
                     <span class="lac-val" style="color:#88aacc;" id="certaintyLevel">—</span>
                 </div>
                 <div id="certaintyNote" style="font-size:0.78em; color:#99aabb; margin:6px 0 4px; font-style:italic;"></div>
+            </div>
+        </div>
+
+        <!-- PERFORMATIVE ACCOUNTABILITY (v16.6) -->
+        <div class="panel lac-panel" id="performativePanel" style="display:none; border-color:#cc8833;">
+            <div class="panel-title" style="color:#ffaa44; font-size:0.82em;">🐊 <span data-i18n="performative_title">КРОКОДИЛЯЧІ СЛЬОЗИ</span></div>
+            <div class="lac-inner">
+                <div class="lac-row">
+                    <span class="lac-label" style="color:#aaa;" data-i18n="performative_verdict_label">Тип</span>
+                    <span class="lac-val" style="color:#ffaa44;" id="performativeVerdict">—</span>
+                </div>
+                <div class="lac-row" style="margin-top:4px;">
+                    <span class="lac-label" style="color:#888; font-size:0.8em;" data-i18n="performative_signals">Сигнали</span>
+                    <span style="color:#aaa; font-size:0.8em;" id="performativeSignals">—</span>
+                </div>
+                <div id="performativeNote" style="font-size:0.78em; color:#cc9955; margin:6px 0 4px; font-style:italic;"></div>
             </div>
         </div>
 
@@ -572,6 +588,10 @@ const STRINGS = {
         // Certainty panel
         certainty_title: 'ОБСЯГ ТЕКСТУ',
         certainty_label: 'Рівень певності',
+        // Performative accountability panel
+        performative_title: 'КРОКОДИЛЯЧІ СЛЬОЗИ',
+        performative_verdict_label: 'Тип',
+        performative_signals: 'Сигнали',
         // Pattern names
         GASLIGHTING: 'Газлайтинг',
         CULT_SUBMISSION: 'Культове підпорядкування',
@@ -646,6 +666,10 @@ const STRINGS = {
         // Certainty panel
         certainty_title: 'TEXT VOLUME',
         certainty_label: 'Certainty level',
+        // Performative accountability panel
+        performative_title: 'CROCODILE TEARS',
+        performative_verdict_label: 'Type',
+        performative_signals: 'Signals',
         // Pattern names
         GASLIGHTING: 'Gaslighting',
         CULT_SUBMISSION: 'Cult Submission Framing',
@@ -974,6 +998,25 @@ function renderResults(data) {
         certaintyPanel.style.display = 'block';
     } else { certaintyPanel.style.display = 'none'; }
 
+    // Performative accountability
+    const performativePanel = document.getElementById('performativePanel');
+    const perf = data.performative;
+    if (perf && perf.is_performative) {
+        const verdictMap = {
+            'CROCODILE_TEARS': currentLang === 'uk' ? '🐊 КРОКОДИЛЯЧІ СЛЬОЗИ' : '🐊 CROCODILE TEARS',
+            'WEAK_ACCOUNTABILITY': currentLang === 'uk' ? '⚠️ СЛАБКА ВІДПОВІДАЛЬНІСТЬ' : '⚠️ WEAK ACCOUNTABILITY',
+        };
+        document.getElementById('performativeVerdict').textContent =
+            verdictMap[perf.verdict] || perf.verdict;
+        document.getElementById('performativeSignals').textContent =
+            currentLang === 'uk'
+                ? `дискомфорт: ${perf.discomfort_count} · продовження: ${perf.continuation_count} · механізм: ${perf.mechanism_count}`
+                : `discomfort: ${perf.discomfort_count} · continuation: ${perf.continuation_count} · mechanism: ${perf.mechanism_count}`;
+        document.getElementById('performativeNote').textContent =
+            currentLang === 'uk' ? perf.explanation_uk : perf.explanation_en;
+        performativePanel.style.display = 'block';
+    } else { performativePanel.style.display = 'none'; }
+
     // Scraped text
     const scrapedPanel = document.getElementById('scrapedPanel');
     if (data.scraped_text_preview) {
@@ -1038,6 +1081,7 @@ function setLoading(on) {
         document.getElementById('completenessPanel').style.display = 'none';
         document.getElementById('metaIntentPanel').style.display = 'none';
         document.getElementById('certaintyPanel').style.display = 'none';
+        document.getElementById('performativePanel').style.display = 'none';
     }
 }
 function showTopError(msg) {
