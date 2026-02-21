@@ -195,7 +195,7 @@ if __name__ == '__main__':
 @app.route('/api/oracle', methods=['POST'])
 def oracle():
     """
-    Oracle endpoint (v16.7)
+    Witness endpoint (v16.7)
     Приймає diagnostics від Свідка, формує промпт, питає Claude.
     Вимагає ANTHROPIC_API_KEY в environment.
     """
@@ -203,12 +203,12 @@ def oracle():
 
     api_key = os.environ.get('ANTHROPIC_API_KEY', '')
     if not api_key:
-        return jsonify({'error': 'ANTHROPIC_API_KEY not set', 'oracle_available': False}), 503
+        return jsonify({'error': 'ANTHROPIC_API_KEY not configured', 'witness_available': False}), 503
 
     try:
         import anthropic
     except ImportError:
-        return jsonify({'error': 'anthropic package not installed', 'oracle_available': False}), 503
+        return jsonify({'error': 'anthropic package not installed', 'witness_available': False}), 503
 
     try:
         data = request.get_json() or {}
@@ -265,11 +265,11 @@ def oracle():
             messages=[{"role": "user", "content": prompt}]
         )
 
-        oracle_text = message.content[0].text if message.content else "Оракул мовчить."
+        witness_text = message.content[0].text if message.content else "Свідок мовчить."
 
         return jsonify({
-            'oracle_text':      oracle_text,
-            'oracle_available': True,
+            'witness_text':      witness_text,
+            'witness_available': True,
             'model':            'claude-haiku-4-5-20251001',
         })
 
@@ -277,4 +277,4 @@ def oracle():
         import traceback
         print(f"Oracle error: {str(e)}")
         traceback.print_exc()
-        return jsonify({'error': str(e), 'oracle_available': False}), 500
+        return jsonify({'error': str(e), 'witness_available': False}), 500
