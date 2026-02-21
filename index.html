@@ -864,8 +864,6 @@ async function analyze() {
 
     btn.disabled = true;
     document.getElementById('i18n-btn_analyze').textContent = t('analyzing');
-    window._lastVeritasResult = data;
-        revealResults();
     setLoading(true);
 
     try {
@@ -880,8 +878,10 @@ async function analyze() {
         catch { throw new Error(`Bad JSON: ${rawText.slice(0,200)}`); }
         if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
 
+        window._lastVeritasResult = data;
         setLoading(false);
         renderResults(data);
+        revealResults();
     } catch (err) {
         setLoading(false);
         showTopError(err.message);
