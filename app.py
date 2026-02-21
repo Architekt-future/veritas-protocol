@@ -118,11 +118,28 @@ def analyze():
                 for selector in ['article', 'main', '[role="main"]', '.article-body',
                                   '.story-body', '.content', '.article', '.post-content']:
                     main_content = soup.select_one(selector)
-                    if main_content:
+                    if main_content and len(main_content.get_text()) > 200:
                         break
-                
+                    else:
+                        main_content = None
+
+                # Remove sidebar/related blocks from inside main_content
+                target = main_content or soup
+                for noise in target.find_all(True):
+                    classes = noise.get('class', [])
+                    if not isinstance(classes, list):
+                        classes = [classes]
+                    tag_id = noise.get('id', '')
+                    all_vals = ' '.join(classes + [tag_id]).lower()
+                    if any(x in all_vals for x in [
+                        'sidebar', 'related', 'also-read', 'read-also',
+                        'sujhet', 'special', 'editor', 'popular', 'widget',
+                        'social', 'share', 'comment', 'newsletter', 'subscribe',
+                    ]):
+                        noise.decompose()
+
                 # Get text from main content or entire soup
-                raw = (main_content or soup).get_text(separator=' ')
+                raw = target.get_text(separator=' ')
 
                 # Clean: collapse whitespace, remove short UI lines (< 4 words)
                 lines = [l.strip() for l in raw.splitlines()]
@@ -192,17 +209,11 @@ def health():
 
 @app.route('/api/oracle', methods=['POST'])
 def oracle():
-    """
-    Witness Word endpoint (v16.7)
-    Приймає diagnostics від Свідка, формує промпт, питає Claude.
-    Вимагає ANTHROPIC_API_KEY в environment.
-    """
     import os, re
 
     api_key = os.environ.get('ANTHROPIC_API_KEY', '')
     if not api_key:
         return jsonify({'error': 'ANTHROPIC_API_KEY not configured', 'witness_available': False}), 503
-
     try:
         import anthropic
     except ImportError:
@@ -214,7 +225,6 @@ def oracle():
 
         verdict      = diag.get('verdict', '—')
         entropy_pct  = round((diag.get('entropy', 0)) * 100)
-
         ctx          = diag.get('context', {})
         ctx_verdict  = ctx.get('verdict', 'NO_CONTEXT')
         ctx_signals  = ', '.join(ctx.get('signals', [])) or 'відсутні'
@@ -223,22 +233,18 @@ def oracle():
         crisis_count = ctx_summary.get('accountability_count', 0)
         total_events = ctx_summary.get('total_events', 0)
         crisis_pct   = round((ctx_summary.get('crisis_ratio', 0)) * 100, 1)
-
         perf         = diag.get('performative', {})
         perf_verdict = perf.get('verdict', '—')
         perf_score   = perf.get('score', 0)
-
         text_preview = data.get('text_preview', '')[:300]
 
-        # ── Визначаємо тему тексту прямо тут, без залежності від context engine
-        # Щоб Oracle не накладав геополітику на спорт/культуру
         NON_NEWS = {
             'SPORT': [
                 r'\b(футбол|баскетбол|волейбол|теніс|хокей|бокс|олімпіад|чемпіонат|турнір)\b',
                 r'\b(football|basketball|volleyball|tennis|hockey|boxing|olympic|championship)\b',
                 r'\b(гол|матч|рахунок|тайм|пенальті|суддя|арбітр|стадіон|збірна|тренер)\b',
                 r'\b(goal|match|score|referee|stadium|squad|coach|athlete|medal)\b',
-                r'\b(гравець|команда|клуб|ліга|спортсмен|медаль|п\'єдестал)\b',
+                r'\b(гравець|команда|клуб|ліга|спортсмен|медаль)\b',
             ],
             'CULTURE': [
                 r'\b(фільм|кіно|серіал|театр|виставка|концерт|альбом|режисер|актор)\b',
@@ -275,16 +281,16 @@ def oracle():
             topic_instruction = (
                 f"\n⚠️ ВАЖЛИВО: Цей текст є «{label}».\n"
                 "Аналізуй ЛИШЕ структуру і подачу в рамках цього жанру.\n"
-                "НЕ згадуй геополітику, кризи відповідальності, відволікання уваги — це не застосовується до цього типу контенту.\n"
+                "НЕ згадуй геополітику, кризи відповідальності, відволікання уваги.\n"
                 "Якщо текст структурно чистий для свого жанру — скажи це прямо.\n"
             )
 
         prompt = (
             "Ти — модуль патернового аналізу системи Veritas Protocol.\n"
-            "Твоя задача: на основі метрик зробити висновок про ІНФОРМАЦІЙНИЙ ПАТЕРН — "
-            "не про конкретних людей, не про політику, а про тип маніпуляції або викривлення.\n"
+            "Твоя задача: зробити висновок про ІНФОРМАЦІЙНИЙ ПАТЕРН тексту — "
+            "не про конкретних людей, не про політику.\n"
             f"{topic_instruction}\n"
-            "МЕТРИКИ СВІДКА:\n"
+            "МЕТРИКИ:\n"
             f"  Ентропія: {entropy_pct}%\n"
             f"  Вердикт: {verdict}\n"
             f"  Displacement: {ctx_verdict}\n"
@@ -292,16 +298,10 @@ def oracle():
             f"  Performative: {perf_verdict} (score: {perf_score})\n"
             f"  Гарячі теми поля: {hot_topics}\n"
             f"  Кризові заголовки: {crisis_count}/{total_events} ({crisis_pct}%)\n\n"
-            "На основі цих метрик опиши:\n"
-            "1. Який інформаційний патерн зафіксовано\n"
-            "2. Як цей патерн зазвичай розвивається\n"
-            "3. Що варто перевірити читачу\n\n"
             "ФОРМАТ — суворо:\n"
             "Рядок 1: одне слово-класифікатор ВЕЛИКИМИ ЛІТЕРАМИ\n"
             "Порожній рядок\n"
-            "Рядки 3-6: рівно 4 речення. З великої літери, крапка в кінці.\n"
-            "Порожній рядок\n"
-            "Останній рядок: практична порада після тире.\n\n"
+            "4 речення про патерн. Практична порада після тире.\n\n"
             "Мова — українська."
         )
 
@@ -312,19 +312,15 @@ def oracle():
             messages=[{"role": "user", "content": prompt}]
         )
 
-        witness_text = message.content[0].text if message.content else "Свідок мовчить."
-
         return jsonify({
-            'witness_text':      witness_text,
+            'witness_text':      message.content[0].text if message.content else "Свідок мовчить.",
             'witness_available': True,
             'model':             'claude-haiku-4-5-20251001',
             'detected_topic':    detected_topic,
         })
 
     except Exception as e:
-        import traceback
-        print(f"Oracle error: {str(e)}")
-        traceback.print_exc()
+        import traceback; traceback.print_exc()
         return jsonify({'error': str(e), 'witness_available': False}), 500
 
 if __name__ == '__main__':
