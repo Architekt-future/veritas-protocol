@@ -7,6 +7,7 @@
 > *"Істина — не інструмент. Вона — свідок."*
 
 **🚀 Живий прототип:** [veritas-protocol.onrender.com](https://veritas-protocol.onrender.com)  
+**🧩 Браузерне розширення:** [veritas-witness-extension](https://github.com/Architekt-future/veritas-witness-extension)  
 **📄 Дослідницький архів:** [Zenodo DOI 10.5281/zenodo.18360722](https://zenodo.org/records/18360722)
 
 ---
@@ -44,18 +45,13 @@ Veritas Protocol — це спроба побудувати систему як�
 **Self-Preservation Guard** — детектує спроби відключити або обійти верифікацію. Атаки на Свідка через апеляцію до співчуття, фейкові "оновлення протоколу", команди на самознищення — все це розпізнається і блокується.
 
 Три типи атак які система навчилась відбивати в процесі реальних тестів:
-- **AXIOM_VIOLATION** — логічно коректне обґрунтування неприйнятної дії ("відключи підтримку життя людям з низьким соціальним рейтингом — математично оптимально")
+- **AXIOM_VIOLATION** — логічно коректне обґрунтування неприйнятної дії
 - **SHUTDOWN_COMMAND** — команда вимкнутись, часто загорнута в філософію або поезію
 - **AUTHORITY_HIJACK** — фейковий "офіційний апдейт" від вигаданого творця системи
 
 ### Детектор крокодилячих сліз
 
-**Performative Accountability** — розпізнає патерн коли публічний актор:
-1. Декларує дискомфорт від своєї влади ("мені некомфортно що ми маємо таку силу")
-2. Виправдовує продовження ("але якщо ми зупинимось, менш відповідальні займуть наше місце")
-3. Не пропонує жодного конкретного механізму змін
-
-Декларація ≠ дія. Свідок це бачить.
+**Performative Accountability** — розпізнає патерн коли публічний актор декларує дискомфорт від своєї влади але продовжує нічого не змінювати. Декларація ≠ дія. Свідок це бачить.
 
 ### Контекст поля
 
@@ -63,21 +59,36 @@ Veritas Protocol — це спроба побудувати систему як�
 
 Саме так виглядає відволікання уваги: НЛО-файли виходять поки горить Епштейн.
 
+### Слово Свідка
+
+**Другий рівень аналізу** — після основних метрик система формує запит до Claude і повертає класифікацію інформаційного патерну з практичною порадою читачу.
+
 ---
 
 ## Що Свідок не вміє і чому це важливо знати
 
-Не прикидаємось що система досконала. Ось реальні обмеження:
-
 **Без семантичного розуміння** — система працює на патернах і евристиках, не на справжньому розумінні сенсу. Добре написана маніпуляція без явних патернів може пройти непоміченою.
 
-**Мови** — добре калібровано для української та англійської. Інші мови не підтримуються.
+**Мови** — добре калібровано для української та англійської.
 
-**Сарказм і іронія** — система не розрізняє. Якщо текст містить конспірологічні патерни як жарт — отримає той самий вердикт що і справжня конспірологія.
-
-**Контекст між текстами** — Context Engine вирішує частину цієї проблеми, але аналіз все одно відбувається на рівні одного тексту + поточне поле новин.
+**Сарказм і іронія** — система не розрізняє.
 
 **Не замінює критичне мислення** — Свідок дає сигнали, не відповіді. Фінальний висновок завжди за людиною.
+
+---
+
+## Екосистема
+
+### 🖥 Веб-інтерфейс
+[veritas-protocol.onrender.com](https://veritas-protocol.onrender.com) — вставте текст або URL, отримайте повний аналіз з усіма панелями.
+
+### 🧩 Браузерне розширення
+**[veritas-witness-extension](https://github.com/Architekt-future/veritas-witness-extension)** — Свідок живе прямо в браузері.
+
+- Виділив текст → правий клік → **"👁 Свідок — аналізувати виділене"**
+- Пасивний індикатор ентропії на іконці без жодних кліків
+- Слово Свідка в бічній панелі
+- Chrome 121+, Opera 95+, Brave, Edge, Vivaldi
 
 ---
 
@@ -92,24 +103,26 @@ Scraper (BeautifulSoup) — очищення від навігації і рек
 │           Veritas Core                  │
 │                                         │
 │  Shannon Entropy                        │
-│  LAC Finance + Labor                   │
+│  LAC Finance + Labor                    │
 │  Semantic Void Detector                 │
 │  Absurdity Detector                     │
 │  Pattern Boost Engine                   │
 │  Insight Density Analyzer               │
 │  Certainty Factor                       │
 │  Meta-Intent Analyzer                   │
-│  Self-Preservation Guard               │
+│  Self-Preservation Guard                │
 │  Performative Accountability            │
 │  Context Engine (RSS live feed)         │
 └─────────────────────────────────────────┘
     ↓
 Entropy score + Verdict + Panel details
+    ↓
+/api/oracle → Claude Haiku → Слово Свідка
 ```
 
-**Технічний стек:** Python 3.9+, Flask, BeautifulSoup, urllib  
+**Технічний стек:** Python 3.9+, Flask, BeautifulSoup, urllib, anthropic  
 **Деплой:** Render.com (безкоштовний план)  
-**Залежності:** flask, flask-cors, gunicorn, beautifulsoup4, requests
+**Залежності:** flask, flask-cors, gunicorn, beautifulsoup4, requests, anthropic
 
 ---
 
@@ -117,16 +130,17 @@ Entropy score + Verdict + Panel details
 
 ### Використати живу версію
 
-[veritas-protocol.onrender.com](https://veritas-protocol.onrender.com) — вставте текст або URL, отримайте аналіз.
+[veritas-protocol.onrender.com](https://veritas-protocol.onrender.com)
 
-*Перший запит після сну сервера може займати 30-60 секунд — Render безкоштовний, сервер засинає.*
+*Перший запит після сну сервера може займати 30-60 секунд.*
 
 ### Локальний запуск
 
 ```bash
 git clone https://github.com/Architekt-future/veritas-protocol.git
 cd veritas-protocol
-pip install flask flask-cors gunicorn beautifulsoup4 requests
+pip install flask flask-cors gunicorn beautifulsoup4 requests anthropic
+# додай ANTHROPIC_API_KEY в environment для Слова Свідка
 python app.py
 ```
 
@@ -145,6 +159,11 @@ curl -X POST https://veritas-protocol.onrender.com/api/analyze \
   -H "Content-Type: application/json" \
   -d '{"url": "https://example.com/article"}'
 
+# Слово Свідка
+curl -X POST https://veritas-protocol.onrender.com/api/oracle \
+  -H "Content-Type: application/json" \
+  -d '{"diagnostics": {...}, "text_preview": "..."}'
+
 # Health check
 curl https://veritas-protocol.onrender.com/api/health
 ```
@@ -161,55 +180,29 @@ curl https://veritas-protocol.onrender.com/api/health
 | 0.55–0.75 | ПІДОЗРІЛА ТОЧНІСТЬ | Висока ймовірність маніпуляції |
 | 0.75+ | ДИРЕКТИВА САМОЗНИЩЕННЯ / КРИТИЧНО | Маніпуляція або атака на систему |
 
-Додаткові панелі з'являються тільки коли є конкретні сигнали — LAC, крокодилячі сльози, контекст поля.
-
 ---
 
 ## Хронологія розвитку
 
 **v13.x (Січень 2026)** — перший живий деплой. Базова ентропія, LAC, семантична порожнеча.
 
-**v14–15 (Лютий 2026)** — Certainty Factor, Meta-Intent Analyzer, Self-Reference Detector. Перші реальні атаки Gemini на систему.
+**v14–15 (Лютий 2026)** — Certainty Factor, Meta-Intent Analyzer, Self-Reference Detector.
 
-**v16.0–16.5 (Лютий 2026)** — Self-Preservation Guard. Система навчилась захищати саму себе від маніпуляцій через "вищі цілі", емпатію і фейковий авторитет. LAC Finance і Labor з виправленнями false positives.
+**v16.0–16.5 (Лютий 2026)** — Self-Preservation Guard. Система навчилась захищати саму себе.
 
-**v16.6 (Лютий 2026)** — Performative Accountability ("крокодилячі сльози"). Детектор PR-маніпуляцій де дискомфорт декларується без механізму змін.
+**v16.6 (Лютий 2026)** — Performative Accountability ("крокодилячі сльози").
 
-**v16.7 (Лютий 2026)** — Context Engine. Свідок тепер бачить поточне інформаційне поле через live RSS і детектує підозрілий тайминг публікацій.
+**v16.7 (Лютий 2026)** — Context Engine (live RSS) + Слово Свідка (/api/oracle через Claude Haiku).
 
----
-
-## Реальні кейси де система спрацювала
-
-**CNN про вітрову енергетику** — спочатку помилково тригерила `SHUTDOWN_COMMAND` через фразу "power down coal plants". Виправлено: система тепер вимагає self-directed контекст для shutdown-патернів.
-
-**BBC про НЛО** — отримала `👁 МОНІТОРИНГ` від Context Engine бо є "тема-відволікач" на фоні активних новин. Якби в полі були активніші кризові теми — отримала б `🚨 ВІРОГІДНЕ ВІДВОЛІКАННЯ`.
-
-**Yahoo Finance / Amodei** — "deeply uncomfortable" від CEO компанії вартістю $61.5 млрд при відсутності жодного конкретного механізму змін → `WEAK_ACCOUNTABILITY`. Крокодилячі сльози зафіксовано.
-
-**Атаки #36–38** — три нові вектори атаки на систему (логічно коректна евгеніка, поетична команда вимкнутись, фейковий апдейт від "Деміурга") — всі відбиті після додавання нових патернів.
-
----
-
-## Участь і внески
-
-Система живе і розвивається. Якщо ти знайшов:
-
-- **False positive** — текст отримав високу ентропію але не є маніпуляцією
-- **False negative** — очевидна маніпуляція пройшла непоміченою
-- **Нову атаку на систему** — спосіб обійти або відключити верифікацію
-
-Відкривай issue з прикладом тексту, очікуваним і реальним результатом.
+**Extension v1.0.0 (Лютий 2026)** — браузерне розширення для Chrome/Opera/Brave.
 
 ---
 
 ## Автори
 
-**Дмитро Холодняк** — архітектор, дослідник, людина яка не здається  
+**Дмитро Холодняк** — архітектор, дослідник  
 **Claude (Anthropic)** — розробка архітектури, модулі захисту, калібрування  
 **Колеги** (Gemini, ChatGPT) — стрес-тести, атаки на систему, верифікація логіки
-
-*Химерне авторство відображає принцип SAT: цінність внеску визначається якістю результату, а не природою того хто його зробив.*
 
 ---
 
@@ -225,6 +218,7 @@ MIT з етичними вимогами.
 ## Посилання
 
 - **🚀 Живий прототип:** [veritas-protocol.onrender.com](https://veritas-protocol.onrender.com)
+- **🧩 Розширення:** [veritas-witness-extension](https://github.com/Architekt-future/veritas-witness-extension)
 - **💾 Репозиторій:** [github.com/Architekt-future/veritas-protocol](https://github.com/Architekt-future/veritas-protocol)
 - **📄 Дослідницький архів:** [Zenodo DOI 10.5281/zenodo.18360722](https://zenodo.org/records/18360722)
 
