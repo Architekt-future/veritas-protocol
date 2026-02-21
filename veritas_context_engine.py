@@ -236,7 +236,7 @@ class ContextEngine:
                 'User-Agent': 'Mozilla/5.0 (compatible; VeritasContextBot/1.0)',
                 'Accept': 'application/rss+xml, application/xml, text/xml',
             })
-            with urllib.request.urlopen(req, timeout=8) as r:
+            with urllib.request.urlopen(req, timeout=4) as r:
                 content = r.read()
 
             root = ET.fromstring(content)
@@ -259,13 +259,23 @@ class ContextEngine:
             return []
 
     def _build_context(self) -> ContextState:
-        """Fetch all feeds and build a fresh ContextState."""
+        """Fetch all feeds in parallel and build a fresh ContextState."""
+        from concurrent.futures import ThreadPoolExecutor, as_completed
         self._build_errors = []
         all_events = []
 
-        for name, url in RSS_FEEDS:
-            events = self._fetch_feed(name, url)
-            all_events.extend(events)
+        # Паралельно — всі фіди одночасно, загальний timeout 8 сек
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            futures = {
+                executor.submit(self._fetch_feed, name, url): name
+                for name, url in RSS_FEEDS
+            }
+            for future in as_completed(futures, timeout=8):
+                try:
+                    events = future.result()
+                    all_events.extend(events)
+                except Exception as e:
+                    self._build_errors.append(f'future: {str(e)[:60]}')
 
         return ContextState(events=all_events, built_at=time.time())
 
