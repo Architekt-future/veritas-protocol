@@ -42,7 +42,7 @@ def home():
     except:
         return jsonify({
             'status': 'online',
-            'version': 'v13.3',
+            'version': 'v16.7',
             'message': 'Veritas Protocol API is running (index.html not found)',
             'features': {
                 'pattern_boost': engine.pattern_boost_engine is not None,
@@ -185,8 +185,92 @@ def analyze():
 def health():
     return jsonify({
         'status': 'healthy',
-        'version': 'v13.3'
+        'version': 'v16.7'
     })
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=10000, debug=False)
+
+
+@app.route('/api/oracle', methods=['POST'])
+def oracle():
+    """
+    Oracle endpoint (v16.7)
+    Приймає diagnostics від Свідка, формує промпт, питає Claude.
+    Вимагає ANTHROPIC_API_KEY в environment.
+    """
+    import os
+
+    api_key = os.environ.get('ANTHROPIC_API_KEY', '')
+    if not api_key:
+        return jsonify({'error': 'ANTHROPIC_API_KEY not set', 'oracle_available': False}), 503
+
+    try:
+        import anthropic
+    except ImportError:
+        return jsonify({'error': 'anthropic package not installed', 'oracle_available': False}), 503
+
+    try:
+        data = request.get_json() or {}
+        diag = data.get('diagnostics', {})
+
+        verdict      = diag.get('verdict', '—')
+        entropy_pct  = round((diag.get('entropy', 0)) * 100)
+        status       = diag.get('status', '—')
+
+        ctx          = diag.get('context', {})
+        ctx_verdict  = ctx.get('verdict', 'NO_CONTEXT')
+        ctx_signals  = ', '.join(ctx.get('signals', [])) or 'відсутні'
+        ctx_summary  = ctx.get('summary') or {}
+        hot_topics   = ', '.join(w for w, _ in ctx_summary.get('top_topics', [])[:6]) or 'невідомо'
+        crisis_count = ctx_summary.get('accountability_count', 0)
+        total_events = ctx_summary.get('total_events', 0)
+        crisis_pct   = round((ctx_summary.get('crisis_ratio', 0)) * 100, 1)
+
+        perf         = diag.get('performative', {})
+        perf_verdict = perf.get('verdict', '—')
+        perf_score   = perf.get('score', 0)
+
+        text_preview = data.get('text_preview', '')[:300]
+
+        prompt = (
+            "Ти — Оракул системи Veritas Protocol. Свідок щойно зафіксував:\n\n"
+            f"ВЕРДИКТ: {verdict}\n"
+            f"ЕНТРОПІЯ: {entropy_pct}%\n"
+            f"СТАТУС: {status}\n"
+            f"DISPLACEMENT: {ctx_verdict}\n"
+            f"СИГНАЛИ: {ctx_signals}\n"
+            f"PERFORMATIVE: {perf_verdict} (score: {perf_score})\n"
+            f"ГАРЯЧІ ТЕМИ ПОЛЯ: {hot_topics}\n"
+            f"КРИЗОВІ ЗАГОЛОВКИ: {crisis_count}/{total_events} ({crisis_pct}%)\n"
+            f"ТЕКСТ (уривок): \"{text_preview}\"\n\n"
+            "ФОРМАТ ВІДПОВІДІ — суворо дотримуйся:\n"
+            "Рядок 1: одне слово-вирок ВЕЛИКИМИ ЛІТЕРАМИ (без крапки)\n"
+            "Порожній рядок\n"
+            "Рядки 3-6: рівно 4 речення. Кожне — з великої літери, закінчується крапкою.\n"
+            "Аналізуй патерн і скажи до чого він веде в наступні 24-48 годин.\n"
+            "Порожній рядок\n"
+            "Останній рядок: одне коротке речення-підсумок після тире.\n\n"
+            "Говори прямо. Без дипломатії. Мова — українська. Обов'язково заверши всі речення."
+        )
+
+        client = anthropic.Anthropic(api_key=api_key)
+        message = client.messages.create(
+            model="claude-opus-4-6",
+            max_tokens=512,
+            messages=[{"role": "user", "content": prompt}]
+        )
+
+        oracle_text = message.content[0].text if message.content else "Оракул мовчить."
+
+        return jsonify({
+            'oracle_text':      oracle_text,
+            'oracle_available': True,
+            'model':            'claude-opus-4-6',
+        })
+
+    except Exception as e:
+        import traceback
+        print(f"Oracle error: {str(e)}")
+        traceback.print_exc()
+        return jsonify({'error': str(e), 'oracle_available': False}), 500
