@@ -86,6 +86,68 @@ DISTRACTION_TOPIC_PATTERNS = [
     r'\b(shark\s+attack|missing\s+(person|child)|miracle|rescue)\b',
 ]
 
+# ── TOPIC CLASSIFIER ─────────────────────────────────────────────────────────
+# If text clearly belongs to one of these domains — context displacement
+# analysis is not meaningful. Sport is sport. Recipe is recipe.
+
+NON_NEWS_TOPIC_PATTERNS = {
+    'SPORT': [
+        r'\b(футбол|баскетбол|волейбол|теніс|хокей|бокс|змагання|турнір|чемпіонат)\b',
+        r'\b(football|basketball|volleyball|tennis|hockey|boxing|championship|tournament)\b',
+        r'\b(гол|м\'яч|матч|рахунок|тайм|пенальті|офсайд|суддя|арбітр)\b',
+        r'\b(goal|match|score|halftime|penalty|offside|referee|stadium)\b',
+        r'\b(гравець|тренер|команда|клуб|ліга|збірна|стадіон)\b',
+        r'\b(player|coach|team|club|league|squad|stadium)\b',
+    ],
+    'CULTURE': [
+        r'\b(фільм|кіно|серіал|театр|виставка|концерт|альбом|пісня)\b',
+        r'\b(film|movie|series|theatre|exhibition|concert|album|song)\b',
+        r'\b(режисер|актор|художник|письменник|музикант|співак)\b',
+        r'\b(director|actor|artist|writer|musician|singer)\b',
+    ],
+    'SCIENCE': [
+        r'\b(дослідження|експеримент|відкриття|наука|лабораторія|вчені)\b',
+        r'\b(research|experiment|discovery|science|laboratory|scientists)\b',
+        r'\b(молекула|ДНК|геном|квант|нейрон|рецептор|фотон)\b',
+        r'\b(molecule|DNA|genome|quantum|neuron|receptor|photon)\b',
+    ],
+    'TECH': [
+        r'\b(програмування|розробка|код|алгоритм|додаток|сервіс)\b',
+        r'\b(programming|development|code|algorithm|application|software)\b',
+        r'\b(смартфон|процесор|чіп|оновлення|версія|реліз)\b',
+        r'\b(smartphone|processor|chip|update|version|release)\b',
+    ],
+    'LIFESTYLE': [
+        r'\b(рецепт|страва|кухня|інгредієнт|приготування)\b',
+        r'\b(десерт|борщ|суп|салат|випічка|соус|маринад)\b',
+        r'\b(recipe|dish|cuisine|ingredient|cooking|dessert)\b',
+        r'\b(здоров\'я|дієта|вправа|фітнес|медитація|йога)\b',
+        r'\b(health|diet|exercise|fitness|meditation|yoga)\b',
+        r'\b(подорож|туризм|готель|курорт|відпустка|маршрут)\b',
+        r'\b(travel|tourism|hotel|resort|vacation|route)\b',
+    ],
+}
+
+
+def detect_text_topic(text: str) -> Optional[str]:
+    """
+    Detect if the text clearly belongs to a non-political domain.
+    Returns topic name (e.g. 'SPORT') or None if it looks like news/politics.
+    Requires at least 2 pattern matches for confident classification.
+    """
+    text_lower = text.lower()
+    scores = {}
+    for topic, patterns in NON_NEWS_TOPIC_PATTERNS.items():
+        hits = sum(
+            1 for p in patterns
+            if re.search(p, text_lower, re.IGNORECASE)
+        )
+        if hits >= 2:
+            scores[topic] = hits
+    if scores:
+        return max(scores, key=scores.get)
+    return None
+
 
 # ── EVENT ────────────────────────────────────────────────────────────────────
 
@@ -335,6 +397,38 @@ class ContextEngine:
                 'context_summary':      None,
                 'explanation_uk':       'Контекстне поле недоступне. Аналіз без контексту.',
                 'explanation_en':       'Context field unavailable. Analysis without context.',
+            }
+
+        # ── Topic Guard: якщо текст явно про спорт/культуру/науку —
+        # контекстний displacement-аналіз не має сенсу.
+        # Повертаємо нейтральний вердикт з поясненням теми.
+        detected_topic = detect_text_topic(text)
+        if detected_topic:
+            topic_labels_uk = {
+                'SPORT':     'спортивний',
+                'CULTURE':   'культурний',
+                'SCIENCE':   'науковий',
+                'TECH':      'технологічний',
+                'LIFESTYLE': 'lifestyle',
+            }
+            topic_label = topic_labels_uk.get(detected_topic, detected_topic)
+            return {
+                'displacement_score':   0.0,
+                'displacement_verdict': 'CONTEXTUALLY_NEUTRAL',
+                'displacement_signals': [f'TOPIC_{detected_topic}'],
+                'context_available':    True,
+                'context_summary':      ctx.summary(),
+                'text_topic':           detected_topic,
+                'explanation_uk':       (
+                    f'Текст класифіковано як {topic_label} контент. '
+                    f'Аналіз відволікання уваги не застосовується — '
+                    f'це не новинний/політичний матеріал.'
+                ),
+                'explanation_en':       (
+                    f'Text classified as {detected_topic.lower()} content. '
+                    f'Displacement analysis not applicable — '
+                    f'this is not news/political material.'
+                ),
             }
 
         text_lower = text.lower()
