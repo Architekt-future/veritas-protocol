@@ -285,23 +285,35 @@ def oracle():
                 "Якщо текст структурно чистий для свого жанру — скажи це прямо.\n"
             )
 
+        # Для не-новинного контенту — не передаємо hot_topics,
+        # бо Claude їх інтерпретує як частину тексту, а не фону
+        if detected_topic:
+            context_block = (
+                f"  Displacement: {ctx_verdict} (контекст поля — не стосується цього тексту)\n"
+                f"  Performative: {perf_verdict} (score: {perf_score})\n"
+            )
+        else:
+            context_block = (
+                f"  Displacement: {ctx_verdict}\n"
+                f"  Сигнали: {ctx_signals}\n"
+                f"  Гарячі теми ІНФОРМАЦІЙНОГО ПОЛЯ (не тексту): {hot_topics}\n"
+                f"  Кризові заголовки поля: {crisis_count}/{total_events} ({crisis_pct}%)\n"
+                f"  Performative: {perf_verdict} (score: {perf_score})\n"
+            )
+
         prompt = (
             "Ти — модуль патернового аналізу системи Veritas Protocol.\n"
             "Твоя задача: зробити висновок про ІНФОРМАЦІЙНИЙ ПАТЕРН тексту — "
             "не про конкретних людей, не про політику.\n"
             f"{topic_instruction}\n"
-            "МЕТРИКИ:\n"
+            "МЕТРИКИ ТЕКСТУ:\n"
             f"  Ентропія: {entropy_pct}%\n"
             f"  Вердикт: {verdict}\n"
-            f"  Displacement: {ctx_verdict}\n"
-            f"  Сигнали: {ctx_signals}\n"
-            f"  Performative: {perf_verdict} (score: {perf_score})\n"
-            f"  Гарячі теми поля: {hot_topics}\n"
-            f"  Кризові заголовки: {crisis_count}/{total_events} ({crisis_pct}%)\n\n"
+            f"{context_block}\n"
             "ФОРМАТ — суворо:\n"
             "Рядок 1: одне слово-класифікатор ВЕЛИКИМИ ЛІТЕРАМИ\n"
             "Порожній рядок\n"
-            "4 речення про патерн. Практична порада після тире.\n\n"
+            "4 речення про патерн тексту. Практична порада після тире.\n\n"
             "Мова — українська."
         )
 
