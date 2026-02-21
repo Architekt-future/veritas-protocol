@@ -256,7 +256,7 @@ def oracle():
 
         client = anthropic.Anthropic(api_key=api_key)
         message = client.messages.create(
-            model="claude-opus-4-6",
+            model="claude-haiku-4-5-20251001",
             max_tokens=512,
             messages=[{"role": "user", "content": prompt}]
         )
@@ -266,7 +266,7 @@ def oracle():
         return jsonify({
             'oracle_text':      oracle_text,
             'oracle_available': True,
-            'model':            'claude-opus-4-6',
+            'model':            'claude-haiku-4-5-20251001',
         })
 
     except Exception as e:
