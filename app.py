@@ -42,7 +42,7 @@ def home():
     except:
         return jsonify({
             'status': 'online',
-            'version': 'v16.7',
+            'version': 'v13.3',
             'message': 'Veritas Protocol API is running (index.html not found)',
             'features': {
                 'pattern_boost': engine.pattern_boost_engine is not None,
@@ -185,21 +185,19 @@ def analyze():
 def health():
     return jsonify({
         'status': 'healthy',
-        'version': 'v16.7'
+        'version': 'v13.3'
     })
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=10000, debug=False)
 
 
 @app.route('/api/oracle', methods=['POST'])
 def oracle():
     """
-    Witness endpoint (v16.7)
+    Witness Word endpoint (v16.7)
     Приймає diagnostics від Свідка, формує промпт, питає Claude.
     Вимагає ANTHROPIC_API_KEY в environment.
     """
-    import os
+    import os, re
 
     api_key = os.environ.get('ANTHROPIC_API_KEY', '')
     if not api_key:
@@ -216,7 +214,6 @@ def oracle():
 
         verdict      = diag.get('verdict', '—')
         entropy_pct  = round((diag.get('entropy', 0)) * 100)
-        status       = diag.get('status', '—')
 
         ctx          = diag.get('context', {})
         ctx_verdict  = ctx.get('verdict', 'NO_CONTEXT')
@@ -232,48 +229,80 @@ def oracle():
         perf_score   = perf.get('score', 0)
 
         text_preview = data.get('text_preview', '')[:300]
-        text_topic   = data.get('text_topic')  # e.g. 'SPORT', 'CULTURE', None
 
-        topic_labels_uk = {
-            'SPORT':     'спортивний репортаж',
-            'CULTURE':   'культурний контент',
-            'SCIENCE':   'науковий текст',
-            'TECH':      'технологічний текст',
-            'LIFESTYLE': 'lifestyle-контент',
+        # ── Визначаємо тему тексту прямо тут, без залежності від context engine
+        # Щоб Oracle не накладав геополітику на спорт/культуру
+        NON_NEWS = {
+            'SPORT': [
+                r'\b(футбол|баскетбол|волейбол|теніс|хокей|бокс|олімпіад|чемпіонат|турнір)\b',
+                r'\b(football|basketball|volleyball|tennis|hockey|boxing|olympic|championship)\b',
+                r'\b(гол|матч|рахунок|тайм|пенальті|суддя|арбітр|стадіон|збірна|тренер)\b',
+                r'\b(goal|match|score|referee|stadium|squad|coach|athlete|medal)\b',
+                r'\b(гравець|команда|клуб|ліга|спортсмен|медаль|п\'єдестал)\b',
+            ],
+            'CULTURE': [
+                r'\b(фільм|кіно|серіал|театр|виставка|концерт|альбом|режисер|актор)\b',
+                r'\b(film|movie|series|theatre|concert|album|director|actor|artist)\b',
+            ],
+            'SCIENCE': [
+                r'\b(дослідження|експеримент|відкриття|вчені|лабораторія|наука)\b',
+                r'\b(research|experiment|discovery|scientists|laboratory|science)\b',
+            ],
+            'TECH': [
+                r'\b(програм|розробка|код|алгоритм|додаток|смартфон|процесор)\b',
+                r'\b(software|development|code|algorithm|application|smartphone)\b',
+            ],
         }
-        topic_context = ''
-        if text_topic and text_topic in topic_labels_uk:
-            topic_context = (
-                f"\n⚠️ ВАЖЛИВО: Цей текст класифіковано як «{topic_labels_uk[text_topic]}».\n"
-                "Аналізуй ЛИШЕ структуру і подачу тексту в рамках його жанру.\n"
-                "НЕ згадуй геополітику, кризи, відволікання уваги — це не застосовується.\n"
-                "Якщо текст структурно чистий для свого жанру — так і скажи.\n"
+
+        detected_topic = None
+        preview_lower = text_preview.lower()
+        for topic, patterns in NON_NEWS.items():
+            hits = sum(1 for p in patterns if re.search(p, preview_lower, re.IGNORECASE))
+            if hits >= 2:
+                detected_topic = topic
+                break
+
+        TOPIC_LABELS = {
+            'SPORT':   'спортивний репортаж',
+            'CULTURE': 'культурний контент',
+            'SCIENCE': 'науковий текст',
+            'TECH':    'технологічний текст',
+        }
+
+        topic_instruction = ''
+        if detected_topic:
+            label = TOPIC_LABELS.get(detected_topic, detected_topic.lower())
+            topic_instruction = (
+                f"\n⚠️ ВАЖЛИВО: Цей текст є «{label}».\n"
+                "Аналізуй ЛИШЕ структуру і подачу в рамках цього жанру.\n"
+                "НЕ згадуй геополітику, кризи відповідальності, відволікання уваги — це не застосовується до цього типу контенту.\n"
+                "Якщо текст структурно чистий для свого жанру — скажи це прямо.\n"
             )
 
         prompt = (
             "Ти — модуль патернового аналізу системи Veritas Protocol.\n"
             "Твоя задача: на основі метрик зробити висновок про ІНФОРМАЦІЙНИЙ ПАТЕРН — "
             "не про конкретних людей, не про політику, а про тип маніпуляції або викривлення.\n"
-            f"{topic_context}\n"
+            f"{topic_instruction}\n"
             "МЕТРИКИ СВІДКА:\n"
             f"  Ентропія: {entropy_pct}%\n"
             f"  Вердикт: {verdict}\n"
             f"  Displacement: {ctx_verdict}\n"
             f"  Сигнали: {ctx_signals}\n"
-            f"  Performative pattern: {perf_verdict} (score: {perf_score})\n"
+            f"  Performative: {perf_verdict} (score: {perf_score})\n"
             f"  Гарячі теми поля: {hot_topics}\n"
             f"  Кризові заголовки: {crisis_count}/{total_events} ({crisis_pct}%)\n\n"
             "На основі цих метрик опиши:\n"
-            "1. Який інформаційний патерн зафіксовано (без згадки конкретних осіб)\n"
-            "2. Як цей патерн зазвичай розвивається в інформаційному полі\n"
+            "1. Який інформаційний патерн зафіксовано\n"
+            "2. Як цей патерн зазвичай розвивається\n"
             "3. Що варто перевірити читачу\n\n"
             "ФОРМАТ — суворо:\n"
-            "Рядок 1: одне слово-класифікатор патерну ВЕЛИКИМИ ЛІТЕРАМИ\n"
+            "Рядок 1: одне слово-класифікатор ВЕЛИКИМИ ЛІТЕРАМИ\n"
             "Порожній рядок\n"
-            "Рядки 3-6: рівно 4 речення про патерн. З великої літери, крапка в кінці.\n"
+            "Рядки 3-6: рівно 4 речення. З великої літери, крапка в кінці.\n"
             "Порожній рядок\n"
-            "Останній рядок: практична порада читачу після тире.\n\n"
-            "Мова — українська. Всі речення завершені."
+            "Останній рядок: практична порада після тире.\n\n"
+            "Мова — українська."
         )
 
         client = anthropic.Anthropic(api_key=api_key)
@@ -288,7 +317,8 @@ def oracle():
         return jsonify({
             'witness_text':      witness_text,
             'witness_available': True,
-            'model':            'claude-haiku-4-5-20251001',
+            'model':             'claude-haiku-4-5-20251001',
+            'detected_topic':    detected_topic,
         })
 
     except Exception as e:
@@ -296,3 +326,6 @@ def oracle():
         print(f"Oracle error: {str(e)}")
         traceback.print_exc()
         return jsonify({'error': str(e), 'witness_available': False}), 500
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=10000, debug=False)
