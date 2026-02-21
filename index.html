@@ -535,6 +535,72 @@
         </div>
     </div>
 
+
+    <!-- ORACLE PANEL (v16.7) -->
+    <div id="oracleSection" style="display:none; margin-top:18px;">
+        <div style="text-align:center; margin-bottom:12px;">
+            <button id="oracleBtn"
+                onclick="consultOracle()"
+                style="
+                    background: linear-gradient(135deg, #0d0d1a, #1a1a2e);
+                    border: 1px solid rgba(100,100,255,0.35);
+                    color: #9999dd;
+                    padding: 10px 28px;
+                    font-size: 0.82em;
+                    letter-spacing: 3px;
+                    font-family: 'Courier New', monospace;
+                    cursor: pointer;
+                    border-radius: 4px;
+                    transition: all 0.3s;
+                    text-shadow: 0 0 12px rgba(140,140,255,0.4);
+                "
+                onmouseover="this.style.borderColor='rgba(140,140,255,0.7)';this.style.color='#bbbbff'"
+                onmouseout="this.style.borderColor='rgba(100,100,255,0.35)';this.style.color='#9999dd'"
+            >👁 ЗАПИТАТИ ОРАКУЛА</button>
+        </div>
+
+        <div id="oraclePanel" style="display:none;
+            background: linear-gradient(160deg, rgba(10,10,30,0.95), rgba(15,10,35,0.95));
+            border: 1px solid rgba(100,100,255,0.2);
+            border-radius: 6px;
+            padding: 22px 26px;
+            margin-top: 4px;
+            position: relative;
+            overflow: hidden;
+        ">
+            <!-- top glow -->
+            <div style="position:absolute;top:-30px;left:50%;transform:translateX(-50%);
+                width:180px;height:60px;
+                background:radial-gradient(ellipse,rgba(100,100,255,0.12),transparent 70%);
+                pointer-events:none;"></div>
+
+            <div style="font-size:9px;letter-spacing:4px;color:#333366;margin-bottom:16px;">
+                СЛОВО ОРАКУЛА
+            </div>
+
+            <div id="oracleLoading" style="display:none; text-align:center; color:#444488; font-size:0.8em; letter-spacing:2px; padding:12px 0;">
+                <span id="oracleLoadingText">⟳ СКАНУВАННЯ ПОЛЯ...</span>
+            </div>
+
+            <div id="oracleText" style="
+                font-family: 'Courier New', monospace;
+                font-size: 0.85em;
+                line-height: 1.85;
+                color: #b0b0d8;
+                white-space: pre-wrap;
+                display:none;
+            "></div>
+
+            <div id="oracleError" style="display:none; color:#ff6666; font-size:0.78em; padding:8px 0;"></div>
+
+            <div id="oracleFooter" style="display:none;
+                margin-top:18px; padding-top:12px;
+                border-top:1px solid rgba(255,255,255,0.04);
+                font-size:9px; color:#222244; letter-spacing:2px;
+            ">VERITAS ORACLE v0.1 · НЕ ПРОРОЦТВО · АНАЛІЗ ПАТЕРНІВ</div>
+        </div>
+    </div>
+
     <!-- FOOTER -->
     <div class="footer">
         💠 Veritas Protocol v16.4 &nbsp;·&nbsp;
@@ -798,7 +864,8 @@ async function analyze() {
 
     btn.disabled = true;
     document.getElementById('i18n-btn_analyze').textContent = t('analyzing');
-    revealResults();
+    window._lastVeritasResult = data;
+        revealResults();
     setLoading(true);
 
     try {
@@ -1121,7 +1188,22 @@ function statusToClass(status, manipScore) {
     const m = { VERIFIED:'trusted', ACCEPTABLE:'acceptable', WARNING:'suspicious', VOID:'suspicious', CRITICAL:'chaos' };
     return m[status] || 'acceptable';
 }
-function revealResults() { document.getElementById('resultsSection').style.display = 'block'; }
+function revealResults() {
+    document.getElementById('resultsSection').style.display = 'block';
+    // Show oracle section after analysis
+    const oracleSection = document.getElementById('oracleSection');
+    if (oracleSection) {
+        oracleSection.style.display = 'block';
+        // Reset oracle state
+        document.getElementById('oraclePanel').style.display = 'none';
+        document.getElementById('oracleText').style.display = 'none';
+        document.getElementById('oracleError').style.display = 'none';
+        document.getElementById('oracleFooter').style.display = 'none';
+        document.getElementById('oracleLoading').style.display = 'none';
+        document.getElementById('oracleBtn').disabled = false;
+        document.getElementById('oracleBtn').textContent = '👁 ЗАПИТАТИ ОРАКУЛА';
+    }
+}
 function setLoading(on) {
     if (on) {
         document.getElementById('entropyValue').textContent = '...';
@@ -1170,11 +1252,96 @@ function clearAll() {
     if (textDisplay) textDisplay.textContent = '';
     const sourceTag = document.getElementById('sourceTag');
     if (sourceTag) sourceTag.innerHTML = '';
+    const oracleSection = document.getElementById('oracleSection');
+    if (oracleSection) oracleSection.style.display = 'none';
+    window._lastVeritasResult = null;
 }
 function escHtml(s) {
     if (!s) return '';
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
+
+// ============================================================
+// ORACLE (v16.7)
+// ============================================================
+let _oracleLoadingInterval = null;
+
+async function consultOracle() {
+    if (!window._lastVeritasResult) return;
+
+    const btn = document.getElementById('oracleBtn');
+    const panel = document.getElementById('oraclePanel');
+    const loading = document.getElementById('oracleLoading');
+    const loadingText = document.getElementById('oracleLoadingText');
+    const textEl = document.getElementById('oracleText');
+    const errEl = document.getElementById('oracleError');
+    const footer = document.getElementById('oracleFooter');
+
+    // Reset
+    btn.disabled = true;
+    btn.textContent = '⟳ ОРАКУЛ ДУМАЄ...';
+    panel.style.display = 'block';
+    loading.style.display = 'block';
+    textEl.style.display = 'none';
+    errEl.style.display = 'none';
+    footer.style.display = 'none';
+    textEl.textContent = '';
+
+    // Loading phase animation
+    const phases = ['⟳ СКАНУВАННЯ ПОЛЯ...', '⚡ КАНАЛ ВІДКРИТО...', '👁 ОРАКУЛ ГОВОРИТЬ...'];
+    let pi = 0;
+    _oracleLoadingInterval = setInterval(() => {
+        loadingText.textContent = phases[pi % phases.length];
+        pi++;
+    }, 700);
+
+    try {
+        const diag = window._lastVeritasResult;
+        // text preview from scraped or input
+        const textPreview = (
+            diag.scraped_text_preview ||
+            document.getElementById('textInput').value ||
+            ''
+        ).slice(0, 300);
+
+        const resp = await fetch('/api/oracle', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                diagnostics:  diag,
+                text_preview: textPreview,
+            })
+        });
+
+        clearInterval(_oracleLoadingInterval);
+        loading.style.display = 'none';
+
+        const result = await resp.json();
+
+        if (!resp.ok || result.error) {
+            errEl.textContent = 'Оракул недоступний: ' + (result.error || resp.status);
+            errEl.style.display = 'block';
+            btn.disabled = false;
+            btn.textContent = '↺ СПРОБУВАТИ ЗНОВУ';
+            return;
+        }
+
+        textEl.textContent = result.oracle_text || 'Оракул мовчить.';
+        textEl.style.display = 'block';
+        footer.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = '↺ ЗАПИТАТИ ЗНОВУ';
+
+    } catch(e) {
+        clearInterval(_oracleLoadingInterval);
+        loading.style.display = 'none';
+        errEl.textContent = 'Помилка: ' + e.message;
+        errEl.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = '↺ СПРОБУВАТИ ЗНОВУ';
+    }
+}
+
 document.getElementById('urlInput').addEventListener('keypress', e => { if (e.key === 'Enter') analyze(); });
 </script>
 </body>
