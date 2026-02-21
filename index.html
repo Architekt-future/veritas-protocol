@@ -556,7 +556,7 @@
                 "
                 onmouseover="this.style.borderColor='rgba(140,140,255,0.7)';this.style.color='#bbbbff'"
                 onmouseout="this.style.borderColor='rgba(100,100,255,0.35)';this.style.color='#9999dd'"
-            >👁 ЗАПИТАТИ ОРАКУЛА</button>
+            >👁 СЛОВО СВІДКА</button>
         </div>
 
         <div id="oraclePanel" style="display:none;
@@ -575,7 +575,7 @@
                 pointer-events:none;"></div>
 
             <div style="font-size:9px;letter-spacing:4px;color:#333366;margin-bottom:16px;">
-                СЛОВО ОРАКУЛА
+                СЛОВО СВІДКА
             </div>
 
             <div id="oracleLoading" style="display:none; text-align:center; color:#444488; font-size:0.8em; letter-spacing:2px; padding:12px 0;">
@@ -597,7 +597,7 @@
                 margin-top:18px; padding-top:12px;
                 border-top:1px solid rgba(255,255,255,0.04);
                 font-size:9px; color:#222244; letter-spacing:2px;
-            ">VERITAS ORACLE v0.1 · НЕ ПРОРОЦТВО · АНАЛІЗ ПАТЕРНІВ</div>
+            ">VERITAS WITNESS v0.1 · АНАЛІЗ ПАТЕРНУ · АНАЛІЗ ПАТЕРНІВ</div>
         </div>
     </div>
 
@@ -1190,18 +1190,18 @@ function statusToClass(status, manipScore) {
 }
 function revealResults() {
     document.getElementById('resultsSection').style.display = 'block';
-    // Show oracle section after analysis
+    // Show witness section after analysis
     const oracleSection = document.getElementById('oracleSection');
     if (oracleSection) {
         oracleSection.style.display = 'block';
-        // Reset oracle state
+        // Reset witness state
         document.getElementById('oraclePanel').style.display = 'none';
         document.getElementById('oracleText').style.display = 'none';
         document.getElementById('oracleError').style.display = 'none';
         document.getElementById('oracleFooter').style.display = 'none';
         document.getElementById('oracleLoading').style.display = 'none';
         document.getElementById('oracleBtn').disabled = false;
-        document.getElementById('oracleBtn').textContent = '👁 ЗАПИТАТИ ОРАКУЛА';
+        document.getElementById('oracleBtn').textContent = '👁 СЛОВО СВІДКА';
     }
 }
 function setLoading(on) {
@@ -1279,7 +1279,7 @@ async function consultOracle() {
 
     // Reset
     btn.disabled = true;
-    btn.textContent = '⟳ ОРАКУЛ ДУМАЄ...';
+    btn.textContent = '⟳ СВІДОК ДУМАЄ...';
     panel.style.display = 'block';
     loading.style.display = 'block';
     textEl.style.display = 'none';
@@ -1288,7 +1288,7 @@ async function consultOracle() {
     textEl.textContent = '';
 
     // Loading phase animation
-    const phases = ['⟳ СКАНУВАННЯ ПОЛЯ...', '⚡ КАНАЛ ВІДКРИТО...', '👁 ОРАКУЛ ГОВОРИТЬ...'];
+    const phases = ['⟳ СКАНУВАННЯ ПОЛЯ...', '⚡ КАНАЛ ВІДКРИТО...', '👁 СВІДОК ГОВОРИТЬ...'];
     let pi = 0;
     _oracleLoadingInterval = setInterval(() => {
         loadingText.textContent = phases[pi % phases.length];
@@ -1319,18 +1319,18 @@ async function consultOracle() {
         const result = await resp.json();
 
         if (!resp.ok || result.error) {
-            errEl.textContent = 'Оракул недоступний: ' + (result.error || resp.status);
+            errEl.textContent = 'Свідок недоступний: ' + (result.error || resp.status);
             errEl.style.display = 'block';
             btn.disabled = false;
             btn.textContent = '↺ СПРОБУВАТИ ЗНОВУ';
             return;
         }
 
-        textEl.textContent = result.oracle_text || 'Оракул мовчить.';
+        textEl.textContent = result.witness_text || 'Свідок мовчить.';
         textEl.style.display = 'block';
         footer.style.display = 'block';
         btn.disabled = false;
-        btn.textContent = '↺ ЗАПИТАТИ ЗНОВУ';
+        btn.textContent = '↺ СЛОВО СВІДКА ЗНОВУ';
 
     } catch(e) {
         clearInterval(_oracleLoadingInterval);
