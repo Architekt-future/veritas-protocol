@@ -171,6 +171,7 @@ def analyze():
                 
                 print(f'🔍 Scrape result: text length={len(text)}, words={len(text.split())}')
                 print(f'🔍 Raw length was: {len(raw)}')
+                print(f'🔍 Text preview: {repr(text[:300])}')
                 if not text or len(text) < 100:
                     return jsonify({
                         'error': 'Could not extract enough text from URL',
