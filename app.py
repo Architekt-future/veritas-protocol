@@ -152,10 +152,10 @@ def analyze():
                 counts = collections.Counter(word_chunks)
                 text = '. '.join(c for c in word_chunks if counts[c] < 3)
 
-                # Limit to 1500 words
+                # Limit to 5000 words
                 words = text.split()
-                if len(words) > 1500:
-                    text = ' '.join(words[:1500])
+                if len(words) > 5000:
+                    text = ' '.join(words[:5000])
                 
                 if not text or len(text) < 100:
                     return jsonify({
@@ -182,7 +182,7 @@ def analyze():
         if url:
             # Preview: first 1000 words (not chars!)
             words = text.split()
-            preview_words = words[:1000] if len(words) > 1000 else words
+            preview_words = words[:2000] if len(words) > 2000 else words
             result['scraped_text_preview'] = ' '.join(preview_words)
             result['scraped_word_count'] = len(words)
             result['scraped_url'] = url
