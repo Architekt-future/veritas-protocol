@@ -85,7 +85,7 @@ def analyze():
                 import requests
                 from bs4 import BeautifulSoup
                 
-                headers = {'User-Agent': 'Mozilla/5.0 (compatible; VeritasBot/1.0)'}
+                headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36', 'Accept': 'text/html,application/xhtml+xml', 'Accept-Language': 'uk,en;q=0.9'}
                 response = requests.get(url, headers=headers, timeout=10)
                 response.raise_for_status()
                 
