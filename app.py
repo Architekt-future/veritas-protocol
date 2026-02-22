@@ -170,6 +170,8 @@ def analyze():
                 if len(words) > 5000:
                     text = ' '.join(words[:5000])
                 
+                print(f'🔍 Scrape result: text length={len(text)}, words={len(text.split())}')
+                print(f'🔍 Raw length was: {len(raw)}')
                 if not text or len(text) < 100:
                     return jsonify({
                         'error': 'Could not extract enough text from URL',
