@@ -104,11 +104,11 @@ def analyze():
                     for tag in soup.find_all(True):
                         val = ' '.join(tag.get(attr, []) if isinstance(tag.get(attr), list) else [tag.get(attr, '')])
                         if any(x in val.lower() for x in [
-                            'nav', 'menu', 'sidebar', 'ad', 'advertisement',
+                            'nav', 'menu', 'sidebar', 'advertisement',
                             'social', 'share', 'comment', 'related', 'popular',
                             'trending', 'cookie', 'banner', 'promo', 'subscribe',
                             'newsletter', 'paywall', 'modal', 'overlay', 'feedback',
-                            'breadcrumb', 'tag', 'label', 'byline', 'timestamp',
+                            'breadcrumb',
                         ]):
                             tag.decompose()
                             break
