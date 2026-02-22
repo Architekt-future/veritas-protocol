@@ -134,16 +134,25 @@ def analyze():
                     if any(x in all_vals for x in [
                         'sidebar', 'related', 'also-read', 'read-also',
                         'sujhet', 'special', 'editor', 'popular', 'widget',
-                        'social', 'share', 'comment', 'newsletter', 'subscribe',
+                        'newsletter', 'subscribe',
                     ]):
                         noise.decompose()
 
                 # Get text from main content or entire soup
                 raw = target.get_text(separator=' ')
 
-                # Clean: collapse whitespace, join lines
+                # Clean: filter short noise lines, collapse whitespace
+                lines = [l.strip() for l in raw.splitlines()]
+                # Keep lines with 5+ words — removes nav buttons, country names, UI fragments
+                # but keeps real sentences (even short ones like "Де живе Ендрю?")
+                SKIP_STARTS = ('Author,', 'Author ', 'Role,', 'Role ', 'BBC World Service')
+                meaningful = [
+                    l for l in lines
+                    if (len(l.split()) >= 5 or (len(l.split()) >= 3 and any(c in l for c in '.!?:')))
+                    and not any(l.startswith(s) for s in SKIP_STARTS)
+                ]
                 import re as _re
-                text = _re.sub(r'\s+', ' ', raw).strip()
+                text = _re.sub(r'\s+', ' ', ' '.join(meaningful)).strip()
 
                 # Limit to 5000 words
                 words = text.split()
