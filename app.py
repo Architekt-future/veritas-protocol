@@ -141,28 +141,22 @@ def analyze():
                 # Get text from main content or entire soup
                 raw = target.get_text(separator=' ')
 
-                # Clean: collapse whitespace, remove short UI lines (< 4 words)
+                # Clean: collapse whitespace
                 lines = [l.strip() for l in raw.splitlines()]
 
-                # Filter noise lines:
-                # - too short (UI fragments)
-                # - metadata patterns (Author, Role, BBC, дата, час читання)
-                # - pure list items (single geographic/proper names — e.g. country lists)
-                import re as _re
+                # Remove only obvious metadata lines — keep everything else
                 META_PATTERNS = [
-                    'Author,', 'Author ', 'Role,', 'Role ',
-                    'BBC World', 'BBC Ukraine', 'BBC News',
+                    'Author,', 'Role,', 'BBC World Service',
                     'Час прочитання', 'хв читати', 'хвилин читати',
+                    'Підписуйтеся на наш канал', 'Пропустити Whatsapp',
+                    'Кінець Whatsapp',
                 ]
-                def is_noise_line(line):
-                    words = line.split()
-                    if len(words) < 4:
+                def is_metadata(line):
+                    if not line:
                         return True
-                    if any(p.lower() in line.lower() for p in META_PATTERNS):
-                        return True
-                    return False
+                    return any(p.lower() in line.lower() for p in META_PATTERNS)
 
-                meaningful = [l for l in lines if not is_noise_line(l)]
+                meaningful = [l for l in lines if not is_metadata(l)]
                 text = ' '.join(meaningful)
 
                 # Deduplicate: remove lines that appear 3+ times (nav repetition)
