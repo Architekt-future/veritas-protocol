@@ -141,18 +141,18 @@ def analyze():
                 # Get text from main content or entire soup
                 raw = target.get_text(separator=' ')
 
-                # Clean: filter short noise lines, collapse whitespace
-                lines = [l.strip() for l in raw.splitlines()]
-                # Keep lines with 5+ words — removes nav buttons, country names, UI fragments
-                # but keeps real sentences (even short ones like "Де живе Ендрю?")
-                SKIP_STARTS = ('Author,', 'Author ', 'Role,', 'Role ', 'BBC World Service')
-                meaningful = [
-                    l for l in lines
-                    if (len(l.split()) >= 5 or (len(l.split()) >= 3 and any(c in l for c in '.!?:')))
-                    and not any(l.startswith(s) for s in SKIP_STARTS)
-                ]
                 import re as _re
-                text = _re.sub(r'\s+', ' ', ' '.join(meaningful)).strip()
+                # Collapse whitespace first
+                text = _re.sub(r'\s+', ' ', raw).strip()
+                # Remove metadata phrases that appear inline (BBC and similar sites)
+                # Remove BBC-style metadata block (Author/Role/date/readtime)
+                text = _re.sub(r'(Author,|Role,)\s.{0,200}?(?=\d{1,2}\s\w+\s\d{4})', '', text)
+                text = _re.sub(r'BBC World Service\s*', '', text)
+                text = _re.sub(r'\d{1,2}\s+\w+\s+\d{4}\s+', '', text)
+                text = _re.sub(r'Час прочитання[^А-ЯA-Z]{0,30}', '', text, flags=_re.IGNORECASE)
+                text = _re.sub(r'Пропустити Whatsapp.{0,100}Кінець Whatsapp', '', text, flags=_re.IGNORECASE|_re.DOTALL)
+                text = _re.sub(r'Підписуйтеся на наш канал тут\.?', '', text, flags=_re.IGNORECASE)
+                text = _re.sub(r'\s+', ' ', text).strip()
 
                 # Limit to 5000 words
                 words = text.split()
