@@ -141,29 +141,9 @@ def analyze():
                 # Get text from main content or entire soup
                 raw = target.get_text(separator=' ')
 
-                # Clean: collapse whitespace
-                lines = [l.strip() for l in raw.splitlines()]
-
-                # Remove only obvious metadata lines — keep everything else
-                META_PATTERNS = [
-                    'Author,', 'Role,', 'BBC World Service',
-                    'Час прочитання', 'хв читати', 'хвилин читати',
-                    'Підписуйтеся на наш канал', 'Пропустити Whatsapp',
-                    'Кінець Whatsapp',
-                ]
-                def is_metadata(line):
-                    if not line:
-                        return True
-                    return any(p.lower() in line.lower() for p in META_PATTERNS)
-
-                meaningful = [l for l in lines if not is_metadata(l)]
-                text = ' '.join(meaningful)
-
-                # Deduplicate: remove lines that appear 3+ times (nav repetition)
-                import collections
-                word_chunks = text.split('. ')
-                counts = collections.Counter(word_chunks)
-                text = '. '.join(c for c in word_chunks if counts[c] < 3)
+                # Clean: collapse whitespace, join lines
+                import re as _re
+                text = _re.sub(r'\s+', ' ', raw).strip()
 
                 # Limit to 5000 words
                 words = text.split()
