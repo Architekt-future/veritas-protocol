@@ -100,18 +100,20 @@ def analyze():
                     element.decompose()
 
                 # Also remove by common ad/nav class and id names
-                for attr in ['class', 'id']:
-                    for tag in soup.find_all(True):
-                        val = ' '.join(tag.get(attr, []) if isinstance(tag.get(attr), list) else [tag.get(attr, '')])
-                        if any(x in val.lower() for x in [
-                            'nav', 'menu', 'sidebar', 'advertisement',
-                            'social', 'share', 'comment', 'related', 'popular',
-                            'trending', 'cookie', 'banner', 'promo', 'subscribe',
-                            'newsletter', 'paywall', 'modal', 'overlay', 'feedback',
-                            'breadcrumb',
-                        ]):
+                # Use list() to avoid crash when iterating over decomposed tags
+                NOISE_CLASSES = ['nav', 'menu', 'sidebar', 'advertisement',
+                    'social', 'share', 'comment', 'related', 'popular',
+                    'trending', 'cookie', 'banner', 'promo', 'subscribe',
+                    'newsletter', 'paywall', 'modal', 'overlay', 'breadcrumb']
+                for tag in list(soup.find_all(True)):
+                    try:
+                        classes = ' '.join(tag.get('class', []) or [])
+                        tag_id = tag.get('id', '') or ''
+                        val = (classes + ' ' + tag_id).lower()
+                        if any(x in val for x in NOISE_CLASSES):
                             tag.decompose()
-                            break
+                    except Exception:
+                        pass
                 
                 # Try to find main content area
                 main_content = None
@@ -125,18 +127,18 @@ def analyze():
 
                 # Remove sidebar/related blocks from inside main_content
                 target = main_content or soup
-                for noise in target.find_all(True):
-                    classes = noise.get('class', [])
-                    if not isinstance(classes, list):
-                        classes = [classes]
-                    tag_id = noise.get('id', '')
-                    all_vals = ' '.join(classes + [tag_id]).lower()
-                    if any(x in all_vals for x in [
-                        'sidebar', 'related', 'also-read', 'read-also',
-                        'sujhet', 'special', 'editor', 'popular', 'widget',
-                        'newsletter', 'subscribe',
-                    ]):
-                        noise.decompose()
+                INNER_NOISE = ['sidebar', 'related', 'also-read', 'read-also',
+                    'sujhet', 'special', 'editor', 'popular', 'widget',
+                    'newsletter', 'subscribe']
+                for noise in list(target.find_all(True)):
+                    try:
+                        classes = ' '.join(noise.get('class', []) or [])
+                        nid = noise.get('id', '') or ''
+                        val = (classes + ' ' + nid).lower()
+                        if any(x in val for x in INNER_NOISE):
+                            noise.decompose()
+                    except Exception:
+                        pass
 
                 # Get text from main content or entire soup
                 raw = target.get_text(separator=' ')
@@ -152,6 +154,14 @@ def analyze():
                 text = _re.sub(r'Час прочитання[^А-ЯA-Z]{0,30}', '', text, flags=_re.IGNORECASE)
                 text = _re.sub(r'Пропустити Whatsapp.{0,100}Кінець Whatsapp', '', text, flags=_re.IGNORECASE|_re.DOTALL)
                 text = _re.sub(r'Підписуйтеся на наш канал тут\.?', '', text, flags=_re.IGNORECASE)
+                # Remove Commonwealth country list (appears after "всіх 14 інших країн")
+                text = _re.sub(
+                    r'(Антигуа і Барбуда|Австралія|Багамські|Беліз|Канада|Гренада|Ямайка|'
+                    r'Нова Зеландія|Папуа|Сент-Кітс|Сент-Люсія|Сент-Вінсент|Соломонові|Тувалу)'
+                    r'(\s+(Антигуа|Австралія|Багамські|Беліз|Канада|Гренада|Ямайка|'
+                    r'Нова Зеландія|Папуа|Сент-Кітс|Сент-Люсія|Сент-Вінсент|Соломонові|Тувалу))+',
+                    '', text
+                )
                 text = _re.sub(r'\s+', ' ', text).strip()
 
                 # Limit to 5000 words
