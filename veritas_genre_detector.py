@@ -55,6 +55,15 @@ class GenreDetector:
         r'\bмусимо визнати\b', r'\bочевидно що\b', r'\bбезсумнівно\b',
     ]
 
+    SCIENCE_SIGNALS = [
+        r'\bдослідник', r'\bдослідженн', r'\bнауков', r'\bпсихолог',
+        r'\bнейробіолог', r'\bтермін', r'\bвстановлено', r'\bсвідчать',
+        r'\bопитувальник', r'\bмодел', r'\bгіпотез', r'\bкогнітивн',
+        r'\bклінічн', r'\bвибірк', r'\bексперимент',
+        r'\bresearch', r'\bstudy', r'\bfindings', r'\bscientists',
+        r'\bpsycholog', r'\bneurolog', r'\bclinical',
+    ]
+
     SATIRE_SIGNALS = [
         r'\bнібито\b.*\bзнову\b', r'\bгеніальний план\b',
         r'\bтрадиційно\b.*\bзвинувачують\b',
@@ -86,6 +95,13 @@ class GenreDetector:
             'entropy_damper':     True,
             'entropy_cap':        1.0,
         },
+        'SCIENCE': {
+            'absurdity_weight':   0.0,   # scientific metaphors ≠ absurdity
+            'anon_authority':     False,  # "дослідники вважають" is expected
+            'unanchored_claim':   False,
+            'entropy_damper':     False,
+            'entropy_cap':        0.85,
+        },
         'SATIRE': {
             'absurdity_weight':   0.0,   # irony ≠ absurdity
             'anon_authority':     False,
@@ -111,6 +127,9 @@ class GenreDetector:
         'OPINION':   ('VERIFIED', 'АВТОРСЬКА ПОЗИЦІЯ',
                       'Текст є вираженням суб\'єктивної думки; оцінюйте аргументи, '
                       'а не факти'),
+        'SCIENCE':   ('VERIFIED', 'НАУКОВИЙ ТЕКСТ',
+                      'Текст містить ознаки наукового або науково-популярного матеріалу. '
+                      'Перевіряйте конкретні твердження у наукових джерелах.'),
         'SATIRE':    ('VERIFIED', 'САТИРИЧНИЙ КОНТЕНТ',
                       'Виявлено ознаки сатири або іронії; буквальна інтерпретація '
                       'може бути хибною'),
@@ -122,12 +141,14 @@ class GenreDetector:
         t = text.lower()
 
         analytics = sum(1 for p in self.ANALYTICS_SIGNALS if re.search(p, t, re.I))
+        science   = sum(1 for p in self.SCIENCE_SIGNALS    if re.search(p, t, re.I))
         report    = sum(1 for p in self.REPORT_SIGNALS    if re.search(p, t, re.I))
         opinion   = sum(1 for p in self.OPINION_SIGNALS   if re.search(p, t, re.I))
         satire    = sum(1 for p in self.SATIRE_SIGNALS    if re.search(p, t, re.I))
 
         signals = {
             'analytics': analytics,
+            'science':   science,
             'report':    report,
             'opinion':   opinion,
             'satire':    satire,
@@ -138,6 +159,8 @@ class GenreDetector:
             genre, conf = 'SATIRE',    min(satire / 4, 1.0)
         elif opinion >= 2 and opinion > analytics:
             genre, conf = 'OPINION',   min(opinion / 4, 1.0)
+        elif science >= 3:
+            genre, conf = 'SCIENCE',   min(science / 8, 1.0)
         elif analytics >= 2:
             genre, conf = 'ANALYTICS', min(analytics / 8, 1.0)
         elif report >= 2:
