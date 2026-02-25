@@ -23,6 +23,20 @@ CORS(app)
 # Initialize Veritas engine
 engine = VeritasCalibratedCore()
 print("✅ Veritas engine initialized")
+
+# Warm up RSS context in background thread at startup
+import threading
+def _warm_context():
+    try:
+        if engine.context_engine:
+            ctx = engine.context_engine.get_context()
+            if ctx:
+                print(f"✅ Context field loaded: {ctx.total_events} events")
+            else:
+                print("⚠️  Context field unavailable (RSS blocked or failed)")
+    except Exception as e:
+        print(f"⚠️  Context warmup error: {e}")
+threading.Thread(target=_warm_context, daemon=True).start()
 print(f"   Pattern boost:         {engine.pattern_boost_engine is not None}")
 print(f"   Void detector:         {engine.void_detector is not None}")
 print(f"   Absurdity detector:    {engine.absurdity_detector is not None}")
