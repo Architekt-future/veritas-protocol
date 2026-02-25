@@ -262,18 +262,11 @@
             border: 1px solid rgba(255, 140, 40, 0.25);
             display: none;
         }
-        .pivot-title {
-            color: #fb923c; font-size: 0.82em; letter-spacing: 2px;
-            margin-bottom: 10px; text-transform: uppercase;
-        }
+        .pivot-title { color: #fb923c; font-size: 0.82em; letter-spacing: 2px; margin-bottom: 10px; text-transform: uppercase; }
         .pivot-verdict-row { display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px; }
         .pivot-verdict-val { font-size: 1.2em; font-weight: bold; color: #fb923c; }
         .pivot-explanation { font-size: 0.8em; color: #cc8844; line-height: 1.6; margin: 6px 0; }
-        .pivot-evidence {
-            font-size: 0.76em; color: #886644; font-style: italic;
-            padding: 6px 10px; background: rgba(255,140,40,0.06);
-            border-radius: 4px; margin-top: 6px;
-        }
+        .pivot-evidence { font-size: 0.76em; color: #886644; font-style: italic; padding: 6px 10px; background: rgba(255,140,40,0.06); border-radius: 4px; margin-top: 6px; }
 
         /* SCRAPED */
         .scraped-text-panel { display: none; }
@@ -1303,6 +1296,8 @@ function clearAll() {
     if (sourceTag) sourceTag.innerHTML = '';
     const oracleSection = document.getElementById('oracleSection');
     if (oracleSection) oracleSection.style.display = 'none';
+    const pivPan = document.getElementById('pivotPanel');
+    if (pivPan) pivPan.style.display = 'none';
     window._lastVeritasResult = null;
 }
 function escHtml(s) {
