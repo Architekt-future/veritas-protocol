@@ -445,7 +445,10 @@ class ContextEngine:
         has_crisis = ctx.has_active_accountability_crisis()
 
         # ── Signal 3: Does the text overlap with hot field topics? ────────
-        in_field, overlap_score = ctx.is_topic_in_field(text)
+        # For long texts use only first 150 words — long articles always
+        # contain common words that overlap with RSS field, masking displacement
+        text_for_field = ' '.join(text.split()[:150])
+        in_field, overlap_score = ctx.is_topic_in_field(text_for_field)
 
         # ── Signal 4: Official/breaking claim ────────────────────────────
         official_claim = bool(re.search(
