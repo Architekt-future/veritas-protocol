@@ -59,9 +59,20 @@ class NarrativePivotDetector:
     ]
 
     def analyze(self, text: str) -> PivotResult:
-        paragraphs = [p.strip() for p in re.split(r'\n{2,}|\r\n', text) if len(p.strip()) > 30]
-
+        # Try double newlines first, fall back to single newlines, then sentence splitting
+        paragraphs = [p.strip() for p in re.split(r'\n{2,}', text) if len(p.strip()) > 30]
         if len(paragraphs) < 4:
+            paragraphs = [p.strip() for p in re.split(r'\n', text) if len(p.strip()) > 30]
+        if len(paragraphs) < 4:
+            # Split by sentences — every 3 sentences = 1 "paragraph"
+            sentences = re.split(r'(?<=[.!?])\s+', text)
+            paragraphs = []
+            for i in range(0, len(sentences), 3):
+                chunk = ' '.join(sentences[i:i+3]).strip()
+                if len(chunk) > 30:
+                    paragraphs.append(chunk)
+
+        if len(paragraphs) < 3:
             return PivotResult(
                 has_pivot=False, score=0.0,
                 verdict='INSUFFICIENT_TEXT',
