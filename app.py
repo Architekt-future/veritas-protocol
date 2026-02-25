@@ -185,10 +185,17 @@ def analyze():
                 print(f'🔍 Scrape result: text length={len(text)}, words={len(text.split())}')
                 print(f'🔍 Raw length was: {len(raw)}')
                 print(f'🔍 Text preview: {repr(text[:300])}')
+                word_count = len(text.split())
                 if not text or len(text) < 100:
                     return jsonify({
-                        'error': 'Could not extract enough text from URL',
-                        'status': 'error'
+                        'error': 'Не вдалося зчитати текст сторінки. Сайт може блокувати автоматичне читання. Скопіюйте текст статті вручну і вставте в поле нижче.',
+                        'status': 'scrape_blocked'
+                    }), 400
+                if word_count < 80:
+                    return jsonify({
+                        'error': f'Вдалося зчитати лише {word_count} слів — скоріш за все сайт заблокував читання. Скопіюйте текст статті вручну і вставте в поле нижче.',
+                        'status': 'scrape_partial',
+                        'partial_text': text
                     }), 400
                     
             except Exception as e:
