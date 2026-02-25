@@ -226,6 +226,8 @@ def analyze():
         
         # Analyze text
         result = engine.analyze(text)
+        ctx_dbg = result.get('context', {})
+        print(f'🌐 CONTEXT: available={ctx_dbg.get("available")} verdict={ctx_dbg.get("verdict")} score={ctx_dbg.get("score")}')
         
         # Add scraped text preview if URL was provided
         if url:
