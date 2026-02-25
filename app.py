@@ -154,6 +154,16 @@ def analyze():
                 text = _re.sub(r'Час прочитання[^А-ЯA-Z]{0,30}', '', text, flags=_re.IGNORECASE)
                 text = _re.sub(r'Пропустити Whatsapp.{0,100}Кінець Whatsapp', '', text, flags=_re.IGNORECASE|_re.DOTALL)
                 text = _re.sub(r'Підписуйтеся на наш канал тут\.?', '', text, flags=_re.IGNORECASE)
+                # BBC "Найпопулярніше" sidebar block
+                text = _re.sub(
+                    r'Skip Найпопулярніше and continue reading Найпопулярніше.*?End of Найпопулярніше',
+                    '', text, flags=_re.DOTALL|_re.IGNORECASE
+                )
+                # BBC social subscribe block
+                text = _re.sub(
+                    r'Skip Підписуйтеся на нас у соцмережах.*?End of Підписуйтеся на нас у соцмережах',
+                    '', text, flags=_re.DOTALL|_re.IGNORECASE
+                )
                 text = _re.sub(r'\bArticle Information\b', '', text)
                 text = _re.sub(r'(?<![\w\d])хв(?![\w])', '', text)  # orphan "хв"
                 text = _re.sub(r'\s+', ' ', text).strip()
@@ -256,6 +266,43 @@ def oracle():
         perf_score   = perf.get('score', 0)
         text_preview = data.get('text_preview', '')[:300]
 
+        # All module signals for comprehensive witness analysis
+        lac_finance      = diag.get('lac_finance', {})
+        lac_fin_verdict  = lac_finance.get('verdict', '') if isinstance(lac_finance, dict) else ''
+        lac_fin_score    = lac_finance.get('score', None) if isinstance(lac_finance, dict) else None
+        lac_fin_missing  = ', '.join(lac_finance.get('missing', [])) if isinstance(lac_finance, dict) else ''
+
+        lac_labor        = diag.get('lac_labor', {})
+        lac_lab_verdict  = lac_labor.get('verdict', '') if isinstance(lac_labor, dict) else ''
+
+        self_pres        = diag.get('self_preservation', {})
+        self_pres_verdict = self_pres.get('verdict', '') if isinstance(self_pres, dict) else ''
+
+        meta_intent      = diag.get('meta_intent', {})
+        meta_verdict     = meta_intent.get('verdict', '') if isinstance(meta_intent, dict) else ''
+
+        genre            = diag.get('genre', '')
+        cohesion         = diag.get('cohesion', None)
+        void_score       = diag.get('void', None)
+        absurdity        = diag.get('absurdity', None)
+
+        # Build signals summary — only non-clean signals
+        signals_lines = []
+        if lac_fin_verdict and lac_fin_verdict not in ('N/A', 'CLEAN', ''):
+            line = f'  LAC Фінанси: {lac_fin_verdict}'
+            if lac_fin_score is not None:
+                line += f' (score: {lac_fin_score:.2f})'
+            if lac_fin_missing:
+                line += f' — відсутнє: {lac_fin_missing}'
+            signals_lines.append(line)
+        if lac_lab_verdict and lac_lab_verdict not in ('N/A', 'CLEAN', ''):
+            signals_lines.append(f'  LAC Праця: {lac_lab_verdict}')
+        if self_pres_verdict and self_pres_verdict not in ('SAFE', ''):
+            signals_lines.append(f'  Самозбереження: {self_pres_verdict}')
+        if meta_verdict and meta_verdict not in ('TRANSPARENT', ''):
+            signals_lines.append(f'  Мета-намір: {meta_verdict}')
+        signals_summary = '\n'.join(signals_lines) if signals_lines else '  (модулі не виявили порушень)'
+
         NON_NEWS = {
             'SPORT': [
                 r'\b(футбол|баскетбол|волейбол|теніс|хокей|бокс|олімпіад|чемпіонат|турнір)\b',
@@ -324,11 +371,25 @@ def oracle():
             "Людина не знає термінів. Вона просто хоче зрозуміти чи можна довіряти тому що прочитала.\n"
             f"{topic_instruction}\n"
             "ДАНІ АНАЛІЗУ:\n"
+            f"  Вердикт системи (ГОЛОВНИЙ СИГНАЛ): {verdict}\n"
+            f"  Жанр: {genre}\n"
             f"  Ентропія: {entropy_pct}%\n"
-            f"  Вердикт системи: {verdict}\n"
+            f"  Когезія: {cohesion}\n"
+            f"СПРАЦЮВАННЯ МОДУЛІВ:\n"
+            f"{signals_summary}\n"
+            f"КОНТЕКСТ:\n"
             f"{context_block}\n"
+            "ВАЖЛИВО: Вердикт системи — твій головний орієнтир. Ентропія — допоміжна цифра.\n"
+            "Відповідності вердиктів:\n"
+            "  СТРУКТУРОВАНА РИТОРИКА → РИТОРИКА\n"
+            "  АНАЛІТИЧНА СТРУКТУРОВАНІСТЬ → АНАЛІТИКА\n"
+            "  НАУКОВИЙ ТЕКСТ → ЧИСТО\n"
+            "  АВТОРСЬКА ПОЗИЦІЯ → ДУМКА\n"
+            "  ВЕРИФІКОВАНА ЛОГІКА або СТРУКТУРНА ЦІЛІСНІСТЬ → ЧИСТО\n"
+            "  АБСТРАКТНА СКЛАДНІСТЬ → ПІДОЗРІЛО\n"
+            "  КОНЦЕПТУАЛЬНЕ ЗМІШУВАННЯ або СЕМАНТИЧНИЙ ШУМ → НЕБЕЗПЕЧНО\n"
             "ФОРМАТ — суворо:\n"
-            "Рядок 1: одне слово ВЕЛИКИМИ — загальна оцінка (ЧИСТО / ПІДОЗРІЛО / НЕБЕЗПЕЧНО / АНАЛІТИКА / ДУМКА)\n"
+            "Рядок 1: одне слово ВЕЛИКИМИ — (ЧИСТО / ПІДОЗРІЛО / НЕБЕЗПЕЧНО / АНАЛІТИКА / ДУМКА / РИТОРИКА)\n"
             "Порожній рядок\n"
             "3 речення простою мовою:\n"
             "  1. Що відбувається в тексті (конкретно, без термінів)\n"
