@@ -88,6 +88,12 @@ except ImportError:
     GENRE_DETECTOR_AVAILABLE = False
 
 try:
+    from veritas_narrative_pivot import NarrativePivotDetector
+    NARRATIVE_PIVOT_AVAILABLE = True
+except ImportError:
+    NARRATIVE_PIVOT_AVAILABLE = False
+
+try:
     from veritas_pseudoscience_detector import PseudoscienceDetector
     PSEUDOSCIENCE_AVAILABLE = True
 except ImportError:
@@ -213,6 +219,11 @@ class VeritasCalibratedCore:
             self.genre_detector = GenreDetector()
         else:
             self.genre_detector = None
+
+        if NARRATIVE_PIVOT_AVAILABLE:
+            self.narrative_pivot = NarrativePivotDetector()
+        else:
+            self.narrative_pivot = None
 
         if PSEUDOSCIENCE_AVAILABLE:
             self.pseudoscience_detector = PseudoscienceDetector()
@@ -820,6 +831,29 @@ class VeritasCalibratedCore:
             )
         meta_score = meta_intent_result['meta_score']
 
+        # ---- PHASE: NARRATIVE PIVOT DETECTOR ----
+        narrative_pivot_result = {
+            'has_pivot': False, 'score': 0.0,
+            'verdict': 'NO_PIVOT', 'start_topics': [],
+            'end_topics': [], 'pivot_point': None,
+            'explanation': '', 'evidence': []
+        }
+        if self.narrative_pivot:
+            _pivot = self.narrative_pivot.analyze(text)
+            narrative_pivot_result = {
+                'has_pivot':    _pivot.has_pivot,
+                'score':        _pivot.score,
+                'verdict':      _pivot.verdict,
+                'start_topics': _pivot.start_topics,
+                'end_topics':   _pivot.end_topics,
+                'pivot_point':  _pivot.pivot_point,
+                'explanation':  _pivot.explanation,
+                'evidence':     _pivot.evidence,
+            }
+            if _pivot.has_pivot:
+                _pivot_penalty = _pivot.score * 0.25
+                print(f'🔄 PIVOT: {_pivot.verdict} score={_pivot.score} +{_pivot_penalty:.3f}')
+
         # ---- PHASE 10i: PERFORMATIVE ACCOUNTABILITY DETECTOR (v16.6) ----
         # "Crocodile tears" — discomfort declared without mechanism
         performative_result = {
@@ -1041,6 +1075,11 @@ class VeritasCalibratedCore:
             manip_score = manipulation_result['manipulation_score']
             if manip_score > 0:
                 base_score += manip_score * 1.8  # 180% weight - manipulation is worst category
+
+            # Narrative pivot penalty
+            if narrative_pivot_result['has_pivot']:
+                pivot_penalty = narrative_pivot_result['score'] * 0.25
+                base_score += pivot_penalty
                 
                 # Force minimum thresholds by severity
                 if manip_score >= 0.75:  # PSYCHOLOGICAL_WEAPON
@@ -1456,6 +1495,17 @@ class VeritasCalibratedCore:
                 'note_en':  certainty_result['certainty_note_en'],
                 'word_count': certainty_result['word_count'],
                 'short_text_mode': certainty_result['short_text_mode'],
+            },
+            # NARRATIVE PIVOT
+            'narrative_pivot': {
+                'has_pivot':    narrative_pivot_result['has_pivot'],
+                'score':        narrative_pivot_result['score'],
+                'verdict':      narrative_pivot_result['verdict'],
+                'start_topics': narrative_pivot_result['start_topics'],
+                'end_topics':   narrative_pivot_result['end_topics'],
+                'pivot_point':  narrative_pivot_result['pivot_point'],
+                'explanation':  narrative_pivot_result['explanation'],
+                'evidence':     narrative_pivot_result['evidence'],
             },
             # PERFORMATIVE ACCOUNTABILITY (v16.6)
             'performative': {
