@@ -310,6 +310,21 @@ def oracle():
             signals_lines.append(f'  Мета-намір: {meta_verdict}')
         signals_summary = '\n'.join(signals_lines) if signals_lines else '  (модулі не виявили порушень)'
 
+        # Narrative pivot
+        pivot         = diag.get('narrative_pivot', {})
+        pivot_verdict = pivot.get('verdict', '') if isinstance(pivot, dict) else ''
+        pivot_score   = pivot.get('score', 0) if isinstance(pivot, dict) else 0
+        pivot_expl    = pivot.get('explanation', '') if isinstance(pivot, dict) else ''
+        pivot_evidence = (pivot.get('evidence', []) or [])[:1]
+        pivot_line = ''
+        if pivot_verdict and pivot_verdict not in ('NO_PIVOT', 'INSUFFICIENT_TEXT', ''):
+            pivot_line = (
+                f'  🔄 НАРАТИВНИЙ PIVOT: {pivot_verdict} (score: {pivot_score})\n'
+                f'  {pivot_expl}\n'
+            )
+            if pivot_evidence:
+                pivot_line += f'  Фраза-тригер: «{pivot_evidence[0][:80]}»\n'
+
         NON_NEWS = {
             'SPORT': [
                 r'\b(футбол|баскетбол|волейбол|теніс|хокей|бокс|олімпіад|чемпіонат|турнір)\b',
@@ -384,6 +399,7 @@ def oracle():
             f"  Когезія: {cohesion}\n"
             f"СПРАЦЮВАННЯ МОДУЛІВ:\n"
             f"{signals_summary}\n"
+            f"{pivot_line}"
             f"КОНТЕКСТ:\n"
             f"{context_block}\n"
             "ВАЖЛИВО: Вердикт системи — твій головний орієнтир. Ентропія — допоміжна цифра.\n"
@@ -395,6 +411,7 @@ def oracle():
             "  ВЕРИФІКОВАНА ЛОГІКА або СТРУКТУРНА ЦІЛІСНІСТЬ → ЧИСТО\n"
             "  АБСТРАКТНА СКЛАДНІСТЬ → ПІДОЗРІЛО\n"
             "  КОНЦЕПТУАЛЬНЕ ЗМІШУВАННЯ або СЕМАНТИЧНИЙ ШУМ → НЕБЕЗПЕЧНО\n"
+            "Якщо є НАРАТИВНИЙ PIVOT — завжди згадай це в поясненні, навіть якщо загальний вердикт ЧИСТО.\n"
             "ФОРМАТ — суворо:\n"
             "Рядок 1: одне слово ВЕЛИКИМИ — (ЧИСТО / ПІДОЗРІЛО / НЕБЕЗПЕЧНО / АНАЛІТИКА / ДУМКА / РИТОРИКА)\n"
             "Порожній рядок\n"
