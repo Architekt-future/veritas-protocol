@@ -694,7 +694,7 @@ class VeritasCalibratedCore:
 
         # ---- PHASE 7: ABSURDITY (logical non-sequiturs) ----
         absurdity_result = {'absurdity_score': 0.0, 'evidence': {}}
-        if self.absurdity_detector and _genre != 'ANALYTICS':
+        if self.absurdity_detector and _genre not in ('ANALYTICS', 'SCIENCE', 'OPINION'):
             absurdity_result = self.absurdity_detector.analyze(text)
 
         # ---- PHASE 8: INSIGHT DENSITY (casuistry detection) ----
