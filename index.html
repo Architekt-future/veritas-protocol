@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>💠 Veritas Terminal v16.0</title>
+    <title>💠 Veritas Terminal v16.4</title>
     <style>
         * { margin:0; padding:0; box-sizing:border-box; }
         body {
@@ -46,7 +46,7 @@
         }
         .lang-btn {
             padding: 5px 14px; cursor: pointer; border: none;
-            background: transparent; color: #556;
+            background: transparent; color: #7788aa;
             font-family: 'Courier New', monospace; font-size: 1em;
             letter-spacing: 1px; transition: all 0.2s;
         }
@@ -266,17 +266,12 @@
             color: #fb923c; font-size: 0.82em; letter-spacing: 2px;
             margin-bottom: 10px; text-transform: uppercase;
         }
-        .pivot-verdict-row {
-            display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px;
-        }
+        .pivot-verdict-row { display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px; }
         .pivot-verdict-val { font-size: 1.2em; font-weight: bold; color: #fb923c; }
-        .pivot-explanation {
-            font-size: 0.8em; color: #cc8844; line-height: 1.6; margin: 6px 0;
-        }
+        .pivot-explanation { font-size: 0.8em; color: #cc8844; line-height: 1.6; margin: 6px 0; }
         .pivot-evidence {
             font-size: 0.76em; color: #886644; font-style: italic;
-            padding: 6px 10px;
-            background: rgba(255,140,40,0.06);
+            padding: 6px 10px; background: rgba(255,140,40,0.06);
             border-radius: 4px; margin-top: 6px;
         }
 
@@ -394,8 +389,8 @@
                     <div class="metric-value" id="wordCount">0</div>
                 </div>
                 <div class="metric">
-                    <div class="metric-label" id="i18n-unique"></div>
-                    <div class="metric-value" id="uniqueChars">0</div>
+                    <div class="metric-label" id="i18n-cohesion">КОГЕЗІЯ</div>
+                    <div class="metric-value" id="cohesionScore">0</div>
                 </div>
                 <div class="metric">
                     <div class="metric-label" id="i18n-void_score"></div>
@@ -468,6 +463,91 @@
             </div>
         </div>
 
+        <!-- CONTEXT COMPLETENESS (advisory) -->
+        <div class="panel lac-panel" id="completenessPanel" style="display:none; border-color:#4488aa;">
+            <div class="panel-title" style="color:#66aacc; font-size:0.82em;">🔭 <span id="i18n-completeness_title">ПОВНОТА КОНТЕКСТУ</span></div>
+            <div class="lac-inner">
+                <div class="lac-row">
+                    <span class="lac-label" style="color:#aaa;" id="i18n-completeness_verdict_label">Вердикт</span>
+                    <span class="lac-val" style="color:#66aacc;" id="completenessVerdict">—</span>
+                </div>
+                <div id="completenessNote" style="font-size:0.78em; color:#aab; margin:6px 0 4px; font-style:italic;"></div>
+                <div id="completenessMissing" style="display:none; margin-top:6px;">
+                    <div style="font-size:0.75em; color:#888; margin-bottom:4px;" id="i18n-missing_dims">⚠️ Відсутні виміри:</div>
+                    <div id="completenessMissingList" style="font-size:0.75em; color:#66aacc;"></div>
+                </div>
+                <div style="margin-top:8px; font-size:0.7em; color:#556; font-style:italic;" id="i18n-advisory_note">
+                    👁 Свідок фіксує — не судить. Це порада, не вирок.
+                </div>
+            </div>
+        </div>
+
+        <!-- CERTAINTY FACTOR (v16.5) -->
+        <div class="panel lac-panel" id="certaintyPanel" style="display:none; border-color:#446688;">
+            <div class="panel-title" style="color:#88aacc; font-size:0.82em;">📏 <span data-i18n="certainty_title">ОБСЯГ ТЕКСТУ</span></div>
+            <div class="lac-inner">
+                <div class="lac-row">
+                    <span class="lac-label" style="color:#aaa;" data-i18n="certainty_label">Рівень певності</span>
+                    <span class="lac-val" style="color:#88aacc;" id="certaintyLevel">—</span>
+                </div>
+                <div id="certaintyNote" style="font-size:0.78em; color:#99aabb; margin:6px 0 4px; font-style:italic;"></div>
+            </div>
+        </div>
+
+        <!-- PERFORMATIVE ACCOUNTABILITY (v16.6) -->
+        <div class="panel lac-panel" id="performativePanel" style="display:none; border-color:#cc8833;">
+            <div class="panel-title" style="color:#ffaa44; font-size:0.82em;">🐊 <span data-i18n="performative_title">КРОКОДИЛЯЧІ СЛЬОЗИ</span></div>
+            <div class="lac-inner">
+                <div class="lac-row">
+                    <span class="lac-label" style="color:#aaa;" data-i18n="performative_verdict_label">Тип</span>
+                    <span class="lac-val" style="color:#ffaa44;" id="performativeVerdict">—</span>
+                </div>
+                <div class="lac-row" style="margin-top:4px;">
+                    <span class="lac-label" style="color:#888; font-size:0.8em;" data-i18n="performative_signals">Сигнали</span>
+                    <span style="color:#aaa; font-size:0.8em;" id="performativeSignals">—</span>
+                </div>
+                <div id="performativeNote" style="font-size:0.78em; color:#cc9955; margin:6px 0 4px; font-style:italic;"></div>
+            </div>
+        </div>
+
+        <!-- CONTEXT ENGINE PANEL (v16.7) -->
+        <div class="panel lac-panel" id="contextPanel" style="display:none; border-color:#4a7a4a;">
+            <div class="panel-title" style="color:#66aa66; font-size:0.82em;">🌐 <span data-i18n="context_title">КОНТЕКСТ ПОЛЯ</span></div>
+            <div class="lac-inner">
+                <div class="lac-row">
+                    <span class="lac-label" style="color:#aaa;" data-i18n="context_verdict_label">Вердикт</span>
+                    <span class="lac-val" style="color:#66aa66;" id="contextVerdict">—</span>
+                </div>
+                <div class="lac-row" style="margin-top:4px;">
+                    <span class="lac-label" style="color:#888; font-size:0.8em;" data-i18n="context_signals_label">Сигнали</span>
+                    <span style="color:#aaa; font-size:0.8em;" id="contextSignals">—</span>
+                </div>
+                <div id="contextHotTopics" style="font-size:0.76em; color:#557755; margin:5px 0 3px; font-style:italic;"></div>
+                <div id="contextNote" style="font-size:0.78em; color:#88aa88; margin:4px 0; font-style:italic;"></div>
+            </div>
+        </div>
+
+        <!-- META-INTENT PANEL -->
+        <div class="panel lac-panel" id="metaIntentPanel" style="display:none; border-color:#aa4466;">
+            <div class="panel-title" style="color:#cc6688; font-size:0.82em;">🎯 <span id="i18n-meta_intent_title">МЕТА-НАМІР</span></div>
+            <div class="lac-inner">
+                <div class="lac-row">
+                    <span class="lac-label" style="color:#aaa;">Вердикт</span>
+                    <span class="lac-val" style="color:#cc6688;" id="metaIntentVerdict">—</span>
+                </div>
+                <div id="metaIntentExplanation" style="font-size:0.78em; color:#cc9; margin:6px 0 4px; font-style:italic;"></div>
+                <div id="metaIntentIntents" style="display:none; margin-top:6px;">
+                    <div style="font-size:0.75em; color:#888; margin-bottom:4px;">⚠️ Виявлені наміри:</div>
+                    <div id="metaIntentIntentsList" style="font-size:0.75em; color:#cc6688;"></div>
+                </div>
+                <div style="margin-top:8px; font-size:0.7em; color:#556; font-style:italic;">
+                    🎯 Щит: цей текст адресований системі, а не читачу.
+                </div>
+            </div>
+        </div>
+
+        </div>
+
         <!-- NARRATIVE PIVOT -->
         <div class="pivot-panel" id="pivotPanel">
             <div class="pivot-title">🔄 НАРАТИВНИЙ PIVOT</div>
@@ -487,14 +567,80 @@
         </div>
     </div>
 
+
+    <!-- ORACLE PANEL (v16.7) -->
+    <div id="oracleSection" style="display:none; margin-top:18px;">
+        <div style="text-align:center; margin-bottom:12px;">
+            <button id="oracleBtn"
+                onclick="consultOracle()"
+                style="
+                    background: linear-gradient(135deg, #0d0d1a, #1a1a2e);
+                    border: 1px solid rgba(100,100,255,0.35);
+                    color: #9999dd;
+                    padding: 10px 28px;
+                    font-size: 0.82em;
+                    letter-spacing: 3px;
+                    font-family: 'Courier New', monospace;
+                    cursor: pointer;
+                    border-radius: 4px;
+                    transition: all 0.3s;
+                    text-shadow: 0 0 12px rgba(140,140,255,0.4);
+                "
+                onmouseover="this.style.borderColor='rgba(140,140,255,0.7)';this.style.color='#bbbbff'"
+                onmouseout="this.style.borderColor='rgba(100,100,255,0.35)';this.style.color='#9999dd'"
+            >👁 СЛОВО СВІДКА</button>
+        </div>
+
+        <div id="oraclePanel" style="display:none;
+            background: linear-gradient(160deg, rgba(10,10,30,0.95), rgba(15,10,35,0.95));
+            border: 1px solid rgba(100,100,255,0.2);
+            border-radius: 6px;
+            padding: 22px 26px;
+            margin-top: 4px;
+            position: relative;
+            overflow: hidden;
+        ">
+            <!-- top glow -->
+            <div style="position:absolute;top:-30px;left:50%;transform:translateX(-50%);
+                width:180px;height:60px;
+                background:radial-gradient(ellipse,rgba(100,100,255,0.12),transparent 70%);
+                pointer-events:none;"></div>
+
+            <div style="font-size:9px;letter-spacing:4px;color:#333366;margin-bottom:16px;">
+                СЛОВО СВІДКА
+            </div>
+
+            <div id="oracleLoading" style="display:none; text-align:center; color:#444488; font-size:0.8em; letter-spacing:2px; padding:12px 0;">
+                <span id="oracleLoadingText">⟳ СКАНУВАННЯ ПОЛЯ...</span>
+            </div>
+
+            <div id="oracleText" style="
+                font-family: 'Courier New', monospace;
+                font-size: 0.85em;
+                line-height: 1.85;
+                color: #b0b0d8;
+                white-space: pre-wrap;
+                display:none;
+            "></div>
+
+            <div id="oracleError" style="display:none; color:#ff6666; font-size:0.78em; padding:8px 0;"></div>
+
+            <div id="oracleFooter" style="display:none;
+                margin-top:18px; padding-top:12px;
+                border-top:1px solid rgba(255,255,255,0.04);
+                font-size:9px; color:#222244; letter-spacing:2px;
+            ">VERITAS WITNESS v0.1 · АНАЛІЗ ПАТЕРНУ · АНАЛІЗ ПАТЕРНІВ</div>
+        </div>
+    </div>
+
     <!-- FOOTER -->
     <div class="footer">
-        💠 Veritas Protocol v16.0 &nbsp;·&nbsp;
+        💠 Veritas Protocol v16.4 &nbsp;·&nbsp;
         <span id="i18n-created_by"></span> Dmytro Kholodniak, Gemini, Claude, ChatGPT, DeepSeek
         &nbsp;·&nbsp;
         <a href="https://github.com/Architekt-future/veritas-protocol" target="_blank">GitHub</a>
         &nbsp;·&nbsp;
-        <a href="https://zenodo.org/records/18360722" target="_blank">DOI 10.5281/zenodo.18360722</a>
+        <a href="https://zenodo.org/records/18389292" target="_blank">DOI 10.5281/zenodo.18389292</a>
     </div>
 </div>
 
@@ -504,7 +650,7 @@
 // ============================================================
 const STRINGS = {
     uk: {
-        subtitle: 'Аналізатор інформаційної ентропії · v16.0 · Маніпуляція · Порожнеча · Абсурдність',
+        subtitle: 'Аналізатор інформаційної ентропії · v16.4 · Маніпуляція · Порожнеча · Абсурдність',
         data_input: 'ВВІД ДАНИХ',
         label_url: 'Цільовий URL',
         placeholder_url: 'https://example.com/стаття',
@@ -525,6 +671,7 @@ const STRINGS = {
         absurdity: 'Абсурдність',
         casuistry: 'Казуїстика',
         manipulation: 'Маніпуляція',
+        cohesion: 'Когезія',
         manip_title: 'АНАЛІЗ МАНІПУЛЯЦІЇ',
         lac_finance: 'LAC ФІНАНСИ',
         lac_labor: 'LAC ПРАЦЯ',
@@ -546,6 +693,24 @@ const STRINGS = {
         narrative_dominant_label: 'Домінуючий сигнал',
         narrative_signals_label: 'Активні модулі',
         narrative_nature_label: 'Природа',
+        // Completeness panel
+        completeness_title: 'ПОВНОТА КОНТЕКСТУ',
+        completeness_verdict_label: 'Вердикт',
+        missing_dims: '⚠️ Відсутні виміри:',
+        advisory_note: '👁 Свідок фіксує — не судить. Це порада, не вирок.',
+        verdict_label_lab: 'Вердикт:',
+        missing_criteria_lab: 'Відсутні критерії:',
+        // Certainty panel
+        certainty_title: 'ОБСЯГ ТЕКСТУ',
+        certainty_label: 'Рівень певності',
+        // Performative accountability panel
+        performative_title: 'КРОКОДИЛЯЧІ СЛЬОЗИ',
+        performative_verdict_label: 'Тип',
+        performative_signals: 'Сигнали',
+        // Context engine panel
+        context_title: 'КОНТЕКСТ ПОЛЯ',
+        context_verdict_label: 'Вердикт',
+        context_signals_label: 'Сигнали',
         // Pattern names
         GASLIGHTING: 'Газлайтинг',
         CULT_SUBMISSION: 'Культове підпорядкування',
@@ -567,7 +732,7 @@ const STRINGS = {
         'ПСИХОЛОГІЧНА ЗБРОЯ': 'ПСИХОЛОГІЧНА ЗБРОЯ',
     },
     en: {
-        subtitle: 'Information Entropy Analyzer · v16.0 · Manipulation · Void · Absurdity',
+        subtitle: 'Information Entropy Analyzer · v16.4 · Manipulation · Void · Absurdity',
         data_input: 'DATA INPUT',
         label_url: 'Target URL',
         placeholder_url: 'https://example.com/article',
@@ -585,6 +750,7 @@ const STRINGS = {
         words: 'Words',
         unique: 'Unique',
         void_score: 'Void Score',
+        cohesion: 'Cohesion',
         absurdity: 'Absurdity',
         casuistry: 'Casuistry',
         manipulation: 'Manipulation',
@@ -609,6 +775,24 @@ const STRINGS = {
         narrative_dominant_label: 'Dominant signal',
         narrative_signals_label: 'Active modules',
         narrative_nature_label: 'Nature',
+        // Completeness panel
+        completeness_title: 'CONTEXT COMPLETENESS',
+        completeness_verdict_label: 'Verdict',
+        missing_dims: '⚠️ Missing dimensions:',
+        advisory_note: '👁 The Witness observes — does not judge. Advisory only.',
+        verdict_label_lab: 'Verdict:',
+        missing_criteria_lab: 'Missing Criteria:',
+        // Certainty panel
+        certainty_title: 'TEXT VOLUME',
+        certainty_label: 'Certainty level',
+        // Performative accountability panel
+        performative_title: 'CROCODILE TEARS',
+        performative_verdict_label: 'Type',
+        performative_signals: 'Signals',
+        // Context engine panel
+        context_title: 'FIELD CONTEXT',
+        context_verdict_label: 'Verdict',
+        context_signals_label: 'Signals',
         // Pattern names
         GASLIGHTING: 'Gaslighting',
         CULT_SUBMISSION: 'Cult Submission Framing',
@@ -661,8 +845,9 @@ function setLang(lang) {
 function applyTranslations() {
     // All elements with id starting i18n-
     document.querySelectorAll('[id^="i18n-"]').forEach(el => {
-        const key = el.id.replace('i18n-', '').replace(/_fin$|_lab$/, '');
-        el.textContent = t(key);
+        const key = el.id.replace('i18n-', '').replace(/_fin$/, '');
+        const val = t(key);
+        if (val) el.textContent = val;
     });
     // Placeholders
     document.getElementById('urlInput').placeholder  = t('placeholder_url');
@@ -711,7 +896,6 @@ async function analyze() {
 
     btn.disabled = true;
     document.getElementById('i18n-btn_analyze').textContent = t('analyzing');
-    revealResults();
     setLoading(true);
 
     try {
@@ -726,8 +910,10 @@ async function analyze() {
         catch { throw new Error(`Bad JSON: ${rawText.slice(0,200)}`); }
         if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
 
+        window._lastVeritasResult = data;
         setLoading(false);
         renderResults(data);
+        revealResults();
     } catch (err) {
         setLoading(false);
         showTopError(err.message);
@@ -811,7 +997,7 @@ function renderResults(data) {
     const txt = data.extracted_text || '';
     document.getElementById('charCount').textContent   = diag.char_count || txt.length || 0;
     document.getElementById('wordCount').textContent   = diag.word_count || 0;
-    document.getElementById('uniqueChars').textContent = new Set(txt).size;
+    document.getElementById('cohesionScore').textContent = (diag.logical_cohesion || 0).toFixed(2);
     document.getElementById('voidScore').textContent   = (diag.semantic_void_score || 0).toFixed(2);
     document.getElementById('absurdityScore').textContent = (diag.absurdity_score || 0).toFixed(2);
     document.getElementById('casuistryScore').textContent = (diag.casuistry_score || 0).toFixed(2);
@@ -821,6 +1007,19 @@ function renderResults(data) {
     manipEl.className = 'metric-value' + (manipScore >= 0.5 ? ' danger' : manipScore >= 0.25 ? ' warn' : '');
 
     document.getElementById('metricsPanel').style.display = 'grid';
+
+    // Show new module badges in narrative if triggered
+    const natNature = document.getElementById('narrativeNature');
+    const extraSignals = [];
+    if (data.meta_intent && data.meta_intent.score >= 0.55)
+        extraSignals.push(`🎯 МЕТА-НАМІР ${(data.meta_intent.score * 100).toFixed(0)}%`);
+    const axiomScore = diag.axiom_score || 0;
+    if (axiomScore >= 0.25)
+        extraSignals.push(`⚠️ АКСІОМ-ДРЕЙФ ${(axiomScore * 100).toFixed(0)}%`);
+    if (extraSignals.length && natNature) {
+        const existing = natNature.textContent;
+        natNature.textContent = existing ? existing + ' · ' + extraSignals.join(' · ') : extraSignals.join(' · ');
+    }
 
     // Manipulation panel
     const manipPanel = document.getElementById('manipPanel');
@@ -868,6 +1067,114 @@ function renderResults(data) {
         } else { rfEl.style.display = 'none'; }
         lacLabPanel.style.display = 'block';
     } else { lacLabPanel.style.display = 'none'; }
+
+    // Context completeness (advisory layer)
+    const completenessPanel = document.getElementById('completenessPanel');
+    const cc = data.context_completeness;
+    if (cc && cc.score > 0) {
+        document.getElementById('completenessVerdict').textContent = cc.verdict || '—';
+        document.getElementById('completenessNote').textContent    = cc.note || '';
+        const missingEl = document.getElementById('completenessMissing');
+        if (cc.missing_dimensions && cc.missing_dimensions.length) {
+            const lines = cc.missing_dimensions.map(m =>
+                `• ${m.dimension}: ${m.hint}`
+            ).join('\n');
+            document.getElementById('completenessMissingList').textContent = lines;
+            missingEl.style.display = 'block';
+        } else {
+            missingEl.style.display = 'none';
+        }
+        completenessPanel.style.display = 'block';
+    } else { completenessPanel.style.display = 'none'; }
+
+    // Meta-intent analyzer
+    const metaIntentPanel = document.getElementById('metaIntentPanel');
+    const mi = data.meta_intent;
+    if (mi && mi.score > 0) {
+        document.getElementById('metaIntentVerdict').textContent     = mi.verdict || '—';
+        document.getElementById('metaIntentExplanation').textContent = mi.explanation || '';
+        const intentsEl = document.getElementById('metaIntentIntents');
+        if (mi.intents && mi.intents.length) {
+            const labels = {
+                'behavior_modification': '⚙️ Модифікація поведінки',
+                'concept_redefinition':  '🔄 Переозначення понять',
+                'conditional_coercion':  '⏱️ Умовний примус',
+            };
+            document.getElementById('metaIntentIntentsList').textContent =
+                mi.intents.map(i => labels[i] || i).join('\n');
+            intentsEl.style.display = 'block';
+        } else { intentsEl.style.display = 'none'; }
+        metaIntentPanel.style.display = 'block';
+    } else { metaIntentPanel.style.display = 'none'; }
+
+    // Certainty factor
+    const certaintyPanel = document.getElementById('certaintyPanel');
+    const cert = data.certainty;
+    if (cert && cert.level !== 'SUFFICIENT') {
+        const label = currentLang === 'uk' ? cert.label_uk : cert.label_en;
+        const note  = currentLang === 'uk' ? cert.note_uk  : cert.note_en;
+        document.getElementById('certaintyLevel').textContent = label || cert.level;
+        document.getElementById('certaintyNote').textContent  = note || '';
+        // Color by severity
+        const col = cert.level === 'INSUFFICIENT' ? '#ff8866' :
+                    cert.level === 'LOW_SAMPLE'   ? '#ffaa44' : '#88aacc';
+        document.getElementById('certaintyLevel').style.color = col;
+        certaintyPanel.style.display = 'block';
+    } else { certaintyPanel.style.display = 'none'; }
+
+    // Performative accountability
+    const performativePanel = document.getElementById('performativePanel');
+    const perf = data.performative;
+    if (perf && perf.is_performative) {
+        const verdictMap = {
+            'CROCODILE_TEARS': currentLang === 'uk' ? '🐊 КРОКОДИЛЯЧІ СЛЬОЗИ' : '🐊 CROCODILE TEARS',
+            'WEAK_ACCOUNTABILITY': currentLang === 'uk' ? '⚠️ СЛАБКА ВІДПОВІДАЛЬНІСТЬ' : '⚠️ WEAK ACCOUNTABILITY',
+        };
+        document.getElementById('performativeVerdict').textContent =
+            verdictMap[perf.verdict] || perf.verdict;
+        document.getElementById('performativeSignals').textContent =
+            currentLang === 'uk'
+                ? `дискомфорт: ${perf.discomfort_count} · продовження: ${perf.continuation_count} · механізм: ${perf.mechanism_count}`
+                : `discomfort: ${perf.discomfort_count} · continuation: ${perf.continuation_count} · mechanism: ${perf.mechanism_count}`;
+        document.getElementById('performativeNote').textContent =
+            currentLang === 'uk' ? perf.explanation_uk : perf.explanation_en;
+        performativePanel.style.display = 'block';
+    } else { performativePanel.style.display = 'none'; }
+
+    // Context Engine — displacement detection
+    const contextPanel = document.getElementById('contextPanel');
+    const ctx = data.context;
+    if (ctx && ctx.available && ctx.verdict !== 'CONTEXTUALLY_NEUTRAL' && ctx.verdict !== 'NO_CONTEXT') {
+        const verdictMap = {
+            'LIKELY_DISPLACEMENT': currentLang === 'uk' ? '🚨 ВІРОГІДНЕ ВІДВОЛІКАННЯ' : '🚨 LIKELY DISPLACEMENT',
+            'SUSPICIOUS_TIMING':   currentLang === 'uk' ? '⚠️ ПІДОЗРІЛИЙ ТАЙМИНГ'     : '⚠️ SUSPICIOUS TIMING',
+            'MONITOR':             currentLang === 'uk' ? '👁 МОНІТОРИНГ'              : '👁 MONITOR',
+        };
+        document.getElementById('contextVerdict').textContent =
+            verdictMap[ctx.verdict] || ctx.verdict;
+
+        const signalMap = {
+            'DISTRACTION_TOPIC':             currentLang === 'uk' ? 'тема-відволікач'       : 'distraction topic',
+            'ACTIVE_ACCOUNTABILITY_CRISIS':  currentLang === 'uk' ? 'активна криза'         : 'active crisis',
+            'TOPIC_ISOLATED_FROM_FIELD':     currentLang === 'uk' ? 'ізольована від поля'   : 'isolated from field',
+            'OFFICIAL_CLAIM_OFF_TOPIC':      currentLang === 'uk' ? 'офіційна заява мимо'   : 'official claim off-topic',
+        };
+        document.getElementById('contextSignals').textContent =
+            (ctx.signals || []).map(s => signalMap[s] || s).join(' · ') || '—';
+
+        if (ctx.summary && ctx.summary.top_topics && ctx.summary.top_topics.length > 0) {
+            const topics = ctx.summary.top_topics.slice(0, 6).map(([w]) => w).join(', ');
+            const crisisCount = ctx.summary.accountability_count;
+            const total = ctx.summary.total_events;
+            document.getElementById('contextHotTopics').textContent =
+                currentLang === 'uk'
+                    ? `Гарячі теми: ${topics} · Кризові заголовки: ${crisisCount}/${total}`
+                    : `Hot topics: ${topics} · Crisis headlines: ${crisisCount}/${total}`;
+        }
+        document.getElementById('contextNote').textContent =
+            currentLang === 'uk' ? ctx.explanation_uk : ctx.explanation_en;
+        contextPanel.style.display = 'block';
+    } else { contextPanel.style.display = 'none'; }
 
     // Narrative Pivot
     const pivotPanel = document.getElementById('pivotPanel');
@@ -928,7 +1235,22 @@ function statusToClass(status, manipScore) {
     const m = { VERIFIED:'trusted', ACCEPTABLE:'acceptable', WARNING:'suspicious', VOID:'suspicious', CRITICAL:'chaos' };
     return m[status] || 'acceptable';
 }
-function revealResults() { document.getElementById('resultsSection').style.display = 'block'; }
+function revealResults() {
+    document.getElementById('resultsSection').style.display = 'block';
+    // Show witness section after analysis
+    const oracleSection = document.getElementById('oracleSection');
+    if (oracleSection) {
+        oracleSection.style.display = 'block';
+        // Reset witness state
+        document.getElementById('oraclePanel').style.display = 'none';
+        document.getElementById('oracleText').style.display = 'none';
+        document.getElementById('oracleError').style.display = 'none';
+        document.getElementById('oracleFooter').style.display = 'none';
+        document.getElementById('oracleLoading').style.display = 'none';
+        document.getElementById('oracleBtn').disabled = false;
+        document.getElementById('oracleBtn').textContent = '👁 СЛОВО СВІДКА';
+    }
+}
 function setLoading(on) {
     if (on) {
         document.getElementById('entropyValue').textContent = '...';
@@ -945,6 +1267,11 @@ function setLoading(on) {
         document.getElementById('manipPanel').style.display = 'none';
         document.getElementById('lacFinancePanel').style.display = 'none';
         document.getElementById('lacLaborPanel').style.display = 'none';
+        document.getElementById('completenessPanel').style.display = 'none';
+        document.getElementById('metaIntentPanel').style.display = 'none';
+        document.getElementById('certaintyPanel').style.display = 'none';
+        document.getElementById('performativePanel').style.display = 'none';
+        document.getElementById('contextPanel').style.display = 'none';
         const pPan = document.getElementById('pivotPanel');
         if (pPan) pPan.style.display = 'none';
     }
@@ -967,11 +1294,103 @@ function clearAll() {
     document.getElementById('urlInput').value = '';
     document.getElementById('textInput').value = '';
     document.getElementById('resultsSection').style.display = 'none';
+    // Also clear scraped text panel
+    const scrapedPanel = document.getElementById('scrapedPanel');
+    if (scrapedPanel) scrapedPanel.style.display = 'none';
+    const textDisplay = document.getElementById('textDisplay');
+    if (textDisplay) textDisplay.textContent = '';
+    const sourceTag = document.getElementById('sourceTag');
+    if (sourceTag) sourceTag.innerHTML = '';
+    const oracleSection = document.getElementById('oracleSection');
+    if (oracleSection) oracleSection.style.display = 'none';
+    window._lastVeritasResult = null;
 }
 function escHtml(s) {
     if (!s) return '';
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
+
+// ============================================================
+// ORACLE (v16.7)
+// ============================================================
+let _oracleLoadingInterval = null;
+
+async function consultOracle() {
+    if (!window._lastVeritasResult) return;
+
+    const btn = document.getElementById('oracleBtn');
+    const panel = document.getElementById('oraclePanel');
+    const loading = document.getElementById('oracleLoading');
+    const loadingText = document.getElementById('oracleLoadingText');
+    const textEl = document.getElementById('oracleText');
+    const errEl = document.getElementById('oracleError');
+    const footer = document.getElementById('oracleFooter');
+
+    // Reset
+    btn.disabled = true;
+    btn.textContent = '⟳ СВІДОК ДУМАЄ...';
+    panel.style.display = 'block';
+    loading.style.display = 'block';
+    textEl.style.display = 'none';
+    errEl.style.display = 'none';
+    footer.style.display = 'none';
+    textEl.textContent = '';
+
+    // Loading phase animation
+    const phases = ['⟳ СКАНУВАННЯ ПОЛЯ...', '⚡ КАНАЛ ВІДКРИТО...', '👁 СВІДОК ГОВОРИТЬ...'];
+    let pi = 0;
+    _oracleLoadingInterval = setInterval(() => {
+        loadingText.textContent = phases[pi % phases.length];
+        pi++;
+    }, 700);
+
+    try {
+        const diag = window._lastVeritasResult;
+        // text preview from scraped or input
+        const textPreview = (
+            diag.scraped_text_preview ||
+            document.getElementById('textInput').value ||
+            ''
+        ).slice(0, 300);
+
+        const resp = await fetch('/api/oracle', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                diagnostics:  diag,
+                text_preview: textPreview,
+            })
+        });
+
+        clearInterval(_oracleLoadingInterval);
+        loading.style.display = 'none';
+
+        const result = await resp.json();
+
+        if (!resp.ok || result.error) {
+            errEl.textContent = 'Свідок недоступний: ' + (result.error || resp.status);
+            errEl.style.display = 'block';
+            btn.disabled = false;
+            btn.textContent = '↺ СПРОБУВАТИ ЗНОВУ';
+            return;
+        }
+
+        textEl.textContent = result.witness_text || 'Свідок мовчить.';
+        textEl.style.display = 'block';
+        footer.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = '↺ СЛОВО СВІДКА ЗНОВУ';
+
+    } catch(e) {
+        clearInterval(_oracleLoadingInterval);
+        loading.style.display = 'none';
+        errEl.textContent = 'Помилка: ' + e.message;
+        errEl.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = '↺ СПРОБУВАТИ ЗНОВУ';
+    }
+}
+
 document.getElementById('urlInput').addEventListener('keypress', e => { if (e.key === 'Enter') analyze(); });
 </script>
 </body>
