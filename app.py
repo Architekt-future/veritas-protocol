@@ -301,17 +301,16 @@ def analyze():
         print(f'🌐 HOT_TOPICS: {ctx_summary.get("top_topics", [])[:8]}')
         print(f'🌐 SIGNALS: {ctx_dbg.get("signals", [])}')
         
-        # Add scraped text preview if URL was provided
+        # Add scraped text and preview
         if url:
             words = text.split()
             preview_words = words[:2000] if len(words) > 2000 else words
             result['scraped_text_preview'] = ' '.join(preview_words)
-            result['scraped_text_full'] = text          # повний очищений текст для oracle
             result['scraped_word_count'] = len(words)
             result['scraped_url'] = url
-        else:
-            result['scraped_text_full'] = text          # прямий ввід тексту
-        
+        # Full clean text for oracle — no slicing, works for both URL and direct input
+        result['article_text'] = text
+
         return jsonify(result)
     
     except Exception as e:
@@ -361,10 +360,8 @@ def oracle():
         perf         = diag.get('performative', {})
         perf_verdict = perf.get('verdict', '—')
         perf_score   = perf.get('score', 0)
-        # Беремо повний очищений текст — без будь-якої обрізки.
-        # scraped_text_full встановлюється в /api/analyze після скрейпінгу/очищення.
-        # Якщо його немає (старий клієнт) — fallback на text_preview без обрізки.
-        text_preview = data.get('full_text', '') or data.get('text_preview', '')
+        # Full article text — no slicing. Fallback chain: article_text → text_preview → ''
+        text_preview = data.get('article_text', '') or data.get('text_preview', '')
 
         # All module signals for comprehensive witness analysis
         lac_finance      = diag.get('lac_finance', {})
@@ -386,21 +383,35 @@ def oracle():
         void_score       = diag.get('void', None)
         absurdity        = diag.get('absurdity', None)
 
-        # Build signals summary — only non-clean signals
+        # Build signals summary — only non-clean signals, with human-readable explanations
+        # Each triggered module gets: technical verdict + plain-language explanation for Claude
         signals_lines = []
         if lac_fin_verdict and lac_fin_verdict not in ('N/A', 'CLEAN', ''):
-            line = f'  LAC Фінанси: {lac_fin_verdict}'
+            line = f'  💰 LAC ФІНАНСИ спрацював: {lac_fin_verdict}'
             if lac_fin_score is not None:
                 line += f' (score: {lac_fin_score:.2f})'
             if lac_fin_missing:
-                line += f' — відсутнє: {lac_fin_missing}'
+                line += f'\n     Відсутнє у тексті: {lac_fin_missing}'
+            line += '\n     → Що це означає: текст торкається фінансів або економіки, але уникає відповіді на питання "хто відповідає?", "які ризики?", "що буде якщо не вийде?". Свідок має сказати це простими словами.'
             signals_lines.append(line)
         if lac_lab_verdict and lac_lab_verdict not in ('N/A', 'CLEAN', ''):
-            signals_lines.append(f'  LAC Праця: {lac_lab_verdict}')
+            line = f'  ⚙️ LAC ПРАЦЯ спрацював: {lac_lab_verdict}'
+            line += '\n     → Що це означає: текст говорить про роботу, зайнятість або трудові відносини, але декларує зміни без механізмів: немає відповідальних, немає строків, немає критеріїв. Свідок має пояснити читачу чого саме бракує.'
+            signals_lines.append(line)
         if self_pres_verdict and self_pres_verdict not in ('SAFE', ''):
-            signals_lines.append(f'  Самозбереження: {self_pres_verdict}')
+            line = f'  🛡️ САМОЗБЕРЕЖЕННЯ спрацювало: {self_pres_verdict}'
+            line += '\n     → Що це означає: текст намагається переконати читача не перевіряти або не сумніватись. Це тривожний сигнал.'
+            signals_lines.append(line)
         if meta_verdict and meta_verdict not in ('TRANSPARENT', ''):
-            signals_lines.append(f'  Мета-намір: {meta_verdict}')
+            line = f'  🎯 МЕТА-НАМІР спрацював: {meta_verdict}'
+            line += '\n     → Що це означає: текст, схоже, написаний не щоб поінформувати, а щоб змінити поведінку або переконання читача конкретним чином.'
+            signals_lines.append(line)
+        # Crocodile tears
+        perf_obj = diag.get('performative', {})
+        if isinstance(perf_obj, dict) and perf_obj.get('is_performative'):
+            line = f'  🐊 КРОКОДИЛЯЧІ СЛЬОЗИ спрацювали: {perf_obj.get("verdict","")}'
+            line += '\n     → Що це означає: автор або організація декларує дискомфорт, занепокоєння або відповідальність — але без жодного конкретного зобов\'язання змінити щось реальне. "Нам важливо" без "ми зробимо X до Y".'
+            signals_lines.append(line)
         signals_summary = '\n'.join(signals_lines) if signals_lines else '  (модулі не виявили порушень)'
 
         # Narrative pivot
@@ -485,7 +496,19 @@ def oracle():
                 f"  Performative: {perf_verdict} (score: {perf_score})\n"
             )
 
+        from datetime import datetime as _dt
+        current_date = _dt.now().strftime('%d.%m.%Y')
+
+        # Build module block — only if something triggered
+        modules_block = ''
+        if signals_summary.strip() != '(модулі не виявили порушень)':
+            modules_block = (
+                f"СПРАЦЮВАННЯ МОДУЛІВ (поясни кожен простими словами):\n"
+                f"{signals_summary}\n"
+            )
+
         prompt = (
+            f"Сьогоднішня дата: {current_date}. Використовуй це щоб оцінювати свіжість та актуальність тексту.\n"
             "Ти — Свідок. Пояснюєш звичайній людині що не так з текстом.\n"
             "Людина не знає термінів. Вона просто хоче зрозуміти чи можна довіряти тому що прочитала.\n"
             f"{topic_instruction}\n"
@@ -496,8 +519,7 @@ def oracle():
             f"  Жанр: {detected_genre}\n"
             f"  Ентропія: {entropy_pct}%\n"
             f"  Когезія: {cohesion}\n"
-            f"СПРАЦЮВАННЯ МОДУЛІВ:\n"
-            f"{signals_summary}\n"
+            f"{modules_block}"
             f"{pivot_line}"
             f"КОНТЕКСТ:\n"
             f"{context_block}\n"
@@ -510,16 +532,18 @@ def oracle():
             "  ВЕРИФІКОВАНА ЛОГІКА або СТРУКТУРНА ЦІЛІСНІСТЬ → ЧИСТО\n"
             "  АБСТРАКТНА СКЛАДНІСТЬ → ПІДОЗРІЛО\n"
             "  КОНЦЕПТУАЛЬНЕ ЗМІШУВАННЯ або СЕМАНТИЧНИЙ ШУМ → НЕБЕЗПЕЧНО\n"
-            "  НОВИНИ З ІМПЛІКОВАНОЮ ПРИЧИННІСТЮ → ПІДОЗРІЛО\n"
+            "  ІМПЛІКОВАНА ПРИЧИННІСТЬ → ПІДОЗРІЛО\n"
             "Якщо є НАРАТИВНИЙ PIVOT — завжди згадай це в поясненні, навіть якщо загальний вердикт ЧИСТО.\n"
+            "Якщо спрацювали модулі — обов\'язково поясни кожен з них простими словами в тексті відповіді.\n"
             "ФОРМАТ — суворо:\n"
             "Рядок 1: одне слово ВЕЛИКИМИ — (ЧИСТО / ПІДОЗРІЛО / НЕБЕЗПЕЧНО / АНАЛІТИКА / ДУМКА / РИТОРИКА)\n"
             "Порожній рядок\n"
-            "3 речення простою мовою:\n"
+            "3-5 речень простою мовою:\n"
             "  1. Що відбувається в тексті (конкретно, без термінів)\n"
             "  2. Чому це може бути проблемою (або чому все гаразд)\n"
-            "  3. Що читачу варто зробити далі — конкретна порада\n"
-            "Жодних технічних слів. Жодного згадування ентропії або метрик.\n"
+            "  3. Якщо спрацював модуль — поясни що саме він знайшов (без назви модуля, простими словами)\n"
+            "  4. Що читачу варто зробити далі — конкретна порада\n"
+            "Жодних технічних назв модулів. Жодного згадування ентропії або метрик.\n"
             "Мова — українська."
         )
 
