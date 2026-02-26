@@ -130,14 +130,49 @@ def analyze():
                         pass
                 
                 # Try to find main content area
+                # Ordered from most specific to most generic
+                SELECTORS = [
+                    # Daily Mail / Mail Online
+                    '[itemprop="articleBody"]',
+                    '.mol-article-body',
+                    '.article-text',
+                    # Guardian, Telegraph, Independent
+                    '.article-body-commercial-selector',
+                    '.dcr-article-body',
+                    'div[data-component="text-block"]',
+                    # BBC
+                    '[data-component="text-block"]',
+                    # Generic news
+                    'article', 'main', '[role="main"]', '.article-body',
+                    '.story-body', '.content', '.article', '.post-content',
+                    '.entry-content', '.td-post-content',
+                ]
                 main_content = None
-                for selector in ['article', 'main', '[role="main"]', '.article-body',
-                                  '.story-body', '.content', '.article', '.post-content']:
+                for selector in SELECTORS:
                     main_content = soup.select_one(selector)
                     if main_content and len(main_content.get_text()) > 200:
                         break
                     else:
                         main_content = None
+
+                # Fallback: collect all <p> tags longer than 60 chars
+                # This handles JS-heavy sites where article body isn't in a known wrapper
+                if not main_content:
+                    paragraphs = [
+                        p.get_text(' ', strip=True)
+                        for p in soup.find_all('p')
+                        if len(p.get_text(strip=True)) > 60
+                    ]
+                    if len(paragraphs) >= 3:
+                        from bs4 import BeautifulSoup as _BS, Tag
+                        fake = _BS('<div></div>', 'html.parser')
+                        wrapper = fake.div
+                        for para_text in paragraphs:
+                            p_tag = fake.new_tag('p')
+                            p_tag.string = para_text
+                            wrapper.append(p_tag)
+                        main_content = wrapper
+                        print(f'🔍 Used <p> fallback: {len(paragraphs)} paragraphs')
 
                 # Remove sidebar/related blocks from inside main_content
                 target = main_content or soup
