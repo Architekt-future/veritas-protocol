@@ -308,7 +308,7 @@ def analyze():
             result['scraped_text_preview'] = ' '.join(preview_words)
             result['scraped_word_count'] = len(words)
             result['scraped_url'] = url
-        # Full clean text for oracle — no slicing, works for both URL and direct input
+        # Full clean text for oracle — no slicing, both URL and direct input
         result['article_text'] = text
 
         return jsonify(result)
@@ -360,7 +360,7 @@ def oracle():
         perf         = diag.get('performative', {})
         perf_verdict = perf.get('verdict', '—')
         perf_score   = perf.get('score', 0)
-        # Full article text — no slicing. Fallback chain: article_text → text_preview → ''
+        # Full article text — no slicing. Fallback: article_text → text_preview → ''
         text_preview = data.get('article_text', '') or data.get('text_preview', '')
 
         # All module signals for comprehensive witness analysis
@@ -383,8 +383,7 @@ def oracle():
         void_score       = diag.get('void', None)
         absurdity        = diag.get('absurdity', None)
 
-        # Build signals summary — only non-clean signals, with human-readable explanations
-        # Each triggered module gets: technical verdict + plain-language explanation for Claude
+        # Build signals summary — only non-clean signals, with plain-language explanations
         signals_lines = []
         if lac_fin_verdict and lac_fin_verdict not in ('N/A', 'CLEAN', ''):
             line = f'  💰 LAC ФІНАНСИ спрацював: {lac_fin_verdict}'
@@ -392,25 +391,24 @@ def oracle():
                 line += f' (score: {lac_fin_score:.2f})'
             if lac_fin_missing:
                 line += f'\n     Відсутнє у тексті: {lac_fin_missing}'
-            line += '\n     → Що це означає: текст торкається фінансів або економіки, але уникає відповіді на питання "хто відповідає?", "які ризики?", "що буде якщо не вийде?". Свідок має сказати це простими словами.'
+            line += '\n     → Текст торкається фінансів або економіки, але уникає відповіді: хто відповідає, які ризики, що буде якщо не вийде. Поясни це читачу простими словами.'
             signals_lines.append(line)
         if lac_lab_verdict and lac_lab_verdict not in ('N/A', 'CLEAN', ''):
             line = f'  ⚙️ LAC ПРАЦЯ спрацював: {lac_lab_verdict}'
-            line += '\n     → Що це означає: текст говорить про роботу, зайнятість або трудові відносини, але декларує зміни без механізмів: немає відповідальних, немає строків, немає критеріїв. Свідок має пояснити читачу чого саме бракує.'
+            line += '\n     → Текст про роботу або зайнятість декларує зміни без механізмів: немає відповідальних, строків, критеріїв. Поясни читачу чого саме бракує.'
             signals_lines.append(line)
         if self_pres_verdict and self_pres_verdict not in ('SAFE', ''):
             line = f'  🛡️ САМОЗБЕРЕЖЕННЯ спрацювало: {self_pres_verdict}'
-            line += '\n     → Що це означає: текст намагається переконати читача не перевіряти або не сумніватись. Це тривожний сигнал.'
+            line += '\n     → Текст намагається переконати не перевіряти або не сумніватись. Тривожний сигнал.'
             signals_lines.append(line)
         if meta_verdict and meta_verdict not in ('TRANSPARENT', ''):
             line = f'  🎯 МЕТА-НАМІР спрацював: {meta_verdict}'
-            line += '\n     → Що це означає: текст, схоже, написаний не щоб поінформувати, а щоб змінити поведінку або переконання читача конкретним чином.'
+            line += '\n     → Текст написаний не щоб інформувати, а щоб змінити поведінку або переконання читача.'
             signals_lines.append(line)
-        # Crocodile tears
         perf_obj = diag.get('performative', {})
         if isinstance(perf_obj, dict) and perf_obj.get('is_performative'):
-            line = f'  🐊 КРОКОДИЛЯЧІ СЛЬОЗИ спрацювали: {perf_obj.get("verdict","")}'
-            line += '\n     → Що це означає: автор або організація декларує дискомфорт, занепокоєння або відповідальність — але без жодного конкретного зобов\'язання змінити щось реальне. "Нам важливо" без "ми зробимо X до Y".'
+            line = f'  🐊 КРОКОДИЛЯЧІ СЛЬОЗИ: {perf_obj.get("verdict","")}'
+            line += '\n     → Декларується дискомфорт або відповідальність без жодного конкретного зобов\'язання змінити щось реальне.'
             signals_lines.append(line)
         signals_summary = '\n'.join(signals_lines) if signals_lines else '  (модулі не виявили порушень)'
 
@@ -499,7 +497,6 @@ def oracle():
         from datetime import datetime as _dt
         current_date = _dt.now().strftime('%d.%m.%Y')
 
-        # Build module block — only if something triggered
         modules_block = ''
         if signals_summary.strip() != '(модулі не виявили порушень)':
             modules_block = (
@@ -534,14 +531,14 @@ def oracle():
             "  КОНЦЕПТУАЛЬНЕ ЗМІШУВАННЯ або СЕМАНТИЧНИЙ ШУМ → НЕБЕЗПЕЧНО\n"
             "  ІМПЛІКОВАНА ПРИЧИННІСТЬ → ПІДОЗРІЛО\n"
             "Якщо є НАРАТИВНИЙ PIVOT — завжди згадай це в поясненні, навіть якщо загальний вердикт ЧИСТО.\n"
-            "Якщо спрацювали модулі — обов\'язково поясни кожен з них простими словами в тексті відповіді.\n"
+            "Якщо спрацювали модулі — обов\'язково поясни кожен простими словами в тексті відповіді.\n"
             "ФОРМАТ — суворо:\n"
             "Рядок 1: одне слово ВЕЛИКИМИ — (ЧИСТО / ПІДОЗРІЛО / НЕБЕЗПЕЧНО / АНАЛІТИКА / ДУМКА / РИТОРИКА)\n"
             "Порожній рядок\n"
             "3-5 речень простою мовою:\n"
             "  1. Що відбувається в тексті (конкретно, без термінів)\n"
             "  2. Чому це може бути проблемою (або чому все гаразд)\n"
-            "  3. Якщо спрацював модуль — поясни що саме він знайшов (без назви модуля, простими словами)\n"
+            "  3. Якщо спрацював модуль — поясни що він знайшов (без назви модуля)\n"
             "  4. Що читачу варто зробити далі — конкретна порада\n"
             "Жодних технічних назв модулів. Жодного згадування ентропії або метрик.\n"
             "Мова — українська."
@@ -550,7 +547,7 @@ def oracle():
         client = anthropic.Anthropic(api_key=api_key)
         message = client.messages.create(
             model="claude-haiku-4-5-20251001",
-            max_tokens=512,
+            max_tokens=900,
             messages=[{"role": "user", "content": prompt}]
         )
 
