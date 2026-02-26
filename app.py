@@ -228,6 +228,9 @@ def analyze():
         result = engine.analyze(text)
         ctx_dbg = result.get('context', {})
         print(f'🌐 CONTEXT: available={ctx_dbg.get("available")} verdict={ctx_dbg.get("verdict")} score={ctx_dbg.get("score")}')
+        ctx_summary = ctx_dbg.get('summary', {})
+        print(f'🌐 HOT_TOPICS: {ctx_summary.get("top_topics", [])[:8]}')
+        print(f'🌐 SIGNALS: {ctx_dbg.get("signals", [])}')
         
         # Add scraped text preview if URL was provided
         if url:
