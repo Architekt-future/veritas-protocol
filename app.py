@@ -303,12 +303,14 @@ def analyze():
         
         # Add scraped text preview if URL was provided
         if url:
-            # Preview: first 1000 words (not chars!)
             words = text.split()
             preview_words = words[:2000] if len(words) > 2000 else words
             result['scraped_text_preview'] = ' '.join(preview_words)
+            result['scraped_text_full'] = text          # повний очищений текст для oracle
             result['scraped_word_count'] = len(words)
             result['scraped_url'] = url
+        else:
+            result['scraped_text_full'] = text          # прямий ввід тексту
         
         return jsonify(result)
     
@@ -359,21 +361,10 @@ def oracle():
         perf         = diag.get('performative', {})
         perf_verdict = perf.get('verdict', '—')
         perf_score   = perf.get('score', 0)
-        _raw_preview = data.get('text_preview', '')
-        # Strip Jina navigation noise — skip chars until we find the article proper.
-        # Heuristic: real article text starts after the first occurrence of a date/byline
-        # pattern, or after 'ADVERTISEMENT', or simply skip the first 400 chars of nav.
-        _nav_markers = ['ADVERTISEMENT', 'PUBLISHED:', 'By ', 'Updated:', '| Updated']
-        _skip = 0
-        for _marker in _nav_markers:
-            _idx = _raw_preview.find(_marker)
-            if _idx > 0:
-                _skip = _idx
-                break
-        # If no marker found, skip first 400 chars (typical nav length)
-        if _skip == 0 and len(_raw_preview) > 400:
-            _skip = 400
-        text_preview = _raw_preview[_skip:][:2000]
+        # Беремо повний очищений текст — без будь-якої обрізки.
+        # scraped_text_full встановлюється в /api/analyze після скрейпінгу/очищення.
+        # Якщо його немає (старий клієнт) — fallback на text_preview без обрізки.
+        text_preview = data.get('full_text', '') or data.get('text_preview', '')
 
         # All module signals for comprehensive witness analysis
         lac_finance      = diag.get('lac_finance', {})
