@@ -1,20 +1,30 @@
 """
-Veritas Genre Detector v1.0
+Veritas Genre Detector v2.0
 Detects text genre to apply appropriate analysis calibration.
 
 Genres:
-  ANALYTICS  — multi-source, hedged claims, expert opinions
-  REPORT     — factual, single event, who/what/where/when
-  OPINION    — first person, subjective, persuasive
-  SATIRE     — irony, hyperbole, humor signals
-  UNKNOWN    — insufficient signals
+  ANALYTICS        — multi-source, hedged claims, expert opinions
+  REPORT           — factual, single event, who/what/where/when
+  OPINION          — first person, subjective, persuasive
+  SATIRE           — irony, hyperbole, humor signals
+  SCIENCE          — research, studies, scientific methodology
+  SPORT            — sports events and coverage
+  CULTURE          — film, music, art, entertainment
+  CONSPIRACY_NEWS  — "juicy coincidence" framing, unnamed sources, implied causality
+  UNKNOWN          — insufficient signals
 
-Each genre returns calibration hints for the core engine.
+Changes v2.0:
+  - Added CONSPIRACY_NEWS genre (implied causality, anonymous sources, mystery framing)
+  - Added SPORT, CULTURE genres (moved from app.py crude regex)
+  - Removed overly generic sport/culture words from other signal lists
+  - Raised ANALYTICS threshold (was too easy to trigger)
+  - Added confidence-weighted genre selection (prevents weak multi-match noise)
+  - Calibration hints updated for new genres
 """
 
 import re
 from dataclasses import dataclass
-from typing import Dict, List
+from typing import Dict
 
 
 @dataclass
@@ -27,98 +37,194 @@ class GenreResult:
 
 class GenreDetector:
 
-    # ── Signal patterns ──────────────────────────────────────────────
-
+    # ── ANALYTICS ────────────────────────────────────────────────────
+    # Hedged, multi-source analytical writing
     ANALYTICS_SIGNALS = [
         r'\bвважають\b', r'\bне виключають\b', r'\bза оцінками\b',
-        r'\bаналітики\b', r'\bексперти\b', r'\bзазначають\b',
-        r'\bрозглядається\b', r'\bімовірно\b', r'\bнібито\b',
-        r'\bповідомляється\b', r'\bочікується\b', r'\bза словами\b',
-        r'\bconsider\b', r'\banalysts\b', r'\baccording to\b',
-        r'\bexperts say\b', r'\bappear to\b', r'\bsuggests\b',
-        r'\bза даними\b', r'\bдже рела свідчать\b', r'\bна думку\b',
+        r'\bаналітики\b', r'\bексперти зазначають\b', r'\bрозглядається\b',
+        r'\bімовірно\b', r'\bповідомляється\b', r'\bочікується\b',
+        r'\bза словами\b', r'\bза даними\b', r'\bна думку\b',
+        r'\banalysts (say|believe|estimate)\b', r'\baccording to\b',
+        r'\bexperts (say|warn|suggest|believe)\b', r'\bappear to\b',
+        r'\bsuggests\b', r'\bsources (say|claim|indicate)\b',
     ]
 
+    # ── REPORT ───────────────────────────────────────────────────────
+    # Factual, event-driven, timestamped
     REPORT_SIGNALS = [
         r'\bзатримали\b', r'\bповідомив\b', r'\bзаявив\b', r'\bвідбулось\b',
         r'\bсталось\b', r'\bзагинули\b', r'\bпоранені\b', r'\bарештували\b',
         r'\bвибухи\b', r'\bнапад\b', r'\bоперація\b', r'\bнаступ\b',
-        r'\bреported\b', r'\bannounced\b', r'\bconfirmed\b', r'\barrested\b',
-        r'\bо \d{1,2}:\d{2}\b',  # time stamp
-        r'\b\d{1,2} \w+ \d{4}\b',  # date
+        r'\bannounced\b', r'\bconfirmed\b', r'\barrested\b',
+        r'\bо \d{1,2}:\d{2}\b',
+        r'\b\d{1,2} (january|february|march|april|may|june|july|august|september|october|november|december) \d{4}\b',
+        r'\bpublished:\b', r'\bupdated:\b',
     ]
 
+    # ── OPINION ──────────────────────────────────────────────────────
+    # First-person, subjective, persuasive
     OPINION_SIGNALS = [
         r'\bя вважаю\b', r'\bна мою думку\b', r'\bмені здається\b',
         r'\bпереконаний\b', r'\bмоя позиція\b', r'\bавтор вважає\b',
         r'\bI believe\b', r'\bIn my opinion\b', r'\bI think\b',
         r'\bмусимо визнати\b', r'\bочевидно що\b', r'\bбезсумнівно\b',
+        r'\bколумніст\b', r'\bколонка\b', r'\bop-?ed\b', r'\bcommentary\b',
     ]
 
+    # ── SCIENCE ──────────────────────────────────────────────────────
+    # Research methodology, peer-reviewed signals
     SCIENCE_SIGNALS = [
-        r'\bдослідник', r'\bдослідженн', r'\bнауков', r'\bпсихолог',
-        r'\bнейробіолог', r'\bтермін', r'\bвстановлено', r'\bсвідчать',
-        r'\bопитувальник', r'\bмодел', r'\bгіпотез', r'\bкогнітивн',
-        r'\bклінічн', r'\bвибірк', r'\bексперимент',
-        r'\bresearch', r'\bstudy', r'\bfindings', r'\bscientists',
-        r'\bpsycholog', r'\bneurolog', r'\bclinical',
+        r'\bдослідник\w*\b', r'\bдослідженн\w*\b', r'\bнауков\w*\b',
+        r'\bпсихолог\w*\b', r'\bнейробіолог\w*\b', r'\bвстановлено\b',
+        r'\bгіпотез\w*\b', r'\bкогнітивн\w*\b', r'\bклінічн\w*\b',
+        r'\bвибірк\w*\b', r'\bексперимент\w*\b', r'\bopublikoван\w*\b',
+        r'\bresearch(ers)?\b', r'\bstudy\b', r'\bfindings\b', r'\bscientists\b',
+        r'\bpsycholog\w*\b', r'\bneurolog\w*\b', r'\bclinical\b',
+        r'\bjournal\b', r'\bpeer.reviewed\b', r'\bpublished in\b',
     ]
 
+    # ── SATIRE ───────────────────────────────────────────────────────
     SATIRE_SIGNALS = [
-        r'\bнібито\b.*\bзнову\b', r'\bгеніальний план\b',
-        r'\bтрадиційно\b.*\bзвинувачують\b',
-        r'\bексперти.*одностайні\b', r'\bнесподівано з\'ясувалось\b',
-        r'\bofficial sources confirm\b.*\bsurprisingly\b',
+        r'\bнібито\b.{1,40}\bзнову\b', r'\bгеніальний план\b',
+        r'\bтрадиційно\b.{1,40}\bзвинувачують\b',
+        r'\bексперти.{1,30}одностайні\b', r'\bнесподівано з.ясувалось\b',
+        r'\bofficial sources confirm\b.{1,40}\bsurprisingly\b',
+        r'\bonion\b', r'\bсатира\b', r'\bпародія\b',
+    ]
+
+    # ── SPORT ────────────────────────────────────────────────────────
+    # Sports-specific vocabulary (NOT generic English words like "score", "match")
+    SPORT_SIGNALS = [
+        r'\b(футбол|баскетбол|волейбол|теніс|хокей|бокс|гандбол|регбі|крикет)\b',
+        r'\b(football|basketball|volleyball|tennis|hockey|boxing)\b',
+        r'\b(олімпіад|чемпіонат|турнір|кубок|ліга|плей-оф)\b',
+        r'\b(olympic|championship|tournament|playoff|league)\b',
+        r'\b(гол|пенальті|арбітр|стадіон|збірна|тренер команди)\b',
+        r'\b(goalkeeper|penalty|referee|stadium|squad leader|head coach)\b',
+        r'\b(спортсмен|атлет|гравець команди|футболіст|баскетболіст)\b',
+        r'\b(медальний залік|таблиця чемпіонату|груповий етап)\b',
+        r'\b(transfer window|match day|league table|hat.trick)\b',
+    ]
+
+    # ── CULTURE ──────────────────────────────────────────────────────
+    CULTURE_SIGNALS = [
+        r'\b(фільм|кіно|серіал|театр|виставка|концерт|альбом)\b',
+        r'\b(режисер|актор|актриса|сценарист|продюсер)\b',
+        r'\b(film|movie|series|theatre|concert|album|premiere)\b',
+        r'\b(director|actor|actress|screenwriter|producer)\b',
+        r'\b(нагород|номінант|прем.єра|реліз|кінофестиваль)\b',
+        r'\b(award|nomination|release|box office|film festival)\b',
+    ]
+
+    # ── CONSPIRACY_NEWS ──────────────────────────────────────────────
+    # "Juicy coincidence" journalism: real facts + implied causality + mystery framing
+    # Classic patterns: Daily Mail, NY Post, tabloids, UFO/deep state content
+    CONSPIRACY_NEWS_SIGNALS = [
+        # Mystery/coincidence framing — the core tell
+        r'\b(mysterious(ly)?|mysteriously)\b',
+        r'\b(oddly timed|suspicious timing|coincidence|no coincidence)\b',
+        r'\b(hours (after|before|later).{1,60}(wiped|deleted|removed|vanished|disappeared))\b',
+        r'\b(days (after|before).{1,60}(died|killed|arrested|fired|resigned))\b',
+        r'\b(the timing.{1,40}(suspicious|odd|strange|raises questions))\b',
+        r'\b(raises questions about|prompting questions)\b',
+
+        # Unnamed/anonymous sourcing as primary evidence
+        r'\b(sources (say|claim|tell us|reveal)|insiders (say|claim|reveal))\b',
+        r'\b(according to sources|sources close to)\b',
+        r'\b(джерела (стверджують|кажуть|повідомляють))\b',
+        r'\b(behind the scenes|off the record|in private)\b',
+
+        # Can't rule out / can't confirm framing (epistemic escape hatch)
+        r"\b(can.t rule (it )?out|cannot rule out)\b",
+        r'\b(we cannot confirm|unconfirmed (reports|claims))\b',
+        r'\b(could not be independently verified)\b',
+        r'\b(не (можна|можу) виключити|не вдалось підтвердити)\b',
+
+        # Deep state / cover-up vocabulary
+        r'\b(cover.?up|coverup|deep state|shadow government)\b',
+        r'\b(suppressed|silenced|wiped clean|scrubbed)\b',
+        r'\b(they don.t want you to know|what (they|the government) (doesn.t|don.t) want)\b',
+        r'\b(UFO|UAP|extraterrestrial|alien (technology|life|contact))\b',
+        r'\b(declassif|FOIA request|Freedom of Information)\b',
+
+        # Sensational verb choices
+        r'\b(vanished|wiped (clean|out)|mysteriously (deleted|disappeared|died))\b',
+        r'\b(bombshell|explosive (revelation|claim)|shocking (twist|revelation))\b',
+        r'\b(truth (finally|about)|reveal(ed)? the truth)\b',
     ]
 
     # ── Calibration presets ──────────────────────────────────────────
 
     CALIBRATION = {
         'ANALYTICS': {
-            'absurdity_weight':   0.0,   # geopolitical metaphors ≠ absurdity
-            'anon_authority':     False,  # "аналітики вважають" is expected
-            'unanchored_claim':   False,  # hedged claims are genre norm
-            'entropy_damper':     False,  # don't suppress entropy
-            'entropy_cap':        0.85,
+            'absurdity_weight': 0.0,
+            'anon_authority':   False,
+            'unanchored_claim': False,
+            'entropy_damper':   False,
+            'entropy_cap':      0.85,
         },
         'REPORT': {
-            'absurdity_weight':   1.8,
-            'anon_authority':     True,
-            'unanchored_claim':   True,
-            'entropy_damper':     True,
-            'entropy_cap':        1.0,
+            'absurdity_weight': 1.8,
+            'anon_authority':   True,
+            'unanchored_claim': True,
+            'entropy_damper':   True,
+            'entropy_cap':      1.0,
         },
         'OPINION': {
-            'absurdity_weight':   1.0,
-            'anon_authority':     False,  # subjective by design
-            'unanchored_claim':   False,
-            'entropy_damper':     True,
-            'entropy_cap':        1.0,
+            'absurdity_weight': 1.0,
+            'anon_authority':   False,
+            'unanchored_claim': False,
+            'entropy_damper':   True,
+            'entropy_cap':      1.0,
         },
         'SCIENCE': {
-            'absurdity_weight':   0.0,   # scientific metaphors ≠ absurdity
-            'anon_authority':     False,  # "дослідники вважають" is expected
-            'unanchored_claim':   False,
-            'entropy_damper':     False,
-            'entropy_cap':        0.85,
+            'absurdity_weight': 0.0,
+            'anon_authority':   False,
+            'unanchored_claim': False,
+            'entropy_damper':   False,
+            'entropy_cap':      0.85,
         },
         'SATIRE': {
-            'absurdity_weight':   0.0,   # irony ≠ absurdity
-            'anon_authority':     False,
-            'unanchored_claim':   False,
-            'entropy_damper':     False,
-            'entropy_cap':        0.90,
+            'absurdity_weight': 0.0,
+            'anon_authority':   False,
+            'unanchored_claim': False,
+            'entropy_damper':   False,
+            'entropy_cap':      0.90,
+        },
+        'SPORT': {
+            'absurdity_weight': 0.0,
+            'anon_authority':   False,
+            'unanchored_claim': False,
+            'entropy_damper':   True,
+            'entropy_cap':      0.70,
+            # Sports results are facts — high entropy = something wrong
+        },
+        'CULTURE': {
+            'absurdity_weight': 0.0,
+            'anon_authority':   False,
+            'unanchored_claim': False,
+            'entropy_damper':   True,
+            'entropy_cap':      0.80,
+        },
+        'CONSPIRACY_NEWS': {
+            'absurdity_weight': 1.5,
+            'anon_authority':   True,   # anonymous sources ARE the problem here
+            'unanchored_claim': True,   # implied causality = unanchored
+            'entropy_damper':   False,  # don't suppress — let entropy speak
+            'entropy_cap':      1.0,
+            # Key: implied_causality penalty active for this genre
+            'implied_causality_boost': 0.25,
         },
         'UNKNOWN': {
-            'absurdity_weight':   1.8,
-            'anon_authority':     True,
-            'unanchored_claim':   True,
-            'entropy_damper':     True,
-            'entropy_cap':        1.0,
+            'absurdity_weight': 1.8,
+            'anon_authority':   True,
+            'unanchored_claim': True,
+            'entropy_damper':   True,
+            'entropy_cap':      1.0,
         },
     }
 
-    # ── Verdict labels ───────────────────────────────────────────────
+    # ── Verdict labels (for clean texts of this genre) ───────────────
 
     CLEAN_VERDICT = {
         'ANALYTICS': ('VERIFIED', 'АНАЛІТИЧНА СТРУКТУРОВАНІСТЬ',
@@ -133,6 +239,14 @@ class GenreDetector:
         'SATIRE':    ('VERIFIED', 'САТИРИЧНИЙ КОНТЕНТ',
                       'Виявлено ознаки сатири або іронії; буквальна інтерпретація '
                       'може бути хибною'),
+        'SPORT':     ('VERIFIED', 'СПОРТИВНИЙ РЕПОРТАЖ',
+                      'Текст є спортивним репортажем або результатами змагань.'),
+        'CULTURE':   ('VERIFIED', 'КУЛЬТУРНИЙ КОНТЕНТ',
+                      'Текст є культурним оглядом або рецензією.'),
+        'CONSPIRACY_NEWS': ('SUSPICIOUS', 'НОВИНИ З ІМПЛІКОВАНОЮ ПРИЧИННІСТЮ',
+                      'Текст містить реальні факти, але подані через "дивний збіг" або '
+                      'анонімні джерела без прямих доказів зв\'язку між подіями. '
+                      'Перевіряйте кожне твердження окремо.'),
     }
 
     # ────────────────────────────────────────────────────────────────
@@ -140,33 +254,70 @@ class GenreDetector:
     def analyze(self, text: str) -> GenreResult:
         t = text.lower()
 
-        analytics = sum(1 for p in self.ANALYTICS_SIGNALS if re.search(p, t, re.I))
-        science   = sum(1 for p in self.SCIENCE_SIGNALS    if re.search(p, t, re.I))
-        report    = sum(1 for p in self.REPORT_SIGNALS    if re.search(p, t, re.I))
-        opinion   = sum(1 for p in self.OPINION_SIGNALS   if re.search(p, t, re.I))
-        satire    = sum(1 for p in self.SATIRE_SIGNALS    if re.search(p, t, re.I))
+        analytics       = sum(1 for p in self.ANALYTICS_SIGNALS       if re.search(p, t, re.I))
+        science         = sum(1 for p in self.SCIENCE_SIGNALS          if re.search(p, t, re.I))
+        report          = sum(1 for p in self.REPORT_SIGNALS           if re.search(p, t, re.I))
+        opinion         = sum(1 for p in self.OPINION_SIGNALS          if re.search(p, t, re.I))
+        satire          = sum(1 for p in self.SATIRE_SIGNALS           if re.search(p, t, re.I))
+        sport           = sum(1 for p in self.SPORT_SIGNALS            if re.search(p, t, re.I))
+        culture         = sum(1 for p in self.CULTURE_SIGNALS          if re.search(p, t, re.I))
+        conspiracy_news = sum(1 for p in self.CONSPIRACY_NEWS_SIGNALS  if re.search(p, t, re.I))
 
         signals = {
-            'analytics': analytics,
-            'science':   science,
-            'report':    report,
-            'opinion':   opinion,
-            'satire':    satire,
+            'analytics':       analytics,
+            'science':         science,
+            'report':          report,
+            'opinion':         opinion,
+            'satire':          satire,
+            'sport':           sport,
+            'culture':         culture,
+            'conspiracy_news': conspiracy_news,
         }
 
-        # Thresholds
+        # ── Genre selection logic ────────────────────────────────────
+        # Priority order matters: more specific genres win over generic ones.
+        # CONSPIRACY_NEWS can overlay REPORT or ANALYTICS — it wins if strong enough.
+
+        genre = 'UNKNOWN'
+        conf  = 0.0
+
         if satire >= 2:
-            genre, conf = 'SATIRE',    min(satire / 4, 1.0)
+            genre, conf = 'SATIRE',          min(satire / 4, 1.0)
+
+        elif conspiracy_news >= 4:
+            # Strong conspiracy framing overrides even if report signals present
+            genre, conf = 'CONSPIRACY_NEWS', min(conspiracy_news / 10, 1.0)
+
         elif opinion >= 2 and opinion > analytics:
-            genre, conf = 'OPINION',   min(opinion / 4, 1.0)
+            genre, conf = 'OPINION',         min(opinion / 4, 1.0)
+
         elif science >= 3:
-            genre, conf = 'SCIENCE',   min(science / 8, 1.0)
-        elif analytics >= 2:
-            genre, conf = 'ANALYTICS', min(analytics / 8, 1.0)
+            genre, conf = 'SCIENCE',         min(science / 8, 1.0)
+
+        elif sport >= 3:
+            # Requires 3 hits — prevents "score", "match" false positives
+            genre, conf = 'SPORT',           min(sport / 6, 1.0)
+
+        elif culture >= 3:
+            genre, conf = 'CULTURE',         min(culture / 6, 1.0)
+
+        elif analytics >= 3:
+            # Raised from 2 to 3 — was triggering too easily
+            # But if conspiracy signals also present, blend toward CONSPIRACY_NEWS
+            if conspiracy_news >= 2:
+                genre, conf = 'CONSPIRACY_NEWS', min((analytics + conspiracy_news) / 14, 1.0)
+            else:
+                genre, conf = 'ANALYTICS',   min(analytics / 8, 1.0)
+
         elif report >= 2:
-            genre, conf = 'REPORT',    min(report / 8, 1.0)
-        else:
-            genre, conf = 'UNKNOWN',   0.0
+            if conspiracy_news >= 2:
+                genre, conf = 'CONSPIRACY_NEWS', min((report + conspiracy_news) / 12, 1.0)
+            else:
+                genre, conf = 'REPORT',      min(report / 8, 1.0)
+
+        elif conspiracy_news >= 2:
+            # Weak but present conspiracy signals
+            genre, conf = 'CONSPIRACY_NEWS', min(conspiracy_news / 10, 0.5)
 
         return GenreResult(
             genre=genre,
@@ -176,15 +327,46 @@ class GenreDetector:
         )
 
 
+# ── Quick smoke-test ─────────────────────────────────────────────────
+
 if __name__ == '__main__':
     d = GenreDetector()
 
     tests = [
-        ('TSN Аналітика', 'Аналітики вважають що Пекін дедалі більше виступає у ролі старшого партнера. Експерти не виключають що Китай не очікував такого масштабу війни. За оцінками ЄС Китай забезпечує до 80 відсотків компонентів.'),
-        ('rbc Репортаж',  'Правоохоронці затримали ймовірну виконавицю двох вибухів. Жінку було затримано в районному центрі. Міністр повідомив що серед постраждалих є цивільні.'),
-        ('Думка',         'Я вважаю що Україна мусить визнати реальність. На мою думку переговори неминучі. Переконаний що час діяти.'),
+        ('Daily Mail НЛО',
+         'Mystery as UFO vault with 3.8 million files is wiped clean hours after Trump demands '
+         'alien docs released. Greenewald said he could not rule out foul play because of the '
+         'suspicious information. They said it was a deletion, not corruption. The timing raises '
+         'questions. Could it have been foul play? I can\'t rule it out. Bombshell UFO speech ready. '
+         'According to sources close to the investigation the server was deliberately wiped.'),
+
+        ('TSN Аналітика',
+         'Аналітики вважають що Пекін дедалі більше виступає у ролі старшого партнера. '
+         'Експерти не виключають що Китай не очікував такого масштабу. За оцінками ЄС '
+         'Китай забезпечує до 80 відсотків компонентів. За словами джерел у Брюсселі.'),
+
+        ('rbc Репортаж',
+         'Правоохоронці затримали ймовірну виконавицю двох вибухів. Жінку було затримано '
+         'в районному центрі. Published: 12 February 2025. Confirmed by police spokesperson.'),
+
+        ('Думка колумніста',
+         'Я вважаю що Україна мусить визнати реальність. На мою думку переговори неминучі. '
+         'Переконаний що час діяти. Колонка редактора.'),
+
+        ('Спорт',
+         'Збірна України вийшла до фіналу чемпіонату. Тренер команди підтвердив склад. '
+         'Матч відбудеться на стадіоні в Варшаві. Груповий етап завершено. '
+         'Баскетбол і волейбол також в програмі олімпіади.'),
+
+        ('Наука',
+         'Дослідники виявили новий механізм. Клінічне дослідження охопило 500 осіб. '
+         'Гіпотеза підтверджена експериментом. Published in peer-reviewed journal. '
+         'Scientists from the laboratory conducted research on cognitive functions.'),
     ]
 
+    print(f'{"Тест":<22} {"Жанр":<20} {"Conf":>5}  {"Сигнали"}')
+    print('─' * 80)
     for name, text in tests:
         r = d.analyze(text)
-        print(f'{name}: {r.genre} (conf={r.confidence}, signals={r.signals})')
+        sig_str = '  '.join(f'{k}={v}' for k, v in r.signals.items() if v > 0)
+        print(f'{name:<22} {r.genre:<20} {r.confidence:>5.2f}  {sig_str}')
