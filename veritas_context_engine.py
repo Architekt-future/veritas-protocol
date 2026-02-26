@@ -456,25 +456,25 @@ class ContextEngine:
             text_lower, re.IGNORECASE
         ))
 
-        # ── Scoring: displacement requires COMBINATION of signals ─────────
-        # A crisis alone does NOT penalize unrelated legitimate texts.
-        # Displacement = distraction topic + off-field + crisis context.
+        # ── Scoring ───────────────────────────────────────────────────────
+        # Distraction topic alone is a signal — crisis amplifies it.
+        # NOT in field = stronger displacement signal.
 
         if is_distraction_topic:
             signals.append('DISTRACTION_TOPIC')
-            score += 0.20
+            score += 0.30               # base: sensational/conspiracy topic
+
+            if not in_field:
+                signals.append('TOPIC_ISOLATED_FROM_FIELD')
+                score += 0.20           # topic absent from current news field
 
             if has_crisis:
                 signals.append('ACTIVE_ACCOUNTABILITY_CRISIS')
-                score += 0.25
+                score += 0.25           # amplifier: there IS a crisis to displace from
 
-                if not in_field:
-                    signals.append('TOPIC_ISOLATED_FROM_FIELD')
-                    score += 0.30
-
-                    if official_claim:
-                        signals.append('OFFICIAL_CLAIM_OFF_TOPIC')
-                        score += 0.15
+                if official_claim:
+                    signals.append('OFFICIAL_CLAIM_OFF_TOPIC')
+                    score += 0.15       # extra: official framing used as cover
 
         # ── Verdict ──────────────────────────────────────────────────────
         score = round(min(1.0, score), 3)
