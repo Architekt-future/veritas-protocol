@@ -1,7 +1,8 @@
 """
-Veritas Protocol - Flask API v16.7
+Veritas Protocol - Flask API v16.8
 Forces fresh import of Veritas modules on every restart
 SCRAPER: Daily Mail selectors + <p> fallback (2026-02-26)
+GENRE: GenreDetector v2.0 — CONSPIRACY_NEWS + fixed SPORT/CULTURE false positives
 """
 
 import sys
@@ -412,56 +413,60 @@ def oracle():
             if pivot_evidence:
                 pivot_line += f'  Фраза-тригер: «{pivot_evidence[0][:80]}»\n'
 
-        NON_NEWS = {
-            'SPORT': [
-                r'\b(футбол|баскетбол|волейбол|теніс|хокей|бокс|олімпіад|чемпіонат|турнір)\b',
-                r'\b(football|basketball|volleyball|tennis|hockey|boxing|olympic|championship)\b',
-                r'\b(гол|матч|рахунок|тайм|пенальті|суддя|арбітр|стадіон|збірна|тренер)\b',
-                r'\b(goal|match|score|referee|stadium|squad|coach|athlete|medal)\b',
-                r'\b(гравець|команда|клуб|ліга|спортсмен|медаль)\b',
-            ],
-            'CULTURE': [
-                r'\b(фільм|кіно|серіал|театр|виставка|концерт|альбом|режисер|актор)\b',
-                r'\b(film|movie|series|theatre|concert|album|director|actor|artist)\b',
-            ],
-            'SCIENCE': [
-                r'\b(дослідження|експеримент|відкриття|вчені|лабораторія|наука)\b',
-                r'\b(research|experiment|discovery|scientists|laboratory|science)\b',
-            ],
-            'TECH': [
-                r'\b(програм|розробка|код|алгоритм|додаток|смартфон|процесор)\b',
-                r'\b(software|development|code|algorithm|application|smartphone)\b',
-            ],
-        }
+        # ── Genre detection via GenreDetector v2.0 ───────────────────
+        # Priority: genre already in diagnostics (set by core) → inline detection → UNKNOWN
+        detected_genre = genre  # from diag.get('genre', '') above
 
-        detected_topic = None
-        preview_lower = text_preview.lower()
-        for topic, patterns in NON_NEWS.items():
-            hits = sum(1 for p in patterns if re.search(p, preview_lower, re.IGNORECASE))
-            if hits >= 2:
-                detected_topic = topic
-                break
+        if not detected_genre and text_preview:
+            try:
+                from veritas_genre_detector import GenreDetector as _GD
+                _gd_result = _GD().analyze(text_preview)
+                detected_genre = _gd_result.genre
+            except Exception:
+                detected_genre = 'UNKNOWN'
 
-        TOPIC_LABELS = {
-            'SPORT':   'спортивний репортаж',
-            'CULTURE': 'культурний контент',
-            'SCIENCE': 'науковий текст',
-            'TECH':    'технологічний текст',
-        }
-
-        topic_instruction = ''
-        if detected_topic:
-            label = TOPIC_LABELS.get(detected_topic, detected_topic.lower())
-            topic_instruction = (
-                f"\n⚠️ ВАЖЛИВО: Цей текст є «{label}».\n"
-                "Аналізуй ЛИШЕ структуру і подачу в рамках цього жанру.\n"
+        # ── Genre-specific instructions for Claude ───────────────────
+        GENRE_INSTRUCTIONS = {
+            'SPORT': (
+                "⚠️ ЖАНР: спортивний репортаж.\n"
+                "Аналізуй ЛИШЕ структуру подачі у межах спортивного жанру.\n"
                 "НЕ згадуй геополітику, кризи відповідальності, відволікання уваги.\n"
                 "Якщо текст структурно чистий для свого жанру — скажи це прямо.\n"
-            )
+            ),
+            'CULTURE': (
+                "⚠️ ЖАНР: культурний огляд або рецензія.\n"
+                "Аналізуй у межах культурного жанру. НЕ шукай маніпуляцію там де є суб'єктивна оцінка.\n"
+            ),
+            'SCIENCE': (
+                "⚠️ ЖАНР: науковий або науково-популярний текст.\n"
+                "Аналізуй точність тверджень і наявність джерел. НЕ трактуй наукові метафори як маніпуляцію.\n"
+            ),
+            'SATIRE': (
+                "⚠️ ЖАНР: сатира або іронія.\n"
+                "НЕ інтерпретуй буквально. Оціни чи є іронія прозорою для читача.\n"
+            ),
+            'OPINION': (
+                "⚠️ ЖАНР: авторська думка або колонка.\n"
+                "Суб'єктивність тут — норма. Оцінюй аргументи, а не факти.\n"
+            ),
+            'CONSPIRACY_NEWS': (
+                "⚠️ ЖАНР: новини з імплікованою причинністю.\n"
+                "Текст містить реальні факти, але подає їх через 'дивний збіг', анонімні джерела "
+                "або конструкцію 'X сталось після Y — чи це випадковість?'.\n"
+                "Це не обов'язково брехня, але це маніпулятивна структура.\n"
+                "Поясни читачу різницю між кореляцією і причинністю.\n"
+                "Скажи прямо: факти реальні, але зв'язок між ними — не доведений.\n"
+            ),
+        }
 
-        # Для не-новинного контенту — не передаємо hot_topics,
-        # бо Claude їх інтерпретує як частину тексту, а не фону
-        if detected_topic:
+        topic_instruction = GENRE_INSTRUCTIONS.get(detected_genre, '')
+
+        # ── Context block ─────────────────────────────────────────────
+        # Редакційні жанри отримують повний контекст поля (displacement, hot topics).
+        # Розважальні/фактичні жанри — ні, бо Claude плутає hot_topics з темою тексту.
+        EDITORIAL_GENRES = {'CONSPIRACY_NEWS', 'ANALYTICS', 'REPORT', 'OPINION', 'UNKNOWN'}
+
+        if detected_genre not in EDITORIAL_GENRES:
             context_block = (
                 f"  Displacement: {ctx_verdict} (контекст поля — не стосується цього тексту)\n"
                 f"  Performative: {perf_verdict} (score: {perf_score})\n"
@@ -481,7 +486,7 @@ def oracle():
             f"{topic_instruction}\n"
             "ДАНІ АНАЛІЗУ:\n"
             f"  Вердикт системи (ГОЛОВНИЙ СИГНАЛ): {verdict}\n"
-            f"  Жанр: {genre}\n"
+            f"  Жанр: {detected_genre}\n"
             f"  Ентропія: {entropy_pct}%\n"
             f"  Когезія: {cohesion}\n"
             f"СПРАЦЮВАННЯ МОДУЛІВ:\n"
@@ -498,6 +503,7 @@ def oracle():
             "  ВЕРИФІКОВАНА ЛОГІКА або СТРУКТУРНА ЦІЛІСНІСТЬ → ЧИСТО\n"
             "  АБСТРАКТНА СКЛАДНІСТЬ → ПІДОЗРІЛО\n"
             "  КОНЦЕПТУАЛЬНЕ ЗМІШУВАННЯ або СЕМАНТИЧНИЙ ШУМ → НЕБЕЗПЕЧНО\n"
+            "  НОВИНИ З ІМПЛІКОВАНОЮ ПРИЧИННІСТЮ → ПІДОЗРІЛО\n"
             "Якщо є НАРАТИВНИЙ PIVOT — завжди згадай це в поясненні, навіть якщо загальний вердикт ЧИСТО.\n"
             "ФОРМАТ — суворо:\n"
             "Рядок 1: одне слово ВЕЛИКИМИ — (ЧИСТО / ПІДОЗРІЛО / НЕБЕЗПЕЧНО / АНАЛІТИКА / ДУМКА / РИТОРИКА)\n"
@@ -521,7 +527,7 @@ def oracle():
             'witness_text':      message.content[0].text if message.content else "Свідок мовчить.",
             'witness_available': True,
             'model':             'claude-haiku-4-5-20251001',
-            'detected_topic':    detected_topic,
+            'detected_genre':    detected_genre,
         })
 
     except Exception as e:
