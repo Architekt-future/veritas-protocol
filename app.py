@@ -1,6 +1,7 @@
 """
-Veritas Protocol - Flask API v16.6
+Veritas Protocol - Flask API v16.7
 Forces fresh import of Veritas modules on every restart
+SCRAPER: Daily Mail selectors + <p> fallback (2026-02-26)
 """
 
 import sys
