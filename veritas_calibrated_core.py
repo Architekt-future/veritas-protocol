@@ -720,7 +720,7 @@ class VeritasCalibratedCore:
         # for actual financial documents, reports, and investment pitches.
         LAC_FINANCE_SKIP_GENRES = {
             'CONSPIRACY_NEWS', 'REPORT', 'OPINION', 'SPORT',
-            'CULTURE', 'LIFESTYLE', 'SATIRE', 'SCIENCE', 'TECH',
+            'CULTURE', 'LIFESTYLE', 'SATIRE', 'SCIENCE',
         }
         lac_finance_result = {
             'score': 0.0,
