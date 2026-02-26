@@ -1137,11 +1137,12 @@ function renderResults(data) {
     // Context Engine — displacement detection
     const contextPanel = document.getElementById('contextPanel');
     const ctx = data.context;
-    if (ctx && ctx.available && ctx.verdict !== 'CONTEXTUALLY_NEUTRAL' && ctx.verdict !== 'NO_CONTEXT') {
+    if (ctx && ctx.available && ctx.verdict !== 'NO_CONTEXT') {
         const verdictMap = {
-            'LIKELY_DISPLACEMENT': currentLang === 'uk' ? '🚨 ВІРОГІДНЕ ВІДВОЛІКАННЯ' : '🚨 LIKELY DISPLACEMENT',
-            'SUSPICIOUS_TIMING':   currentLang === 'uk' ? '⚠️ ПІДОЗРІЛИЙ ТАЙМИНГ'     : '⚠️ SUSPICIOUS TIMING',
-            'MONITOR':             currentLang === 'uk' ? '👁 МОНІТОРИНГ'              : '👁 MONITOR',
+            'LIKELY_DISPLACEMENT':  currentLang === 'uk' ? '🚨 ВІРОГІДНЕ ВІДВОЛІКАННЯ' : '🚨 LIKELY DISPLACEMENT',
+            'SUSPICIOUS_TIMING':    currentLang === 'uk' ? '⚠️ ПІДОЗРІЛИЙ ТАЙМИНГ'     : '⚠️ SUSPICIOUS TIMING',
+            'MONITOR':              currentLang === 'uk' ? '👁 МОНІТОРИНГ'              : '👁 MONITOR',
+            'CONTEXTUALLY_NEUTRAL': currentLang === 'uk' ? '🌐 ПОЛЕ: ОРГАНІЧНО'         : '🌐 FIELD: ORGANIC',
         };
         document.getElementById('contextVerdict').textContent =
             verdictMap[ctx.verdict] || ctx.verdict;
@@ -1166,6 +1167,17 @@ function renderResults(data) {
         }
         document.getElementById('contextNote').textContent =
             currentLang === 'uk' ? ctx.explanation_uk : ctx.explanation_en;
+
+        // Neutral verdict — muted styling, not alarming
+        const cvEl = document.getElementById('contextVerdict');
+        if (ctx.verdict === 'CONTEXTUALLY_NEUTRAL') {
+            cvEl.style.color = '#7788aa';
+            contextPanel.style.opacity = '0.7';
+        } else {
+            cvEl.style.color = '';
+            contextPanel.style.opacity = '1';
+        }
+
         contextPanel.style.display = 'block';
     } else { contextPanel.style.display = 'none'; }
 
