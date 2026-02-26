@@ -1361,9 +1361,9 @@ async function consultOracle() {
 
     try {
         const diag = window._lastVeritasResult;
-        // scraped_text_full — повний очищений текст після скрейпінгу (без навігації).
-        // Якщо URL не аналізувався — беремо textInput напряму.
-        const fullText = diag.scraped_text_full
+        // article_text — повний очищений текст від бекенду без обрізки.
+        // Fallback на textInput якщо текст вводився вручну.
+        const articleText = diag.article_text
             || document.getElementById('textInput').value
             || '';
 
@@ -1371,8 +1371,8 @@ async function consultOracle() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                diagnostics: diag,
-                full_text:   fullText,
+                diagnostics:  diag,
+                article_text: articleText,
             })
         });
 
