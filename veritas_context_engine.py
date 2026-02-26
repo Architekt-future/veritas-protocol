@@ -115,7 +115,7 @@ NON_NEWS_TOPIC_PATTERNS = {
         r'\b(програмування|розробка|код|алгоритм|додаток|сервіс)\b',
         r'\b(programming|development|code|algorithm|application|software)\b',
         r'\b(смартфон|процесор|чіп|оновлення|версія|реліз)\b',
-        r'\b(smartphone|processor|chip|update|version|release)\b',
+        r'\b(smartphone|processor|chip|software update|app version|product release)\b',
     ],
     'LIFESTYLE': [
         r'\b(рецепт|страва|кухня|інгредієнт|приготування)\b',
