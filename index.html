@@ -1361,19 +1361,18 @@ async function consultOracle() {
 
     try {
         const diag = window._lastVeritasResult;
-        // text preview from scraped or input
-        const textPreview = (
-            diag.scraped_text_preview ||
-            document.getElementById('textInput').value ||
-            ''
-        ).slice(0, 1500);
+        // scraped_text_full — повний очищений текст після скрейпінгу (без навігації).
+        // Якщо URL не аналізувався — беремо textInput напряму.
+        const fullText = diag.scraped_text_full
+            || document.getElementById('textInput').value
+            || '';
 
         const resp = await fetch('/api/oracle', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                diagnostics:  diag,
-                text_preview: textPreview,
+                diagnostics: diag,
+                full_text:   fullText,
             })
         });
 
