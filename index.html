@@ -892,15 +892,32 @@ async function analyze() {
     setLoading(true);
 
     try {
-        const res = await fetch(`${API_BASE}/analyze?_t=${Date.now()}`, {
+        const doFetch = () => fetch(`${API_BASE}/analyze?_t=${Date.now()}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache' },
             body: JSON.stringify(body)
         });
-        const rawText = await res.text();
+
+        let res = await doFetch();
+        let rawText = await res.text();
         let data;
         try { data = JSON.parse(rawText); }
-        catch { throw new Error(`Bad JSON: ${rawText.slice(0,200)}`); }
+        catch {
+            // Cold start — server waking up, retry once after delay
+            const retryBtn = document.getElementById('i18n-btn_analyze');
+            const origLabel = retryBtn.textContent;
+            for (let s = 8; s > 0; s--) {
+                retryBtn.textContent = currentLang === 'uk'
+                    ? `⏳ Сервер прокидається… ${s}с`
+                    : `⏳ Server waking up… ${s}s`;
+                await new Promise(r => setTimeout(r, 1000));
+            }
+            retryBtn.textContent = origLabel;
+            res = await doFetch();
+            rawText = await res.text();
+            try { data = JSON.parse(rawText); }
+            catch { throw new Error(`Bad JSON: ${rawText.slice(0, 200)}`); }
+        }
         if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
 
         window._lastVeritasResult = data;
@@ -1137,12 +1154,11 @@ function renderResults(data) {
     // Context Engine — displacement detection
     const contextPanel = document.getElementById('contextPanel');
     const ctx = data.context;
-    if (ctx && ctx.available && ctx.verdict !== 'NO_CONTEXT') {
+    if (ctx && ctx.available && ctx.verdict !== 'CONTEXTUALLY_NEUTRAL' && ctx.verdict !== 'NO_CONTEXT') {
         const verdictMap = {
-            'LIKELY_DISPLACEMENT':  currentLang === 'uk' ? '🚨 ВІРОГІДНЕ ВІДВОЛІКАННЯ' : '🚨 LIKELY DISPLACEMENT',
-            'SUSPICIOUS_TIMING':    currentLang === 'uk' ? '⚠️ ПІДОЗРІЛИЙ ТАЙМИНГ'     : '⚠️ SUSPICIOUS TIMING',
-            'MONITOR':              currentLang === 'uk' ? '👁 МОНІТОРИНГ'              : '👁 MONITOR',
-            'CONTEXTUALLY_NEUTRAL': currentLang === 'uk' ? '🌐 ПОЛЕ: ОРГАНІЧНО'         : '🌐 FIELD: ORGANIC',
+            'LIKELY_DISPLACEMENT': currentLang === 'uk' ? '🚨 ВІРОГІДНЕ ВІДВОЛІКАННЯ' : '🚨 LIKELY DISPLACEMENT',
+            'SUSPICIOUS_TIMING':   currentLang === 'uk' ? '⚠️ ПІДОЗРІЛИЙ ТАЙМИНГ'     : '⚠️ SUSPICIOUS TIMING',
+            'MONITOR':             currentLang === 'uk' ? '👁 МОНІТОРИНГ'              : '👁 MONITOR',
         };
         document.getElementById('contextVerdict').textContent =
             verdictMap[ctx.verdict] || ctx.verdict;
@@ -1167,17 +1183,6 @@ function renderResults(data) {
         }
         document.getElementById('contextNote').textContent =
             currentLang === 'uk' ? ctx.explanation_uk : ctx.explanation_en;
-
-        // Neutral verdict — muted styling, not alarming
-        const cvEl = document.getElementById('contextVerdict');
-        if (ctx.verdict === 'CONTEXTUALLY_NEUTRAL') {
-            cvEl.style.color = '#7788aa';
-            contextPanel.style.opacity = '0.7';
-        } else {
-            cvEl.style.color = '';
-            contextPanel.style.opacity = '1';
-        }
-
         contextPanel.style.display = 'block';
     } else { contextPanel.style.display = 'none'; }
 
