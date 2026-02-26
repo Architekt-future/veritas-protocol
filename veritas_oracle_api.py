@@ -2,9 +2,10 @@ import requests
 import time
 
 class VeritasOracle:
-    def __init__(self, api_token="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"):
-        # Твій пароль від Hugging Face
-        self.api_token = api_token
+    def __init__(self, api_token=None):
+        import os
+        # Читаємо з env змінної, fallback на None
+        self.api_token = api_token or os.environ.get('HF_API_TOKEN', '')
         # Адреса моделі LaBSE (та сама, що ми тестували в Colab)
         self.api_url = "https://api-inference.huggingface.co/models/sentence-transformers/LaBSE"
         self.headers = {"Authorization": f"Bearer {self.api_token}"}
