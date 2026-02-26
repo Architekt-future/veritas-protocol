@@ -234,6 +234,38 @@ def analyze():
                 
                 print(f'🔍 Scrape result: text length={len(text)}, words={len(text.split())}')
                 print(f'🔍 Raw length was: {len(raw)}')
+
+                # ── Jina fallback if scrape returned too little ──────────
+                word_count_check = len(text.split())
+                if word_count_check < 80:
+                    import os as _os
+                    jina_key = _os.environ.get('JINA_API_KEY', '')
+                    if jina_key:
+                        try:
+                            print(f'🔄 Jina fallback: only {word_count_check} words from direct scrape')
+                            jina_headers = {
+                                'Authorization': f'Bearer {jina_key}',
+                                'Accept': 'text/plain',
+                                'X-Return-Format': 'text',
+                            }
+                            jina_res = requests.get(
+                                f'https://r.jina.ai/{url}',
+                                headers=jina_headers,
+                                timeout=20
+                            )
+                            if jina_res.status_code == 200 and len(jina_res.text.split()) > word_count_check:
+                                text = jina_res.text.strip()
+                                # Trim to 5000 words
+                                words = text.split()
+                                if len(words) > 5000:
+                                    text = ' '.join(words[:5000])
+                                print(f'✅ Jina returned {len(text.split())} words')
+                            else:
+                                print(f'⚠️  Jina returned {jina_res.status_code}: {jina_res.text[:100]}')
+                        except Exception as je:
+                            print(f'⚠️  Jina error: {je}')
+                    else:
+                        print('⚠️  Jina fallback skipped: no JINA_API_KEY set')
                 print(f'🔍 Text preview: {repr(text[:300])}')
                 word_count = len(text.split())
                 if not text or len(text) < 100:
