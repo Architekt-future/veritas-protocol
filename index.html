@@ -887,17 +887,51 @@ const NARRATIVE_EN = {
     'Відсутність доказів конструктивно перетворюється на доказ': 'Absence of evidence is constructively transformed into proof',
 };
 
+// Prefix-based translations for dynamically generated dominant strings
+const NARRATIVE_PREFIX_EN = [
+    ['Трудовий контент без ',       'Labor content missing '],
+    ['Трудовий контент з патернами', 'Labor content with exploitation patterns'],
+    ['Фінансовий контент без ',     'Financial content missing '],
+    ['Підміна аксіом:',             'Axiom substitution:'],
+    ['Психологічна маніпуляція:',   'Psychological manipulation:'],
+    ['Риторичний вплив:',           'Rhetorical influence:'],
+    ['Псевдонаукові патерни:',      'Pseudo-scientific patterns:'],
+];
+// Missing criteria UK→EN for inline translation within dynamic strings
+const MISSING_CRITERIA_INLINE_EN = {
+    'явного трейдоффу':                     'explicit tradeoff',
+    'явний трейдофф':                        'explicit tradeoff',
+    'причинно-наслідкового зв\'язку':        'causal closure',
+    'вказаних ризиків блокування':           'blocking power',
+    'розкриття ризиків':                     'risk disclosure',
+    'часових рамок':                         'timeline',
+    'механізму виконання':                   'enforcement mechanism',
+    'відповідальної особи':                  'accountability',
+    'відповідальної сторони':                'stakeholder',
+    'критеріїв відповідальності':            'accountability criteria',
+    'ключових критеріїв логіки':             'key logic criteria',
+};
 function translateNarrative(str) {
     if (!str || currentLang === 'uk') return str;
     // dominant_signal comes as "{icon} {text}" — strip emoji before dict lookup
     const m = str.match(/^([\u{1F300}-\u{1FFFF}\u{2600}-\u{27BF}]\s*)(.*)/su);
-    if (m) {
-        const icon = m[1];
-        const text = m[2].trim();
-        const tr = NARRATIVE_EN[text];
-        return tr ? icon + tr : str;
+    const icon = m ? m[1] : '';
+    const text = m ? m[2].trim() : str;
+    // Exact match
+    const exact = NARRATIVE_EN[text];
+    if (exact) return icon + exact;
+    // Prefix match for dynamic strings
+    for (const [prefix, enPrefix] of NARRATIVE_PREFIX_EN) {
+        if (text.startsWith(prefix)) {
+            let rest = text.slice(prefix.length);
+            // Translate inline criteria list
+            for (const [uk, en] of Object.entries(MISSING_CRITERIA_INLINE_EN)) {
+                rest = rest.replaceAll(uk, en);
+            }
+            return icon + enPrefix + (prefix.endsWith(' ') ? rest : '');
+        }
     }
-    return NARRATIVE_EN[str] || str;
+    return str;
 }
 
 let currentLang = 'uk';
@@ -954,6 +988,7 @@ const COMPLETENESS_DIM_EN = {
     'АКТОР':        'ACTOR',
     'ПРИЧИНА':      'CAUSE',
     'НАСЛІДОК':     'CONSEQUENCE',
+    'НАСЛІДКИ':     'CONSEQUENCES',
     'АЛЬТЕРНАТИВА': 'ALTERNATIVE',
     'КОНТЕКСТ':     'CONTEXT',
 };
@@ -974,6 +1009,14 @@ const COMPLETENESS_HINT_EN = {
         'Alternative perspectives or solutions are absent.',
     'Ширший контекст або передумови не розкриті.':
         'Broader context or background is not explained.',
+    'Дія або тиск описані без аналізу витрат або наслідків.':
+        'Action or pressure described without cost or consequence analysis.',
+    'Відповідальна сторона або актор не названі.':
+        'The responsible party or actor is not named.',
+    'Подія подана без часового контексту.':
+        'Event presented without temporal context.',
+    'Географічний контекст відсутній.':
+        'Geographic context is absent.',
 };
 function translateCompleteness(cc) {
     if (currentLang === 'uk' || !cc) return cc;
