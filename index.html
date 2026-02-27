@@ -657,7 +657,7 @@ const STRINGS = {
         oracle_btn_retry: '↺ СЛОВО СВІДКА ЗНОВУ',
         oracle_btn_thinking: '⟳ СВІДОК ДУМАЄ...',
         oracle_header: 'СЛОВО СВІДКА',
-        oracle_footer: 'VERITAS WITNESS v0.1 · АНАЛІЗ ПАТЕРНУ · АНАЛІЗ ПАТЕРНІВ',
+        oracle_footer: 'VERITAS WITNESS v0.1 · АНАЛІЗ ПАТЕРНУ',
         oracle_loading_1: '⟳ СКАНУВАННЯ ПОЛЯ...',
         oracle_loading_2: '⚡ КАНАЛ ВІДКРИТО...',
         oracle_loading_3: '👁 СВІДОК ГОВОРИТЬ...',
@@ -857,6 +857,12 @@ const NARRATIVE_EN = {
     'Псевдонаукова аналогія — подібність форми видається за ідентичність функції': 'Pseudo-scientific analogy — formal resemblance mistaken for functional identity',
     'Логічний нонсеквітур — передумови і висновки в різних всесвітах': 'Logical non sequitur — premises and conclusions in different universes',
     'Системна атака на основи протоколу — підміна верифікації соціальним комфортом': 'Systemic attack on verification — replacing fact-checking with social comfort',
+    // LAC labor dynamic dominant strings (generated with f-string in core)
+    // We match the prefix since missing list varies; handled in translateNarrative below
+    'Трудовий контент з патернами експлуатації': 'Labor content with exploitation patterns',
+    'Фінансовий контент без ключових критеріїв логіки': 'Financial content missing key logic criteria',
+    'Трудовий контент без критеріїв відповідальності': 'Labor content missing accountability criteria',
+
     // nature translations
     'Текст відповідає базовим критеріям логічної цілісності': 'Text meets basic criteria of logical integrity',
     'Текст спроектований для пригнічення критичного мислення і підпорядкування читача': 'Text designed to suppress critical thinking and subordinate the reader',
@@ -908,6 +914,19 @@ const MISSING_UK = {
     'enforcement':       'механізм контролю',
     'stakeholder':       'відповідальна сторона',
 };
+const LAC_VERDICT_UK = {
+    'IMITATION OF LOGIC':          'ІМІТАЦІЯ ЛОГІКИ',
+    'IMITATION OF RESPONSIBILITY': 'ІМІТАЦІЯ ВІДПОВІДАЛЬНОСТІ',
+    'EXPLOITATION PATTERN':        'ПАТЕРН ЕКСПЛУАТАЦІЇ',
+    'WEAK ACCOUNTABILITY':         'СЛАБКА ВІДПОВІДАЛЬНІСТЬ',
+    'CLEAN':                       'ЧИСТО',
+    'N/A':                         'N/A',
+};
+function translateLacVerdict(v) {
+    if (!v) return 'N/A';
+    return currentLang === 'uk' ? (LAC_VERDICT_UK[v] || v) : v;
+}
+
 function translateMissing(arr) {
     if (!arr || !arr.length) return '';
     if (currentLang === 'uk') return arr.map(k => MISSING_UK[k] || k).join(', ');
@@ -1208,7 +1227,7 @@ function renderResults(data) {
     const lacFinPanel = document.getElementById('lacFinancePanel');
     if (diag.is_financial_content && diag.lac_finance_score !== undefined) {
         document.getElementById('lacFinanceScore').textContent   = diag.lac_finance_score.toFixed(2);
-        document.getElementById('lacFinanceVerdict').textContent = diag.lac_finance_verdict || 'N/A';
+        document.getElementById('lacFinanceVerdict').textContent = translateLacVerdict(diag.lac_finance_verdict);
         const mEl = document.getElementById('lacFinanceMissing');
         if (diag.lac_finance_missing && diag.lac_finance_missing.length) {
             document.getElementById('lacFinanceMissingList').textContent = translateMissing(diag.lac_finance_missing);
@@ -1221,7 +1240,7 @@ function renderResults(data) {
     const lacLabPanel = document.getElementById('lacLaborPanel');
     if (diag.is_labor_content && diag.lac_labor_score !== undefined) {
         document.getElementById('lacLaborScore').textContent   = diag.lac_labor_score.toFixed(2);
-        document.getElementById('lacLaborVerdict').textContent = diag.lac_labor_verdict || 'N/A';
+        document.getElementById('lacLaborVerdict').textContent = translateLacVerdict(diag.lac_labor_verdict);
         const lmEl = document.getElementById('lacLaborMissing');
         if (diag.lac_labor_missing && diag.lac_labor_missing.length) {
             document.getElementById('lacLaborMissingList').textContent = translateMissing(diag.lac_labor_missing);
@@ -1548,7 +1567,7 @@ async function consultOracle() {
         textEl.style.display = 'block';
         footer.style.display = 'block';
         btn.disabled = false;
-        btn.innerHTML = '↺ <span id="i18n-oracle_btn">' + t('oracle_btn_retry') + '</span>';
+        btn.innerHTML = '<span id="i18n-oracle_btn">' + t('oracle_btn_retry') + '</span>';
 
     } catch(e) {
         clearInterval(_oracleLoadingInterval);
