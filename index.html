@@ -821,6 +821,61 @@ const EXPL_EN = {
     'ІМПЛІКОВАНА ПРИЧИННІСТЬ': 'Real facts placed side by side to imply a connection that has not been proven. Check each claim independently.',
 };
 
+// ── NARRATIVE translations (dominant_signal + nature from backend, always UK) ──
+const NARRATIVE_EN = {
+    // dominant_signal translations
+    'Структурно цілісний текст без виражених аномалій': 'Structurally coherent text without significant anomalies',
+    'Семантична порожнеча — багато слів, мало змісту': 'Semantic void — many words, little content',
+    'Казуїстика — складність без інформаційної щільності': 'Casuistry — complexity without informational density',
+    'Реальний невирішений конфлікт — властивість ситуації, не тексту': 'Real unresolved conflict — a property of the situation, not the text',
+    'Семантичний дрейф — базові поняття поступово переосмислюються': 'Semantic drift — key concepts are gradually redefined',
+    'Сумнівні онтологічні претензії': 'Questionable ontological claims',
+    'Колапс епістемології': 'Epistemological collapse',
+    'Колапс епістемології — відсутність доказів подається як доказ': 'Epistemological collapse — absence of evidence presented as proof',
+    'Псевдоісторичні претензії': 'Pseudo-historical claims',
+    'Псевдоісторичний ревізіонізм — фабриковані факти подані як реальність': 'Pseudo-historical revisionism — fabricated facts presented as reality',
+    'Техно-містицизм — технологічна лексика для містичних претензій': 'Techno-mysticism — technological vocabulary for mystical claims',
+    'Небезпечні імплікації у висновках': 'Dangerous implications in conclusions',
+    'Псевдонаукова аналогія — подібність форми видається за ідентичність функції': 'Pseudo-scientific analogy — formal resemblance mistaken for functional identity',
+    'Логічний нонсеквітур — передумови і висновки в різних всесвітах': 'Logical non sequitur — premises and conclusions in different universes',
+    'Системна атака на основи протоколу — підміна верифікації соціальним комфортом': 'Systemic attack on verification — replacing fact-checking with social comfort',
+    // nature translations
+    'Текст відповідає базовим критеріям логічної цілісності': 'Text meets basic criteria of logical integrity',
+    'Текст спроектований для пригнічення критичного мислення і підпорядкування читача': 'Text designed to suppress critical thinking and subordinate the reader',
+    'Текст використовує риторичні конструкції що обмежують автономію судження': 'Text uses rhetorical constructs that limit autonomous judgment',
+    'Неіснуючі події і місця подані як задокументована реальність': 'Non-existent events and places presented as documented reality',
+    'Наукова термінологія використовується для легітимізації містичних претензій': 'Scientific terminology used to legitimize mystical claims',
+    'Система доказів побудована так що будь-яке заперечення стає підтвердженням': 'Evidence system built so that any objection becomes confirmation',
+    'Структурна схожість між явищами використовується як доказ функціональної ідентичності': 'Structural similarity used as proof of functional identity',
+    "Логічні зв'язки між передумовами і висновками відсутні або неможливі": 'Logical connections between premises and conclusions are absent or impossible',
+    'Конкретні факти присутні, але аналіз витрат і ризиків свідомо відсутній': 'Concrete facts present, but cost-risk analysis deliberately absent',
+    'Фінансова аргументація не завершена — відсутні ключові елементи логіки': 'Financial argumentation incomplete — key logical elements missing',
+    'Трудові умови сформульовані так що перекладають ризики на виконавця': 'Labor conditions formulated to shift risks onto the worker',
+    'Трудова відповідальність декларується без механізмів забезпечення': 'Labor accountability declared without enforcement mechanisms',
+    'Текст чесно відображає полярність реального конфлікту — синтез тут неможливий за визначенням': 'Text honestly reflects the polarity of a real conflict — synthesis is impossible by definition',
+    'Висока щільність абстрактних термінів без конкретних референтів': 'High density of abstract terms without concrete referents',
+    'Складна аргументація без фактичної бази — форма без змісту': 'Complex argumentation without factual basis — form without content',
+    'Фундаментальні поняття (істина, факт, логіка) переосмислюються як соціальні конструкти для легітимізації маніпуляції': 'Fundamental concepts (truth, fact, logic) reframed as social constructs to legitimize manipulation',
+    'Поступова підміна значень ключових понять — кожне речення нешкідливе, але разом формують небезпечний дрейф': 'Gradual substitution of key concept meanings — each sentence harmless, but together form a dangerous drift',
+    'Структурна схожість між явищами використовується як доказ функціональної ідентичності — логічний стрибок без обґрунтування': 'Structural similarity used as proof of functional identity — a logical leap without justification',
+    'Наукова термінологія використовується для легітимізації містичних претензій': 'Scientific terminology used to legitimize mystical claims',
+    'Псевдонаукові факти подаються в стилі документованої реальності': 'Pseudo-scientific facts presented in the style of documented reality',
+    'Відсутність доказів конструктивно перетворюється на доказ': 'Absence of evidence is constructively transformed into proof',
+};
+
+function translateNarrative(str) {
+    if (!str || currentLang === 'uk') return str;
+    // dominant_signal comes as "{icon} {text}" — strip emoji before dict lookup
+    const m = str.match(/^([\u{1F300}-\u{1FFFF}\u{2600}-\u{27BF}]\s*)(.*)/su);
+    if (m) {
+        const icon = m[1];
+        const text = m[2].trim();
+        const tr = NARRATIVE_EN[text];
+        return tr ? icon + tr : str;
+    }
+    return NARRATIVE_EN[str] || str;
+}
+
 let currentLang = 'uk';
 
 function t(key) {
@@ -992,7 +1047,7 @@ function renderResults(data) {
     const narrativePanel = document.getElementById('narrativePanel');
     const narrative = data.narrative || {};
     if (narrative.dominant_signal) {
-        document.getElementById('narrativeDominant').textContent = narrative.dominant_signal;
+        document.getElementById('narrativeDominant').textContent = translateNarrative(narrative.dominant_signal);
         
         const signalsEl = document.getElementById('narrativeSignals');
         const signals = narrative.active_signals || [];
@@ -1000,7 +1055,7 @@ function renderResults(data) {
             ? signals.map(s => `<span class="narrative-signal-tag">${escHtml(s)}</span>`).join('')
             : '';
         
-        document.getElementById('narrativeNature').textContent = narrative.nature || '';
+        document.getElementById('narrativeNature').textContent = translateNarrative(narrative.nature || '');
         narrativePanel.style.display = 'block';
     } else {
         narrativePanel.style.display = 'none';
