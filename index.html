@@ -699,6 +699,7 @@ const STRINGS = {
         completeness_verdict_label: 'Вердикт',
         missing_dims: '⚠️ Відсутні виміри:',
         advisory_note: '👁 Свідок фіксує — не судить. Це порада, не вирок.',
+        verdict_label_fin: 'Вердикт:',
         verdict_label_lab: 'Вердикт:',
         missing_criteria_lab: 'Відсутні критерії:',
         // Certainty panel
@@ -790,6 +791,7 @@ const STRINGS = {
         completeness_verdict_label: 'Verdict',
         missing_dims: '⚠️ Missing dimensions:',
         advisory_note: '👁 The Witness observes — does not judge. Advisory only.',
+        verdict_label_fin: 'Verdict:',
         verdict_label_lab: 'Verdict:',
         missing_criteria_lab: 'Missing Criteria:',
         // Certainty panel
@@ -1134,7 +1136,22 @@ function renderResults(data) {
         document.getElementById('lacFinanceVerdict').textContent = diag.lac_finance_verdict || 'N/A';
         const mEl = document.getElementById('lacFinanceMissing');
         if (diag.lac_finance_missing && diag.lac_finance_missing.length) {
-            document.getElementById('lacFinanceMissingList').textContent = diag.lac_finance_missing.join(', ');
+            const MISSING_UK = {
+                'explicit_tradeoff': 'явний компроміс',
+                'accountability': 'відповідальна особа',
+                'blocking_power': 'вказані ризики блокування',
+                'causal_closure': 'причинно-наслідковий зв\'язок',
+                'risk_disclosure': 'розкриття ризиків',
+                'timeline': 'часові рамки',
+                'mechanism': 'механізм виконання',
+                'enforcement': 'механізм контролю',
+                'stakeholder': 'відповідальна сторона',
+            };
+            function translateMissing(arr) {
+                if (currentLang === 'uk') return arr.map(k => MISSING_UK[k] || k).join(', ');
+                return arr.join(', ');
+            }
+            document.getElementById('lacFinanceMissingList').textContent = translateMissing(diag.lac_finance_missing);
             mEl.style.display = 'block';
         } else { mEl.style.display = 'none'; }
         lacFinPanel.style.display = 'block';
@@ -1147,7 +1164,7 @@ function renderResults(data) {
         document.getElementById('lacLaborVerdict').textContent = diag.lac_labor_verdict || 'N/A';
         const lmEl = document.getElementById('lacLaborMissing');
         if (diag.lac_labor_missing && diag.lac_labor_missing.length) {
-            document.getElementById('lacLaborMissingList').textContent = diag.lac_labor_missing.join(', ');
+            document.getElementById('lacLaborMissingList').textContent = translateMissing(diag.lac_labor_missing);
             lmEl.style.display = 'block';
         } else { lmEl.style.display = 'none'; }
         const rfEl = document.getElementById('lacLaborRedFlags');
