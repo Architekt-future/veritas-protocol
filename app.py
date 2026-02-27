@@ -457,6 +457,8 @@ def oracle():
             'war':'війна','energy':'енергетика','law':'право','media':'медіа',
             'protest':'протести','diplomacy':'дипломатія','terrorism':'тероризм',
             'migration':'міграція','technology_war':'технологічна війна',
+            'здоров':'охорона здоров\'я','health_care':'охорона здоров\'я',
+            'wellbeing':'благополуччя','mental_health':'психічне здоров\'я',
         }
         TOPIC_LABELS_EN = {
             'cia_fbi':'intelligence & security','tech':'technology','technology':'technology',
@@ -470,6 +472,8 @@ def oracle():
             'war':'war','energy':'energy','law':'law','media':'media',
             'protest':'protests','diplomacy':'diplomacy','terrorism':'terrorism',
             'migration':'migration','technology_war':'tech warfare',
+            'здоров':'health','health_care':'healthcare',
+            'wellbeing':'wellbeing','mental_health':'mental health',
         }
         TOPIC_LABELS = TOPIC_LABELS_EN if ui_language == 'en' else TOPIC_LABELS_UK
         def _sanitize_topic(t):
