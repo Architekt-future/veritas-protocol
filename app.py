@@ -424,29 +424,48 @@ def oracle():
         # Sanitize raw topic names that come from narrative_pivot module.
         # The module uses internal cluster IDs (cia_fbi, tech, etc.) which must
         # not appear verbatim in user-facing text.
-        TOPIC_LABELS = {
-            'cia_fbi':      'безпека та спецслужби',
-            'tech':         'технології',
-            'technology':   'технології',
-            'finance':      'фінанси',
-            'economy':      'економіка',
-            'politics':     'політика',
-            'military':     'військова тематика',
-            'health':       'охорона здоров\'я',
-            'science':      'наука',
-            'culture':      'культура',
-            'religion':     'релігія',
-            'sport':        'спорт',
-            'education':    'освіта',
-            'environment':  'довкілля',
-            'crime':        'злочинність',
-            'social':       'соціальна тематика',
+        TOPIC_LABELS_UK = {
+            'cia_fbi':'безпека та спецслужби','tech':'технології','technology':'технології',
+            'технологія':'технології','finance':'фінанси','economy':'економіка',
+            'politics':'політика','політика':'політика','military':'військова тематика',
+            'health':'охорона здоров\'я','science':'наука','culture':'культура',
+            'religion':'релігія','sport':'спорт','education':'освіта',
+            'environment':'довкілля','crime':'злочинність','social':'соціальна тематика',
+            'conspiracy':'змова','змова':'змова','нло_космос':'НЛО та космос',
+            'ufo':'НЛО та космос','ufo_space':'НЛО та космос','history':'історія',
+            'war':'війна','energy':'енергетика','law':'право','media':'медіа',
+            'protest':'протести','diplomacy':'дипломатія','terrorism':'тероризм',
+            'migration':'міграція','technology_war':'технологічна війна',
         }
+        TOPIC_LABELS_EN = {
+            'cia_fbi':'intelligence & security','tech':'technology','technology':'technology',
+            'технологія':'technology','finance':'finance','economy':'economy',
+            'politics':'politics','політика':'politics','military':'military',
+            'health':'health','science':'science','culture':'culture',
+            'religion':'religion','sport':'sport','education':'education',
+            'environment':'environment','crime':'crime','social':'social issues',
+            'conspiracy':'conspiracy','змова':'conspiracy','нло_космос':'UFO & space',
+            'ufo':'UFO & space','ufo_space':'UFO & space','history':'history',
+            'war':'war','energy':'energy','law':'law','media':'media',
+            'protest':'protests','diplomacy':'diplomacy','terrorism':'terrorism',
+            'migration':'migration','technology_war':'tech warfare',
+        }
+        TOPIC_LABELS = TOPIC_LABELS_EN if ui_language == 'en' else TOPIC_LABELS_UK
         def _sanitize_topic(t):
             if not t:
-                return 'одна тема'
+                return 'one topic' if ui_language == 'en' else 'одна тема'
             t_low = str(t).lower().strip()
             return TOPIC_LABELS.get(t_low, t_low)
+        def _sanitize_topic_list(topics, max_topics=3):
+            if not topics:
+                return _sanitize_topic('')
+            seen, result = set(), []
+            for raw in topics[:max_topics]:
+                label = _sanitize_topic(raw)
+                if label not in seen:
+                    seen.add(label)
+                    result.append(label)
+            return ', '.join(result) if result else _sanitize_topic('')
 
         # Replace cia_fbi and other raw IDs in pivot explanation text
         pivot_expl_clean = pivot_expl
@@ -459,8 +478,8 @@ def oracle():
         start_topics = pivot.get('start_topics', []) if isinstance(pivot, dict) else []
         end_topics   = pivot.get('end_topics', [])   if isinstance(pivot, dict) else []
         if start_topics and end_topics:
-            start_label = _sanitize_topic(start_topics[0] if start_topics else '')
-            end_label   = _sanitize_topic(end_topics[0]   if end_topics   else '')
+            start_label = _sanitize_topic_list(start_topics)
+            end_label   = _sanitize_topic_list(end_topics)
             pivot_expl_clean = (
                 f'Текст починається з теми "{start_label}" але закінчується темою "{end_label}". '
                 f'Такий перехід може бути навмисним — щоб непомітно підвести читача до висновку який не випливає з початкової теми.'
@@ -555,8 +574,8 @@ def oracle():
                     f"{signals_summary}\n"
                 )
             if pivot_verdict and pivot_verdict not in ('NO_PIVOT', 'INSUFFICIENT_TEXT', ''):
-                start_label_en = _sanitize_topic(start_topics[0] if start_topics else '')
-                end_label_en   = _sanitize_topic(end_topics[0]   if end_topics   else '')
+                start_label_en = _sanitize_topic_list(start_topics)
+                end_label_en   = _sanitize_topic_list(end_topics)
                 pivot_line = (
                     f"  🔄 NARRATIVE PIVOT: {pivot_verdict} (score: {pivot_score})\n"
                     f'  Text starts on topic "{start_label_en}" but ends on topic "{end_label_en}". '
