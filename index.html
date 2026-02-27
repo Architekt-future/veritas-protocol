@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>💠 Veritas Terminal v16.8</title>
+    <title>💠 Veritas Terminal v16.9</title>
     <style>
         * { margin:0; padding:0; box-sizing:border-box; }
         body {
@@ -628,7 +628,7 @@
 
     <!-- FOOTER -->
     <div class="footer">
-        💠 Veritas Protocol v16.4 &nbsp;·&nbsp;
+        💠 Veritas Protocol v16.9 &nbsp;·&nbsp;
         <span id="i18n-created_by"></span> Dmytro Kholodniak, Gemini, Claude, ChatGPT, DeepSeek
         &nbsp;·&nbsp;
         <a href="https://github.com/Architekt-future/veritas-protocol" target="_blank">GitHub</a>
@@ -643,7 +643,7 @@
 // ============================================================
 const STRINGS = {
     uk: {
-        subtitle: 'Аналізатор інформаційної ентропії · v16.8 · Маніпуляція · Порожнеча · Абсурдність',
+        subtitle: 'Аналізатор інформаційної ентропії · v16.9 · Маніпуляція · Порожнеча · Абсурдність',
         data_input: 'ВВІД ДАНИХ',
         label_url: 'Цільовий URL',
         placeholder_url: 'https://example.com/стаття',
@@ -726,7 +726,7 @@ const STRINGS = {
         'ІМПЛІКОВАНА ПРИЧИННІСТЬ': 'ІМПЛІКОВАНА ПРИЧИННІСТЬ',
     },
     en: {
-        subtitle: 'Information Entropy Analyzer · v16.8 · Manipulation · Void · Absurdity',
+        subtitle: 'Information Entropy Analyzer · v16.9 · Manipulation · Void · Absurdity',
         data_input: 'DATA INPUT',
         label_url: 'Target URL',
         placeholder_url: 'https://example.com/article',
@@ -1373,6 +1373,7 @@ async function consultOracle() {
             body: JSON.stringify({
                 diagnostics:  diag,
                 article_text: articleText,
+                language:     currentLang,
             })
         });
 
