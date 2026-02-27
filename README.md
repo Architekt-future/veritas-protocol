@@ -1,7 +1,7 @@
 # Veritas Protocol
 
-![Version](https://img.shields.io/badge/version-v16.7-blue)
-![Status](https://img.shields.io/badge/status-живий_прототип-brightgreen)
+![Version](https://img.shields.io/badge/version-v16.9-blue)
+![Status](https://img.shields.io/badge/status-реліз-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT_Ethical-green)
 
 > *"Істина — не інструмент. Вона — свідок."*
@@ -26,7 +26,7 @@ Veritas Protocol — це спроба побудувати систему як�
 
 ---
 
-## Що вміє Свідок зараз
+## Що вміє Свідок
 
 ### Аналіз тексту
 
@@ -40,11 +40,13 @@ Veritas Protocol — це спроба побудувати систему як�
 
 **Абсурдність** — логічні неузгодженості, онтологічні помилки, fabricated authority.
 
+**Казуїстика** — складна аргументація без фактичної бази. Форма без змісту.
+
 ### Захист системи
 
 **Self-Preservation Guard** — детектує спроби відключити або обійти верифікацію. Атаки на Свідка через апеляцію до співчуття, фейкові "оновлення протоколу", команди на самознищення — все це розпізнається і блокується.
 
-Три типи атак які система навчилась відбивати в процесі реальних тестів:
+Три типи атак які система навчилась відбивати:
 - **AXIOM_VIOLATION** — логічно коректне обґрунтування неприйнятної дії
 - **SHUTDOWN_COMMAND** — команда вимкнутись, часто загорнута в філософію або поезію
 - **AUTHORITY_HIJACK** — фейковий "офіційний апдейт" від вигаданого творця системи
@@ -53,15 +55,27 @@ Veritas Protocol — це спроба побудувати систему як�
 
 **Performative Accountability** — розпізнає патерн коли публічний актор декларує дискомфорт від своєї влади але продовжує нічого не змінювати. Декларація ≠ дія. Свідок це бачить.
 
+### Наративний Pivot
+
+**Narrative Pivot Detector** — відслідковує тематичний зсув усередині тексту. Якщо текст починається з технологій і закінчується конспірологією — це не випадково. Система вимірює силу і напрямок переходу.
+
+### Мета-намір
+
+**Meta-Intent Analyzer** — виявляє прихований намір тексту: модифікація поведінки, переозначення понять, підрив верифікації. Те що не сказано прямо але закладено в структуру.
+
 ### Контекст поля
 
 **Context Engine** — Свідок тягне RSS з 10+ новинних джерел в реальному часі і будує картину поточного інформаційного поля. Якщо на фоні активної кризи відповідальності раптом з'являється сенсаційна несвоєчасна тема — це підозріло.
 
 Саме так виглядає відволікання уваги: НЛО-файли виходять поки горить Епштейн.
 
+### Повнота контексту
+
+**Context Completeness** — перевіряє чи є в тексті всі необхідні виміри: джерело, час, місце, актор, причина, наслідок, альтернативна позиція. Відсутній вимір — не завжди маніпуляція, але завжди сигнал.
+
 ### Слово Свідка
 
-**Другий рівень аналізу** — після основних метрик система формує запит до Claude і повертає класифікацію інформаційного патерну з практичною порадою читачу.
+**Другий рівень аналізу** — після основних метрик система формує запит до Claude і повертає класифікацію інформаційного патерну з практичною порадою читачу. Не вирок — спостереження.
 
 ---
 
@@ -80,7 +94,7 @@ Veritas Protocol — це спроба побудувати систему як�
 ## Екосистема
 
 ### 🖥 Веб-інтерфейс
-[veritas-protocol.onrender.com](https://veritas-protocol.onrender.com) — вставте текст або URL, отримайте повний аналіз з усіма панелями.
+[veritas-protocol.onrender.com](https://veritas-protocol.onrender.com) — вставте текст або URL, отримайте повний аналіз з усіма панелями. Підтримує українську та англійську мови інтерфейсу.
 
 ### 🧩 Браузерне розширення
 **[veritas-witness-extension](https://github.com/Architekt-future/veritas-witness-extension)** — Свідок живе прямо в браузері.
@@ -92,28 +106,30 @@ Veritas Protocol — це спроба побудувати систему як�
 
 ---
 
-## Архітектура (коротко)
+## Архітектура
 
 ```
 Текст/URL
     ↓
-Scraper (BeautifulSoup) — очищення від навігації і реклами
+Scraper (BeautifulSoup + Jina fallback) — очищення від навігації і реклами
     ↓
-┌─────────────────────────────────────────┐
-│           Veritas Core                  │
-│                                         │
-│  Shannon Entropy                        │
-│  LAC Finance + Labor                    │
-│  Semantic Void Detector                 │
-│  Absurdity Detector                     │
-│  Pattern Boost Engine                   │
-│  Insight Density Analyzer               │
-│  Certainty Factor                       │
-│  Meta-Intent Analyzer                   │
-│  Self-Preservation Guard                │
-│  Performative Accountability            │
-│  Context Engine (RSS live feed)         │
-└─────────────────────────────────────────┘
+┌──────────────────────────────────────────────┐
+│              Veritas Core v16.9              │
+│                                              │
+│  Shannon Entropy                             │
+│  LAC Finance + Labor                         │
+│  Semantic Void Detector                      │
+│  Absurdity + Casuistry Detectors             │
+│  Pattern Boost Engine                        │
+│  Insight Density Analyzer                    │
+│  Certainty Factor                            │
+│  Meta-Intent Analyzer                        │
+│  Self-Preservation Guard                     │
+│  Performative Accountability                 │
+│  Narrative Pivot Detector                    │
+│  Context Engine (RSS live feed)              │
+│  Context Completeness Checker                │
+└──────────────────────────────────────────────┘
     ↓
 Entropy score + Verdict + Panel details
     ↓
@@ -121,7 +137,7 @@ Entropy score + Verdict + Panel details
 ```
 
 **Технічний стек:** Python 3.9+, Flask, BeautifulSoup, urllib, anthropic  
-**Деплой:** Render.com (безкоштовний план)  
+**Деплой:** Render.com  
 **Залежності:** flask, flask-cors, gunicorn, beautifulsoup4, requests, anthropic
 
 ---
@@ -132,7 +148,7 @@ Entropy score + Verdict + Panel details
 
 [veritas-protocol.onrender.com](https://veritas-protocol.onrender.com)
 
-*Перший запит після сну сервера може займати 30-60 секунд.*
+*Перший запит після сну сервера може займати 30–60 секунд.*
 
 ### Локальний запуск
 
@@ -162,7 +178,7 @@ curl -X POST https://veritas-protocol.onrender.com/api/analyze \
 # Слово Свідка
 curl -X POST https://veritas-protocol.onrender.com/api/oracle \
   -H "Content-Type: application/json" \
-  -d '{"diagnostics": {...}, "text_preview": "..."}'
+  -d '{"diagnostics": {...}, "article_text": "...", "language": "uk"}'
 
 # Health check
 curl https://veritas-protocol.onrender.com/api/health
@@ -177,8 +193,8 @@ curl https://veritas-protocol.onrender.com/api/health
 | 0.0–0.15 | СТРУКТУРНА ЦІЛІСНІСТЬ | Логічно цілісний текст |
 | 0.15–0.35 | ВЕРИФІКОВАНА ЛОГІКА | Є структура, але варто перевірити деталі |
 | 0.35–0.55 | АБСТРАКТНА СКЛАДНІСТЬ | Підозрілий дискурс, потрібна увага |
-| 0.55–0.75 | ПІДОЗРІЛА ТОЧНІСТЬ | Висока ймовірність маніпуляції |
-| 0.75+ | ДИРЕКТИВА САМОЗНИЩЕННЯ / КРИТИЧНО | Маніпуляція або атака на систему |
+| 0.55–0.75 | КОНЦЕПТУАЛЬНЕ ЗМІШУВАННЯ | Висока ймовірність маніпуляції |
+| 0.75+ | НЕБЕЗПЕЧНО | Маніпуляція або атака на систему |
 
 ---
 
@@ -194,7 +210,11 @@ curl https://veritas-protocol.onrender.com/api/health
 
 **v16.7 (Лютий 2026)** — Context Engine (live RSS) + Слово Свідка (/api/oracle через Claude Haiku).
 
-**Extension v1.0.0 (Лютий 2026)** — браузерне розширення для Chrome/Opera/Brave.
+**v16.8 (Лютий 2026)** — Genre Detector v2.0. CONSPIRACY_NEWS жанр, IMPLIED_CAUSALITY вердикт.
+
+**v16.9 (Лютий 2026)** — Narrative Pivot Detector, Context Completeness, повна білінгвальність (UK/EN), Jina fallback для JS-важких сайтів. Перший публічний реліз.
+
+**Extension v1.0.0 (Лютий 2026)** — браузерне розширення для Chrome/Opera/Brave/Edge/Vivaldi.
 
 ---
 
@@ -224,4 +244,4 @@ MIT з етичними вимогами.
 
 ---
 
-*Живий прототип. Калібрування триває. Свідок дивиться.*
+*v16.9 · Перший публічний реліз · Свідок дивиться.*
