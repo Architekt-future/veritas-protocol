@@ -39,7 +39,7 @@ class NarrativePivotDetector:
         'політика':     [r'\b(трамп|байден|обама|конгрес|сенат|trump|biden|obama|congress|senate|president|адмін)\b'],
         'епштейн':      [r'\b(епштейн|epstein|jeffrey|джеффрі)\b'],
         'кеннеді':      [r'\b(кеннеді|kennedy|jfk|вбивств)\b'],
-        'cia_fbi':      [r'\b(cia|фбр|fbi|розвідк|intelligence|агентств)\b'],
+        'cia_fbi':      [r'\b(cia|фбр|fbi|розвідк|агентств)\b', r'\b(intelligence\s+agenc|intelligence\s+communit|spy\s+agenc|secret\s+service)\b'],
         'військо':      [r'\b(пентагон|pentagon|military|армі|військ|defense|dod)\b'],
         'економіка':    [r'\b(інвестиц|ринок|акці|дохід|invest|market|stock|revenue|profit)\b'],
         'здоров':       [r'\b(лікар|хвороб|вакцин|doctor|vaccine|health|медицин)\b'],
