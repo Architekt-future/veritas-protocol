@@ -643,7 +643,7 @@
 // ============================================================
 const STRINGS = {
     uk: {
-        subtitle: 'Аналізатор інформаційної ентропії · v16.9 · Маніпуляція · Порожнеча · Абсурдність',
+        subtitle: 'Аналізатор інформаційної ентропії · Маніпуляція · Порожнеча · Абсурдність',
         data_input: 'ВВІД ДАНИХ',
         label_url: 'Цільовий URL',
         placeholder_url: 'https://example.com/стаття',
@@ -735,7 +735,7 @@ const STRINGS = {
         'ІМПЛІКОВАНА ПРИЧИННІСТЬ': 'ІМПЛІКОВАНА ПРИЧИННІСТЬ',
     },
     en: {
-        subtitle: 'Information Entropy Analyzer · v16.9 · Manipulation · Void · Absurdity',
+        subtitle: 'Information Entropy Analyzer · Manipulation · Void · Absurdity',
         data_input: 'DATA INPUT',
         label_url: 'Target URL',
         placeholder_url: 'https://example.com/article',
@@ -909,6 +909,7 @@ const MISSING_CRITERIA_INLINE_EN = {
     'відповідальної особи':                  'accountability',
     'відповідальної сторони':                'stakeholder',
     'критеріїв відповідальності':            'accountability criteria',
+    'відповідальності':                      'accountability',
     'ключових критеріїв логіки':             'key logic criteria',
 };
 function translateNarrative(str) {
@@ -932,6 +933,62 @@ function translateNarrative(str) {
         }
     }
     return str;
+}
+
+
+// ── Explanation strings from backend (always Ukrainian) ───────────────────────
+const EXPLANATION_EN = {
+    'Текст поступово змінює значення звичних слів — наприклад, слово "факт" може використовуватись для позначення думки. Це тонка техніка впливу: людина погоджується з чимось, не розуміючи що значення змінилось. Будьте уважні до того як саме вживаються ключові слова.':
+        'The text gradually shifts the meaning of familiar words — for example, the word "fact" may be used to denote opinion. This is a subtle manipulation: the reader agrees to something without realising the meaning has changed. Pay attention to how key words are actually used.',
+    'Текст складається переважно зі слів без конкретного змісту. Це може бути навмисна тактика — створити враження інформативності без реальних фактів. Не варто сприймати такий текст як джерело інформації.':
+        'The text consists mostly of words without concrete meaning. This may be a deliberate tactic — creating an impression of informativeness without real facts. Do not treat this text as a reliable source.',
+    'Текст містить багато термінів і тверджень, які між собою не пов\'язані. Такий прийом використовується щоб приховати відсутність логіки за видимістю складності. Читайте уважно: якщо неможливо простими словами переказати суть — це тривожний сигнал.':
+        'The text contains many terms and claims that are not logically connected. This technique is used to hide the absence of logic behind a facade of complexity. Read carefully: if you cannot retell the essence in simple words, that is a warning sign.',
+    'Текст використовує аналітичні формулювання але уникає конкретики: немає чітких трейдофів, відповідальних осіб чи критеріїв успіху. Це може бути корпоративна або політична риторика замаскована під аналітику. Запитайте себе: хто саме відповідає за ці слова і що буде якщо нічого не зміниться?':
+        'The text uses analytical language but avoids specifics: no clear tradeoffs, no named responsible parties, no success criteria. This may be corporate or political rhetoric disguised as analysis. Ask yourself: who exactly stands behind these words, and what happens if nothing changes?',
+    'Текст використовує аналітичні формулювання, але уникає конкретики: немає чітких трейдофів, відповідальних осіб чи критеріїв успіху. Це може бути корпоративна або політична риторика замаскована під аналітику. Запитайте себе: хто саме відповідає за ці слова і що буде якщо нічого не зміниться?':
+        'The text uses analytical language but avoids specifics: no clear tradeoffs, no named responsible parties, no success criteria. This may be corporate or political rhetoric disguised as analysis. Ask yourself: who exactly stands behind these words, and what happens if nothing changes?',
+    'У тексті змішані теми або поняття, які зазвичай не мають стосунку одне до одного. Це може дезорієнтувати читача і змусити прийняти хибні висновки. Спробуйте розділити текст на окремі твердження і перевірити кожне окремо.':
+        'The text mixes topics or concepts that normally have no relation to each other. This can disorient the reader and lead to false conclusions. Try to separate the text into individual claims and verify each one independently.',
+    'Текст оперує загальними поняттями без конкретних фактів або прикладів. Це не обов\'язково маніпуляція, але перевірити такі твердження складно. Шукайте конкретні цифри, джерела та факти перш ніж довіряти.':
+        'The text operates with general concepts without concrete facts or examples. This is not necessarily manipulation, but such claims are hard to verify. Look for specific numbers, sources and facts before trusting.',
+    'Текст має чітку структуру і твердження логічно пов\'язані між собою. Ознак маніпуляції не виявлено, але це не замінює перевірку фактів у незалежних джерелах.':
+        'The text has a clear structure and claims are logically connected. No signs of manipulation detected, but this does not replace fact-checking in independent sources.',
+    'Текст побудований як аналітичний матеріал: посилається на різні джерела, використовує обережні формулювання. Це ознаки журналістської чесності, а не маніпуляції. Все одно варто перевірити ключові факти самостійно.':
+        'The text is structured as analytical material: it references various sources and uses cautious language. These are signs of journalistic integrity, not manipulation. Still worth checking key facts independently.',
+    'Це текст де автор висловлює власну думку, а не повідомляє факти. Такий формат є нормальним, але важливо пам\'ятати: думка однієї людини — не доказ. Оцінюйте наведені аргументи, а не сприймайте висновки на віру.':
+        'This is a text where the author expresses a personal opinion rather than reporting facts. This format is normal, but remember: one person\'s opinion is not proof. Evaluate the arguments presented rather than accepting conclusions on faith.',
+    'Текст написаний у науковому або науково-популярному стилі: містить терміни, посилання на дослідження, цитати вчених. Це ознаки якісної журналістики. Конкретні твердження варто перевіряти у першоджерелах.':
+        'The text is written in a scientific or popular-science style: it contains terminology, references to research, and quotes from experts. These are signs of quality journalism. Specific claims should be verified against primary sources.',
+    'Текст містить ознаки сатири або гумору — твердження можуть бути навмисно перебільшені. Не сприймайте такий текст буквально і не поширюйте як новину без перевірки жанру.':
+        'The text shows signs of satire or humour — claims may be deliberately exaggerated. Do not take this text literally or share it as news without verifying its genre.',
+    'Текст логічно побудований і не містить очевидних ознак маніпуляції. Це хороший знак, але остаточна перевірка фактів залишається за вами.':
+        'The text is logically structured and contains no obvious signs of manipulation. This is a good sign, but the final fact-check remains your responsibility.',
+};
+// Genre label translations (appear in explanation header)
+const GENRE_LABEL_EN = {
+    'НАУКОВИЙ ТЕКСТ':            'SCIENTIFIC TEXT',
+    'АВТОРСЬКА ПОЗИЦІЯ':         'OPINION',
+    'АНАЛІТИКА':                 'ANALYTICS',
+    'РИТОРИКА':                  'RHETORIC',
+    'САТИРА':                    'SATIRE',
+    'ЗМОВНИЦЬКІ НОВИНИ':         'CONSPIRACY NEWS',
+    'СТРУКТУРНА ЦІЛІСНІСТЬ':     'STRUCTURAL INTEGRITY',
+    'ВЕРИФІКОВАНА ЛОГІКА':       'VERIFIED LOGIC',
+    'АБСТРАКТНА СКЛАДНІСТЬ':     'ABSTRACT COMPLEXITY',
+    'КОНЦЕПТУАЛЬНЕ ЗМІШУВАННЯ':  'CONCEPTUAL MIXING',
+    'СЕМАНТИЧНИЙ ШУМ':           'SEMANTIC NOISE',
+    'ПІДОЗРІЛО':                 'SUSPICIOUS',
+    'НЕБЕЗПЕЧНО':                'DANGEROUS',
+    'ЧИСТО':                     'CLEAN',
+};
+function translateExplanation(str) {
+    if (!str || currentLang === 'uk') return str;
+    return EXPLANATION_EN[str.trim()] || str;
+}
+function translateGenreLabel(str) {
+    if (!str || currentLang === 'uk') return str;
+    return GENRE_LABEL_EN[str.trim()] || str;
 }
 
 let currentLang = 'uk';
@@ -1091,7 +1148,7 @@ async function checkAPIStatus() {
         const res  = await fetch(`${API_BASE}/analyze?_t=${Date.now()}`, { method: 'GET' });
         const data = await res.json();
         if (data.status === 'online') {
-            el.textContent = `✅ API v${data.version || '?'}`;
+            el.textContent = `✅ API ${data.version || '?'}`;
             el.className   = 'api-status online';
         } else { throw new Error(); }
     } catch {
@@ -1175,19 +1232,24 @@ function renderResults(data) {
     // Explanation
     let explanation = data.explanation || '';
     if (currentLang === 'en') {
-        // Static verdicts
-        if (EXPL_EN[ukVerdict]) {
+        // 1. Full explanation dict (genre/verdict explanations from core)
+        const _exTr = translateExplanation(explanation);
+        if (_exTr !== explanation) {
+            explanation = _exTr;
+        } else if (EXPL_EN[ukVerdict]) {
+            // 2. Legacy static verdicts
             explanation = EXPL_EN[ukVerdict];
         } else {
-            // Dynamic manipulation explanations — translate key phrases
+            // 3. Dynamic manipulation — phrase replacement
             explanation = explanation
                 .replace('Виявлено активні техніки маніпуляції:', 'Active manipulation techniques detected:')
-                .replace('Текст спроектований для пригнічення критичного мислення.', 'Text designed to suppress critical thinking.')
                 .replace('Виявлено маніпулятивні конструкції:', 'Manipulative constructs detected:')
-                .replace('Аргументація спрямована на підпорядкування, а не переконання.', 'Argumentation aimed at submission, not persuasion.')
                 .replace('Виявлено елементи впливу:', 'Influence elements detected:')
-                .replace('Текст містить конструкції що обмежують автономію судження.', 'Text contains constructs limiting autonomous judgment.');
-            // Translate pattern names in explanation
+                .replace('Текст спроектований для пригнічення критичного мислення.', 'Text designed to suppress critical thinking.')
+                .replace('Аргументація спрямована на підпорядкування, а не переконання.', 'Argumentation aimed at submission, not persuasion.')
+                .replace('Текст містить конструкції що обмежують автономію судження.', 'Text contains constructs limiting autonomous judgment.')
+                .replace('Виявлено системну підміну аксіом:', 'Systemic axiom substitution detected:')
+                .replace('Виявлено підміну фундаментальних понять:', 'Substitution of fundamental concepts detected:');
             Object.keys(STRINGS.uk).forEach(k => {
                 if (STRINGS.en[k] && explanation.includes(STRINGS.uk[k])) {
                     explanation = explanation.split(STRINGS.uk[k]).join(STRINGS.en[k]);
@@ -1222,8 +1284,25 @@ function renderResults(data) {
         
         const signalsEl = document.getElementById('narrativeSignals');
         const signals = narrative.active_signals || [];
+        const SIGNAL_PREFIX_EN = {
+            'Маніпуляція':   'Manipulation',
+            'Абсурдність':   'Absurdity',
+            'Порожнеча':     'Void',
+            'Казуїстика':    'Casuistry',
+            'Патерн-буст':   'Pattern-boost',
+            'LAC Фінанси':   'LAC Finance',
+            'LAC Праця':     'LAC Labor',
+            'Когезія':       'Cohesion',
+        };
+        function translateSignal(s) {
+            if (currentLang === 'uk') return s;
+            for (const [uk, en] of Object.entries(SIGNAL_PREFIX_EN)) {
+                if (s.startsWith(uk)) return en + s.slice(uk.length);
+            }
+            return s;
+        }
         signalsEl.innerHTML = signals.length > 0
-            ? signals.map(s => `<span class="narrative-signal-tag">${escHtml(s)}</span>`).join('')
+            ? signals.map(s => `<span class="narrative-signal-tag">${escHtml(translateSignal(s))}</span>`).join('')
             : '';
         
         document.getElementById('narrativeNature').textContent = translateNarrative(narrative.nature || '');
@@ -1251,10 +1330,14 @@ function renderResults(data) {
     const natNature = document.getElementById('narrativeNature');
     const extraSignals = [];
     if (data.meta_intent && data.meta_intent.score >= 0.55)
-        extraSignals.push(`🎯 МЕТА-НАМІР ${(data.meta_intent.score * 100).toFixed(0)}%`);
+        extraSignals.push(currentLang === 'uk'
+            ? `🎯 МЕТА-НАМІР ${(data.meta_intent.score * 100).toFixed(0)}%`
+            : `🎯 META-INTENT ${(data.meta_intent.score * 100).toFixed(0)}%`);
     const axiomScore = diag.axiom_score || 0;
     if (axiomScore >= 0.25)
-        extraSignals.push(`⚠️ АКСІОМ-ДРЕЙФ ${(axiomScore * 100).toFixed(0)}%`);
+        extraSignals.push(currentLang === 'uk'
+            ? `⚠️ АКСІОМ-ДРЕЙФ ${(axiomScore * 100).toFixed(0)}%`
+            : `⚠️ AXIOM-DRIFT ${(axiomScore * 100).toFixed(0)}%`);
     if (extraSignals.length && natNature) {
         const existing = natNature.textContent;
         natNature.textContent = existing ? existing + ' · ' + extraSignals.join(' · ') : extraSignals.join(' · ');
