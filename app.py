@@ -133,6 +133,27 @@ def analyze():
                 
                 # Try to find main content area
                 # Ordered from most specific to most generic
+                # Guardian ng-interactive: try Jina immediately, skip BS scrape
+                import re as _re_pre
+                if _re_pre.search(r'theguardian\.com.*ng-interactive', url):
+                    import os as _os_g
+                    jina_key_g = _os_g.environ.get('JINA_API_KEY', '')
+                    if jina_key_g:
+                        try:
+                            jina_res_g = requests.get(
+                                f'https://r.jina.ai/{url}',
+                                headers={'Authorization': f'Bearer {jina_key_g}', 'Accept': 'text/plain'},
+                                timeout=40
+                            )
+                            if jina_res_g.status_code == 200 and len(jina_res_g.text.split()) > 50:
+                                text = jina_res_g.text.strip()
+                                words = text.split()
+                                if len(words) > 5000:
+                                    text = ' '.join(words[:5000])
+                                print(f'✅ Guardian ng-interactive via Jina: {len(text.split())} words')
+                        except Exception as _je_g:
+                            print(f'⚠️  Guardian Jina error: {_je_g}')
+
                 SELECTORS = [
                     # Daily Mail / Mail Online
                     '[itemprop="articleBody"]',
@@ -271,7 +292,7 @@ def analyze():
                 word_count = len(text.split())
                 if not text or len(text) < 100:
                     return jsonify({
-                        'error': 'Не вдалося зчитати текст сторінки. Сайт може блокувати автоматичне читання. Скопіюйте текст статті вручну і вставте в поле нижче.',
+                        'error': 'Could not read page content. The site may be blocking automated reading. Copy the article text manually and paste it below.',
                         'status': 'scrape_blocked'
                     }), 400
                 if word_count < 80:
