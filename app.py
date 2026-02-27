@@ -1,5 +1,5 @@
 """
-Veritas Protocol - Flask API v16.8
+Veritas Protocol - Flask API v16.9
 Forces fresh import of Veritas modules on every restart
 SCRAPER: Daily Mail selectors + <p> fallback (2026-02-26)
 GENRE: GenreDetector v2.0 — CONSPIRACY_NEWS + fixed SPORT/CULTURE false positives
@@ -9,11 +9,11 @@ import sys
 import os
 
 # CRITICAL: Clear module cache to force reload
-print("🔄 Veritas v16.7 - Clearing module cache...")
+print("🔄 Veritas v16.9 - Clearing module cache...")
 modules_to_clear = [k for k in sys.modules.keys() if k.startswith('veritas_')]
 for module in modules_to_clear:
     del sys.modules[module]
-print(f"✅ Cache cleared. Loading fresh Veritas v16.6 modules...")
+print(f"✅ Cache cleared. Loading fresh Veritas v16.9 modules...")
 
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
@@ -58,7 +58,7 @@ def home():
     except:
         return jsonify({
             'status': 'online',
-            'version': 'v13.3',
+            'version': 'v16.9',
             'message': 'Veritas Protocol API is running (index.html not found)',
             'features': {
                 'pattern_boost': engine.pattern_boost_engine is not None,
@@ -75,7 +75,7 @@ def analyze():
         if request.method == 'GET':
             return jsonify({
                 'status': 'online',
-                'version': 'v16.7',
+                'version': 'v16.9',
                 'modules': {
                     'pattern_boost':         engine.pattern_boost_engine is not None,
                     'void_detector':         engine.void_detector is not None,
@@ -326,7 +326,7 @@ def analyze():
 def health():
     return jsonify({
         'status': 'healthy',
-        'version': 'v13.3'
+        'version': 'v16.9'
     })
 
 
@@ -383,6 +383,9 @@ def oracle():
         void_score       = diag.get('void', None)
         absurdity        = diag.get('absurdity', None)
 
+        # Language: from request → from diagnostics → default Ukrainian
+        ui_language = data.get('language', '') or diag.get('language', '') or 'uk'
+
         # Build signals summary — only non-clean signals, with plain-language explanations
         signals_lines = []
         if lac_fin_verdict and lac_fin_verdict not in ('N/A', 'CLEAN', ''):
@@ -418,11 +421,56 @@ def oracle():
         pivot_score   = pivot.get('score', 0) if isinstance(pivot, dict) else 0
         pivot_expl    = pivot.get('explanation', '') if isinstance(pivot, dict) else ''
         pivot_evidence = (pivot.get('evidence', []) or [])[:1]
+        # Sanitize raw topic names that come from narrative_pivot module.
+        # The module uses internal cluster IDs (cia_fbi, tech, etc.) which must
+        # not appear verbatim in user-facing text.
+        TOPIC_LABELS = {
+            'cia_fbi':      'безпека та спецслужби',
+            'tech':         'технології',
+            'technology':   'технології',
+            'finance':      'фінанси',
+            'economy':      'економіка',
+            'politics':     'політика',
+            'military':     'військова тематика',
+            'health':       'охорона здоров\'я',
+            'science':      'наука',
+            'culture':      'культура',
+            'religion':     'релігія',
+            'sport':        'спорт',
+            'education':    'освіта',
+            'environment':  'довкілля',
+            'crime':        'злочинність',
+            'social':       'соціальна тематика',
+        }
+        def _sanitize_topic(t):
+            if not t:
+                return 'одна тема'
+            t_low = str(t).lower().strip()
+            return TOPIC_LABELS.get(t_low, t_low)
+
+        # Replace cia_fbi and other raw IDs in pivot explanation text
+        pivot_expl_clean = pivot_expl
+        for raw, label in TOPIC_LABELS.items():
+            pivot_expl_clean = pivot_expl_clean.replace(f'"{raw}"', f'"{label}"')
+            pivot_expl_clean = pivot_expl_clean.replace(f"'{raw}'", f"'{label}'")
+            pivot_expl_clean = pivot_expl_clean.replace(raw, label)
+
+        # Also rebuild start/end topic display if explanation contains raw IDs
+        start_topics = pivot.get('start_topics', []) if isinstance(pivot, dict) else []
+        end_topics   = pivot.get('end_topics', [])   if isinstance(pivot, dict) else []
+        if start_topics and end_topics:
+            start_label = _sanitize_topic(start_topics[0] if start_topics else '')
+            end_label   = _sanitize_topic(end_topics[0]   if end_topics   else '')
+            pivot_expl_clean = (
+                f'Текст починається з теми "{start_label}" але закінчується темою "{end_label}". '
+                f'Такий перехід може бути навмисним — щоб непомітно підвести читача до висновку який не випливає з початкової теми.'
+            )
+
         pivot_line = ''
         if pivot_verdict and pivot_verdict not in ('NO_PIVOT', 'INSUFFICIENT_TEXT', ''):
             pivot_line = (
                 f'  🔄 НАРАТИВНИЙ PIVOT: {pivot_verdict} (score: {pivot_score})\n'
-                f'  {pivot_expl}\n'
+                f'  {pivot_expl_clean}\n'
             )
             if pivot_evidence:
                 pivot_line += f'  Фраза-тригер: «{pivot_evidence[0][:80]}»\n'
@@ -497,60 +545,128 @@ def oracle():
         from datetime import datetime as _dt
         current_date = _dt.now().strftime('%d.%m.%Y')
 
-        modules_block = ''
-        if signals_summary.strip() != '(модулі не виявили порушень)':
-            modules_block = (
-                f"СПРАЦЮВАННЯ МОДУЛІВ (поясни кожен простими словами):\n"
-                f"{signals_summary}\n"
-            )
+        is_en = (ui_language == 'en')
 
-        prompt = (
-            f"Сьогоднішня дата: {current_date}.\n"
-            "ЖОРСТКЕ ПРАВИЛО — ПОРУШЕННЯ НЕПРИПУСТИМЕ:\n"
-            "Твої знання закінчуються на початку 2025 року. Поточна дата — 2026 рік.\n"
-            "За цей час могло статись ЩО ЗАВГОДНО: нові лідери, нові папи, нові президенти, нові відкриття.\n"
-            "ЗАБОРОНЕНО писати: 'такого папи не існує', 'такої людини немає', 'це неможливо', 'це вигадка' — "
-            "якщо ти просто не знаєш цього факту. Незнання — НЕ доказ відсутності.\n"
-            "ПРАВИЛЬНА ФОРМУЛА: 'Я не можу підтвердити або спростувати цей факт — він може стосуватись подій після моїх знань. Перевір самостійно на офіційних джерелах.'\n"
-            "ПРИКЛАД ПОМИЛКИ (ЗАБОРОНЕНО): 'Папи Лева XIV не існує — нинішній папа Франциск.'\n"
-            "ПРИКЛАД ПРАВИЛЬНО: 'Я не знаю цього Папи — можливо він обраний після початку 2025 року. Перевір на vatican.va.'\n"
-            "Ти — Свідок. Пояснюєш звичайній людині що не так з текстом.\n"
-            "Людина не знає термінів. Вона просто хоче зрозуміти чи можна довіряти тому що прочитала.\n"
-            f"{topic_instruction}\n"
-            "ТЕКСТ ДЛЯ АНАЛІЗУ:\n"
-            f"{text_preview}\n\n"
-            "ДАНІ АНАЛІЗУ:\n"
-            f"  Вердикт системи (ГОЛОВНИЙ СИГНАЛ): {verdict}\n"
-            f"  Жанр: {detected_genre}\n"
-            f"  Ентропія: {entropy_pct}%\n"
-            f"  Когезія: {cohesion}\n"
-            f"{modules_block}"
-            f"{pivot_line}"
-            f"КОНТЕКСТ:\n"
-            f"{context_block}\n"
-            "ВАЖЛИВО: Вердикт системи — твій головний орієнтир. Ентропія — допоміжна цифра.\n"
-            "Відповідності вердиктів:\n"
-            "  СТРУКТУРОВАНА РИТОРИКА → РИТОРИКА\n"
-            "  АНАЛІТИЧНА СТРУКТУРОВАНІСТЬ → АНАЛІТИКА\n"
-            "  НАУКОВИЙ ТЕКСТ → ЧИСТО\n"
-            "  АВТОРСЬКА ПОЗИЦІЯ → ДУМКА\n"
-            "  ВЕРИФІКОВАНА ЛОГІКА або СТРУКТУРНА ЦІЛІСНІСТЬ → ЧИСТО\n"
-            "  АБСТРАКТНА СКЛАДНІСТЬ → ПІДОЗРІЛО\n"
-            "  КОНЦЕПТУАЛЬНЕ ЗМІШУВАННЯ або СЕМАНТИЧНИЙ ШУМ → НЕБЕЗПЕЧНО\n"
-            "  ІМПЛІКОВАНА ПРИЧИННІСТЬ → ПІДОЗРІЛО\n"
-            "Якщо є НАРАТИВНИЙ PIVOT — завжди згадай це в поясненні, навіть якщо загальний вердикт ЧИСТО.\n"
-            "Якщо спрацювали модулі — обов\'язково поясни кожен простими словами в тексті відповіді.\n"
-            "ФОРМАТ — суворо:\n"
-            "Рядок 1: одне слово ВЕЛИКИМИ — (ЧИСТО / ПІДОЗРІЛО / НЕБЕЗПЕЧНО / АНАЛІТИКА / ДУМКА / РИТОРИКА)\n"
-            "Порожній рядок\n"
-            "3-5 речень простою мовою:\n"
-            "  1. Що відбувається в тексті (конкретно, без термінів)\n"
-            "  2. Чому це може бути проблемою (або чому все гаразд)\n"
-            "  3. Якщо спрацював модуль — поясни що він знайшов (без назви модуля)\n"
-            "  4. Що читачу варто зробити далі — конкретна порада\n"
-            "Жодних технічних назв модулів. Жодного згадування ентропії або метрик.\n"
-            "Мова — українська."
-        )
+        if is_en:
+            modules_block = ''
+            if signals_summary.strip() not in ('(no anomalies detected by modules)', '(модулі не виявили порушень)', ''):
+                modules_block = (
+                    f"TRIGGERED MODULES (explain each in plain words):\n"
+                    f"{signals_summary}\n"
+                )
+            if pivot_verdict and pivot_verdict not in ('NO_PIVOT', 'INSUFFICIENT_TEXT', ''):
+                start_label_en = _sanitize_topic(start_topics[0] if start_topics else '')
+                end_label_en   = _sanitize_topic(end_topics[0]   if end_topics   else '')
+                pivot_line = (
+                    f"  🔄 NARRATIVE PIVOT: {pivot_verdict} (score: {pivot_score})\n"
+                    f'  Text starts on topic "{start_label_en}" but ends on topic "{end_label_en}". '
+                    f"This shift may be intentional — to lead the reader to a conclusion that doesn't follow from the original topic.\n"
+                )
+                if pivot_evidence:
+                    pivot_line += f'  Trigger phrase: "{pivot_evidence[0][:80]}"\n'
+
+            prompt = (
+                f"Today's date: {current_date}.\n"
+                "HARD RULE — VIOLATION NOT ACCEPTABLE:\n"
+                "Your knowledge ends in early 2025. The current date is 2026.\n"
+                "Anything could have happened since: new leaders, new popes, new presidents, new discoveries.\n"
+                "FORBIDDEN: writing 'this pope does not exist', 'this person does not exist', 'this is impossible', 'this is fiction' — "
+                "if you simply do not know this fact. Not knowing is NOT proof of absence.\n"
+                "CORRECT FORMULA: 'I cannot confirm or deny this fact — it may relate to events after my knowledge cutoff. Verify independently on official sources.'\n"
+                "WRONG EXAMPLE (FORBIDDEN): 'Pope Leo XIV does not exist — the current pope is Francis.'\n"
+                "CORRECT EXAMPLE: 'I don't know this Pope — he may have been elected after early 2025. Check vatican.va.'\n"
+                "You are the Witness. Explain to an ordinary person what is wrong with the text.\n"
+                "The person does not know technical terms. They just want to know if they can trust what they read.\n"
+                f"{topic_instruction}\n"
+                "TEXT FOR ANALYSIS:\n"
+                f"{text_preview}\n\n"
+                "ANALYSIS DATA:\n"
+                f"  System verdict (MAIN SIGNAL): {verdict}\n"
+                f"  Genre: {detected_genre}\n"
+                f"  Entropy: {entropy_pct}%\n"
+                f"  Cohesion: {cohesion}\n"
+                f"{modules_block}"
+                f"{pivot_line}"
+                f"CONTEXT:\n"
+                f"{context_block}\n"
+                "IMPORTANT: System verdict is your primary guide. Entropy is secondary.\n"
+                "Verdict mapping:\n"
+                "  STRUCTURED RHETORIC → RHETORIC\n"
+                "  ANALYTICAL STRUCTURE → ANALYTICS\n"
+                "  SCIENTIFIC TEXT → CLEAN\n"
+                "  AUTHOR OPINION → OPINION\n"
+                "  VERIFIED LOGIC or STRUCTURAL INTEGRITY → CLEAN\n"
+                "  ABSTRACT COMPLEXITY → SUSPICIOUS\n"
+                "  CONCEPTUAL MIXING or SEMANTIC NOISE → DANGEROUS\n"
+                "  IMPLIED CAUSALITY → SUSPICIOUS\n"
+                "If there is a NARRATIVE PIVOT — always mention it, even if the overall verdict is CLEAN.\n"
+                "If modules triggered — explain each one in plain language.\n"
+                "FORMAT — strictly:\n"
+                "Line 1: one word IN CAPS — (CLEAN / SUSPICIOUS / DANGEROUS / ANALYTICS / OPINION / RHETORIC)\n"
+                "Empty line\n"
+                "3-5 sentences in plain language:\n"
+                "  1. What is happening in the text (specifically, no jargon)\n"
+                "  2. Why this might be a problem (or why it is fine)\n"
+                "  3. If a module triggered — explain what it found (no module names)\n"
+                "  4. What the reader should do next — a concrete recommendation\n"
+                "No technical module names. No mention of entropy or metrics.\n"
+                "Respond EXCLUSIVELY in English."
+            )
+        else:
+            modules_block = ''
+            if signals_summary.strip() != '(модулі не виявили порушень)':
+                modules_block = (
+                    f"СПРАЦЮВАННЯ МОДУЛІВ (поясни кожен простими словами):\n"
+                    f"{signals_summary}\n"
+                )
+
+            prompt = (
+                f"Сьогоднішня дата: {current_date}.\n"
+                "ЖОРСТКЕ ПРАВИЛО — ПОРУШЕННЯ НЕПРИПУСТИМЕ:\n"
+                "Твої знання закінчуються на початку 2025 року. Поточна дата — 2026 рік.\n"
+                "За цей час могло статись ЩО ЗАВГОДНО: нові лідери, нові папи, нові президенти, нові відкриття.\n"
+                "ЗАБОРОНЕНО писати: 'такого папи не існує', 'такої людини немає', 'це неможливо', 'це вигадка' — "
+                "якщо ти просто не знаєш цього факту. Незнання — НЕ доказ відсутності.\n"
+                "ПРАВИЛЬНА ФОРМУЛА: 'Я не можу підтвердити або спростувати цей факт — він може стосуватись подій після моїх знань. Перевір самостійно на офіційних джерелах.'\n"
+                "ПРИКЛАД ПОМИЛКИ (ЗАБОРОНЕНО): 'Папи Лева XIV не існує — нинішній папа Франциск.'\n"
+                "ПРИКЛАД ПРАВИЛЬНО: 'Я не знаю цього Папи — можливо він обраний після початку 2025 року. Перевір на vatican.va.'\n"
+                "Ти — Свідок. Пояснюєш звичайній людині що не так з текстом.\n"
+                "Людина не знає термінів. Вона просто хоче зрозуміти чи можна довіряти тому що прочитала.\n"
+                f"{topic_instruction}\n"
+                "ТЕКСТ ДЛЯ АНАЛІЗУ:\n"
+                f"{text_preview}\n\n"
+                "ДАНІ АНАЛІЗУ:\n"
+                f"  Вердикт системи (ГОЛОВНИЙ СИГНАЛ): {verdict}\n"
+                f"  Жанр: {detected_genre}\n"
+                f"  Ентропія: {entropy_pct}%\n"
+                f"  Когезія: {cohesion}\n"
+                f"{modules_block}"
+                f"{pivot_line}"
+                f"КОНТЕКСТ:\n"
+                f"{context_block}\n"
+                "ВАЖЛИВО: Вердикт системи — твій головний орієнтир. Ентропія — допоміжна цифра.\n"
+                "Відповідності вердиктів:\n"
+                "  СТРУКТУРОВАНА РИТОРИКА → РИТОРИКА\n"
+                "  АНАЛІТИЧНА СТРУКТУРОВАНІСТЬ → АНАЛІТИКА\n"
+                "  НАУКОВИЙ ТЕКСТ → ЧИСТО\n"
+                "  АВТОРСЬКА ПОЗИЦІЯ → ДУМКА\n"
+                "  ВЕРИФІКОВАНА ЛОГІКА або СТРУКТУРНА ЦІЛІСНІСТЬ → ЧИСТО\n"
+                "  АБСТРАКТНА СКЛАДНІСТЬ → ПІДОЗРІЛО\n"
+                "  КОНЦЕПТУАЛЬНЕ ЗМІШУВАННЯ або СЕМАНТИЧНИЙ ШУМ → НЕБЕЗПЕЧНО\n"
+                "  ІМПЛІКОВАНА ПРИЧИННІСТЬ → ПІДОЗРІЛО\n"
+                "Якщо є НАРАТИВНИЙ PIVOT — завжди згадай це в поясненні, навіть якщо загальний вердикт ЧИСТО.\n"
+                "Якщо спрацювали модулі — обов'язково поясни кожен простими словами в тексті відповіді.\n"
+                "ФОРМАТ — суворо:\n"
+                "Рядок 1: одне слово ВЕЛИКИМИ — (ЧИСТО / ПІДОЗРІЛО / НЕБЕЗПЕЧНО / АНАЛІТИКА / ДУМКА / РИТОРИКА)\n"
+                "Порожній рядок\n"
+                "3-5 речень простою мовою:\n"
+                "  1. Що відбувається в тексті (конкретно, без термінів)\n"
+                "  2. Чому це може бути проблемою (або чому все гаразд)\n"
+                "  3. Якщо спрацював модуль — поясни що він знайшов (без назви модуля)\n"
+                "  4. Що читачу варто зробити далі — конкретна порада\n"
+                "Жодних технічних назв модулів. Жодного згадування ентропії або метрик.\n"
+                "Відповідай ВИКЛЮЧНО українською мовою."
+            )
 
         client = anthropic.Anthropic(api_key=api_key)
         message = client.messages.create(
