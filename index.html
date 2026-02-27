@@ -581,7 +581,7 @@
                 "
                 onmouseover="this.style.borderColor='rgba(140,140,255,0.7)';this.style.color='#bbbbff'"
                 onmouseout="this.style.borderColor='rgba(100,100,255,0.35)';this.style.color='#9999dd'"
-            >👁 СЛОВО СВІДКА</button>
+            >👁 <span id="i18n-oracle_btn">СЛОВО СВІДКА</span></button>
         </div>
 
         <div id="oraclePanel" style="display:none;
@@ -600,11 +600,11 @@
                 pointer-events:none;"></div>
 
             <div style="font-size:9px;letter-spacing:4px;color:#333366;margin-bottom:16px;">
-                СЛОВО СВІДКА
+                <span id="i18n-oracle_header">СЛОВО СВІДКА</span>
             </div>
 
             <div id="oracleLoading" style="display:none; text-align:center; color:#444488; font-size:0.8em; letter-spacing:2px; padding:12px 0;">
-                <span id="oracleLoadingText">⟳ СКАНУВАННЯ ПОЛЯ...</span>
+                <span id="oracleLoadingText">⟳ ...</span>
             </div>
 
             <div id="oracleText" style="
@@ -622,7 +622,7 @@
                 margin-top:18px; padding-top:12px;
                 border-top:1px solid rgba(255,255,255,0.04);
                 font-size:9px; color:#222244; letter-spacing:2px;
-            ">VERITAS WITNESS v0.1 · АНАЛІЗ ПАТЕРНУ · АНАЛІЗ ПАТЕРНІВ</div>
+            "><span id="i18n-oracle_footer">VERITAS WITNESS v0.1 · АНАЛІЗ ПАТЕРНУ · АНАЛІЗ ПАТЕРНІВ</span></div>
         </div>
     </div>
 
@@ -653,6 +653,14 @@ const STRINGS = {
         btn_analyze: 'АНАЛІЗ',
         btn_clear: 'ОЧИСТИТИ',
         the_witness: 'СВІДОК',
+        oracle_btn: 'СЛОВО СВІДКА',
+        oracle_btn_retry: '↺ СЛОВО СВІДКА ЗНОВУ',
+        oracle_btn_thinking: '⟳ СВІДОК ДУМАЄ...',
+        oracle_header: 'СЛОВО СВІДКА',
+        oracle_footer: 'VERITAS WITNESS v0.1 · АНАЛІЗ ПАТЕРНУ · АНАЛІЗ ПАТЕРНІВ',
+        oracle_loading_1: '⟳ СКАНУВАННЯ ПОЛЯ...',
+        oracle_loading_2: '⚡ КАНАЛ ВІДКРИТО...',
+        oracle_loading_3: '👁 СВІДОК ГОВОРИТЬ...',
         entropy: 'Ентропія',
         order: 'Порядок',
         complex: 'Складність',
@@ -736,6 +744,14 @@ const STRINGS = {
         btn_analyze: 'ANALYZE',
         btn_clear: 'CLEAR',
         the_witness: 'THE WITNESS',
+        oracle_btn: 'WITNESS WORD',
+        oracle_btn_retry: '↺ WITNESS WORD AGAIN',
+        oracle_btn_thinking: '⟳ WITNESS THINKING...',
+        oracle_header: 'WITNESS WORD',
+        oracle_footer: 'VERITAS WITNESS v0.1 · PATTERN ANALYSIS',
+        oracle_loading_1: '⟳ SCANNING FIELD...',
+        oracle_loading_2: '⚡ CHANNEL OPEN...',
+        oracle_loading_3: '👁 WITNESS SPEAKS...',
         entropy: 'Entropy',
         order: 'Order',
         complex: 'Complex',
@@ -1322,7 +1338,7 @@ function revealResults() {
         document.getElementById('oracleFooter').style.display = 'none';
         document.getElementById('oracleLoading').style.display = 'none';
         document.getElementById('oracleBtn').disabled = false;
-        document.getElementById('oracleBtn').textContent = '👁 СЛОВО СВІДКА';
+        document.getElementById('oracleBtn').innerHTML = '👁 <span id="i18n-oracle_btn">' + t('oracle_btn') + '</span>';
     }
 }
 function setLoading(on) {
@@ -1404,7 +1420,7 @@ async function consultOracle() {
 
     // Reset
     btn.disabled = true;
-    btn.textContent = '⟳ СВІДОК ДУМАЄ...';
+    btn.textContent = t('oracle_btn_thinking');
     panel.style.display = 'block';
     loading.style.display = 'block';
     textEl.style.display = 'none';
@@ -1413,7 +1429,7 @@ async function consultOracle() {
     textEl.textContent = '';
 
     // Loading phase animation
-    const phases = ['⟳ СКАНУВАННЯ ПОЛЯ...', '⚡ КАНАЛ ВІДКРИТО...', '👁 СВІДОК ГОВОРИТЬ...'];
+    const phases = [t('oracle_loading_1'), t('oracle_loading_2'), t('oracle_loading_3')];
     let pi = 0;
     _oracleLoadingInterval = setInterval(() => {
         loadingText.textContent = phases[pi % phases.length];
@@ -1444,18 +1460,18 @@ async function consultOracle() {
         const result = await resp.json();
 
         if (!resp.ok || result.error) {
-            errEl.textContent = 'Свідок недоступний: ' + (result.error || resp.status);
+            errEl.textContent = (currentLang === 'uk' ? 'Свідок недоступний: ' : 'Witness unavailable: ') + (result.error || resp.status);
             errEl.style.display = 'block';
             btn.disabled = false;
-            btn.textContent = '↺ СПРОБУВАТИ ЗНОВУ';
+            btn.textContent = currentLang === 'uk' ? '↺ СПРОБУВАТИ ЗНОВУ' : '↺ TRY AGAIN';
             return;
         }
 
-        textEl.textContent = result.witness_text || 'Свідок мовчить.';
+        textEl.textContent = result.witness_text || (currentLang === 'uk' ? 'Свідок мовчить.' : 'The Witness is silent.');
         textEl.style.display = 'block';
         footer.style.display = 'block';
         btn.disabled = false;
-        btn.textContent = '↺ СЛОВО СВІДКА ЗНОВУ';
+        btn.innerHTML = '↺ <span id="i18n-oracle_btn">' + t('oracle_btn_retry') + '</span>';
 
     } catch(e) {
         clearInterval(_oracleLoadingInterval);
@@ -1463,7 +1479,7 @@ async function consultOracle() {
         errEl.textContent = 'Помилка: ' + e.message;
         errEl.style.display = 'block';
         btn.disabled = false;
-        btn.textContent = '↺ СПРОБУВАТИ ЗНОВУ';
+        btn.textContent = currentLang === 'uk' ? '↺ СПРОБУВАТИ ЗНОВУ' : '↺ TRY AGAIN';
     }
 }
 
