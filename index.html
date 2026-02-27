@@ -972,6 +972,7 @@ const COMPLETENESS_VERDICT_EN = {
     'ПОВНИЙ_КОНТЕКСТ':      'FULL_CONTEXT',
     'ДОСТАТНІЙ_КОНТЕКСТ':   'SUFFICIENT_CONTEXT',
     'МІНІМАЛЬНИЙ_КОНТЕКСТ': 'MINIMAL_CONTEXT',
+    'ЧАСТКОВИЙ_КОНТЕКСТ':   'PARTIAL_CONTEXT',
     'НЕДОСТАТНІЙ_КОНТЕКСТ': 'INSUFFICIENT_CONTEXT',
     'ВІДСУТНІЙ_КОНТЕКСТ':   'NO_CONTEXT',
 };
@@ -980,6 +981,7 @@ const COMPLETENESS_NOTE_EN = {
     'Текст переважно повний, але окремі виміри відсутні.':              'Text is mostly complete, but some dimensions are missing.',
     'Тексту бракує важливих контекстуальних вимірів.':                  'Text lacks important contextual dimensions.',
     'Текст майже позбавлений контексту.':                               'Text is almost entirely lacking context.',
+    'Деякі виміри контексту відсутні. Для повної картини варто звернутись до додаткових джерел.': 'Some contextual dimensions are missing. Additional sources would provide a fuller picture.',
 };
 const COMPLETENESS_DIM_EN = {
     'ДЖЕРЕЛО':      'SOURCE',
@@ -990,7 +992,9 @@ const COMPLETENESS_DIM_EN = {
     'НАСЛІДОК':     'CONSEQUENCE',
     'НАСЛІДКИ':     'CONSEQUENCES',
     'АЛЬТЕРНАТИВА': 'ALTERNATIVE',
-    'КОНТЕКСТ':     'CONTEXT',
+    'КОНТЕКСТ':               'CONTEXT',
+    'АЛЬТЕРНАТИВНА ПОЗИЦІЯ':  'ALTERNATIVE VIEW',
+    'ПРИЧИННІСТЬ':            'CAUSALITY',
 };
 const COMPLETENESS_HINT_EN = {
     'Згадано актора або подію без посилання на верифіковане джерело.':
@@ -1017,6 +1021,12 @@ const COMPLETENESS_HINT_EN = {
         'Event presented without temporal context.',
     'Географічний контекст відсутній.':
         'Geographic context is absent.',
+    'Сильне твердження подане без альтернативної точки зору.':
+        'A strong claim is presented without an alternative perspective.',
+    'Присутня сильна заява без пояснення причини або мотиву.':
+        'A strong claim is present without explanation of cause or motive.',
+    'Присутня причинно-наслідкова заява без верифікованого механізму.':
+        'A causal claim is present without a verified mechanism.',
 };
 function translateCompleteness(cc) {
     if (currentLang === 'uk' || !cc) return cc;
@@ -1050,7 +1060,7 @@ function setLang(lang) {
 function applyTranslations() {
     // Elements with id starting i18n-
     document.querySelectorAll('[id^="i18n-"]').forEach(el => {
-        const key = el.id.replace('i18n-', '').replace(/_fin$/, '');
+        const key = el.id.replace('i18n-', '');
         const val = t(key);
         if (val) el.textContent = val;
     });
