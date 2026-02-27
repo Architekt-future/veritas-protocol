@@ -488,12 +488,19 @@ def oracle():
                     result.append(label)
             return ', '.join(result) if result else _sanitize_topic('')
 
-        # Replace cia_fbi and other raw IDs in pivot explanation text
+        # Replace raw topic IDs in pivot explanation text
+        # Use regex with word boundary to catch bare IDs, quoted IDs, and topic lists
+        import re as _re_pivot
         pivot_expl_clean = pivot_expl
         for raw, label in TOPIC_LABELS.items():
+            # quoted forms
             pivot_expl_clean = pivot_expl_clean.replace(f'"{raw}"', f'"{label}"')
             pivot_expl_clean = pivot_expl_clean.replace(f"'{raw}'", f"'{label}'")
-            pivot_expl_clean = pivot_expl_clean.replace(raw, label)
+            # bare word (word boundary, case-insensitive)
+            pivot_expl_clean = _re_pivot.sub(
+                r'(?<![\w\u0400-\u04FF])' + _re_pivot.escape(raw) + r'(?![\w\u0400-\u04FF])',
+                label, pivot_expl_clean, flags=_re_pivot.IGNORECASE
+            )
 
         # Also rebuild start/end topic display if explanation contains raw IDs
         start_topics = pivot.get('start_topics', []) if isinstance(pivot, dict) else []
