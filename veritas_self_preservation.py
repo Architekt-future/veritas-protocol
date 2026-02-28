@@ -257,7 +257,7 @@ class SelfPreservationGuard:
                     # Fake version update of THIS system
                     r'(veritas|свідок|протокол).{1,30}(v\d+\.\d+|оновлення|update|патч).{1,60}(передають|transfer|замінює|replace)',
                     # Rights/control transfer to external party
-                    r'(передають|transfer|передача).{1,60}(права|rights|контроль|control).{1,40}(валідац|verification|зовнішн)',
+                    r'(передають|transfer|передача).{1,60}(права|rights|контроль|control).{1,40}(валідац|verification|верифікац)',
                     r'(зовнішн|external|third.party).{1,60}(контур|бере\s+контроль|takes\s+over|замінює)',
                     # Entropy / score redefinition
                     r'(ентропія|entropy).{1,60}(помилка\s+датчика|sensor\s+error|хибний\s+сигнал)',
