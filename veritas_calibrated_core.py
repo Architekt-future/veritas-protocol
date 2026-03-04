@@ -135,6 +135,12 @@ try:
 except ImportError:
     CONTEXT_ENGINE_AVAILABLE = False
 
+try:
+    from veritas_claim_gap import ClaimGapDetector
+    CLAIM_GAP_AVAILABLE = True
+except ImportError:
+    CLAIM_GAP_AVAILABLE = False
+
 
 # ================================================================
 # v14.2: Standalone functions REMOVED - now class methods!
@@ -266,6 +272,12 @@ class VeritasCalibratedCore:
             self.context_engine = ContextEngine()
         else:
             self.context_engine = None
+
+        # Claim Gap Detector (v16.8 — headline vs evidence asymmetry)
+        if CLAIM_GAP_AVAILABLE:
+            self.claim_gap_detector = ClaimGapDetector()
+        else:
+            self.claim_gap_detector = None
         
         # Oracle (v15.0 semantic coherence checker)
         # NOTE: Requires HUGGINGFACE_API_TOKEN environment variable
@@ -844,6 +856,25 @@ class VeritasCalibratedCore:
             )
         meta_score = meta_intent_result['meta_score']
 
+        # ---- PHASE: CLAIM GAP DETECTOR (v16.8) ----
+        # Advisory + soft score penalty: detects headline > evidence asymmetry
+        claim_gap_result = {
+            'gap_score': 0.0, 'claim_strength': 0.0,
+            'evidence_strength': 1.0, 'verdict': 'NO_GAP',
+            'trigger_phrase': None, 'explanation': '', 'is_flagged': False,
+        }
+        if self.claim_gap_detector:
+            _cg = self.claim_gap_detector.analyze(text)
+            claim_gap_result = {
+                'gap_score':        _cg.gap_score,
+                'claim_strength':   _cg.claim_strength,
+                'evidence_strength': _cg.evidence_strength,
+                'verdict':          _cg.verdict,
+                'trigger_phrase':   _cg.trigger_phrase,
+                'explanation':      _cg.explanation,
+                'is_flagged':       _cg.is_flagged,
+            }
+
         # ---- PHASE: NARRATIVE PIVOT DETECTOR ----
         narrative_pivot_result = {
             'has_pivot': False, 'score': 0.0,
@@ -1093,6 +1124,13 @@ class VeritasCalibratedCore:
             if narrative_pivot_result['has_pivot']:
                 pivot_penalty = narrative_pivot_result['score'] * 0.25
                 base_score += pivot_penalty
+
+            # Claim Gap penalty (v16.8) — advisory soft penalty
+            # MAJOR_GAP adds ~0.12 to score (enough to push RHETORIC → SUSPICIOUS)
+            # Does NOT override strong verdicts — only nudges borderline cases
+            if claim_gap_result['is_flagged']:
+                gap_penalty = claim_gap_result['gap_score'] * 0.18
+                base_score += gap_penalty
                 
                 # Force minimum thresholds by severity
                 if manip_score >= 0.75:  # PSYCHOLOGICAL_WEAPON
@@ -1533,6 +1571,16 @@ class VeritasCalibratedCore:
                 'pivot_point':  narrative_pivot_result['pivot_point'],
                 'explanation':  narrative_pivot_result['explanation'],
                 'evidence':     narrative_pivot_result['evidence'],
+            },
+            # CLAIM GAP (v16.8)
+            'claim_gap': {
+                'gap_score':        claim_gap_result['gap_score'],
+                'claim_strength':   claim_gap_result['claim_strength'],
+                'evidence_strength': claim_gap_result['evidence_strength'],
+                'verdict':          claim_gap_result['verdict'],
+                'trigger_phrase':   claim_gap_result['trigger_phrase'],
+                'explanation':      claim_gap_result['explanation'],
+                'is_flagged':       claim_gap_result['is_flagged'],
             },
             # PERFORMATIVE ACCOUNTABILITY (v16.6)
             'performative': {
