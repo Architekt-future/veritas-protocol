@@ -218,6 +218,26 @@ def analyze():
                 import re as _re
                 # Collapse whitespace first
                 text = _re.sub(r'\s+', ' ', raw).strip()
+
+                # Prepend page title/h1 so ClaimGapDetector sees the headline.
+                # Headlines often contain the strong claim ("Пророцтво монаха")
+                # but disappear from the scraped body. Prepending puts them in
+                # the 150-char header window that ClaimGapDetector scans.
+                try:
+                    _h1 = soup.find('h1')
+                    _title_tag = soup.find('title')
+                    _headline = ''
+                    if _h1:
+                        _headline = _h1.get_text(strip=True)
+                    elif _title_tag:
+                        # strip " | Site Name" suffix
+                        _headline = _re.split(r'\s*[\|\u2013\u2014]\s*', _title_tag.get_text(strip=True))[0].strip()
+                    if _headline and not text.startswith(_headline[:30]):
+                        text = _headline + '. ' + text
+                        print(f'\U0001f3f7\ufe0f  Headline prepended: {_headline[:80]}')
+                except Exception:
+                    pass
+
                 # Remove metadata phrases that appear inline (BBC and similar sites)
                 # Remove BBC-style metadata block (Author/Role/date/readtime)
                 text = _re.sub(r'(Author,|Role,)\s.{0,200}?(?=\d{1,2}\s\w+\s\d{4})', '', text)
@@ -238,29 +258,6 @@ def analyze():
                 )
                 text = _re.sub(r'\bArticle Information\b', '', text)
                 text = _re.sub(r'(?<![\w\d])хв(?![\w])', '', text)  # orphan "хв"
-                text = _re.sub(r'\s+', ' ', text).strip()
-                # WIRED / Condé Nast: strip "YOU MIGHT ALSO LIKE" / "READ MORE" tail
-                # These sections contain unrelated article headlines that pollute pivot analysis
-                text = _re.sub(
-                    r'(You Might Also Like|READ MORE|Most Popular|MOST POPULAR'
-                    r'|More From Wired|MORE FROM WIRED'
-                    r'|Читайте також|Також читайте|Більше матеріалів'
-                    r'|Популярні матеріали|Рекомендовані статті).*$',
-                    '', text, flags=_re.DOTALL|_re.IGNORECASE
-                )
-                # The Conversation: strip author/partner boilerplate at the end
-                text = _re.sub(
-                    r'(Want to write\? Write an article|Register now|Editorial Policies'
-                    r'|Community standards|Republishing guidelines|Who we are|Our charter'
-                    r'|Privacy policy|Terms and conditions|Copyright © \d{4}).*$',
-                    '', text, flags=_re.DOTALL|_re.IGNORECASE
-                )
-                # The Conversation: strip country/edition navigation list
-                # e.g. "Home Arts + Culture Economy ... Africa Australia Brasil Canada..."
-                text = _re.sub(
-                    r'\b(Home\s+Arts|Arts \+ Culture\s+Economy|Academic rigor, journalistic flair)\b.*$',
-                    '', text, flags=_re.DOTALL|_re.IGNORECASE
-                )
                 text = _re.sub(r'\s+', ' ', text).strip()
                 # Remove Commonwealth country list (appears after "всіх 14 інших країн")
                 text = _re.sub(
