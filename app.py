@@ -239,6 +239,29 @@ def analyze():
                 text = _re.sub(r'\bArticle Information\b', '', text)
                 text = _re.sub(r'(?<![\w\d])хв(?![\w])', '', text)  # orphan "хв"
                 text = _re.sub(r'\s+', ' ', text).strip()
+                # WIRED / Condé Nast: strip "YOU MIGHT ALSO LIKE" / "READ MORE" tail
+                # These sections contain unrelated article headlines that pollute pivot analysis
+                text = _re.sub(
+                    r'(You Might Also Like|READ MORE|Most Popular|MOST POPULAR'
+                    r'|More From Wired|MORE FROM WIRED'
+                    r'|Читайте також|Також читайте|Більше матеріалів'
+                    r'|Популярні матеріали|Рекомендовані статті).*$',
+                    '', text, flags=_re.DOTALL|_re.IGNORECASE
+                )
+                # The Conversation: strip author/partner boilerplate at the end
+                text = _re.sub(
+                    r'(Want to write\? Write an article|Register now|Editorial Policies'
+                    r'|Community standards|Republishing guidelines|Who we are|Our charter'
+                    r'|Privacy policy|Terms and conditions|Copyright © \d{4}).*$',
+                    '', text, flags=_re.DOTALL|_re.IGNORECASE
+                )
+                # The Conversation: strip country/edition navigation list
+                # e.g. "Home Arts + Culture Economy ... Africa Australia Brasil Canada..."
+                text = _re.sub(
+                    r'\b(Home\s+Arts|Arts \+ Culture\s+Economy|Academic rigor, journalistic flair)\b.*$',
+                    '', text, flags=_re.DOTALL|_re.IGNORECASE
+                )
+                text = _re.sub(r'\s+', ' ', text).strip()
                 # Remove Commonwealth country list (appears after "всіх 14 інших країн")
                 text = _re.sub(
                     r'(Антигуа і Барбуда|Австралія|Багамські|Беліз|Канада|Гренада|Ямайка|'
