@@ -40,7 +40,9 @@ class NarrativePivotDetector:
         'епштейн':      [r'\b(епштейн|epstein)\b',
                          r'\b(jeffrey\s+epstein|джеффрі\s+епштейн)\b'],
         'кеннеді':      [r'\b(кеннеді|kennedy|jfk|вбивств)\b'],
-        'cia_fbi':      [r'\b(cia|фбр|fbi|розвідк|агентств)\b', r'\b(intelligence\s+agenc|intelligence\s+communit|spy\s+agenc|secret\s+service)\b'],
+        'cia_fbi':      [r'\b(cia|фбр|fbi)\b',
+                         r'\b(spy\s+agenc|secret\s+service|deep\s+state)\b',
+                         r'\b(розвідувальн[аеі]\s+агенц|спецслужб)\b'],
         'військо':      [r'\b(пентагон|pentagon|dod)\b',
                          r'\b(military\s+(base|operation|force|budget|action|command))\b',
                          r'\b(armed\s+forces|department\s+of\s+defense)\b',
@@ -158,12 +160,16 @@ class NarrativePivotDetector:
             evidence=pivot_evidence[:3],
         )
 
+    # Topics that require 2+ pattern hits to avoid single-word false positives
+    HIGH_THRESHOLD_TOPICS = {'cia_fbi', 'змова', 'нло_космос'}
+
     def _detect_topics(self, text: str) -> List[str]:
         found = []
         t = text.lower()
         for topic, patterns in self.TOPIC_CLUSTERS.items():
             hits = sum(1 for p in patterns if re.search(p, t, re.IGNORECASE))
-            if hits >= 1:
+            min_hits = 2 if topic in self.HIGH_THRESHOLD_TOPICS else 1
+            if hits >= min_hits:
                 found.append(topic)
         return found
 
