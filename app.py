@@ -227,11 +227,12 @@ def analyze():
                     _h1 = soup.find('h1')
                     _title_tag = soup.find('title')
                     _headline = ''
-                    if _h1:
-                        _headline = _h1.get_text(strip=True)
-                    elif _title_tag:
-                        # strip " | Site Name" suffix
+                    if _title_tag:
+                        # <title> often has the clickbait headline (e.g. "Пророцтво монаха...")
+                        # <h1> is often a softened version — so prefer <title>
                         _headline = _re.split(r'\s*[\|\u2013\u2014]\s*', _title_tag.get_text(strip=True))[0].strip()
+                    if not _headline and _h1:
+                        _headline = _h1.get_text(strip=True)
                     if _headline and not text.startswith(_headline[:30]):
                         text = _headline + '. ' + text
                         print(f'\U0001f3f7\ufe0f  Headline prepended: {_headline[:80]}')
