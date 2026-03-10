@@ -1027,6 +1027,11 @@ class VeritasCalibratedCore:
         if pattern_boost_result['boost'] > 0.5:
             is_protected_science = False
 
+        # OVERRIDE: if LAC Epistemology fires (fake logic inside scientific wrapper)
+        # Academic shell with conclusion leap or unverified citations = not protected
+        if lac_epistemology_result['score'] >= 0.35:
+            is_protected_science = False
+
         if is_protected_science:
             base_score = min(0.15, shannon_entropy * 0.5)  # strong shield
         else:
@@ -1149,6 +1154,20 @@ class VeritasCalibratedCore:
                     red_flag_count = len(lac_labor_result['red_flags'])
                     base_score += min(0.3, red_flag_count * 0.1)  # up to +0.3
 
+            # LAC EPISTEMOLOGY BOOST (epistemic manipulation — fake logic)
+            # Mirrors LAC Finance / LAC Labor pattern
+            epist_score = lac_epistemology_result['score']
+            if epist_score > 0:
+                imitation_penalty = epist_score * 0.35  # up to +0.35 at score=1.0
+                base_score += imitation_penalty
+                # COMBINED (2+ patterns) → force at least WARNING
+                if lac_epistemology_result['verdict'] == 'COMBINED':
+                    base_score = max(base_score, 0.35)
+                # Conclusion leap or unverified citation are especially deceptive
+                hits = lac_epistemology_result.get('pattern_hits', {})
+                if hits.get('conclusion_leap', 0) or hits.get('unverified_citation', 0):
+                    base_score = max(base_score, 0.30)
+
             # EMERGENCY: LAC_I zero-cost violations → auto-boost to at least 0.5
             if lac_i_violations and any(v.vtype == 'ZERO_COST_PROPOSITION' for v in lac_i_violations):
                 base_score = max(base_score, 0.5)
@@ -1178,6 +1197,21 @@ class VeritasCalibratedCore:
                     base_score = max(base_score, 0.55)
                 elif manip_score >= 0.25:  # MANIPULATION_PRESENT
                     base_score = max(base_score, 0.35)
+
+            # MODALITY PENALTY — text built entirely on "може/might/could/якщо"
+            # High modality + no concrete facts = speculation presented as analysis
+            _modal_uk = ['може ', 'могли б', 'могло б', 'можуть ', 'якщо ', 'міг би', 'могла б',
+                         'можливо ', 'ймовірно ', 'припускають', 'припустимо']
+            _modal_en = ['might ', 'could ', 'may ', 'would ', 'perhaps ', 'possibly ',
+                         'if trends', 'if this', 'some analysts', 'some experts']
+            _modal_hits = sum(1 for m in _modal_uk + _modal_en if m in text.lower())
+            _word_count_safe = max(1, word_count)
+            _modal_ratio = _modal_hits / _word_count_safe
+            # Only penalize if modality is dominant AND no concrete numbers/sources present
+            _has_hard_facts = bool(re.search(r'\d+[%$€₴]|\d{4}|p\s*[<>]\s*0\.\d', text))
+            if _modal_ratio > 0.04 and not _has_hard_facts:
+                _modal_penalty = min(0.20, _modal_ratio * 3.0)
+                base_score += _modal_penalty
 
             # AXIOM GUARD BOOST — semantic drift / axiom replacement
             axiom_score = axiom_result['axiom_score']
@@ -1579,9 +1613,6 @@ class VeritasCalibratedCore:
                 'axiom_score': round(axiom_result['axiom_score'], 3),
                 'axiom_verdict': axiom_result['axiom_verdict'],
                 'axiom_patterns': [p['name'] for p in axiom_result['axiom_patterns']],
-                'self_preservation_score': round(preservation_result['preservation_score'], 3),
-                'self_preservation_verdict': preservation_result['preservation_verdict'],
-                'self_preservation_patterns': [p['name'] for p in preservation_result['preservation_patterns']],
                 'genre': _genre,
             },
             # ADVISORY LAYER — never affects verdict or entropy
