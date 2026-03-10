@@ -1080,6 +1080,8 @@ const EPIST_VERDICT_UK = {
     'ANONYMOUS_AUTHORITY':   'АНОНІМНИЙ АВТОРИТЕТ',
     'CORRELATION_CAUSATION': 'КОРЕЛЯЦІЯ ЯК ПРИЧИНА',
     'UNFALSIFIABLE':         'НЕЗАПЕРЕЧНА ТЕЗА',
+    'CONCLUSION_LEAP':       'СТРИБОК У ВИСНОВКАХ',
+    'UNVERIFIED_CITATION':   'НЕПЕРЕВІРЕНА ЦИТАТА',
     'COMBINED':              'КОМБІНОВАНИЙ',
     'CLEAN':                 'ЧИСТО',
     'N/A':                   'N/A',
@@ -1088,11 +1090,15 @@ const EPIST_PATTERNS_UK = {
     'anonymous_authority':   'анонімні авторитети (без імен та установ)',
     'correlation_causation': 'кореляція подана як причинність',
     'unfalsifiable':         'незаперечна теза — заперечення = доказ змови',
+    'conclusion_leap':       'стрибок у висновках ("логічно припустити", "таким чином")',
+    'unverified_citation':   'цитовані дослідження без посилань або DOI',
 };
 const EPIST_PATTERNS_EN = {
     'anonymous_authority':   'anonymous authorities (no names or institutions)',
     'correlation_causation': 'correlation presented as causation',
     'unfalsifiable':         'unfalsifiable claim — denial = proof of conspiracy',
+    'conclusion_leap':       'conclusion leap ("logically follows", "thus") without causal chain',
+    'unverified_citation':   'named studies cited without verifiable link or DOI',
 };
 function translateEpistVerdict(v) {
     if (!v) return 'N/A';
