@@ -477,6 +477,59 @@ def oracle():
             signals_lines.append(line)
         signals_summary = '\n'.join(signals_lines) if signals_lines else '  (модулі не виявили порушень)'
 
+        # ── Entropy multiplier: кожен спрацьований модуль збільшує entropy_pct ──
+        # Базова entropy — це сигнал структури. Модулі — це сигнали змісту.
+        # Множник накопичується: кожен спрацьований модуль додає вагу.
+        MODULE_WEIGHTS = {
+            'self_preservation': 0.20,   # найсильніший — пряма атака на систему
+            'meta_intent':       0.15,   # системна риторика
+            'performative':      0.12,   # крокодилячі сльози
+            'lac_epistemology':  0.10,   # підроблена логіка
+            'lac_finance':       0.08,   # фінансова безвідповідальність
+            'lac_labor':         0.08,   # трудова безвідповідальність
+            'manipulation':      0.10,   # маніпулятивні патерни
+            'claim_gap':         0.07,   # заяви без доказів
+            'axiom':             0.10,   # підміна аксіом
+        }
+        entropy_multiplier = 1.0
+        triggered_modules = []
+        if self_pres_verdict and self_pres_verdict not in ('SAFE', 'CLEAN', ''):
+            entropy_multiplier += MODULE_WEIGHTS['self_preservation']
+            triggered_modules.append('self_preservation')
+        if meta_verdict and meta_verdict not in ('TRANSPARENT', 'CLEAN', ''):
+            entropy_multiplier += MODULE_WEIGHTS['meta_intent']
+            triggered_modules.append('meta_intent')
+        perf_obj_check = diag.get('performative', {})
+        if isinstance(perf_obj_check, dict) and perf_obj_check.get('is_performative'):
+            entropy_multiplier += MODULE_WEIGHTS['performative']
+            triggered_modules.append('performative')
+        if lac_epist_verdict and lac_epist_verdict not in ('N/A', 'CLEAN', ''):
+            entropy_multiplier += MODULE_WEIGHTS['lac_epistemology']
+            triggered_modules.append('lac_epistemology')
+        if lac_fin_verdict and lac_fin_verdict not in ('N/A', 'CLEAN', ''):
+            entropy_multiplier += MODULE_WEIGHTS['lac_finance']
+            triggered_modules.append('lac_finance')
+        if lac_lab_verdict and lac_lab_verdict not in ('N/A', 'CLEAN', ''):
+            entropy_multiplier += MODULE_WEIGHTS['lac_labor']
+            triggered_modules.append('lac_labor')
+        manip_score_check = diag.get('manipulation_score', 0) or 0
+        if manip_score_check >= 0.25:
+            entropy_multiplier += MODULE_WEIGHTS['manipulation']
+            triggered_modules.append('manipulation')
+        claim_gap_check = diag.get('claim_gap', {})
+        if isinstance(claim_gap_check, dict) and claim_gap_check.get('is_flagged'):
+            entropy_multiplier += MODULE_WEIGHTS['claim_gap']
+            triggered_modules.append('claim_gap')
+        axiom_score_check = diag.get('axiom_score', 0) or 0
+        if axiom_score_check >= 0.25:
+            entropy_multiplier += MODULE_WEIGHTS['axiom']
+            triggered_modules.append('axiom')
+
+        # Застосовуємо множник до entropy_pct, але cap на 100%
+        entropy_pct_boosted = min(100, round(entropy_pct * entropy_multiplier))
+        # Кількість спрацьованих модулів для відображення
+        triggered_count = len(triggered_modules)
+
         # Narrative pivot
         pivot         = diag.get('narrative_pivot', {})
         pivot_verdict = pivot.get('verdict', '') if isinstance(pivot, dict) else ''
@@ -676,7 +729,7 @@ def oracle():
                 "ANALYSIS DATA:\n"
                 f"  System verdict (MAIN SIGNAL): {verdict}\n"
                 f"  Genre: {detected_genre}\n"
-                f"  Entropy: {entropy_pct}%\n"
+                f"  Entropy (base): {entropy_pct}% → with module multiplier: {entropy_pct_boosted}% ({triggered_count} module(s) triggered)\n"
                 f"  Cohesion: {cohesion}\n"
                 f"{modules_block}"
                 f"{pivot_line}"
@@ -746,7 +799,7 @@ def oracle():
                 "ДАНІ АНАЛІЗУ:\n"
                 f"  Вердикт системи (ГОЛОВНИЙ СИГНАЛ): {verdict}\n"
                 f"  Жанр: {detected_genre}\n"
-                f"  Ентропія: {entropy_pct}%\n"
+                f"  Ентропія (база): {entropy_pct}% → з множником модулів: {entropy_pct_boosted}% ({triggered_count} модуль(ів) спрацювало)\n"
                 f"  Когезія: {cohesion}\n"
                 f"{modules_block}"
                 f"{pivot_line}"
@@ -798,10 +851,15 @@ def oracle():
         )
 
         return jsonify({
-            'witness_text':      message.content[0].text if message.content else "Свідок мовчить.",
-            'witness_available': True,
-            'model':             'claude-haiku-4-5-20251001',
-            'detected_genre':    detected_genre,
+            'witness_text':        message.content[0].text if message.content else "Свідок мовчить.",
+            'witness_available':   True,
+            'model':               'claude-haiku-4-5-20251001',
+            'detected_genre':      detected_genre,
+            'entropy_boosted':     entropy_pct_boosted,
+            'entropy_base':        entropy_pct,
+            'triggered_modules':   triggered_modules,
+            'triggered_count':     triggered_count,
+            'entropy_multiplier':  round(entropy_multiplier, 3),
         })
 
     except Exception as e:
