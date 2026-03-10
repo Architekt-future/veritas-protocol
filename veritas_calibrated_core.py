@@ -69,6 +69,13 @@ try:
 except ImportError:
     LAC_EPISTEMOLOGY_AVAILABLE = False
 
+# Import Framing detector
+try:
+    from veritas_framing_detector import VeritasFramingDetector
+    FRAMING_AVAILABLE = True
+except ImportError:
+    FRAMING_AVAILABLE = False
+
 # Import Manipulation detector
 try:
     from veritas_manipulation_detector import ManipulationDetector
@@ -215,6 +222,12 @@ class VeritasCalibratedCore:
             self.lac_epistemology = VeritasLACEpistemology()
         else:
             self.lac_epistemology = None
+
+        # Framing detector (agenda setting, false dilemma, ground prep, juxtaposition)
+        if FRAMING_AVAILABLE:
+            self.framing_detector = VeritasFramingDetector()
+        else:
+            self.framing_detector = None
         
         # Manipulation detector (gaslighting, cult rhetoric, totalitarian framing)
         if MANIPULATION_AVAILABLE:
@@ -952,6 +965,28 @@ class VeritasCalibratedCore:
         if self.performative_detector:
             performative_result = self.performative_detector.analyze(text)
 
+        # ---- PHASE 10k: FRAMING DETECTOR (v1.0) ----
+        # Soft rhetorical manipulation: agenda setting, false dilemma,
+        # ground preparation, overton shift, presupposition, juxtaposition
+        framing_result = {
+            'score':         0.0,
+            'verdict':       'N/A',
+            'is_framing':    False,
+            'patterns_found': [],
+            'evidence':      [],
+            'pattern_hits':  {},
+        }
+        if self.framing_detector:
+            fr = self.framing_detector.analyze(text)
+            framing_result = {
+                'score':          fr.score,
+                'verdict':        fr.verdict,
+                'is_framing':     fr.is_framing,
+                'patterns_found': fr.patterns_found,
+                'evidence':       fr.evidence,
+                'pattern_hits':   fr.pattern_hits,
+            }
+
         # ---- PHASE 10j: CONTEXT ENGINE (v16.7) ----
         # Displacement detection — is this text suspicious given the field?
         context_result = {
@@ -1167,6 +1202,17 @@ class VeritasCalibratedCore:
                 hits = lac_epistemology_result.get('pattern_hits', {})
                 if hits.get('conclusion_leap', 0) or hits.get('unverified_citation', 0):
                     base_score = max(base_score, 0.30)
+
+            # FRAMING BOOST (soft rhetorical manipulation — no lies, just architecture)
+            framing_score = framing_result['score']
+            if framing_score > 0:
+                base_score += framing_score * 0.30  # up to +0.30 at score=1.0
+                # COMBINED framing (2+ patterns) → force at least WARNING
+                if framing_result['verdict'] == 'COMBINED':
+                    base_score = max(base_score, 0.35)
+                # Juxtaposition (implied conspiracy) nudges toward SUSPICIOUS
+                if 'juxtaposition' in framing_result.get('patterns_found', []):
+                    base_score = max(base_score, 0.28)
 
             # EMERGENCY: LAC_I zero-cost violations → auto-boost to at least 0.5
             if lac_i_violations and any(v.vtype == 'ZERO_COST_PROPOSITION' for v in lac_i_violations):
@@ -1607,6 +1653,11 @@ class VeritasCalibratedCore:
                 'lac_epistemology_red_flags': lac_epistemology_result['red_flags'],
                 'lac_epistemology_pattern_hits': lac_epistemology_result['pattern_hits'],
                 'is_epistemic_content': lac_epistemology_result['is_epistemic'],
+                'framing_score': round(framing_result['score'], 3),
+                'framing_verdict': framing_result['verdict'],
+                'framing_patterns': framing_result['patterns_found'],
+                'framing_pattern_hits': framing_result['pattern_hits'],
+                'is_framing': framing_result['is_framing'],
                 'manipulation_score': round(manipulation_result['manipulation_score'], 3),
                 'manipulation_verdict': manipulation_result['manipulation_verdict'],
                 'manipulation_patterns': [p['name'] for p in manipulation_result['manipulation_patterns']],
