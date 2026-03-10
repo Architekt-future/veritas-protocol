@@ -675,10 +675,13 @@ class VeritasCalibratedCore:
         certainty_result = {
             'certainty_level': 'SUFFICIENT',
             'certainty_label_uk': '',
+            'certainty_label_en': '',
             'certainty_note_uk': '',
+            'certainty_note_en': '',
             'short_text_mode': False,
             'adjusted_min_hits': None,
             'entropy_floor': 0.0,
+            'word_count': 0,
         }
         if self.certainty_factor:
             certainty_result = self.certainty_factor.analyze(text)
