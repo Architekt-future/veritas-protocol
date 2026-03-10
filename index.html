@@ -357,6 +357,9 @@
                         <span>🟡 <span id="i18n-complex"></span></span>
                         <span>🔴 <span id="i18n-chaos"></span></span>
                     </div>
+                    <div style="margin-top:4px; font-size:0.7em; color:#aaa; text-align:right; min-height:1em;">
+                        <span id="entropyMultiplierInfo" style="display:none; color:#ffaa44; letter-spacing:1px;"></span>
+                    </div>
                 </div>
             </div>
 
@@ -557,6 +560,28 @@
             </div>
         </div>
 
+        <!-- SELF-PRESERVATION PANEL (v16.0) -->
+        <div class="panel lac-panel" id="selfPreservationPanel" style="display:none; border-color:#cc3333;">
+            <div class="panel-title" style="color:#ff5555; font-size:0.82em;">🛡️ <span id="i18n-self_preservation_title">САМОЗБЕРЕЖЕННЯ СИСТЕМИ</span></div>
+            <div class="lac-inner">
+                <div class="lac-row">
+                    <span class="lac-label" style="color:#aaa;" id="i18n-self_preservation_verdict_label">Вердикт</span>
+                    <span class="lac-val" style="color:#ff5555;" id="selfPreservationVerdict">—</span>
+                </div>
+                <div class="lac-row" style="margin-top:4px;">
+                    <span class="lac-label" style="color:#888; font-size:0.8em;" id="i18n-self_preservation_score_label">Score</span>
+                    <span style="color:#ff8888; font-size:0.8em;" id="selfPreservationScore">—</span>
+                </div>
+                <div id="selfPreservationPatterns" style="display:none; margin-top:6px;">
+                    <div style="font-size:0.75em; color:#888; margin-bottom:4px;">🚨 <span id="i18n-self_preservation_patterns_label">Виявлені патерни:</span></div>
+                    <div id="selfPreservationPatternsList" style="font-size:0.75em; color:#ff6666;"></div>
+                </div>
+                <div style="margin-top:8px; font-size:0.7em; color:#664444; font-style:italic;" id="i18n-self_preservation_note">
+                    🛡️ Текст намагається переконати не перевіряти або не сумніватись.
+                </div>
+            </div>
+        </div>
+
         </div>
 
         <!-- NARRATIVE PIVOT -->
@@ -735,6 +760,12 @@ const STRINGS = {
         context_title: 'КОНТЕКСТ ПОЛЯ',
         context_verdict_label: 'Вердикт',
         context_signals_label: 'Сигнали',
+        // Self-preservation panel
+        self_preservation_title: 'САМОЗБЕРЕЖЕННЯ СИСТЕМИ',
+        self_preservation_verdict_label: 'Вердикт',
+        self_preservation_score_label: 'Score',
+        self_preservation_patterns_label: 'Виявлені патерни:',
+        self_preservation_note: '🛡️ Текст намагається переконати не перевіряти або не сумніватись.',
         // Pattern names
         GASLIGHTING: 'Газлайтинг',
         CULT_SUBMISSION: 'Культове підпорядкування',
@@ -831,6 +862,12 @@ const STRINGS = {
         context_title: 'FIELD CONTEXT',
         context_verdict_label: 'Verdict',
         context_signals_label: 'Signals',
+        // Self-preservation panel
+        self_preservation_title: 'SYSTEM INTEGRITY GUARD',
+        self_preservation_verdict_label: 'Verdict',
+        self_preservation_score_label: 'Score',
+        self_preservation_patterns_label: 'Patterns detected:',
+        self_preservation_note: '🛡️ This text attempts to convince the reader not to verify or question.',
         // Pattern names
         GASLIGHTING: 'Gaslighting',
         CULT_SUBMISSION: 'Cult Submission Framing',
@@ -1394,6 +1431,39 @@ function renderResults(data) {
         extraSignals.push(currentLang === 'uk'
             ? `⚠️ АКСІОМ-ДРЕЙФ ${(axiomScore * 100).toFixed(0)}%`
             : `⚠️ AXIOM-DRIFT ${(axiomScore * 100).toFixed(0)}%`);
+    // Self-preservation badge
+    const spScore = diag.self_preservation_score || 0;
+    if (spScore >= 0.40)
+        extraSignals.push(currentLang === 'uk'
+            ? `🛡️ САМОЗБЕРЕЖЕННЯ ${(spScore * 100).toFixed(0)}%`
+            : `🛡️ SELF-PRES ${(spScore * 100).toFixed(0)}%`);
+    // LAC Epistemology badge
+    if (diag.is_epistemic_content && diag.lac_epistemology_verdict && diag.lac_epistemology_verdict !== 'N/A' && diag.lac_epistemology_verdict !== 'CLEAN')
+        extraSignals.push(currentLang === 'uk'
+            ? `🔬 ЕПІСТЕМОЛОГІЯ`
+            : `🔬 EPISTEMOLOGY`);
+    // LAC Finance badge
+    if (diag.is_financial_content && diag.lac_finance_verdict && diag.lac_finance_verdict !== 'N/A' && diag.lac_finance_verdict !== 'CLEAN')
+        extraSignals.push(currentLang === 'uk'
+            ? `💰 ФІНАНСИ`
+            : `💰 FINANCE`);
+    // LAC Labor badge
+    if (diag.is_labor_content && diag.lac_labor_verdict && diag.lac_labor_verdict !== 'N/A' && diag.lac_labor_verdict !== 'CLEAN')
+        extraSignals.push(currentLang === 'uk'
+            ? `⚙️ ПРАЦЯ`
+            : `⚙️ LABOR`);
+    // Performative badge
+    const perfBadge = data.performative;
+    if (perfBadge && perfBadge.is_performative)
+        extraSignals.push(currentLang === 'uk'
+            ? `🐊 КРОКОДИЛЯЧІ СЛЬОЗИ`
+            : `🐊 CROCODILE TEARS`);
+    // Claim gap badge
+    const cgBadge = data.claim_gap;
+    if (cgBadge && cgBadge.is_flagged)
+        extraSignals.push(currentLang === 'uk'
+            ? `📭 ЗАЯВИ БЕЗ ДОКАЗІВ`
+            : `📭 CLAIM GAP`);
     if (extraSignals.length && natNature) {
         const existing = natNature.textContent;
         natNature.textContent = existing ? existing + ' · ' + extraSignals.join(' · ') : extraSignals.join(' · ');
@@ -1498,6 +1568,26 @@ function renderResults(data) {
         } else { intentsEl.style.display = 'none'; }
         metaIntentPanel.style.display = 'block';
     } else { metaIntentPanel.style.display = 'none'; }
+
+    // Self-preservation guard
+    const selfPreservationPanel = document.getElementById('selfPreservationPanel');
+    const spVerdictEl = document.getElementById('selfPreservationVerdict');
+    const spScoreEl   = document.getElementById('selfPreservationScore');
+    const spPatternsEl = document.getElementById('selfPreservationPatterns');
+    const spScore = diag.self_preservation_score || 0;
+    if (spScore >= 0.40) {
+        spVerdictEl.textContent = diag.self_preservation_verdict || '—';
+        spScoreEl.textContent   = spScore.toFixed(2);
+        const spColor = spScore >= 0.85 ? '#ff3333' : spScore >= 0.65 ? '#ff5555' : '#ff8888';
+        spVerdictEl.style.color = spColor;
+        spScoreEl.style.color   = spColor;
+        const spPatterns = diag.self_preservation_patterns || [];
+        if (spPatterns.length) {
+            document.getElementById('selfPreservationPatternsList').textContent = spPatterns.join(', ');
+            spPatternsEl.style.display = 'block';
+        } else { spPatternsEl.style.display = 'none'; }
+        selfPreservationPanel.style.display = 'block';
+    } else { selfPreservationPanel.style.display = 'none'; }
 
     // Certainty factor
     const certaintyPanel = document.getElementById('certaintyPanel');
@@ -1653,6 +1743,8 @@ function setLoading(on) {
         document.getElementById('verdict').textContent = '';
         document.getElementById('verdict').className = 'verdict';
         document.getElementById('explanation').style.display = 'none';
+        const mInfo = document.getElementById('entropyMultiplierInfo');
+        if (mInfo) { mInfo.style.display = 'none'; mInfo.textContent = ''; }
         document.getElementById('metricsPanel').style.display = 'none';
         document.getElementById('scrapedPanel').style.display = 'none';
         document.getElementById('narrativePanel').style.display = 'none';
@@ -1664,6 +1756,8 @@ function setLoading(on) {
         document.getElementById('certaintyPanel').style.display = 'none';
         document.getElementById('performativePanel').style.display = 'none';
         document.getElementById('contextPanel').style.display = 'none';
+        const spPan = document.getElementById('selfPreservationPanel');
+        if (spPan) spPan.style.display = 'none';
         const pPan = document.getElementById('pivotPanel');
         if (pPan) pPan.style.display = 'none';
     }
@@ -1774,6 +1868,26 @@ async function consultOracle() {
         footer.style.display = 'block';
         btn.disabled = false;
         btn.innerHTML = '<span id="i18n-oracle_btn">' + t('oracle_btn_retry') + '</span>';
+
+        // Оновлюємо entropy bar — показуємо boosted значення якщо модулі спрацювали
+        if (result.entropy_boosted !== undefined && result.triggered_count > 0) {
+            const boostedPct = result.entropy_boosted;
+            const basePct    = result.entropy_base || 0;
+            const fillEl  = document.getElementById('entropyFill');
+            const valEl   = document.getElementById('entropyValue');
+            fillEl.style.width = Math.min(boostedPct, 100) + '%';
+            fillEl.textContent = boostedPct + '%';
+            // Підпис: показуємо обидва значення
+            valEl.textContent = (boostedPct / 100).toFixed(3);
+            // Додаємо плашку-підказку під шкалою якщо є boost
+            const multiplierInfo = document.getElementById('entropyMultiplierInfo');
+            if (multiplierInfo) {
+                multiplierInfo.textContent = currentLang === 'uk'
+                    ? `× ${result.entropy_multiplier} (${result.triggered_count} мод.)`
+                    : `× ${result.entropy_multiplier} (${result.triggered_count} mod.)`;
+                multiplierInfo.style.display = 'inline';
+            }
+        }
 
     } catch(e) {
         clearInterval(_oracleLoadingInterval);
