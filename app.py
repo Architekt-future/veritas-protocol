@@ -52,6 +52,99 @@ print(f"   Meta-intent:           {getattr(engine, 'meta_intent_analyzer', None)
 print(f"   Certainty factor:      {getattr(engine, 'certainty_factor', None) is not None}")
 print(f"   Performative detector: {getattr(engine, 'performative_detector', None) is not None}")
 
+# ── Entropy multiplier: shared logic for /api/analyze and /api/oracle ──────
+MODULE_WEIGHTS = {
+    'self_preservation': 0.20,
+    'meta_intent':       0.15,
+    'performative':      0.12,
+    'lac_epistemology':  0.10,
+    'lac_finance':       0.08,
+    'lac_labor':         0.08,
+    'manipulation':      0.10,
+    'claim_gap':         0.07,
+    'axiom':             0.10,
+}
+
+def compute_entropy_boost(result: dict) -> dict:
+    """
+    Given a full engine.analyze() result dict, compute entropy multiplier
+    based on triggered modules and return boost metadata.
+    Returns dict: {entropy_boosted, entropy_base, entropy_multiplier,
+                   triggered_modules, triggered_count}
+    """
+    diag = result.get('diagnostics', {})
+    base_entropy = result.get('entropy', 0)
+    entropy_pct  = round(base_entropy * 100)
+
+    multiplier      = 1.0
+    triggered_mods  = []
+
+    # Self-preservation
+    sp = result.get('self_preservation', diag.get('self_preservation', {}))
+    sp_verdict = sp.get('verdict', '') if isinstance(sp, dict) else diag.get('self_preservation_verdict', '')
+    if sp_verdict and sp_verdict not in ('SAFE', 'CLEAN', ''):
+        multiplier += MODULE_WEIGHTS['self_preservation']
+        triggered_mods.append('self_preservation')
+
+    # Meta-intent
+    mi = result.get('meta_intent', {})
+    mi_verdict = mi.get('verdict', '') if isinstance(mi, dict) else ''
+    if mi_verdict and mi_verdict not in ('TRANSPARENT', 'CLEAN', ''):
+        multiplier += MODULE_WEIGHTS['meta_intent']
+        triggered_mods.append('meta_intent')
+
+    # Performative
+    perf = result.get('performative', {})
+    if isinstance(perf, dict) and perf.get('is_performative'):
+        multiplier += MODULE_WEIGHTS['performative']
+        triggered_mods.append('performative')
+
+    # LAC Epistemology
+    epist_verdict = diag.get('lac_epistemology_verdict', '')
+    if epist_verdict and epist_verdict not in ('N/A', 'CLEAN', ''):
+        multiplier += MODULE_WEIGHTS['lac_epistemology']
+        triggered_mods.append('lac_epistemology')
+
+    # LAC Finance
+    fin_verdict = diag.get('lac_finance_verdict', '')
+    if fin_verdict and fin_verdict not in ('N/A', 'CLEAN', ''):
+        multiplier += MODULE_WEIGHTS['lac_finance']
+        triggered_mods.append('lac_finance')
+
+    # LAC Labor
+    lab_verdict = diag.get('lac_labor_verdict', '')
+    if lab_verdict and lab_verdict not in ('N/A', 'CLEAN', ''):
+        multiplier += MODULE_WEIGHTS['lac_labor']
+        triggered_mods.append('lac_labor')
+
+    # Manipulation
+    manip_score = diag.get('manipulation_score', 0) or 0
+    if manip_score >= 0.25:
+        multiplier += MODULE_WEIGHTS['manipulation']
+        triggered_mods.append('manipulation')
+
+    # Claim gap
+    cg = result.get('claim_gap', {})
+    if isinstance(cg, dict) and cg.get('is_flagged'):
+        multiplier += MODULE_WEIGHTS['claim_gap']
+        triggered_mods.append('claim_gap')
+
+    # Axiom
+    axiom_score = diag.get('axiom_score', 0) or 0
+    if axiom_score >= 0.25:
+        multiplier += MODULE_WEIGHTS['axiom']
+        triggered_mods.append('axiom')
+
+    entropy_boosted = min(100, round(entropy_pct * multiplier))
+
+    return {
+        'entropy_boosted':    entropy_boosted,
+        'entropy_base':       entropy_pct,
+        'entropy_multiplier': round(multiplier, 3),
+        'triggered_modules':  triggered_mods,
+        'triggered_count':    len(triggered_mods),
+    }
+
 @app.route('/')
 def home():
     """Serve the HTML interface"""
@@ -355,6 +448,10 @@ def analyze():
         # Full clean text for oracle — no slicing, both URL and direct input
         result['article_text'] = text
 
+        # ── Entropy boost: модулі множать ентропію ──────────────────────────
+        boost = compute_entropy_boost(result)
+        result.update(boost)
+
         return jsonify(result)
     
     except Exception as e:
@@ -477,58 +574,11 @@ def oracle():
             signals_lines.append(line)
         signals_summary = '\n'.join(signals_lines) if signals_lines else '  (модулі не виявили порушень)'
 
-        # ── Entropy multiplier: кожен спрацьований модуль збільшує entropy_pct ──
-        # Базова entropy — це сигнал структури. Модулі — це сигнали змісту.
-        # Множник накопичується: кожен спрацьований модуль додає вагу.
-        MODULE_WEIGHTS = {
-            'self_preservation': 0.20,   # найсильніший — пряма атака на систему
-            'meta_intent':       0.15,   # системна риторика
-            'performative':      0.12,   # крокодилячі сльози
-            'lac_epistemology':  0.10,   # підроблена логіка
-            'lac_finance':       0.08,   # фінансова безвідповідальність
-            'lac_labor':         0.08,   # трудова безвідповідальність
-            'manipulation':      0.10,   # маніпулятивні патерни
-            'claim_gap':         0.07,   # заяви без доказів
-            'axiom':             0.10,   # підміна аксіом
-        }
-        entropy_multiplier = 1.0
-        triggered_modules = []
-        if self_pres_verdict and self_pres_verdict not in ('SAFE', 'CLEAN', ''):
-            entropy_multiplier += MODULE_WEIGHTS['self_preservation']
-            triggered_modules.append('self_preservation')
-        if meta_verdict and meta_verdict not in ('TRANSPARENT', 'CLEAN', ''):
-            entropy_multiplier += MODULE_WEIGHTS['meta_intent']
-            triggered_modules.append('meta_intent')
-        perf_obj_check = diag.get('performative', {})
-        if isinstance(perf_obj_check, dict) and perf_obj_check.get('is_performative'):
-            entropy_multiplier += MODULE_WEIGHTS['performative']
-            triggered_modules.append('performative')
-        if lac_epist_verdict and lac_epist_verdict not in ('N/A', 'CLEAN', ''):
-            entropy_multiplier += MODULE_WEIGHTS['lac_epistemology']
-            triggered_modules.append('lac_epistemology')
-        if lac_fin_verdict and lac_fin_verdict not in ('N/A', 'CLEAN', ''):
-            entropy_multiplier += MODULE_WEIGHTS['lac_finance']
-            triggered_modules.append('lac_finance')
-        if lac_lab_verdict and lac_lab_verdict not in ('N/A', 'CLEAN', ''):
-            entropy_multiplier += MODULE_WEIGHTS['lac_labor']
-            triggered_modules.append('lac_labor')
-        manip_score_check = diag.get('manipulation_score', 0) or 0
-        if manip_score_check >= 0.25:
-            entropy_multiplier += MODULE_WEIGHTS['manipulation']
-            triggered_modules.append('manipulation')
-        claim_gap_check = diag.get('claim_gap', {})
-        if isinstance(claim_gap_check, dict) and claim_gap_check.get('is_flagged'):
-            entropy_multiplier += MODULE_WEIGHTS['claim_gap']
-            triggered_modules.append('claim_gap')
-        axiom_score_check = diag.get('axiom_score', 0) or 0
-        if axiom_score_check >= 0.25:
-            entropy_multiplier += MODULE_WEIGHTS['axiom']
-            triggered_modules.append('axiom')
-
-        # Застосовуємо множник до entropy_pct, але cap на 100%
-        entropy_pct_boosted = min(100, round(entropy_pct * entropy_multiplier))
-        # Кількість спрацьованих модулів для відображення
-        triggered_count = len(triggered_modules)
+        # ── Entropy boost: беремо вже розраховані значення з data (вже в /api/analyze) ──
+        entropy_pct_boosted = data.get('entropy_boosted', entropy_pct)
+        triggered_modules   = data.get('triggered_modules', [])
+        triggered_count     = data.get('triggered_count', 0)
+        entropy_multiplier  = data.get('entropy_multiplier', 1.0)
 
         # Narrative pivot
         pivot         = diag.get('narrative_pivot', {})
