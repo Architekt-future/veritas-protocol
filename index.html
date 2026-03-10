@@ -475,6 +475,24 @@
                     </div>
                 </div>
             </div>
+            <!-- FRAMING DETECTOR -->
+            <div class="lac-panel" id="framingPanel" style="display:none; border-color:#f59e42;">
+                <div class="panel-title" style="color:#f59e42; font-size:0.82em;">🖼️ <span id="i18n-framing_title">ФРЕЙМІНГ</span></div>
+                <div class="lac-inner">
+                    <div class="lac-row">
+                        <span class="lac-label" id="i18n-framing_score_label">Ризик:</span>
+                        <span class="lac-val" style="color:#f59e42;" id="framingScore">—</span>
+                    </div>
+                    <div class="lac-row">
+                        <span class="lac-label" id="i18n-framing_verdict_label">Тип:</span>
+                        <span class="lac-val" style="color:#f59e42;" id="framingVerdict">—</span>
+                    </div>
+                    <div class="lac-missing" id="framingPatterns" style="display:none;">
+                        🚩 <span id="i18n-framing_patterns_label">Знайдені техніки:</span>
+                        <div id="framingPatternsList" style="margin-top:5px;"></div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- CONTEXT COMPLETENESS (advisory) -->
@@ -723,6 +741,10 @@ const STRINGS = {
         epist_score: 'Ризик:',
         epist_verdict: 'Тип:',
         epist_patterns: 'Знайдені патерни:',
+        framing_title: 'ФРЕЙМІНГ',
+        framing_score_label: 'Ризик:',
+        framing_verdict_label: 'Тип:',
+        framing_patterns_label: 'Знайдені техніки:',
         logic_score: 'Оцінка логічності:',
         responsibility_score: 'Оцінка відповідальності:',
         verdict_label: 'Вердикт:',
@@ -825,6 +847,10 @@ const STRINGS = {
         epist_score: 'Risk:',
         epist_verdict: 'Type:',
         epist_patterns: 'Patterns found:',
+        framing_title: 'FRAMING',
+        framing_score_label: 'Risk:',
+        framing_verdict_label: 'Type:',
+        framing_patterns_label: 'Techniques found:',
         logic_score: 'Logic Authenticity Score:',
         responsibility_score: 'Responsibility Score:',
         verdict_label: 'Verdict:',
@@ -1107,6 +1133,46 @@ function translateEpistVerdict(v) {
 function translateEpistPatterns(hits) {
     if (!hits) return '';
     const map = currentLang === 'uk' ? EPIST_PATTERNS_UK : EPIST_PATTERNS_EN;
+    return Object.entries(hits)
+        .filter(([, count]) => count > 0)
+        .map(([key]) => map[key] || key)
+        .join('\n');
+}
+
+const FRAMING_VERDICT_UK = {
+    'AGENDA_SETTING':     'ПЕРЕКЛЮЧЕННЯ УВАГИ',
+    'FALSE_DILEMMA':      'ХИБНА ДИЛЕМА',
+    'GROUND_PREPARATION': 'ПІДГОТОВКА ҐРУНТУ',
+    'OVERTON_SHIFT':      'ЗСУВ ОВЕРТОНА',
+    'PRESUPPOSITION':     'ВБУДОВАНА ПЕРЕДУМОВА',
+    'JUXTAPOSITION':      'ЗІСТАВЛЕННЯ БЕЗ ВИСНОВКУ',
+    'COMBINED':           'КОМБІНОВАНИЙ',
+    'CLEAN':              'ЧИСТО',
+    'N/A':                'N/A',
+};
+const FRAMING_PATTERNS_UK = {
+    'agenda_setting':     'переключення уваги ("справжня проблема не в X, а в Y")',
+    'false_dilemma':      'хибна дилема (два варіанти, без альтернатив)',
+    'ground_preparation': 'підготовка ґрунту (поступовий підвід до висновку)',
+    'overton_shift':      'зсув Овертона (нормалізація через крайнощі)',
+    'presupposition':     'вбудована передумова (недоведений факт у нейтральному реченні)',
+    'juxtaposition':      'зіставлення без висновку ("дивний збіг у часі")',
+};
+const FRAMING_PATTERNS_EN = {
+    'agenda_setting':     'agenda setting ("real problem is not X but Y")',
+    'false_dilemma':      'false dilemma (binary choice, no alternatives)',
+    'ground_preparation': 'ground preparation (step-by-step nudge to conclusion)',
+    'overton_shift':      'Overton window shift (normalizing via extremes)',
+    'presupposition':     'presupposition (unproven claim in neutral sentence)',
+    'juxtaposition':      'juxtaposition ("strange coincidence in timing")',
+};
+function translateFramingVerdict(v) {
+    if (!v) return 'N/A';
+    return currentLang === 'uk' ? (FRAMING_VERDICT_UK[v] || v) : v;
+}
+function translateFramingPatterns(hits) {
+    if (!hits) return '';
+    const map = currentLang === 'uk' ? FRAMING_PATTERNS_UK : FRAMING_PATTERNS_EN;
     return Object.entries(hits)
         .filter(([, count]) => count > 0)
         .map(([key]) => map[key] || key)
@@ -1487,6 +1553,11 @@ function renderResults(data) {
         extraSignals.push(currentLang === 'uk'
             ? `📭 ЗАЯВИ БЕЗ ДОКАЗІВ`
             : `📭 CLAIM GAP`);
+    // Framing badge
+    if (diag.is_framing && diag.framing_verdict && diag.framing_verdict !== 'N/A' && diag.framing_verdict !== 'CLEAN')
+        extraSignals.push(currentLang === 'uk'
+            ? `🖼️ ФРЕЙМІНГ`
+            : `🖼️ FRAMING`);
     if (extraSignals.length && natNature) {
         const existing = natNature.textContent;
         natNature.textContent = existing ? existing + ' · ' + extraSignals.join(' · ') : extraSignals.join(' · ');
@@ -1552,6 +1623,20 @@ function renderResults(data) {
         } else { pEl.style.display = 'none'; }
         lacEpistPanel.style.display = 'block';
     } else { lacEpistPanel.style.display = 'none'; }
+
+    // Framing detector
+    const framingPanel = document.getElementById('framingPanel');
+    if (diag.is_framing && diag.framing_verdict && diag.framing_verdict !== 'N/A') {
+        document.getElementById('framingScore').textContent   = (diag.framing_score || 0).toFixed(2);
+        document.getElementById('framingVerdict').textContent = translateFramingVerdict(diag.framing_verdict);
+        const fpEl = document.getElementById('framingPatterns');
+        const framingText = translateFramingPatterns(diag.framing_pattern_hits);
+        if (framingText) {
+            document.getElementById('framingPatternsList').textContent = framingText;
+            fpEl.style.display = 'block';
+        } else { fpEl.style.display = 'none'; }
+        framingPanel.style.display = 'block';
+    } else { framingPanel.style.display = 'none'; }
 
     // Context completeness (advisory layer)
     const completenessPanel = document.getElementById('completenessPanel');
