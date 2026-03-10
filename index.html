@@ -1357,8 +1357,25 @@ function renderResults(data) {
         }
     }
 
-    // Witness bar
-    updateWitness(entropy, status);
+    // Witness bar — використовуємо boosted entropy якщо модулі спрацювали
+    const displayEntropy = (data.entropy_boosted !== undefined && data.triggered_count > 0)
+        ? data.entropy_boosted / 100
+        : entropy;
+    updateWitness(displayEntropy, status);
+
+    // Показуємо множник під шкалою якщо є boost
+    const mInfo = document.getElementById('entropyMultiplierInfo');
+    if (mInfo) {
+        if (data.triggered_count > 0 && data.entropy_multiplier > 1) {
+            mInfo.textContent = currentLang === 'uk'
+                ? `× ${data.entropy_multiplier} (${data.triggered_count} мод.)`
+                : `× ${data.entropy_multiplier} (${data.triggered_count} mod.)`;
+            mInfo.style.display = 'inline';
+        } else {
+            mInfo.style.display = 'none';
+            mInfo.textContent = '';
+        }
+    }
 
     // Verdict
     const verdictEl = document.getElementById('verdict');
@@ -1874,26 +1891,6 @@ async function consultOracle() {
         footer.style.display = 'block';
         btn.disabled = false;
         btn.innerHTML = '<span id="i18n-oracle_btn">' + t('oracle_btn_retry') + '</span>';
-
-        // Оновлюємо entropy bar — показуємо boosted значення якщо модулі спрацювали
-        if (result.entropy_boosted !== undefined && result.triggered_count > 0) {
-            const boostedPct = result.entropy_boosted;
-            const basePct    = result.entropy_base || 0;
-            const fillEl  = document.getElementById('entropyFill');
-            const valEl   = document.getElementById('entropyValue');
-            fillEl.style.width = Math.min(boostedPct, 100) + '%';
-            fillEl.textContent = boostedPct + '%';
-            // Підпис: показуємо обидва значення
-            valEl.textContent = (boostedPct / 100).toFixed(3);
-            // Додаємо плашку-підказку під шкалою якщо є boost
-            const multiplierInfo = document.getElementById('entropyMultiplierInfo');
-            if (multiplierInfo) {
-                multiplierInfo.textContent = currentLang === 'uk'
-                    ? `× ${result.entropy_multiplier} (${result.triggered_count} мод.)`
-                    : `× ${result.entropy_multiplier} (${result.triggered_count} mod.)`;
-                multiplierInfo.style.display = 'inline';
-            }
-        }
 
     } catch(e) {
         clearInterval(_oracleLoadingInterval);
