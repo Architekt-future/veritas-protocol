@@ -454,6 +454,24 @@
                     </div>
                 </div>
             </div>
+            <!-- LAC EPISTEMOLOGY -->
+            <div class="lac-panel" id="lacEpistPanel" style="display:none;">
+                <div class="panel-title" style="color:#c084fc; font-size:0.82em;">🔬 <span id="i18n-lac_epistemology"></span></div>
+                <div class="lac-inner">
+                    <div class="lac-row">
+                        <span class="lac-label" id="i18n-epist_score"></span>
+                        <span class="lac-val" style="color:#c084fc;" id="lacEpistScore">—</span>
+                    </div>
+                    <div class="lac-row">
+                        <span class="lac-label" id="i18n-epist_verdict"></span>
+                        <span class="lac-val" style="color:#c084fc;" id="lacEpistVerdict">—</span>
+                    </div>
+                    <div class="lac-missing" id="lacEpistPatterns" style="display:none;">
+                        🚩 <span id="i18n-epist_patterns"></span>
+                        <div id="lacEpistPatternsList" style="margin-top:5px;"></div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- CONTEXT COMPLETENESS (advisory) -->
@@ -676,6 +694,10 @@ const STRINGS = {
         manip_title: 'АНАЛІЗ МАНІПУЛЯЦІЇ',
         lac_finance: 'LAC ФІНАНСИ',
         lac_labor: 'LAC ПРАЦЯ',
+        lac_epistemology: 'LAC ЕПІСТЕМОЛОГІЯ',
+        epist_score: 'Ризик:',
+        epist_verdict: 'Тип:',
+        epist_patterns: 'Знайдені патерни:',
         logic_score: 'Оцінка логічності:',
         responsibility_score: 'Оцінка відповідальності:',
         verdict_label: 'Вердикт:',
@@ -768,6 +790,10 @@ const STRINGS = {
         manip_title: 'MANIPULATION ANALYSIS',
         lac_finance: 'LAC FINANCE ANALYSIS',
         lac_labor: 'LAC LABOR ANALYSIS',
+        lac_epistemology: 'LAC EPISTEMOLOGY',
+        epist_score: 'Risk:',
+        epist_verdict: 'Type:',
+        epist_patterns: 'Patterns found:',
         logic_score: 'Logic Authenticity Score:',
         responsibility_score: 'Responsibility Score:',
         verdict_label: 'Verdict:',
@@ -1013,6 +1039,36 @@ const LAC_VERDICT_UK = {
     'CLEAN':                       'ЧИСТО',
     'N/A':                         'N/A',
 };
+const EPIST_VERDICT_UK = {
+    'ANONYMOUS_AUTHORITY':   'АНОНІМНИЙ АВТОРИТЕТ',
+    'CORRELATION_CAUSATION': 'КОРЕЛЯЦІЯ ЯК ПРИЧИНА',
+    'UNFALSIFIABLE':         'НЕЗАПЕРЕЧНА ТЕЗА',
+    'COMBINED':              'КОМБІНОВАНИЙ',
+    'CLEAN':                 'ЧИСТО',
+    'N/A':                   'N/A',
+};
+const EPIST_PATTERNS_UK = {
+    'anonymous_authority':   'анонімні авторитети (без імен та установ)',
+    'correlation_causation': 'кореляція подана як причинність',
+    'unfalsifiable':         'незаперечна теза — заперечення = доказ змови',
+};
+const EPIST_PATTERNS_EN = {
+    'anonymous_authority':   'anonymous authorities (no names or institutions)',
+    'correlation_causation': 'correlation presented as causation',
+    'unfalsifiable':         'unfalsifiable claim — denial = proof of conspiracy',
+};
+function translateEpistVerdict(v) {
+    if (!v) return 'N/A';
+    return currentLang === 'uk' ? (EPIST_VERDICT_UK[v] || v) : v;
+}
+function translateEpistPatterns(hits) {
+    if (!hits) return '';
+    const map = currentLang === 'uk' ? EPIST_PATTERNS_UK : EPIST_PATTERNS_EN;
+    return Object.entries(hits)
+        .filter(([, count]) => count > 0)
+        .map(([key]) => map[key] || key)
+        .join('\n');
+}
 function translateLacVerdict(v) {
     if (!v) return 'N/A';
     return currentLang === 'uk' ? (LAC_VERDICT_UK[v] || v) : v;
@@ -1389,6 +1445,20 @@ function renderResults(data) {
         } else { rfEl.style.display = 'none'; }
         lacLabPanel.style.display = 'block';
     } else { lacLabPanel.style.display = 'none'; }
+
+    // LAC Epistemology
+    const lacEpistPanel = document.getElementById('lacEpistPanel');
+    if (diag.is_epistemic_content && diag.lac_epistemology_verdict && diag.lac_epistemology_verdict !== 'N/A') {
+        document.getElementById('lacEpistScore').textContent   = (diag.lac_epistemology_score || 0).toFixed(2);
+        document.getElementById('lacEpistVerdict').textContent = translateEpistVerdict(diag.lac_epistemology_verdict);
+        const pEl = document.getElementById('lacEpistPatterns');
+        const patternText = translateEpistPatterns(diag.lac_epistemology_pattern_hits);
+        if (patternText) {
+            document.getElementById('lacEpistPatternsList').textContent = patternText;
+            pEl.style.display = 'block';
+        } else { pEl.style.display = 'none'; }
+        lacEpistPanel.style.display = 'block';
+    } else { lacEpistPanel.style.display = 'none'; }
 
     // Context completeness (advisory layer)
     const completenessPanel = document.getElementById('completenessPanel');
