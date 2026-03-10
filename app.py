@@ -1,19 +1,20 @@
 """
-Veritas Protocol - Flask API v16.9
+Veritas Protocol - Flask API v17.0
 Forces fresh import of Veritas modules on every restart
 SCRAPER: Daily Mail selectors + <p> fallback (2026-02-26)
 GENRE: GenreDetector v2.0 — CONSPIRACY_NEWS + fixed SPORT/CULTURE false positives
+LAC EPISTEMOLOGY: v1.0 — anonymous authority / correlation-causation / unfalsifiable
 """
 
 import sys
 import os
 
 # CRITICAL: Clear module cache to force reload
-print("🔄 Veritas v16.9 - Clearing module cache...")
+print("🔄 Veritas v17.0 - Clearing module cache...")
 modules_to_clear = [k for k in sys.modules.keys() if k.startswith('veritas_')]
 for module in modules_to_clear:
     del sys.modules[module]
-print(f"✅ Cache cleared. Loading fresh Veritas v16.9 modules...")
+print(f"✅ Cache cleared. Loading fresh Veritas v17.0 modules...")
 
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
@@ -45,6 +46,7 @@ print(f"   Absurdity detector:    {engine.absurdity_detector is not None}")
 print(f"   Insight detector:      {engine.insight_detector is not None}")
 print(f"   LAC Finance:           {engine.lac_finance is not None}")
 print(f"   LAC Labor:             {engine.lac_labor is not None}")
+print(f"   LAC Epistemology:      {getattr(engine, 'lac_epistemology', None) is not None}")
 print(f"   Self-preservation:     {getattr(engine, 'self_preservation_guard', None) is not None}")
 print(f"   Meta-intent:           {getattr(engine, 'meta_intent_analyzer', None) is not None}")
 print(f"   Certainty factor:      {getattr(engine, 'certainty_factor', None) is not None}")
@@ -58,7 +60,7 @@ def home():
     except:
         return jsonify({
             'status': 'online',
-            'version': 'v16.9',
+            'version': 'v17.0',
             'message': 'Veritas Protocol API is running (index.html not found)',
             'features': {
                 'pattern_boost': engine.pattern_boost_engine is not None,
@@ -75,7 +77,7 @@ def analyze():
         if request.method == 'GET':
             return jsonify({
                 'status': 'online',
-                'version': 'v16.9',
+                'version': 'v17.0',
                 'modules': {
                     'pattern_boost':         engine.pattern_boost_engine is not None,
                     'void_detector':         engine.void_detector is not None,
@@ -368,7 +370,7 @@ def analyze():
 def health():
     return jsonify({
         'status': 'healthy',
-        'version': 'v16.9'
+        'version': 'v17.0'
     })
 
 
@@ -414,6 +416,10 @@ def oracle():
         lac_labor        = diag.get('lac_labor', {})
         lac_lab_verdict  = lac_labor.get('verdict', '') if isinstance(lac_labor, dict) else ''
 
+        lac_epist        = diag.get('lac_epistemology', {})
+        lac_epist_verdict = lac_epist.get('verdict', '') if isinstance(lac_epist, dict) else ''
+        lac_epist_hits   = lac_epist.get('pattern_hits', {}) if isinstance(lac_epist, dict) else {}
+
         self_pres        = diag.get('self_preservation', {})
         self_pres_verdict = self_pres.get('verdict', '') if isinstance(self_pres, dict) else ''
 
@@ -441,6 +447,20 @@ def oracle():
         if lac_lab_verdict and lac_lab_verdict not in ('N/A', 'CLEAN', ''):
             line = f'  ⚙️ LAC ПРАЦЯ спрацював: {lac_lab_verdict}'
             line += '\n     → Текст про роботу або зайнятість декларує зміни без механізмів: немає відповідальних, строків, критеріїв. Поясни читачу чого саме бракує.'
+            signals_lines.append(line)
+        if lac_epist_verdict and lac_epist_verdict not in ('N/A', 'CLEAN', ''):
+            hits = lac_epist_hits
+            parts = []
+            if hits.get('anonymous_authority', 0):
+                parts.append('анонімні авторитети (без імен та установ)')
+            if hits.get('correlation_causation', 0):
+                parts.append('кореляція подана як причинність')
+            if hits.get('unfalsifiable', 0):
+                parts.append('незаперечна теза (заперечення = доказ змови)')
+            details = '; '.join(parts) if parts else lac_epist_verdict
+            line = f'  🔬 LAC ЕПІСТЕМОЛОГІЯ спрацювала: {lac_epist_verdict}'
+            line += f'\n     Знайдено: {details}'
+            line += '\n     → Текст імітує логічний аргумент але не дає верифікованих доказів. Поясни читачу конкретно що саме не можна перевірити і чому це проблема.'
             signals_lines.append(line)
         if self_pres_verdict and self_pres_verdict not in ('SAFE', ''):
             line = f'  🛡️ САМОЗБЕРЕЖЕННЯ спрацювало: {self_pres_verdict}'
