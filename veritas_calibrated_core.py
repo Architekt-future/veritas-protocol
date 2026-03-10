@@ -1579,6 +1579,9 @@ class VeritasCalibratedCore:
                 'axiom_score': round(axiom_result['axiom_score'], 3),
                 'axiom_verdict': axiom_result['axiom_verdict'],
                 'axiom_patterns': [p['name'] for p in axiom_result['axiom_patterns']],
+                'self_preservation_score': round(preservation_result['preservation_score'], 3),
+                'self_preservation_verdict': preservation_result['preservation_verdict'],
+                'self_preservation_patterns': [p['name'] for p in preservation_result['preservation_patterns']],
                 'genre': _genre,
             },
             # ADVISORY LAYER — never affects verdict or entropy
