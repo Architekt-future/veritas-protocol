@@ -62,6 +62,13 @@ try:
 except ImportError:
     LAC_LABOR_AVAILABLE = False
 
+# Import LAC Epistemology detector
+try:
+    from veritas_lac_epistemology import VeritasLACEpistemology
+    LAC_EPISTEMOLOGY_AVAILABLE = True
+except ImportError:
+    LAC_EPISTEMOLOGY_AVAILABLE = False
+
 # Import Manipulation detector
 try:
     from veritas_manipulation_detector import ManipulationDetector
@@ -202,6 +209,12 @@ class VeritasCalibratedCore:
             self.lac_labor = VeritasLACLabor()
         else:
             self.lac_labor = None
+
+        # LAC Epistemology detector (anonymous authority / correlation-causation / unfalsifiable)
+        if LAC_EPISTEMOLOGY_AVAILABLE:
+            self.lac_epistemology = VeritasLACEpistemology()
+        else:
+            self.lac_epistemology = None
         
         # Manipulation detector (gaslighting, cult rhetoric, totalitarian framing)
         if MANIPULATION_AVAILABLE:
@@ -767,6 +780,29 @@ class VeritasCalibratedCore:
                 'is_labor': labor_analysis.is_labor_content,
                 'red_flags': labor_analysis.red_flags,
                 'evidence': labor_analysis.evidence
+            }
+
+        # ---- PHASE 10e2: LAC EPISTEMOLOGY ----
+        # Detects: anonymous authority / correlation-causation / unfalsifiable framing
+        lac_epistemology_result = {
+            'score': 0.0,
+            'verdict': 'N/A',
+            'missing': [],
+            'is_epistemic': False,
+            'red_flags': [],
+            'evidence': [],
+            'pattern_hits': {}
+        }
+        if self.lac_epistemology:
+            epist_analysis = self.lac_epistemology.analyze(text)
+            lac_epistemology_result = {
+                'score': epist_analysis.score,
+                'verdict': epist_analysis.verdict,
+                'missing': epist_analysis.missing,
+                'is_epistemic': epist_analysis.is_epistemic_content,
+                'red_flags': epist_analysis.red_flags,
+                'evidence': epist_analysis.evidence,
+                'pattern_hits': epist_analysis.pattern_hits
             }
         
         # ---- PHASE 10b: MANIPULATION DETECTION ----
@@ -1528,6 +1564,12 @@ class VeritasCalibratedCore:
                 'lac_labor_missing': lac_labor_result['missing'],
                 'lac_labor_red_flags': lac_labor_result['red_flags'],
                 'is_labor_content': lac_labor_result['is_labor'],
+                'lac_epistemology_score': round(lac_epistemology_result['score'], 3),
+                'lac_epistemology_verdict': lac_epistemology_result['verdict'],
+                'lac_epistemology_missing': lac_epistemology_result['missing'],
+                'lac_epistemology_red_flags': lac_epistemology_result['red_flags'],
+                'lac_epistemology_pattern_hits': lac_epistemology_result['pattern_hits'],
+                'is_epistemic_content': lac_epistemology_result['is_epistemic'],
                 'manipulation_score': round(manipulation_result['manipulation_score'], 3),
                 'manipulation_verdict': manipulation_result['manipulation_verdict'],
                 'manipulation_patterns': [p['name'] for p in manipulation_result['manipulation_patterns']],
