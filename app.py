@@ -408,17 +408,17 @@ def oracle():
         text_preview = data.get('article_text', '') or data.get('text_preview', '')
 
         # All module signals for comprehensive witness analysis
-        lac_finance      = diag.get('lac_finance', {})
-        lac_fin_verdict  = lac_finance.get('verdict', '') if isinstance(lac_finance, dict) else ''
-        lac_fin_score    = lac_finance.get('score', None) if isinstance(lac_finance, dict) else None
-        lac_fin_missing  = ', '.join(lac_finance.get('missing', [])) if isinstance(lac_finance, dict) else ''
+        # LAC Finance — flat fields from diagnostics
+        lac_fin_verdict  = diag.get('lac_finance_verdict', '')
+        lac_fin_score    = diag.get('lac_finance_score', None)
+        lac_fin_missing  = ', '.join(diag.get('lac_finance_missing', []))
 
-        lac_labor        = diag.get('lac_labor', {})
-        lac_lab_verdict  = lac_labor.get('verdict', '') if isinstance(lac_labor, dict) else ''
+        # LAC Labor — flat fields from diagnostics
+        lac_lab_verdict  = diag.get('lac_labor_verdict', '')
 
-        lac_epist        = diag.get('lac_epistemology', {})
-        lac_epist_verdict = lac_epist.get('verdict', '') if isinstance(lac_epist, dict) else ''
-        lac_epist_hits   = lac_epist.get('pattern_hits', {}) if isinstance(lac_epist, dict) else {}
+        # LAC Epistemology — flat fields from diagnostics
+        lac_epist_verdict = diag.get('lac_epistemology_verdict', '')
+        lac_epist_hits    = diag.get('lac_epistemology_pattern_hits', {})
 
         self_pres        = diag.get('self_preservation', {})
         self_pres_verdict = self_pres.get('verdict', '') if isinstance(self_pres, dict) else ''
