@@ -1,9 +1,11 @@
 """
-Veritas LAC Epistemology — v1.0
-Detects three classic epistemic manipulation patterns:
+Veritas LAC Epistemology — v1.1
+Detects four classic epistemic manipulation patterns:
   1. Anonymous authorities ("some experts", "independent researchers")
   2. Correlation-as-causation framing
   3. Unfalsifiable / conspiracy framing ("science doesn't recognize this — which is telling")
+  4. Conclusion leap — logical jump from data to radical claim via "логічно припустити", "таким чином"
+  5. Unverified citation — named sources cited without verifiable links
 
 Interface mirrors veritas_lac_labor / veritas_lac_finance.
 """
@@ -16,7 +18,7 @@ from typing import List
 @dataclass
 class EpistemologyResult:
     score: float                  # 0.0 = clean, 1.0 = severe
-    verdict: str                  # CLEAN | ANONYMOUS_AUTHORITY | CORRELATION_CAUSATION | UNFALSIFIABLE | COMBINED
+    verdict: str                  # CLEAN | ANONYMOUS_AUTHORITY | CORRELATION_CAUSATION | UNFALSIFIABLE | CONCLUSION_LEAP | COMBINED
     is_epistemic_content: bool
     missing: List[str] = field(default_factory=list)
     red_flags: List[str] = field(default_factory=list)
@@ -61,6 +63,11 @@ class VeritasLACEpistemology:
         r'\bодночасн\w+\s+з(ріст|рост|збільш)',
         r'\bпаралельн\w+\s+з(ріст|рост)',
         r'\bна\s+тлі\s+(зростання|збільшення|падіння)\b.*\b(також|одночасно)',
+        # Імплікована причинність без слова "кореляція"
+        r'\bвраховуючи\s+(ці|дані|результати|вищезазначен)\w*\s*,?\s*(логічно|можна|варто|слід)',
+        r'\bаналогічн[іі]\s+результати\b.{0,80}\b(також|підтверджують|свідчать)',
+        r'\bпоказали?\s+що\b.{0,120}\bможе\s+мати\b',
+        r'\bдемонструють\b.{0,80}\b(може|призводить|веде\s+до)\b',
     ]
     CORR_PATTERNS_EN = [
         r'\bcorrelation\b',
@@ -71,6 +78,10 @@ class VeritasLACEpistemology:
         r'\btiming\s+(is|seems|appears)\s+(suspicious|notable|curious|interesting)\b',
         r'\bstrange\s+coincidence\b',
         r'\bdivný\s+zbig\b',
+        # Implied causation without the word "correlation"
+        r'\bgiven\s+(these|this|the)\s+(data|results|findings)\b.{0,60}(logical|reasonable|safe)\s+to\s+(assume|conclude|suggest)',
+        r'\bshowed?\s+that\b.{0,120}\bmay\s+have\b',
+        r'\bdemonstrat\w+\b.{0,80}\b(may|leads?\s+to|results?\s+in)\b',
     ]
 
     # ── Pattern 3: Unfalsifiable / conspiracy framing ───────────────────────
@@ -92,10 +103,49 @@ class VeritasLACEpistemology:
         r'those\s+who\s+question\s+(are|get|were)\s+(silenced|dismissed|ridiculed)',
     ]
 
+    # ── Pattern 4: Conclusion leap ───────────────────────────────────────────
+    # Псевдологічний перехід від даних до радикального висновку
+    LEAP_PATTERNS_UK = [
+        r'\bлогічно\s+(припустити|зробити\s+висновок|вважати)\b',
+        r'\bтаким\s+чином\s*,?\s*(батьки|люди|ми|суспільство|держава)\b',
+        r'\bотже\s*,?\s*(батьки|люди|ми|суспільство)\b.{0,80}(ставлять|загрожують|несуть)',
+        r'\bможна\s+зробити\s+висновок\s+що\b.{0,80}(фактично|по\s+суті|насправді)',
+        r'\bфактично\s+(ставлять|піддають|загрожують|знищують)\b',
+        r'\bнеобхідно\s+визнати\s+що\b.{0,60}(призводить|веде|спричиняє)',
+        r'\bнаслідком\s+(цього|чого)\s+є\b.{0,60}(неминуч|очевидн|зрозумі)',
+        r'\bзалишається\s+(лише|тільки)\s+(визнати|погодитись|прийняти)\b',
+    ]
+    LEAP_PATTERNS_EN = [
+        r'\blogically\s+(follows|conclude|assume|implies?)\b',
+        r'\bthus\b.{0,60}(parents?|people|we|society|children)\b.{0,60}(are|put|face|risk)',
+        r'\btherefore\b.{0,60}(parents?|people|children)\b.{0,80}(effectively|essentially|actually)\b',
+        r'\bit\s+is\s+(safe|logical|reasonable)\s+to\s+(assume|conclude|infer)\b',
+        r'\beffectively\s+(putting|destroying|undermining|jeopardizing)\b',
+        r'\bonly\s+(logical|reasonable)\s+conclusion\b',
+        r'\bmust\s+(accept|acknowledge|recognize)\s+that\b.{0,60}(leads?|causes?|results?)',
+        r'\bthe\s+data\s+(clearly|obviously|inevitably)\s+(show|suggest|prove|indicate)\b',
+    ]
+
+    # ── Pattern 5: Unverified named citation ─────────────────────────────────
+    # Іменований авторитет без верифікованого посилання (URL/DOI/журнал)
+    UNVERIFIED_CITE_PATTERNS_UK = [
+        r'\b(дослідження|робота|стаття)\s+\w+\s+(та|і|et)\s+\w+\.?\s*\(\d{4}\)',
+        r'\bуніверситет\w*\s+\w+\s*\(\d{4}\)\s+показал',
+        r'\bдослідження\s+університет\w*\s+\w+\s*\(\d{4}\)',
+    ]
+    UNVERIFIED_CITE_PATTERNS_EN = [
+        r'\b\w+\s+et\s+al\.\s*\(\d{4}\)',
+        r'\buniversity\s+of\s+\w+\s*\(\d{4}\)\s+(study|research|found|showed)',
+        r'\b(study|research)\s+(by|from|at)\s+\w[\w\s]+university\b.{0,60}\(\d{4}\)',
+        r'\b\w+\s+\(\d{4}\)\s+(found|showed|demonstrated|reported)\b',
+    ]
+
     # Threshold: how many hits trigger each pattern
     ANON_THRESHOLD = 1
     CORR_THRESHOLD = 1
     UNFALS_THRESHOLD = 1
+    LEAP_THRESHOLD = 1
+    UNVERIFIED_CITE_THRESHOLD = 1
 
     def analyze(self, text: str) -> EpistemologyResult:
         if not text or len(text.strip()) < 50:
@@ -108,14 +158,18 @@ class VeritasLACEpistemology:
         t = text.lower()
 
         # Count hits per pattern group
-        anon_hits = self._count_hits(t, self.ANON_PATTERNS_UK + self.ANON_PATTERNS_EN)
-        corr_hits = self._count_hits(t, self.CORR_PATTERNS_UK + self.CORR_PATTERNS_EN)
-        unfals_hits = self._count_hits(t, self.UNFALS_PATTERNS_UK + self.UNFALS_PATTERNS_EN)
+        anon_hits        = self._count_hits(t, self.ANON_PATTERNS_UK + self.ANON_PATTERNS_EN)
+        corr_hits        = self._count_hits(t, self.CORR_PATTERNS_UK + self.CORR_PATTERNS_EN)
+        unfals_hits      = self._count_hits(t, self.UNFALS_PATTERNS_UK + self.UNFALS_PATTERNS_EN)
+        leap_hits        = self._count_hits(t, self.LEAP_PATTERNS_UK + self.LEAP_PATTERNS_EN)
+        unverified_hits  = self._count_hits(t, self.UNVERIFIED_CITE_PATTERNS_UK + self.UNVERIFIED_CITE_PATTERNS_EN)
 
         pattern_hits = {
-            'anonymous_authority': anon_hits,
-            'correlation_causation': corr_hits,
-            'unfalsifiable': unfals_hits,
+            'anonymous_authority':    anon_hits,
+            'correlation_causation':  corr_hits,
+            'unfalsifiable':          unfals_hits,
+            'conclusion_leap':        leap_hits,
+            'unverified_citation':    unverified_hits,
         }
 
         triggered = []
@@ -141,6 +195,18 @@ class VeritasLACEpistemology:
             missing.append('falsifiable hypothesis or direct rebuttal of mainstream evidence')
             evidence.append('Text frames official disagreement as proof of conspiracy rather than evidence against the claim')
 
+        if leap_hits >= self.LEAP_THRESHOLD:
+            triggered.append('CONCLUSION_LEAP')
+            red_flags.append(f'conclusion_leap:{leap_hits}')
+            missing.append('logical chain connecting data to conclusion')
+            evidence.append('Text jumps from observation to radical conclusion using pseudo-logical connectors ("логічно припустити", "таким чином")')
+
+        if unverified_hits >= self.UNVERIFIED_CITE_THRESHOLD:
+            triggered.append('UNVERIFIED_CITATION')
+            red_flags.append(f'unverified_citation:{unverified_hits}')
+            missing.append('verifiable URL, DOI, or direct link to cited study')
+            evidence.append('Text cites named studies or authors without providing a verifiable link or DOI')
+
         is_epistemic = bool(triggered)
 
         if not triggered:
@@ -152,7 +218,15 @@ class VeritasLACEpistemology:
             )
 
         # Score: each pattern adds weight
-        score = min(1.0, 0.35 * len(triggered))
+        # Leap and unverified citation are particularly deceptive — higher weight
+        weights = {
+            'ANONYMOUS_AUTHORITY':  0.30,
+            'CORRELATION_CAUSATION': 0.30,
+            'UNFALSIFIABLE':        0.35,
+            'CONCLUSION_LEAP':      0.35,
+            'UNVERIFIED_CITATION':  0.25,
+        }
+        score = min(1.0, sum(weights.get(p, 0.30) for p in triggered))
 
         verdict = 'COMBINED' if len(triggered) > 1 else triggered[0]
 
