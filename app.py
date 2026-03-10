@@ -63,6 +63,7 @@ MODULE_WEIGHTS = {
     'manipulation':      0.10,
     'claim_gap':         0.07,
     'axiom':             0.10,
+    'framing':           0.09,
 }
 
 def compute_entropy_boost(result: dict) -> dict:
@@ -134,6 +135,12 @@ def compute_entropy_boost(result: dict) -> dict:
     if axiom_score >= 0.25:
         multiplier += MODULE_WEIGHTS['axiom']
         triggered_mods.append('axiom')
+
+    # Framing
+    framing_score = diag.get('framing_score', 0) or 0
+    if framing_score > 0:
+        multiplier += MODULE_WEIGHTS['framing']
+        triggered_mods.append('framing')
 
     entropy_boosted = min(100, round(entropy_pct * multiplier))
 
@@ -517,6 +524,11 @@ def oracle():
         lac_epist_verdict = diag.get('lac_epistemology_verdict', '')
         lac_epist_hits    = diag.get('lac_epistemology_pattern_hits', {})
 
+        # Framing detector
+        framing_verdict  = diag.get('framing_verdict', '')
+        framing_patterns = diag.get('framing_patterns', [])
+        framing_hits     = diag.get('framing_pattern_hits', {})
+
         self_pres        = diag.get('self_preservation', {})
         self_pres_verdict = self_pres.get('verdict', '') if isinstance(self_pres, dict) else ''
 
@@ -571,6 +583,23 @@ def oracle():
         if isinstance(perf_obj, dict) and perf_obj.get('is_performative'):
             line = f'  🐊 КРОКОДИЛЯЧІ СЛЬОЗИ: {perf_obj.get("verdict","")}'
             line += '\n     → Декларується дискомфорт або відповідальність без жодного конкретного зобов\'язання змінити щось реальне.'
+            signals_lines.append(line)
+        if framing_verdict and framing_verdict not in ('N/A', 'CLEAN', ''):
+            framing_parts = []
+            FRAMING_LABELS = {
+                'agenda_setting':     'переключення уваги ("справжня проблема не в X, а в Y")',
+                'false_dilemma':      'хибна дилема ("або X, або Y" — без альтернатив)',
+                'ground_preparation': 'підготовка ґрунту (поступовий підвід до висновку)',
+                'overton_shift':      'зсув Овертона (нормалізація через крайнощі)',
+                'presupposition':     'вбудована передумова (недоведений факт у нейтральному реченні)',
+                'juxtaposition':      'зіставлення без висновку ("збіг у часі")',
+            }
+            for p in framing_patterns:
+                framing_parts.append(FRAMING_LABELS.get(p, p))
+            details = '; '.join(framing_parts) if framing_parts else framing_verdict
+            line = f'  🖼️ ФРЕЙМІНГ спрацював: {framing_verdict}'
+            line += f'\n     Знайдено: {details}'
+            line += '\n     → Текст маніпулює без брехні: через архітектуру подачі інформації він веде читача до висновку який прямо не формулюється. Поясни яку саме техніку використано і до якого висновку веде текст.'
             signals_lines.append(line)
         signals_summary = '\n'.join(signals_lines) if signals_lines else '  (модулі не виявили порушень)'
 
