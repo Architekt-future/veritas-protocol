@@ -1571,14 +1571,14 @@ function renderResults(data) {
 
     // Self-preservation guard
     const selfPreservationPanel = document.getElementById('selfPreservationPanel');
-    const spVerdictEl = document.getElementById('selfPreservationVerdict');
-    const spScoreEl   = document.getElementById('selfPreservationScore');
+    const spVerdictEl  = document.getElementById('selfPreservationVerdict');
+    const spScoreEl    = document.getElementById('selfPreservationScore');
     const spPatternsEl = document.getElementById('selfPreservationPatterns');
-    const spScore = diag.self_preservation_score || 0;
-    if (spScore >= 0.40) {
+    const spScoreVal   = diag.self_preservation_score || 0;
+    if (spScoreVal >= 0.40) {
         spVerdictEl.textContent = diag.self_preservation_verdict || '—';
-        spScoreEl.textContent   = spScore.toFixed(2);
-        const spColor = spScore >= 0.85 ? '#ff3333' : spScore >= 0.65 ? '#ff5555' : '#ff8888';
+        spScoreEl.textContent   = spScoreVal.toFixed(2);
+        const spColor = spScoreVal >= 0.85 ? '#ff3333' : spScoreVal >= 0.65 ? '#ff5555' : '#ff8888';
         spVerdictEl.style.color = spColor;
         spScoreEl.style.color   = spColor;
         const spPatterns = diag.self_preservation_patterns || [];
