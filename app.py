@@ -63,7 +63,6 @@ MODULE_WEIGHTS = {
     'manipulation':      0.10,
     'claim_gap':         0.07,
     'axiom':             0.10,
-    'framing':           0.09,
 }
 
 def compute_entropy_boost(result: dict) -> dict:
@@ -136,12 +135,6 @@ def compute_entropy_boost(result: dict) -> dict:
         multiplier += MODULE_WEIGHTS['axiom']
         triggered_mods.append('axiom')
 
-    # Framing
-    framing_score = diag.get('framing_score', 0) or 0
-    if framing_score > 0:
-        multiplier += MODULE_WEIGHTS['framing']
-        triggered_mods.append('framing')
-
     entropy_boosted = min(100, round(entropy_pct * multiplier))
 
     return {
@@ -151,6 +144,95 @@ def compute_entropy_boost(result: dict) -> dict:
         'triggered_modules':  triggered_mods,
         'triggered_count':    len(triggered_mods),
     }
+
+
+# ── INFLUENCE TIER ────────────────────────────────────────────────────────────
+_TIER_META = {
+    0: {'tier':0,'label_uk':'ІНФОРМАЦІЙНИЙ ФОН','label_en':'INFORMATIONAL','color':'#4ade80',
+        'desc_uk':'Текст може мати неточності, але без навмисної архітектури впливу.',
+        'desc_en':'Text may have inaccuracies but no deliberate influence architecture.'},
+    1: {'tier':1,'label_uk':'РИТОРИЧНА СКЛАДНІСТЬ','label_en':'RHETORICAL','color':'#a3e635',
+        'desc_uk':'Є прийоми переконування, але в межах норми публіцистики й аналітики.',
+        'desc_en':'Persuasion techniques present, within normal journalistic range.'},
+    2: {'tier':2,'label_uk':'ФРЕЙМІНГ / AGENDA','label_en':'FRAMING','color':'#facc15',
+        'desc_uk':'Свідомо побудована перспектива — читач підводиться до висновку.',
+        'desc_en':'Deliberately constructed perspective — reader is guided to a conclusion.'},
+    3: {'tier':3,'label_uk':'МАНІПУЛЯЦІЯ','label_en':'MANIPULATION','color':'#fb923c',
+        'desc_uk':'Архітектура впливу з прихованою метою. Емоційний або логічний тиск.',
+        'desc_en':'Influence architecture with hidden purpose. Emotional or logical pressure.'},
+    4: {'tier':4,'label_uk':'ПСИХОЛОГІЧНА АТАКА','label_en':'PSYCHOLOGICAL ATTACK','color':'#f87171',
+        'desc_uk':'Системний вплив на переконання. Страх, провина, образ ворога.',
+        'desc_en':'Systemic influence on beliefs. Fear, guilt, enemy construction.'},
+}
+
+def _make_tier(level, trigger_module, trigger_value):
+    meta = dict(_TIER_META[level])
+    meta['trigger_module'] = trigger_module
+    meta['trigger_value']  = trigger_value
+    return {'influence_tier': meta}
+
+def compute_influence_tier(result):
+    """Градація інтенсивності впливу 0-4. Враховує entropy_boosted + всі модулі."""
+    diag        = result.get('diagnostics', {})
+    entropy_pct = result.get('entropy_boosted') or round(result.get('entropy', 0) * 100)
+
+    sp_verdict    = diag.get('self_preservation_verdict', '') or                     (result.get('self_preservation') or {}).get('verdict', '')
+    manip_score   = diag.get('manipulation_score', 0) or 0
+    axiom_score   = diag.get('axiom_score', 0) or 0
+    framing_score = diag.get('framing_score', 0) or 0
+    framing_v     = diag.get('framing_verdict', '')
+    epist_v       = diag.get('lac_epistemology_verdict', '')
+    mi            = result.get('meta_intent') or {}
+    mi_score      = mi.get('score', 0) or 0
+    mi_verdict    = mi.get('verdict', '')
+    perf          = result.get('performative') or {}
+    is_perf       = perf.get('is_performative', False)
+    claim_gap     = result.get('claim_gap') or {}
+    is_cg         = claim_gap.get('is_flagged', False)
+    pivot         = result.get('narrative_pivot') or {}
+    pivot_score   = pivot.get('score', 0) or 0
+
+    # Tier 4 — Психологічна атака
+    if sp_verdict and sp_verdict not in ('SAFE', 'CLEAN', ''):
+        return _make_tier(4, 'self_preservation', sp_verdict)
+    if manip_score >= 0.65:
+        return _make_tier(4, 'manipulation', f'{round(manip_score*100)}%')
+    if mi_score >= 0.80 and mi_verdict not in ('TRANSPARENT', 'CLEAN', ''):
+        return _make_tier(4, 'meta_intent', mi_verdict)
+    if axiom_score >= 0.65:
+        return _make_tier(4, 'axiom', f'{round(axiom_score*100)}%')
+
+    # Tier 3 — Маніпуляція
+    if manip_score >= 0.35:
+        return _make_tier(3, 'manipulation', f'{round(manip_score*100)}%')
+    if axiom_score >= 0.40:
+        return _make_tier(3, 'axiom', f'{round(axiom_score*100)}%')
+    if mi_score >= 0.55 and mi_verdict not in ('TRANSPARENT', 'CLEAN', ''):
+        return _make_tier(3, 'meta_intent', mi_verdict)
+    if entropy_pct >= 65:
+        return _make_tier(3, 'entropy', f'{entropy_pct}%')
+
+    # Tier 2 — Фреймінг / Agenda
+    if framing_score >= 0.35 or framing_v in ('COMBINED', 'AGENDA_SETTING', 'OVERTON_SHIFT'):
+        return _make_tier(2, 'framing', framing_v or f'{round(framing_score*100)}%')
+    if epist_v and epist_v not in ('N/A', 'CLEAN', ''):
+        return _make_tier(2, 'lac_epistemology', epist_v)
+    if is_perf:
+        return _make_tier(2, 'performative', perf.get('verdict', ''))
+    if pivot_score >= 0.45:
+        return _make_tier(2, 'narrative_pivot', f'{round(pivot_score*100)}%')
+    if is_cg:
+        return _make_tier(2, 'claim_gap', claim_gap.get('verdict', ''))
+    if entropy_pct >= 40:
+        return _make_tier(2, 'entropy', f'{entropy_pct}%')
+
+    # Tier 1 — Риторична складність
+    if framing_score > 0 or entropy_pct >= 20:
+        return _make_tier(1, 'entropy', f'{entropy_pct}%')
+
+    # Tier 0 — Інформаційний фон
+    return _make_tier(0, None, None)
+
 
 @app.route('/')
 def home():
@@ -459,6 +541,9 @@ def analyze():
         boost = compute_entropy_boost(result)
         result.update(boost)
 
+        tier = compute_influence_tier(result)
+        result.update(tier)
+
         return jsonify(result)
     
     except Exception as e:
@@ -524,11 +609,6 @@ def oracle():
         lac_epist_verdict = diag.get('lac_epistemology_verdict', '')
         lac_epist_hits    = diag.get('lac_epistemology_pattern_hits', {})
 
-        # Framing detector
-        framing_verdict  = diag.get('framing_verdict', '')
-        framing_patterns = diag.get('framing_patterns', [])
-        framing_hits     = diag.get('framing_pattern_hits', {})
-
         self_pres        = diag.get('self_preservation', {})
         self_pres_verdict = self_pres.get('verdict', '') if isinstance(self_pres, dict) else ''
 
@@ -583,23 +663,6 @@ def oracle():
         if isinstance(perf_obj, dict) and perf_obj.get('is_performative'):
             line = f'  🐊 КРОКОДИЛЯЧІ СЛЬОЗИ: {perf_obj.get("verdict","")}'
             line += '\n     → Декларується дискомфорт або відповідальність без жодного конкретного зобов\'язання змінити щось реальне.'
-            signals_lines.append(line)
-        if framing_verdict and framing_verdict not in ('N/A', 'CLEAN', ''):
-            framing_parts = []
-            FRAMING_LABELS = {
-                'agenda_setting':     'переключення уваги ("справжня проблема не в X, а в Y")',
-                'false_dilemma':      'хибна дилема ("або X, або Y" — без альтернатив)',
-                'ground_preparation': 'підготовка ґрунту (поступовий підвід до висновку)',
-                'overton_shift':      'зсув Овертона (нормалізація через крайнощі)',
-                'presupposition':     'вбудована передумова (недоведений факт у нейтральному реченні)',
-                'juxtaposition':      'зіставлення без висновку ("збіг у часі")',
-            }
-            for p in framing_patterns:
-                framing_parts.append(FRAMING_LABELS.get(p, p))
-            details = '; '.join(framing_parts) if framing_parts else framing_verdict
-            line = f'  🖼️ ФРЕЙМІНГ спрацював: {framing_verdict}'
-            line += f'\n     Знайдено: {details}'
-            line += '\n     → Текст маніпулює без брехні: через архітектуру подачі інформації він веде читача до висновку який прямо не формулюється. Поясни яку саме техніку використано і до якого висновку веде текст.'
             signals_lines.append(line)
         signals_summary = '\n'.join(signals_lines) if signals_lines else '  (модулі не виявили порушень)'
 
