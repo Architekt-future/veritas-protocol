@@ -605,14 +605,16 @@ class VeritasCalibratedCore:
             'внаслідок', 'незважаючи', 'навпаки', 'зокрема',
             'по-перше', 'по-друге', 'таким чином', 'а саме',
             'адже', 'тому', 'звідси', 'отож', 'проте', 'однак',
-            'щоб', 'що', 'є', 'це',
+            'щоб',
+            # REMOVED: 'що', 'є', 'це' — занадто загальні, не є логічними коннекторами
             
             # English
             'because', 'therefore', 'thus', 'hence', 'if', 'then',
             'consequently', 'however', 'nevertheless', 'moreover',
             'furthermore', 'specifically', 'namely', 'firstly',
             'secondly', 'accordingly', 'since', 'given that',
-            'whereas', 'although', 'though', 'that', 'is', 'this',
+            'whereas', 'although', 'though',
+            # REMOVED: 'that', 'is', 'this' — too common, not logical connectors
         ]
         
         text_lower = text.lower()
@@ -1443,6 +1445,15 @@ class VeritasCalibratedCore:
             logical_cohesion < 0.2 and
             absurdity_result.get('danger_count', 0) == 0
         )
+        # v19.1: Corporate hollow — high buzzwords + no facts = pure bullshit
+        # навіть якщо cohesion > 0.2 (бо речення граматично правильні)
+        is_corporate_void = (
+            void_result['void_score'] >= 0.20 and
+            void_result.get('buzzword_count', 0) >= 4 and
+            void_result.get('buzzword_ratio', 0) >= 0.05 and
+            absurdity_result.get('danger_count', 0) == 0 and
+            manipulation_result['manipulation_score'] < 0.25
+        )
         
         # MANIPULATION OVERRIDE: detected manipulation overrides standard verdict
         manip_score = manipulation_result['manipulation_score']
@@ -1520,7 +1531,7 @@ class VeritasCalibratedCore:
         elif axiom_score >= 0.25:
             status, verdict = 'WARNING', 'СЕМАНТИЧНИЙ ДРЕЙФ'
             explanation = 'Текст поступово змінює значення звичних слів — наприклад, слово "факт" може використовуватись для позначення думки. Це тонка техніка впливу: людина погоджується з чимось, не розуміючи що значення змінилось. Будьте уважні до того як саме вживаються ключові слова.'
-        elif is_pure_bullshit:
+        elif is_pure_bullshit or is_corporate_void:
             status, verdict = 'VOID', 'СЕМАНТИЧНА ПОРОЖНЕЧА'
             explanation = 'Текст складається переважно зі слів без конкретного змісту. Це може бути навмисна тактика — створити враження інформативності без реальних фактів. Не варто сприймати такий текст як джерело інформації.'
         elif is_semantic_void:
