@@ -268,6 +268,7 @@ MODULE_WEIGHTS = {
     'laundered_claim':   0.12,
     'framing':           0.09,
     'narrative_pivot':   0.07,
+    'semantic_void':     0.10,
 }
 
 
@@ -443,6 +444,15 @@ def compute_entropy_boost(result: dict) -> dict:
         multiplier += MODULE_WEIGHTS['axiom']
         triggered_mods.append('axiom')
 
+    # Semantic void — порожнеча змісту
+    void_score_val = diag.get('void', 0) or 0
+    if void_score_val >= 0.30:
+        multiplier += MODULE_WEIGHTS.get('semantic_void', 0.10)
+        triggered_mods.append('semantic_void')
+    elif void_score_val >= 0.15:
+        multiplier += MODULE_WEIGHTS.get('semantic_void', 0.10) * 0.5
+        triggered_mods.append('semantic_void')
+
     # Framing
     framing_result = result.get('diagnostics', {})
     framing_score  = framing_result.get('framing_score', 0) or 0
@@ -564,6 +574,10 @@ def compute_influence_tier(result):
     # WEAK_ATTRIBUTION форсує tier 2
     if lc_verdict == 'WEAK_ATTRIBUTION' or (is_lc and lc_score >= 0.20):
         return _make_tier(2, 'laundered_claim', lc_verdict)
+    # Semantic void — висока порожнеча форсує tier 2
+    void_val = (result.get('diagnostics') or {}).get('void', 0) or 0
+    if void_val >= 0.40:
+        return _make_tier(2, 'semantic_void', f'{round(void_val*100)}%')
     if entropy_pct >= 40:
         return _make_tier(2, 'entropy', f'{entropy_pct}%')
 
