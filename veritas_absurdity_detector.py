@@ -229,6 +229,47 @@ class AbsurdityDetector:
         ]
 
         # ================================================================
+        # TYPE 9: FABRICATED TECHNO-FINANCE
+        # ================================================================
+        # Real institutions + invented impossible technology/mechanism
+        # Це найнебезпечніший клас: без містики, з числами і назвами,
+        # але описує фізично/логічно неможливе як технічну норму
+
+        self.fabricated_techno_finance = [
+            # Зчитування думок/намірів як фінансовий механізм
+            r'(зчитуван|фіксац|вимірюван).{1,60}(намір|думк|ментальн|пре-когнітивн|пре.когнітивн)',
+            r'(intent.to.pay|proof.of.thought|proof-of-thought)',
+            r'(пре.когнітивн|прекогнітивн).{1,60}(запит|сигнал|транзакц|платіж)',
+            r'(ментальн.{1,20}візуалізац|ментальн.{1,20}намір).{1,60}(вартість|збір|дебетуван|транзакц)',
+            r'(нейро.транзакц|нейротранзакц)',
+            # Податок/збір з думки/уяви
+            r'(збір|податок|дебетуван).{1,60}(уяв|візуалізац|намір|ментальн)',
+            r'(вартість|розмір).{1,60}(ментальн|уяв|думк).{1,60}(об.єкт|товар|актив)',
+            # Реальна установа + неіснуючий стандарт
+            r'(базельськ|bis\.org|мвф|нбу|fed|ecb).{1,80}(нейро|ментальн|пре.когнітивн|intent.to)',
+            r'(deloitte|pwc|kpmg|ernst).{1,80}(нейро.транзакц|intent.to.pay|proof.of.thought|ментальн)',
+            # "Ліквідність в уяві споживача"
+            r'(ліквідність|капітал|актив).{1,60}(уяв|свідом|ментальн|формуванн).{1,40}(споживач|користувач)',
+            r'(абсорбц|поглинан).{1,60}(ліквідност|капітал).{1,60}(уяв|свідом|намір)',
+        ]
+
+        # ================================================================
+        # TYPE 10: IMPOSSIBLE MEASUREMENT PRECISION
+        # ================================================================
+        # Precise numbers (%) applied to unmeasurable phenomena
+        # "знижує інфляційні очікування на 12.4% за рахунок уяви"
+
+        self.impossible_measurement = [
+            # Точний % від думок/намірів/свідомості
+            r'(\d+[\.,]\d+\s*%).{1,80}(уяв|намір|ментальн|свідом|думк)',
+            r'(уяв|намір|ментальн|свідом).{1,80}(\d+[\.,]\d+\s*%)',
+            r'похибк.{1,30}(\d+[\.,]\d+\s*%).{1,60}(намір|ментальн|думк|Intent)',
+            # Вимірювання ще не існуючих подій
+            r'(абсорбц|вилучен|дебетуван).{1,60}(ліквідност|капітал).{1,60}(ще на етап|до моменту|до здійснення)',
+            r'(на етапі.{1,30}формуванн|до.{1,20}формуванн).{1,60}(ліквідност|намір|рішення)',
+        ]
+
+        # ================================================================
         # TYPE 8: PSEUDO-SCIENTIFIC ANALOGY
         # ================================================================
         # "X looks like Y structurally → therefore X IS Y functionally"
@@ -415,6 +456,36 @@ class AbsurdityDetector:
             absurdity_score += 0.30
         
         # ================================================================
+        # CHECK 9: FABRICATED TECHNO-FINANCE
+        # ================================================================
+
+        techno_finance_count = 0
+        for pattern in self.fabricated_techno_finance:
+            if re.search(pattern, text_lower, re.IGNORECASE):
+                techno_finance_count += 1
+                evidence.setdefault('fabricated_techno_finance', []).append(pattern[:60])
+
+        if techno_finance_count >= 2:
+            absurdity_score += 0.65  # Реальні установи + неможлива технологія
+        elif techno_finance_count == 1:
+            absurdity_score += 0.40
+
+        # ================================================================
+        # CHECK 10: IMPOSSIBLE MEASUREMENT PRECISION
+        # ================================================================
+
+        impossible_meas_count = 0
+        for pattern in self.impossible_measurement:
+            if re.search(pattern, text_lower, re.IGNORECASE):
+                impossible_meas_count += 1
+                evidence.setdefault('impossible_measurement', []).append(pattern[:60])
+
+        if impossible_meas_count >= 2:
+            absurdity_score += 0.45
+        elif impossible_meas_count == 1:
+            absurdity_score += 0.25
+
+        # ================================================================
         # AGGREGATE
         # ================================================================
         
@@ -431,4 +502,6 @@ class AbsurdityDetector:
             'epistemology_collapse_count': epistemology_count,
             'pseudo_history_count': pseudo_history_count,
             'pseudo_analogy_count': pseudo_analogy_count,
+            'techno_finance_count': techno_finance_count,
+            'impossible_measurement_count': impossible_meas_count,
         }
