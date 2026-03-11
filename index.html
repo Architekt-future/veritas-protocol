@@ -157,6 +157,40 @@
         .verdict.manip      { background: rgba(180,0,220,0.18);  color: #dd44ff; border: 1px solid rgba(180,0,220,0.45); animation: pulse 1.4s infinite; }
         @keyframes pulse { 0%,100%{ opacity:1; } 50%{ opacity:0.55; } }
 
+        /* INFLUENCE TIER */
+        .influence-tier-block {
+            margin-top: 12px;
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.07);
+            background: rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .tier-badge {
+            font-size: 0.65em;
+            font-weight: 900;
+            letter-spacing: 2px;
+            padding: 4px 10px;
+            border-radius: 4px;
+            flex-shrink: 0;
+            text-transform: uppercase;
+        }
+        .tier-desc {
+            font-size: 0.72em;
+            color: #667;
+            line-height: 1.5;
+            letter-spacing: 0.3px;
+        }
+        .tier-trigger {
+            font-size: 0.62em;
+            letter-spacing: 1px;
+            opacity: 0.6;
+            margin-top: 2px;
+        }
+
+
         /* EXPLANATION */
         .explanation {
             margin-top: 14px; padding: 13px 16px;
@@ -364,6 +398,18 @@
             </div>
 
             <div class="verdict" id="verdict"></div>
+
+            <!-- INFLUENCE TIER -->
+            <div class="influence-tier-block" id="influenceTierBlock" style="display:none;">
+                <div>
+                    <div class="tier-badge" id="influenceTierBadge">—</div>
+                </div>
+                <div>
+                    <div class="tier-desc" id="influenceTierDesc"></div>
+                    <div class="tier-trigger" id="influenceTierTrigger"></div>
+                </div>
+            </div>
+
             <div class="explanation" id="explanation" style="display:none;"></div>
 
             <!-- NARRATIVE / DIAGNOSIS DETAIL -->
@@ -1385,6 +1431,70 @@ async function analyze() {
 }
 
 // ============================================================
+
+// ── INFLUENCE TIER RENDERER ───────────────────────────────────────────────────
+const TIER_MODULE_LABELS_UK = {
+    'self_preservation': 'Самозбереження',
+    'manipulation':      'Маніпуляція',
+    'meta_intent':       'Мета-намір',
+    'axiom':             'Аксіом-дрейф',
+    'framing':           'Фреймінг',
+    'lac_epistemology':  'LAC Епістемологія',
+    'performative':      'Performative',
+    'narrative_pivot':   'Наративний Pivot',
+    'claim_gap':         'Заяви без доказів',
+    'entropy':           'Ентропія',
+};
+const TIER_MODULE_LABELS_EN = {
+    'self_preservation': 'Self-Preservation',
+    'manipulation':      'Manipulation',
+    'meta_intent':       'Meta-Intent',
+    'axiom':             'Axiom Drift',
+    'framing':           'Framing',
+    'lac_epistemology':  'LAC Epistemology',
+    'performative':      'Performative',
+    'narrative_pivot':   'Narrative Pivot',
+    'claim_gap':         'Claim Gap',
+    'entropy':           'Entropy',
+};
+
+function renderInfluenceTier(data) {
+    const block   = document.getElementById('influenceTierBlock');
+    const badge   = document.getElementById('influenceTierBadge');
+    const desc    = document.getElementById('influenceTierDesc');
+    const trigger = document.getElementById('influenceTierTrigger');
+    if (!block) return;
+
+    const it = data.influence_tier;
+    if (!it) { block.style.display = 'none'; return; }
+
+    const isUk    = currentLang !== 'en';
+    const label   = isUk ? it.label_uk : it.label_en;
+    const descTxt = isUk ? it.desc_uk  : it.desc_en;
+    const color   = it.color || '#888';
+
+    badge.textContent = label;
+    badge.style.background = color + '22';
+    badge.style.color      = color;
+    badge.style.border     = `1px solid ${color}55`;
+
+    desc.textContent = descTxt;
+
+    const modLabels = isUk ? TIER_MODULE_LABELS_UK : TIER_MODULE_LABELS_EN;
+    const modLabel  = modLabels[it.trigger_module] || it.trigger_module || '';
+    const modVal    = it.trigger_value || '';
+    if (modLabel) {
+        trigger.textContent = isUk
+            ? `↑ ${modLabel}${modVal ? ' · ' + modVal : ''}`
+            : `↑ ${modLabel}${modVal ? ' · ' + modVal : ''}`;
+        trigger.style.color = color;
+    } else {
+        trigger.textContent = '';
+    }
+
+    block.style.display = 'flex';
+}
+
 function renderResults(data) {
     const entropy = typeof data.entropy === 'number' ? data.entropy : 0;
     const diag    = data.diagnostics || {};
@@ -1442,6 +1552,9 @@ function renderResults(data) {
             mInfo.textContent = '';
         }
     }
+
+    // Influence Tier
+    renderInfluenceTier(data);
 
     // Verdict
     const verdictEl = document.getElementById('verdict');
@@ -1850,6 +1963,8 @@ function setLoading(on) {
         document.getElementById('entropyFill').style.background = 'transparent';
         document.getElementById('verdict').textContent = '';
         document.getElementById('verdict').className = 'verdict';
+        const _itb = document.getElementById('influenceTierBlock');
+        if (_itb) _itb.style.display = 'none';
         document.getElementById('explanation').style.display = 'none';
         const mInfo = document.getElementById('entropyMultiplierInfo');
         if (mInfo) { mInfo.style.display = 'none'; mInfo.textContent = ''; }
@@ -1879,6 +1994,8 @@ function showTopError(msg) {
     document.getElementById('entropyFill').style.background = 'transparent';
     document.getElementById('verdict').textContent = '';
     document.getElementById('verdict').className = 'verdict';
+    const _itb = document.getElementById('influenceTierBlock');
+    if (_itb) _itb.style.display = 'none';
     document.getElementById('explanation').style.display = 'block';
     document.getElementById('explanation').innerHTML = `<div class="error">❌ ${escHtml(msg)}</div>`;
     document.getElementById('metricsPanel').style.display = 'none';
