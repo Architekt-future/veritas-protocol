@@ -540,6 +540,16 @@ def compute_influence_tier(result):
     if entropy_pct >= 65:
         return _make_tier(3, 'entropy', f'{entropy_pct}%')
 
+    # Читаємо laundered_claim
+    lc         = result.get('laundered_claim') or {}
+    lc_score   = lc.get('score', 0) or 0
+    lc_verdict = lc.get('verdict', '')
+    is_lc      = lc.get('is_flagged', False)
+
+    # Tier 3 — LAUNDERED_CLAIM форсує tier 3 (відмивання від сторони конфлікту = маніпуляція)
+    if lc_verdict == 'LAUNDERED_CLAIM':
+        return _make_tier(3, 'laundered_claim', f'{round(lc_score*100)}%')
+
     # Tier 2 — Фреймінг / Agenda
     if framing_score >= 0.35 or framing_v in ('COMBINED', 'AGENDA_SETTING', 'OVERTON_SHIFT'):
         return _make_tier(2, 'framing', framing_v or f'{round(framing_score*100)}%')
@@ -551,6 +561,9 @@ def compute_influence_tier(result):
         return _make_tier(2, 'narrative_pivot', f'{round(pivot_score*100)}%')
     if is_cg:
         return _make_tier(2, 'claim_gap', claim_gap.get('verdict', ''))
+    # WEAK_ATTRIBUTION форсує tier 2
+    if lc_verdict == 'WEAK_ATTRIBUTION' or (is_lc and lc_score >= 0.20):
+        return _make_tier(2, 'laundered_claim', lc_verdict)
     if entropy_pct >= 40:
         return _make_tier(2, 'entropy', f'{entropy_pct}%')
 
