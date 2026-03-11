@@ -1696,6 +1696,9 @@ class VeritasCalibratedCore:
                 'axiom_score': round(axiom_result['axiom_score'], 3),
                 'axiom_verdict': axiom_result['axiom_verdict'],
                 'axiom_patterns': [p['name'] for p in axiom_result['axiom_patterns']],
+                'self_preservation_score': round(preservation_result['preservation_score'], 3),
+                'self_preservation_verdict': preservation_result['preservation_verdict'],
+                'self_preservation_patterns': [p['name'] for p in preservation_result['preservation_patterns']],
                 'genre': _genre,
             },
             # ADVISORY LAYER — never affects verdict or entropy
@@ -1771,7 +1774,14 @@ class VeritasCalibratedCore:
                 'summary':          context_result['context_summary'],
                 'explanation_uk':   context_result['explanation_uk'],
                 'explanation_en':   context_result['explanation_en'],
-            }
+            },
+            # SELF-PRESERVATION GUARD
+            'self_preservation': {
+                'score':       round(preservation_result['preservation_score'], 3),
+                'verdict':     preservation_result['preservation_verdict'],
+                'patterns':    [p['name'] for p in preservation_result['preservation_patterns']],
+                'explanation': preservation_result['preservation_explanation'],
+            },
         }
 
 
