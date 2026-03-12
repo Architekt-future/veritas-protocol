@@ -285,7 +285,9 @@ class VeritasLACLabor:
         is_labor = self._is_labor_content(text_lower)
 
         # Якщо не трудовий контент — повертаємо чистий результат одразу
+        print(f'🔧 LAC_LABOR: is_labor={is_labor}, text_preview={text_lower[:80]}')
         if not is_labor:
+            print('🔧 LAC_LABOR: early return N/A')
             return LACLaborResult(
                 score=0.0,
                 verdict='N/A',
