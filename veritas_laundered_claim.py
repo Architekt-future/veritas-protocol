@@ -40,19 +40,35 @@ class LaunderedClaimDetector:
 
     # Джерела що є сторонами конфліктів / зацікавленими сторонами
     CONFLICT_SOURCES_UK = [
+        # Російські державні актори
         'кремль', 'путін', 'пєсков', 'лавров', 'медведєв', 'захарова',
         'міноборони росії', 'міноборони рф', 'генштаб росії',
-        'офіс президента росії', 'держдума',
-        'хамас', 'хезболла', 'талібан',
+        'офіс президента росії', 'держдума', 'мзс росії',
+        # Інші державні актори конфліктів
+        'іранське міністерство', 'тегеран заявив', 'пхеньян',
+        'північна корея', 'китайський мзс', 'режим асада',
+        # Недержавні актори
+        'хамас', 'хезболла', 'талібан', 'іділ', 'вагнер',
+        # Корпоративні зацікавлені сторони
         'представник компанії', 'прес-служба компанії',
-        'речник', 'представник сторони',
+        'речник', 'представник сторони', 'виробник заявив',
+        'прес-служба', 'прес-секретар',
     ]
     CONFLICT_SOURCES_EN = [
+        # Russian state actors
         'kremlin', 'putin', 'peskov', 'lavrov', 'medvedev', 'zakharova',
         'russian defense ministry', 'russian mod', 'russian general staff',
-        'hamas', 'hezbollah', 'taliban',
-        'company spokesperson', 'press office',
-        'spokesman', 'spokeswoman',
+        'state duma', 'russian foreign ministry',
+        # Other state conflict actors
+        'iranian foreign ministry', 'tehran said', 'pyongyang',
+        'north korea', 'chinese foreign ministry', 'beijing spokesperson',
+        'syrian government', 'venezuelan government',
+        # Non-state conflict actors
+        'hamas', 'hezbollah', 'taliban', 'isis', 'wagner group',
+        # Corporate interested parties
+        'company spokesperson', 'press office', 'spokesman', 'spokeswoman',
+        'the manufacturer said', 'the developer said',
+        'a company representative',
     ]
 
     # Маркери що перетворюють думку на факт (відсутність яких = проблема)
@@ -79,14 +95,34 @@ class LaunderedClaimDetector:
         r'кінець (міжнародного|світового|правового)',
     ]
     FACT_FRAMING_EN = [
+        # Systemic collapse framing
         r'(law|order|system)\s+(no longer exists|ceased to exist|is dead|has collapsed)',
         r'de facto (no longer|ceased|gone)',
         r'(world|country|economy)\s+(finds itself|has lost|collapsed)',
         r'legal vacuum',
         r'end of (international|world|legal)',
+        # Corporate safety laundering
+        r'(product|drug|vaccine|treatment)\s+is\s+(completely\s+)?(safe|effective|proven)',
+        r'(meets|exceeds)\s+all\s+(safety|regulatory|quality)\s+standards',
+        r'no (side effects|risks|dangers|concerns)',
+        r'(fully|thoroughly|extensively)\s+(tested|vetted|approved)',
+        r'(our|the)\s+(research|data|studies)\s+(show|confirm|prove)',
+        # Political self-serving absolutes
+        r'(we have|there is)\s+no (choice|option|alternative)\s+but to',
+        r'(forced|compelled|had no choice)\s+to\s+(respond|attack|retaliate)',
+        r'(provoked|started|initiated)\s+by\s+(them|ukraine|the west|nato)',
+        r'(justified|legitimate|necessary)\s+(response|action|strike)',
     ]
 
-    # Заголовкові патерни без атрибуції
+    # Заголовкові патерни без атрибуції — EN
+    HEADLINE_NO_ATTRIBUTION_EN = [
+        r'^[A-Z][^:"]{10,}(has collapsed|no longer exists|is dead|is over)',
+        r'^(Russia|Iran|China|Hamas):\s',
+        r'^[A-Z][^:"]{5,}(forced to|had no choice|provoked)',
+        r'^(Mystery|Shocking|Explosive)\b',
+    ]
+
+    # Заголовкові патерни без атрибуції — UK
     HEADLINE_NO_ATTRIBUTION_UK = [
         r'^[А-ЯІЇЄ][^:«»"\']{10,}(припинив|зник|колапс|криза|кінець|вакуум)',
         r'^У (кремлі|москві|пекіні|тегерані).{0,20}(заявили|повідомили|стверджують)',
@@ -100,7 +136,9 @@ class LaunderedClaimDetector:
 
     def _detect_lang(self, text: str) -> str:
         uk_chars = len(re.findall(r'[іїєІЇЄ]', text))
-        return 'uk' if uk_chars > 3 else 'en'
+        # Threshold пропорційний довжині — для коротких текстів достатньо 2 символів
+        threshold = max(2, min(5, len(text) // 200))
+        return 'uk' if uk_chars >= threshold else 'en'
 
     def analyze(self, text: str) -> LaunderedClaimResult:
         result = LaunderedClaimResult()
@@ -151,166 +189,32 @@ class LaunderedClaimDetector:
 
         # ── СИГНАЛ 4: Заголовок без лапок ────────────────────────────────────
         first_line = text.split('\n')[0][:200]
-        if lang == 'uk':
-            for pat in self.HEADLINE_NO_ATTRIBUTION_UK:
-                if re.search(pat, first_line):
-                    # Перевіряємо чи є лапки в заголовку
-                    if '«' not in first_line and '"' not in first_line and "'" not in first_line:
-                        signals.append('Заголовок відтворює твердження без лапок')
-                        score += 0.10
-                    break
+        headline_patterns = (self.HEADLINE_NO_ATTRIBUTION_UK
+                             if lang == 'uk'
+                             else self.HEADLINE_NO_ATTRIBUTION_EN)
+        for pat in headline_patterns:
+            if re.search(pat, first_line):
+                no_quotes = ('«' not in first_line and '"' not in first_line
+                             and "'" not in first_line and '"' not in first_line)
+                if no_quotes:
+                    signals.append('Заголовок відтворює твердження без лапок/атрибуції')
+                    score += 0.10
+                break
 
-        # ── ПІДСУМОК ──────────────────────────────────────────────────────────
-        score = min(score, 0.70)  # cap
-
-        if score >= 0.35:
-            verdict = 'LAUNDERED_CLAIM'
-            explanation = (
-                'Заява зацікавленої сторони подається як факт про реальність. '
-                'Читач отримує позицію однієї сторони конфлікту як об\'єктивний опис дійсності.'
-            )
-            result.is_flagged = True
-        elif score >= 0.20:
-            verdict = 'WEAK_ATTRIBUTION'
-            explanation = (
-                'Недостатнє маркування джерела твердження. '
-                'Межа між фактом і позицією розмита.'
-            )
-            result.is_flagged = True
-        else:
-            verdict = 'CLEAN'
-            explanation = ''
-
-        result.score      = round(score, 3)
-        result.verdict    = verdict
-        result.signals    = signals
-        result.explanation = explanation
-        return result
-    """
-    Детектор відмивання тверджень через медіа-трансляцію.
-    """
-
-    # Джерела що є сторонами конфліктів / зацікавленими сторонами
-    CONFLICT_SOURCES_UK = [
-        'кремль', 'путін', 'пєсков', 'лавров', 'медведєв', 'захарова',
-        'міноборони росії', 'міноборони рф', 'генштаб росії',
-        'офіс президента росії', 'держдума',
-        'хамас', 'хезболла', 'талібан',
-        'представник компанії', 'прес-служба компанії',
-        'речник', 'представник сторони',
-    ]
-    CONFLICT_SOURCES_EN = [
-        'kremlin', 'putin', 'peskov', 'lavrov', 'medvedev', 'zakharova',
-        'russian defense ministry', 'russian mod', 'russian general staff',
-        'hamas', 'hezbollah', 'taliban',
-        'company spokesperson', 'press office',
-        'spokesman', 'spokeswoman',
-    ]
-
-    # Маркери що перетворюють думку на факт (відсутність яких = проблема)
-    ATTRIBUTION_MARKERS_UK = [
-        'на думку', 'за словами', 'за твердженням', 'як заявив',
-        'як стверджує', 'на переконання', 'як вважає', 'на погляд',
-        'за оцінкою', 'як повідомив', 'посилаючись на', 'цитує',
-        'за версією', 'на його думку', 'на її думку', 'повідомляє',
-    ]
-    ATTRIBUTION_MARKERS_EN = [
-        'according to', 'as stated by', 'as claimed by', 'in the view of',
-        'in the opinion of', 'as argued by', 'as reported by', 'citing',
-        'per', 'sources say', 'he said', 'she said', 'they said',
-    ]
-
-    # Сильні фактичні конструкції — ознака відмивання
-    FACT_FRAMING_UK = [
-        r'(право|закон|система|порядок)\s+(припинив|перестав|зник|більше не існує|фактично не існує)',
-        r'фактично (припинив|перестав|не існує|зник)',
-        r'де-факто (не існує|припинив|зник)',
-        r'(світ|країна|економіка)\s+(опинився|перейшла|втратила)',
-        r'насправді (вже|більше|фактично)',
-        r'правовий вакуум',
-        r'кінець (міжнародного|світового|правового)',
-    ]
-    FACT_FRAMING_EN = [
-        r'(law|order|system)\s+(no longer exists|ceased to exist|is dead|has collapsed)',
-        r'de facto (no longer|ceased|gone)',
-        r'(world|country|economy)\s+(finds itself|has lost|collapsed)',
-        r'legal vacuum',
-        r'end of (international|world|legal)',
-    ]
-
-    # Заголовкові патерни без атрибуції
-    HEADLINE_NO_ATTRIBUTION_UK = [
-        r'^[А-ЯІЇЄ][^:«»"\']{10,}(припинив|зник|колапс|криза|кінець|вакуум)',
-        r'^У (кремлі|москві|пекіні|тегерані).{0,20}(заявили|повідомили|стверджують)',
-    ]
-
-    def __init__(self):
-        self._attr_uk = [p.lower() for p in self.ATTRIBUTION_MARKERS_UK]
-        self._attr_en = [p.lower() for p in self.ATTRIBUTION_MARKERS_EN]
-        self._src_uk  = [s.lower() for s in self.CONFLICT_SOURCES_UK]
-        self._src_en  = [s.lower() for s in self.CONFLICT_SOURCES_EN]
-
-    def _detect_lang(self, text: str) -> str:
-        uk_chars = len(re.findall(r'[іїєІЇЄ]', text))
-        return 'uk' if uk_chars > 3 else 'en'
-
-    def analyze(self, text: str) -> LaunderedClaimResult:
-        result = LaunderedClaimResult()
-        if not text or len(text) < 50:
-            return result
-
-        text_lower = text.lower()
-        lang = self._detect_lang(text)
-        signals = []
-        score = 0.0
-
-        # ── СИГНАЛ 1: Джерело є стороною конфлікту ───────────────────────────
-        sources = self._src_uk if lang == 'uk' else self._src_en
-        found_sources = [s for s in sources if s in text_lower]
-        if found_sources:
-            signals.append(f'Джерело — сторона конфлікту: {", ".join(found_sources[:2])}')
-            score += 0.15
-
-        # ── СИГНАЛ 2: Фактичні конструкції без маркування ────────────────────
-        fact_patterns = self.FACT_FRAMING_UK if lang == 'uk' else self.FACT_FRAMING_EN
-        fact_hits = []
-        for pattern in fact_patterns:
-            m = re.search(pattern, text_lower)
-            if m:
-                fact_hits.append(m.group(0)[:40])
-
-        if fact_hits:
-            # Перевіряємо чи є атрибуція поруч
-            attr_markers = self._attr_uk if lang == 'uk' else self._attr_en
-            attr_count = sum(1 for m in attr_markers if m in text_lower)
-
-            if attr_count == 0:
-                signals.append(f'Фактична конструкція без атрибуції: «{fact_hits[0]}»')
-                score += 0.20
-            elif attr_count < len(fact_hits):
-                signals.append(f'Недостатня атрибуція для {len(fact_hits)} тверджень')
-                score += 0.10
-
-        # ── СИГНАЛ 3: Низька щільність маркерів думки ────────────────────────
-        attr_markers = self._attr_uk if lang == 'uk' else self._attr_en
-        attr_density = sum(1 for m in attr_markers if m in text_lower)
-        words = len(text.split())
-
-        # Якщо джерело є стороною, але маркерів мало
-        if found_sources and attr_density < 2 and words > 100:
-            signals.append('Низька щільність маркерів думки при зацікавленому джерелі')
-            score += 0.10
-
-        # ── СИГНАЛ 4: Заголовок без лапок ────────────────────────────────────
-        first_line = text.split('\n')[0][:200]
-        if lang == 'uk':
-            for pat in self.HEADLINE_NO_ATTRIBUTION_UK:
-                if re.search(pat, first_line):
-                    # Перевіряємо чи є лапки в заголовку
-                    if '«' not in first_line and '"' not in first_line and "'" not in first_line:
-                        signals.append('Заголовок відтворює твердження без лапок')
-                        score += 0.10
-                    break
+        # ── СИГНАЛ 5: Корпоративне/державне відмивання ───────────────────────
+        # Якщо джерело є стороною І використовує абсолютні фактичні конструкції
+        if found_sources and fact_hits:
+            absolute_patterns = [
+                r'\b(completely|absolutely|totally|entirely)\s+(safe|effective|proven)\b',
+                r'\b(no|zero)\s+(risk|danger|side effect)\b',
+                r'\b(forced|had no choice|no alternative)\b',
+                r'\b(provoked|started|initiated)\s+by\b',
+            ]
+            absolute_hits = sum(1 for p in absolute_patterns
+                                if re.search(p, text_lower, re.IGNORECASE))
+            if absolute_hits >= 1:
+                signals.append('Абсолютні твердження від зацікавленої сторони')
+                score += 0.15
 
         # ── ПІДСУМОК ──────────────────────────────────────────────────────────
         score = min(score, 0.70)  # cap
