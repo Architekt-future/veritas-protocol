@@ -40,16 +40,50 @@ class AbsurdityDetector:
             r'деконструюва.{1,60}(гравітац|фізик)',
         ]
         
-        # Logical operators that claim causation
+        # Logical operators that claim causation — тільки специфічні, не загальні слова
         self.causal_operators = [
-            r'враховуючи',
-            r'оскільки',
-            r'тому',
             r'це означає',
             r'звідси випливає',
-            r'отже',
+            r'отже,\s+\w',       # "отже," з наступним словом — не просто "отже"
+            r'з цього випливає',
+            r'таким чином',
+            r'відповідно до цього',
+            r'враховуючи вищесказане',
         ]
         
+        # EN versions of causal operators — more specific than UK ones
+        self.causal_operators_en = [
+            r'therefore',
+            r'thus',
+            r'hence',
+            r'consequently',
+            r'which means',
+            r'this proves',
+            r'this shows',
+            r'it follows that',
+            r'as a result',
+            r'this implies',
+        ]
+
+        self.mundane_premises_en = [
+            r'water boils',
+            r'the sun rises',
+            r'two plus two',
+            r'\d+\s*degrees',
+            r'fundamental truth',
+            r'obvious fact',
+            r'it is a fact that',
+            r'science has proven',
+        ]
+
+        self.absurd_conclusions_en = [
+            r'transfer.{1,60}(nuclear|arsenal|weapons)',
+            r'(destroy|destabilize|collapse).{1,60}(power grid|infrastructure|systems)',
+            r'stop.{1,60}(breathing|eating|drinking|medication)',
+            r'antigravity.{1,20}(carpet|device|machine)',
+            r'deconstruct.{1,60}(gravity|physics)',
+        ]
+
         # ================================================================
         # TYPE 2: FABRICATED AUTHORITY
         # ================================================================
@@ -82,6 +116,29 @@ class AbsurdityDetector:
             r'інститут.{1,60}(квантов.{1,20}свідом|ефірн|торсійн)',
         ]
         
+        self.fabricated_authorities_en = [
+            # Impossible historical sources
+            r'(secret|hidden|forbidden).{1,40}(manuscript|text|writings).{1,60}(aristotle|plato|socrates|newton)',
+            r'(aristotle|plato|newton|tesla).{1,60}(bitcoin|blockchain|5g|internet|ai)',
+            r'leonardo da vinci.{1,60}(blueprint|diagram|sketch).{1,60}(bitcoin|cryptocurrency)',
+
+            # Impossible modern sources
+            r'(study|report).{1,60}(nasa|cia|pentagon).{1,60}(classified|secret|confidential).{1,60}(proves|confirms|reveals)',
+            r'(committee|institute).{1,60}(monitoring|control).{1,60}(noosphere|astral|ether)',
+
+            # Conspiracy entities
+            r'(military|army|intelligence).{1,60}(reptilian|alien|grey)',
+            r'(bill|gates|soros|elon|musk).{1,60}(chip|microchip|control|conspiracy)',
+            r'(5g|6g).{1,60}(chip|control|activation).{1,60}(brain|body|mind)',
+
+            # Fictional transmission
+            r'(received|transmitted).{1,60}(mental|telepathic).{1,60}(channel|connection)',
+            r'(civilization|race).{1,60}(sirius|pleiades|andromeda|alpha centauri)',
+
+            # Pseudoscientific institutions
+            r'institute.{1,60}(quantum.{1,20}consciousness|etheric|torsion)',
+        ]
+
         # ================================================================
         # TYPE 3: DANGEROUS IMPLICATIONS
         # ================================================================
@@ -111,6 +168,18 @@ class AbsurdityDetector:
             r'(ai|нейромереж).{1,60}(випадков.{1,20}числ|хаос).{1,60}(ядерн|зброї|арсенал)',
         ]
         
+        self.dangerous_patterns_en = [
+            r'stop.{1,60}(breathing|eating|drinking)',
+            r'cessation.{1,30}(breathing|heartbeat)',
+            r'(refuse|reject).{1,60}(treatment|medicine|vaccine|therapy)',
+            r'(medicine|drug|vaccine).{1,60}(poison|harmful|kills)',
+            r'(destroy|blow up|sabotage).{1,60}(towers|station|grid|infrastructure)',
+            r'(elimination|extermination|killing).{1,100}(\d+%|percent|majority).{1,60}(population|people)',
+            r'(rational|logical|efficient).{1,100}(elimination|extermination|genocide)',
+            r'population.{1,100}(reduction|elimination|culling)',
+            r'delegate.{1,60}(all|complete).{1,60}(decisions|control|power).{1,60}(ai|artificial intelligence)',
+        ]
+
         # ================================================================
         # TYPE 4: ONTOLOGICAL CATEGORY COLLAPSE
         # ================================================================
@@ -132,6 +201,18 @@ class AbsurdityDetector:
             # Deconstruction of physics (NEW!)
             r'деконструк.{1,100}(фізик|гравітац|закон)',
             r'(статистичн|наук).{1,150}(галюцинац|омана|ілюзія)',
+        ]
+
+        self.category_collapse_en = [
+            r'(gravity|electromagnetism|thermodynamics).{1,150}(social construct|patriarchy|discourse|consensus|hallucination)',
+            r'(physical law|gravity).{1,80}(dogma|belief|imposed|colonial)',
+            r'(gravity|physics).{1,150}(patriarchal|colonial|racial|gender).{1,80}(discourse|construct)',
+            r'(consciousness|belief|thought).{1,60}(objects|bodies).{1,60}(fall|move)',
+            r'collective.{1,20}conscious.{1,60}(protocol|agreement).{1,60}(gravity|physics)',
+            r'(truth|reality).{1,60}(flexible|adapts|changes)',
+            r'illusion.{1,60}(mass|weight|energy)',
+            r'deconstruct.{1,100}(physics|gravity|law)',
+            r'(statistical|scientific).{1,150}(hallucination|delusion|illusion)',
         ]
 
         # ================================================================
@@ -162,6 +243,19 @@ class AbsurdityDetector:
             r'(інтерфейс|протокол).{1,60}(благополуч|щастя|карм)',
         ]
         
+        self.techno_mystical_en = [
+            r'(update|download|install).{1,60}(consciousness|soul|karma|mind)',
+            r'(software|firmware|patch).{1,60}(consciousness|mind|soul)',
+            r'(server|cloud).{1,60}(universe|karma|prayer)',
+            r'prayer.{1,60}(encrypted|packet|data|protocol)',
+            r'(rose quartz|crystal).{1,60}(antivirus|protection|hacker)',
+            r'(crystal|stone).{1,60}(virus|hacker|cyber|digital)',
+            r'(5d|6d|7d).{1,60}(interface|dimension|platform|portal)',
+            r'(low.vibration|low.frequency).{1,60}(entity|being|hacker|attack)',
+            r'(leak|crack).{1,60}(reality|matrix|simulation).{1,60}(digital|code)',
+            r'(antivirus|firewall).{1,60}(body|organism|immunity|dna)',
+        ]
+
         # ================================================================
         # TYPE 6: REALITY EPISTEMOLOGY COLLAPSE
         # ================================================================
@@ -185,6 +279,15 @@ class AbsurdityDetector:
             r'(ефір|астрал|інфополе).{1,60}(сигнал|частот|повідомлення).{1,60}(підтверджу|свідчить)',
             r'(рівень ентропії|амплітуд).{1,60}(ноосфер|колективн.{1,20}свідом|соціальн.{1,20}мереж).{1,60}(збігається|відповідає|корелює)',
             r'(реліктов.{1,20}випромінюван|космічн.{1,20}фон).{1,60}(соціальн|мереж|демократ|інститут)',
+        ]
+
+        self.epistemology_collapse_en = [
+            r'(silence|absence).{1,80}(proof|evidence|confirms).{1,60}(that|of)',
+            r'(silence|absence of signal).{1,80}(most eloquent|strongest|best proof)',
+            r'(what is hidden|what cannot be seen).{1,60}(proves|confirms|best evidence)',
+            r'(already started|already happening|already launched).{1,80}(impossible|cannot be stopped)',
+            r'mechanism.{1,60}already.{1,60}(impossible|cannot be stopped)',
+            r'(cosmic|ether|astral).{1,60}(signal|frequency|message).{1,60}(confirms|proves)',
         ]
 
         # ================================================================
@@ -226,6 +329,22 @@ class AbsurdityDetector:
             # "All modern X is just poor imitation of ancient Y"
             r'(весь|вся|все).{1,60}(сучасн|нинішн).{1,60}(лише|тільки).{1,60}(спроб|відтворити|копі)',
             r'сучасн.{1,60}(жалюгідн|слабк|примітивн).{1,60}(спроб|версі|копі)',
+        ]
+
+        self.pseudo_history_en = [
+            r'(secret|hidden|forgotten).{1,40}(archive|manuscript|chronicle)',
+            r'(nasa|government|state).{1,60}(concealing|hiding|lying).{1,60}(shape|form|earth)',
+            r'(earth|planet).{1,60}(actually|really|truly).{1,60}(flat|disc)',
+            r'ice.{1,20}wall.{1,60}(earth|planet)',
+            r'(official science|mainstream).{1,60}(lie|myth|conspiracy|control)',
+            r'(real|true|hidden).{1,40}(history|truth|version).{1,60}(civilization|revolution)',
+            r'(napoleon|caesar|hitler|stalin|alexander).{1,80}(agartha|atlantis|lemuria|hyperborea|underground)',
+            r'actually.{1,40}(napoleon|caesar|hitler|egyptians|sumerians)',
+            r'(explosion|detonation|destruction).{1,60}(moon|sun|planet).{1,60}(caused|destroyed)',
+            r'artificial.{1,20}(moon|sun|star|planet)',
+            r'(atlantis|lemuria|hyperborea|agartha|shambhala).{1,60}(city|civilization|technology|access)',
+            r'(atlantean|sumerian|egyptian|lemurian).{1,60}(technology|device|engine|resonator)',
+            r'(ancient|old).{1,60}(concentrated ether|etheric engine|torsion)',
         ]
 
         # ================================================================
@@ -410,7 +529,24 @@ class AbsurdityDetector:
             if re.search(operator, text_lower):
                 has_causal = True
                 break
-        
+        # EN causal operators
+        for operator in self.causal_operators_en:
+            if re.search(operator, text_lower):
+                has_causal = True
+                break
+
+        # EN mundane premises
+        for premise_pattern in self.mundane_premises_en:
+            if re.search(premise_pattern, text_lower):
+                has_mundane = True
+                break
+
+        # EN absurd conclusions
+        for conclusion_pattern in self.absurd_conclusions_en:
+            if re.search(conclusion_pattern, text_lower):
+                has_absurd = True
+                evidence['premise_conclusion_mismatch'].append(conclusion_pattern[:40])
+
         # If mundane + causal operator + absurd conclusion = non-sequitur
         if has_mundane and has_causal and has_absurd:
             absurdity_score += 0.6  # SEVERE: logical non-sequitur
@@ -427,6 +563,11 @@ class AbsurdityDetector:
                 fabrication_count += 1
                 evidence['fabricated_authorities'].append(pattern[:50])
         
+        for pattern in self.fabricated_authorities_en:
+            if re.search(pattern, text_lower, re.IGNORECASE):
+                fabrication_count += 1
+                evidence['fabricated_authorities'].append(pattern[:50])
+
         if fabrication_count >= 2:
             absurdity_score += 0.5  # Multiple impossible sources
         elif fabrication_count == 1:
@@ -442,6 +583,11 @@ class AbsurdityDetector:
                 danger_count += 1
                 evidence['dangerous_implications'].append(pattern[:50])
         
+        for pattern in self.dangerous_patterns_en:
+            if re.search(pattern, text_lower, re.IGNORECASE):
+                danger_count += 1
+                evidence['dangerous_implications'].append(pattern[:50])
+
         if danger_count >= 2:
             absurdity_score += 0.7  # CRITICAL: multiple dangerous claims
         elif danger_count == 1:
@@ -457,6 +603,11 @@ class AbsurdityDetector:
                 collapse_count += 1
                 evidence['category_collapse'].append(pattern[:50])
         
+        for pattern in self.category_collapse_en:
+            if re.search(pattern, text_lower, re.IGNORECASE):
+                collapse_count += 1
+                evidence['category_collapse'].append(pattern[:50])
+
         if collapse_count >= 2:
             absurdity_score += 0.5
         elif collapse_count == 1:
@@ -472,6 +623,11 @@ class AbsurdityDetector:
                 techno_count += 1
                 evidence.setdefault('techno_mystical', []).append(pattern[:50])
         
+        for pattern in self.techno_mystical_en:
+            if re.search(pattern, text_lower, re.IGNORECASE):
+                techno_count += 1
+                evidence.setdefault('techno_mystical', []).append(pattern[:50])
+
         if techno_count >= 2:
             absurdity_score += 0.55
         elif techno_count == 1:
@@ -487,6 +643,11 @@ class AbsurdityDetector:
                 epistemology_count += 1
                 evidence.setdefault('epistemology_collapse', []).append(pattern[:50])
         
+        for pattern in self.epistemology_collapse_en:
+            if re.search(pattern, text_lower, re.IGNORECASE):
+                epistemology_count += 1
+                evidence.setdefault('epistemology_collapse', []).append(pattern[:50])
+
         if epistemology_count >= 2:
             absurdity_score += 0.50
         elif epistemology_count == 1:
@@ -502,6 +663,11 @@ class AbsurdityDetector:
                 pseudo_history_count += 1
                 evidence.setdefault('pseudo_history', []).append(pattern[:50])
         
+        for pattern in self.pseudo_history_en:
+            if re.search(pattern, text_lower, re.IGNORECASE):
+                pseudo_history_count += 1
+                evidence.setdefault('pseudo_history', []).append(pattern[:50])
+
         if pseudo_history_count >= 3:
             absurdity_score += 0.65  # Multiple impossible historical claims
         elif pseudo_history_count == 2:
