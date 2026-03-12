@@ -1068,6 +1068,69 @@ def oracle():
             line = f'  🐊 КРОКОДИЛЯЧІ СЛЬОЗИ: {perf_obj.get("verdict","")}'
             line += '\n     → Декларується дискомфорт або відповідальність без жодного конкретного зобов\'язання змінити щось реальне.'
             signals_lines.append(line)
+
+        # ── Маніпуляція ──
+        manip_score_w   = diag.get('manipulation_score', 0) or 0
+        manip_verdict_w = diag.get('manipulation_verdict', '')
+        manip_patterns_w = diag.get('manipulation_patterns', [])
+        if manip_score_w >= 0.25 and manip_verdict_w and manip_verdict_w not in ('CLEAN', ''):
+            patterns_str = ', '.join(manip_patterns_w) if manip_patterns_w else manip_verdict_w
+            line = f'  🧠 МАНІПУЛЯЦІЯ спрацювала: {manip_verdict_w} (score: {manip_score_w:.2f})'
+            line += f'\n     Патерни: {patterns_str}'
+            line += '\n     → Текст використовує риторичні конструкції щоб обмежити автономію судження читача. Поясни конкретно який прийом і чому це проблема.'
+            signals_lines.append(line)
+
+        # ── Абсурдність ──
+        absurd_score_w = diag.get('absurdity_score', 0) or 0
+        if absurd_score_w >= 0.30:
+            absurd_ev = diag.get('absurdity_evidence', {})
+            ev_keys = list(absurd_ev.keys())[:3] if absurd_ev else []
+            line = f'  🌀 АБСУРДНІСТЬ спрацювала: {absurd_score_w:.2f}'
+            if ev_keys:
+                line += f'\n     Типи: {", ".join(ev_keys)}'
+            line += '\n     → Текст містить твердження які суперечать реальності або внутрішньо суперечать одне одному. Поясни конкретно що саме неможливо або абсурдно.'
+            signals_lines.append(line)
+
+        # ── Framing ──
+        framing_score_w   = diag.get('framing_score', 0) or 0
+        framing_verdict_w = diag.get('framing_verdict', '')
+        framing_patterns_w = diag.get('framing_patterns', [])
+        if framing_score_w >= 0.25 and framing_verdict_w and framing_verdict_w not in ('CLEAN', 'NO_FRAMING', ''):
+            patterns_str = ', '.join(framing_patterns_w[:3]) if framing_patterns_w else framing_verdict_w
+            line = f'  🖼️ ФРЕЙМІНГ спрацював: {framing_verdict_w} (score: {framing_score_w:.2f})'
+            line += f'\n     Патерни: {patterns_str}'
+            line += '\n     → Текст навмисно формує рамку сприйняття щоб певні висновки здавались очевидними. Поясни яка рамка і що вона приховує.'
+            signals_lines.append(line)
+
+        # ── Axiom ──
+        axiom_score_w   = diag.get('axiom_score', 0) or 0
+        axiom_verdict_w = diag.get('axiom_verdict', '')
+        axiom_patterns_w = diag.get('axiom_patterns', [])
+        if axiom_score_w >= 0.30 and axiom_verdict_w and axiom_verdict_w not in ('CLEAN', ''):
+            patterns_str = ', '.join(axiom_patterns_w[:3]) if axiom_patterns_w else axiom_verdict_w
+            line = f'  ⚖️ АКСІОМА спрацювала: {axiom_verdict_w} (score: {axiom_score_w:.2f})'
+            line += f'\n     Патерни: {patterns_str}'
+            line += '\n     → Текст подає спірне твердження як самоочевидну істину що не потребує доказів. Поясни яке саме.'
+            signals_lines.append(line)
+
+        # ── Claim Gap ──
+        cg_obj = result.get('claim_gap', {})
+        if isinstance(cg_obj, dict) and cg_obj.get('is_flagged'):
+            cg_verdict = cg_obj.get('verdict', '')
+            cg_trigger = cg_obj.get('trigger_phrase', '')
+            line = f'  📏 РОЗРИВ ТВЕРДЖЕНЬ: {cg_verdict}'
+            if cg_trigger:
+                line += f'\n     Тригер: «{cg_trigger[:60]}»'
+            line += '\n     → Текст робить сильне твердження але докази або механізм його не підкріплюють. Поясни що саме задекларовано і чого бракує.'
+            signals_lines.append(line)
+
+        # ── Laundered Claim ──
+        lc_obj = result.get('laundered_claim', {})
+        if isinstance(lc_obj, dict) and lc_obj.get('is_flagged'):
+            lc_verdict = lc_obj.get('verdict', '')
+            line = f'  🧺 ВІДМИВАННЯ ТВЕРДЖЕНЬ: {lc_verdict}'
+            line += '\n     → Інформація з зацікавленого джерела подається як нейтральний факт. Поясни хто насправді за цим стоїть.'
+            signals_lines.append(line)
         signals_summary = '\n'.join(signals_lines) if signals_lines else '  (модулі не виявили порушень)'
 
         # ── Entropy boost: беремо вже розраховані значення з data (вже в /api/analyze) ──
