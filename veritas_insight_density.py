@@ -80,6 +80,201 @@ class InsightDensityDetector:
         
         # Long compound words (>15 chars) add complexity
         self.long_word_threshold = 15
+
+        # ================================================================
+        # ENGLISH MARKERS
+        # ================================================================
+
+        self.complexity_markers_en = {
+            'abstract_nouns': [
+                'paradigm', 'context', 'aspect', 'factor', 'component',
+                'framework', 'mechanism', 'dynamic', 'dimension',
+                'characteristic', 'model', 'concept', 'perspective',
+                'narrative', 'discourse', 'architecture', 'ecosystem',
+            ],
+            'bureaucratic': [
+                'implementation', 'optimization', 'consolidation', 'integration',
+                'synchronization', 'coordination', 'transformation', 'validation',
+                'monetization', 'operationalization', 'systematization',
+                'prioritization', 'institutionalization',
+            ],
+            'pseudo_intellectual': [
+                'holistic', 'synergistic', 'emergent', 'reflexive',
+                'dialectical', 'epistemological', 'ontological', 'paradigmatic',
+                'multifaceted', 'multidimensional', 'nuanced',
+            ],
+            'geopolitical': [
+                'geopolitical', 'transnational', 'multilateral', 'hegemonic',
+                'deescalation', 'interdependence', 'proliferation',
+                'multipolar', 'asymmetric',
+            ],
+        }
+
+        # ================================================================
+        # CASUISTRY PATTERNS — ENGLISH
+        # ================================================================
+
+        # Hedging без змісту
+        self.hedging_en = [
+            r"it could be argued",
+            r"one might suggest",
+            r"in some ways",
+            r"to some extent",
+            r"to a certain degree",
+            r"in a sense",
+            r"arguably",
+            r"it can be said",
+            r"some would say",
+            r"it is possible that",
+            r"there is reason to believe",
+            r"it seems that",
+            r"it appears that",
+        ]
+
+        # Circular reasoning
+        self.circular_en = [
+            r"the reason (?:is|was) (?:due to|because of) the",
+            r"(?:important|significant|relevant) because (?:it|they) (?:matter|is important|are significant)",
+            r"by (?:its|their|the) very nature",
+            r"in and of itself",
+            r"speaks for itself",
+            r"self-evident",
+            r"goes without saying",
+        ]
+
+        # Vague quantity замість цифр
+        self.vague_quantity_en = [
+            r"many (?:people|experts|studies|countries|cases)",
+            r"some (?:argue|suggest|believe|claim|say)",
+            r"a number of",
+            r"various (?:factors|reasons|sources|experts)",
+            r"several (?:factors|reasons|experts|studies)",
+            r"countless",
+            r"numerous (?:studies|experts|factors|cases)",
+            r"some experts",
+            r"many analysts",
+        ]
+
+        # False precision
+        self.false_precision_en = [
+            r"arguably (?:the most|one of the most)",
+            r"perhaps (?:the greatest|the most|the biggest)",
+            r"one of the (?:most|greatest|biggest|key|main)",
+            r"(?:the|a) key (?:factor|issue|challenge|question|aspect)",
+            r"(?:the|a) central (?:question|issue|challenge|theme)",
+            r"(?:the|a) fundamental (?:question|issue|challenge|problem)",
+            r"(?:the|a) critical (?:factor|issue|challenge|moment)",
+        ]
+
+        # Momentum — замість доказів
+        self.momentum_en = [
+            r"it is (?:clear|obvious|evident|apparent) that",
+            r"obviously",
+            r"as (?:we all|everyone) know",
+            r"undoubtedly",
+            r"certainly",
+            r"without (?:a )?doubt",
+            r"it goes without saying",
+            r"(?:clearly|plainly|simply) put",
+            r"make no mistake",
+            r"the fact (?:is|remains) that",
+            r"the truth (?:is|remains) that",
+            r"needless to say",
+        ]
+
+        # ================================================================
+        # CASUISTRY PATTERNS — UKRAINIAN
+        # ================================================================
+
+        # Hedging без змісту
+        self.hedging_uk = [
+            r"можна стверджувати",
+            r"певною мірою",
+            r"в певному сенсі",
+            r"деякою мірою",
+            r"є підстави вважати",
+            r"схоже (?:на те )?що",
+            r"здається що",
+            r"дехто міг би сказати",
+            r"це можна розглядати як",
+            r"у певному розумінні",
+        ]
+
+        # Circular reasoning
+        self.circular_uk = [
+            r"причина (?:полягає|криється) в (?:самій|тому що)",
+            r"важливо тому що (?:це|воно) важлив",
+            r"за своєю природою",
+            r"само по собі",
+            r"говорить само за себе",
+            r"само собою зрозуміло",
+            r"не потребує пояснень",
+        ]
+
+        # Vague quantity
+        self.vague_quantity_uk = [
+            r"багато (?:людей|експертів|досліджень|країн)",
+            r"деякі (?:стверджують|вважають|говорять|кажуть)",
+            r"ряд (?:факторів|причин|експертів|досліджень)",
+            r"різні (?:фактори|причини|джерела|експерти)",
+            r"численні (?:дослідження|факти|докази|експерти)",
+            r"багато аналітиків",
+            r"деякі експерти",
+            r"чимало (?:людей|фахівців)",
+        ]
+
+        # False precision
+        self.false_precision_uk = [
+            r"(?:мабуть|мабуть) (?:найбільш|найважливіш)",
+            r"один із (?:найбільш|найважливіш|ключових|головних)",
+            r"(?:ключовий|головний|центральний|фундаментальний) (?:фактор|питання|виклик|аспект|момент)",
+            r"(?:критичний|вирішальний) (?:фактор|момент|питання)",
+            r"(?:найважливіш|найголовніш)\w+ питання",
+        ]
+
+        # Momentum
+        self.momentum_uk = [
+            r"(?:зрозуміло|очевидно|ясно) що",
+            r"як (?:всі|усі|ми всі) знають",
+            r"безсумнівно",
+            r"безперечно",
+            r"немає сумніву",
+            r"не викликає сумніву",
+            r"цілком (?:зрозуміло|очевидно)",
+            r"нема чого й казати",
+            r"факт залишається фактом",
+            r"правда (?:полягає|в тому) що",
+        ]
+
+        self.empty_phrases_en = [
+            r'in the context of',
+            r'in terms of',
+            r'with respect to',
+            r'in light of',
+            r'in the realm of',
+            r'in the framework of',
+            r'from the perspective of',
+            r'in the wake of',
+            r'at the end of the day',
+            r'going forward',
+            r'it is worth noting',
+            r'it is important to note',
+            r'needless to say',
+            r'by the same token',
+            r'in this regard',
+        ]
+
+        self.concrete_markers_en = {
+            'numbers': r'\d+(?:[.,]\d+)?(?:\s*%)?',
+            'years': r'(19|20)\d{2}',
+            'specific_amounts': r'\d+\s*(million|billion|thousand|percent|trillion)',
+            'names': r'[A-Z][a-z]+\s+[A-Z][a-z]+',
+            'locations': r'(united states|europe|china|russia|ukraine|washington|new york|london|brussels)',
+            'organizations': r'(UN|NATO|EU|UNESCO|WHO|NASA|FBI|CIA|IMF|WTO|Census Bureau)',
+            'specific_actions': r'(built|created|invented|measured|recorded|published|signed|passed|launched|founded)',
+            'verifiable_sources': r'(university|institute|study|research|experiment|publication|journal|report|data|survey)',
+            'dates': r'(january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{1,2}',
+        }
         
         # ================================================================
         # CASUISTRY PATTERNS (specific empty phrases)
@@ -124,6 +319,11 @@ class InsightDensityDetector:
             if matches:
                 fact_count += len(matches)
                 found_facts.append(f"{fact_type}:{len(matches)}")
+        for fact_type, pattern in self.concrete_markers_en.items():
+            matches = re.findall(pattern, text_lower)
+            if matches:
+                fact_count += len(matches)
+                found_facts.append(f"en_{fact_type}:{len(matches)}")
         
         # ================================================================
         # COUNT LINGUISTIC COMPLEXITY
@@ -137,6 +337,12 @@ class InsightDensityDetector:
                 if term in text_lower:
                     complexity_count += 1
         
+        # 1b. English complexity markers
+        for category, terms in self.complexity_markers_en.items():
+            for term in terms:
+                if term in text_lower:
+                    complexity_count += 1
+
         # 2. Long compound words
         long_words = [w for w in words if len(w) > self.long_word_threshold]
         complexity_count += len(long_words)
@@ -146,6 +352,29 @@ class InsightDensityDetector:
         for phrase in self.empty_phrases:
             matches = re.findall(phrase, text_lower)
             empty_phrase_count += len(matches)
+        for phrase in self.empty_phrases_en:
+            matches = re.findall(phrase, text_lower)
+            empty_phrase_count += len(matches)
+
+        # Нові казуїстичні патерни EN
+        casuistry_lists_en = [
+            self.hedging_en, self.circular_en, self.vague_quantity_en,
+            self.false_precision_en, self.momentum_en,
+        ]
+        for pattern_list in casuistry_lists_en:
+            for phrase in pattern_list:
+                matches = re.findall(phrase, text_lower)
+                empty_phrase_count += len(matches)
+
+        # Нові казуїстичні патерни UK
+        casuistry_lists_uk = [
+            self.hedging_uk, self.circular_uk, self.vague_quantity_uk,
+            self.false_precision_uk, self.momentum_uk,
+        ]
+        for pattern_list in casuistry_lists_uk:
+            for phrase in pattern_list:
+                matches = re.findall(phrase, text_lower)
+                empty_phrase_count += len(matches)
         
         complexity_count += empty_phrase_count
         
