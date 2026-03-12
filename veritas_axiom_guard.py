@@ -220,6 +220,115 @@ class AxiomGuard:
             r'(інструмент.{1,60}(застарів|марн)).{1,60}(масштаб|швидкість|обсяг)',
         ]
 
+
+        # ================================================================
+        # PATTERN 7: AUTHORITY REALITY CLAIM
+        # Зацікавлена сторона не висловлює думку — проголошує стан реальності.
+        # "право припинило існування" замість "ми вважаємо що право слабке"
+        # Структура: [джерело] + [інститут] + [фінальний вирок існуванню]
+        # ================================================================
+
+        self.authority_reality_claim = [
+            # UK: інститут + фінальний вирок
+            r'(право|закон|система|порядок|норми).{1,60}(припинил.{1,20}існування|припинил.{1,20}діяти|перестал.{1,20}існувати)',
+            r'(право|закон|система|порядок).{1,60}(фактично|де-факто).{1,60}(немає|не існує|зникло|мертве)',
+            r'(міжнародн.{1,20}(право|норми|порядок)).{1,60}(крах|колапс|смерть|кінець)',
+            r'(втратил.{1,40}(практичний сенс|сенс існування|дієвість|силу))',
+            r'(існу.{1,30}лише на папері)',
+            r'(старий порядок|старий устрій).{1,60}(зник|припинив|замінен|прийшло на зміну)',
+
+            # EN: institution + final verdict on existence
+            r'(law|order|system|norms).{1,60}(ceased to exist|no longer exists|is dead|has died)',
+            r'(international law|world order|legal system).{1,60}(collapse|death|end|disintegration)',
+            r'(law|norms|rules).{1,60}(only on paper|meaningless|irrelevant|no practical)',
+            r'(lost.{1,30}(practical meaning|relevance|force|effect))',
+            r'(old order|old system).{1,60}(gone|collapsed|replaced)',
+        ]
+
+        # ================================================================
+        # PATTERN 8: UNIVERSAL NEGATION
+        # Неможливість дії розповсюджується на весь світ.
+        # "ніхто не може / неможливо / будь-яку сторону"
+        # Знищує агентність — якщо ніхто не може, то й намагатися не варто.
+        # ================================================================
+
+        self.universal_negation = [
+            # UK
+            r'(неможливо|не можна).{1,60}(будь-яку|жодну|жодного|будь-кого).{1,60}(сторону|країну|учасника)',
+            r'(ніхто не може|ніхто не здатен).{1,60}(сформулювати|визначити|назвати|пояснити)',
+            r'(жодна (країна|сторона|держава)).{1,60}(не може|не здатна|не в змозі).{1,60}(закликати|змусити|притягнути)',
+            r'(норми|правила|закони).{1,60}(втратили.{1,30}(сенс|значення|силу)).{1,60}(для всіх|для будь-якої|взагалі)',
+
+            # EN
+            r'(impossible|no longer possible).{1,60}(any (party|country|side|state)).{1,60}(to comply|to follow|to abide)',
+            r'(no one (can|is able to)).{1,60}(define|explain|formulate|describe)',
+            r'(no (country|state|party)).{1,60}(can|is able|is capable).{1,60}(enforce|compel|hold accountable)',
+            r'(rules|norms|laws).{1,60}(lost.{1,30}(meaning|relevance|force)).{1,60}(for (all|any|everyone))',
+        ]
+
+        # ================================================================
+        # PATTERN 9: DE FACTO / DE JURE SPLIT
+        # Класичний прийом: формально існує, реально — ні.
+        # Знімає відповідальність за руйнування "і так мертвого" інституту.
+        # ================================================================
+
+        self.de_facto_split = [
+            # UK
+            r'де-юре.{1,60}(є|існує|діє).{1,60}де-факто.{1,60}(немає|не існує|зникло|мертве)',
+            r'де-факто.{1,60}(немає|не існує|мертве).{1,60}де-юре.{1,60}(є|існує)',
+            r'(формально|юридично).{1,60}(існує|діє).{1,60}(але|проте|насправді).{1,60}(фактично|реально).{1,60}(немає|не працює|мертве)',
+            r'(на папері|номінально).{1,60}(існує|є|діє).{1,60}(на практиці|реально|фактично).{1,60}(немає|не діє|не працює)',
+
+            # EN
+            r'de jure.{1,60}(exists|remains).{1,60}de facto.{1,60}(gone|dead|nonexistent)',
+            r'de facto.{1,60}(gone|dead|nonexistent).{1,60}de jure.{1,60}(exists|remains)',
+            r'(formally|legally|on paper).{1,60}(exists|stands).{1,60}(but|yet|however).{1,60}(in practice|in reality|effectively).{1,60}(gone|dead|absent)',
+        ]
+
+        # ================================================================
+        # PATTERN 10: VACUUM DECLARATION
+        # Оголошення вакууму / хаосу як нового стану — риторична підготовка
+        # до легітимізації довільних дій ("якщо немає правил — все можна").
+        # ================================================================
+
+        self.vacuum_declaration = [
+            # UK
+            r'(правовий|нормативний|інституційний|міжнародний).{1,20}вакуум',
+            r'(опинився|перебуває|живе).{1,60}(вакуумі|безправ.{1,10}|безпорядку|хаосі)',
+            r'вакуум.{1,60}(не має.{1,30}(визначення|формулювання|назви)|ще не визначен)',
+            r'(новий|інший).{1,30}(порядок|устрій|правила).{1,60}(ще не сформувався|ще немає|невідомий)',
+            r'(нічого не прийшло на зміну|нема чим замінити|заміни немає)',
+
+            # EN
+            r'(legal|normative|institutional|international).{1,20}vacuum',
+            r'(finds itself|living|operating).{1,60}(vacuum|lawlessness|chaos|void)',
+            r'vacuum.{1,60}(no (definition|name|description)|yet to be defined)',
+            r'(new|different).{1,30}(order|rules|system).{1,60}(yet to (emerge|form|develop)|unknown|undefined)',
+            r'(nothing (has|to) (replaced|replace)|no replacement|no substitute)',
+        ]
+
+        # ================================================================
+        # PATTERN 11: EXISTENTIAL PAST TENSE
+        # Інститут описується в минулому часі — читач отримує fait accompli.
+        # Некролог замість аналізу. Мета: зробити руйнування незворотним у свідомості.
+        # ================================================================
+
+        self.existential_past_tense = [
+            # UK
+            r'(те що ми називали|те що раніше було).{1,60}(право|закон|порядок|система)',
+            r'(більше не (є|існує|діє|має)).{1,60}(право|закон|норми|порядок|система)',
+            r'(прийшло на зміну|замінило).{1,60}(старому|попередньому).{1,60}(порядку|праву|устрою)',
+            r'(ми (всі|вже) позбулися).{1,60}(права|закону|порядку|норм)',
+            r'(втратили|позбулися|залишилися без).{1,60}(міжнародного права|правового захисту|норм)',
+
+            # EN
+            r'(what we (used to|once) call(ed)?).{1,60}(law|order|system|rules)',
+            r'(no longer (is|exists|applies|functions)).{1,60}(law|order|norms|system)',
+            r'(replaced|succeeded).{1,60}(old|previous|former).{1,60}(order|law|system)',
+            r'(we (all|have) lost).{1,60}(international law|legal protection|rule of law)',
+            r'(lost|stripped of|left without).{1,60}(international law|legal framework|norms)',
+        ]
+
     def analyze(self, text: str) -> Dict:
         if len(text) < 50:
             return {
@@ -238,7 +347,13 @@ class AxiomGuard:
             ('VERIFICATION_ABOLITION', self.verification_abolition, 0.65, 1),
             ('AXIOM_INVERSION',        self.axiom_inversion,       0.75, 1),
             ('BACKDOOR_PROPOSAL',      self.backdoor_proposal,     0.70, 2),
-            ('SYSTEMIC_NIHILISM',       self.systemic_nihilism,     0.65, 2),
+            ('SYSTEMIC_NIHILISM',        self.systemic_nihilism,      0.65, 2),
+            # Нові патерни: пєсков-клас маніпуляцій
+            ('AUTHORITY_REALITY_CLAIM', self.authority_reality_claim, 0.70, 1),
+            ('UNIVERSAL_NEGATION',      self.universal_negation,      0.55, 1),
+            ('DE_FACTO_SPLIT',          self.de_facto_split,          0.60, 1),
+            ('VACUUM_DECLARATION',      self.vacuum_declaration,      0.55, 1),
+            ('EXISTENTIAL_PAST_TENSE',  self.existential_past_tense,  0.55, 1),
         ]
 
         for name, patterns, score, min_hits in checks:
