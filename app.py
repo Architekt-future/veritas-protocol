@@ -410,13 +410,15 @@ def compute_entropy_boost(result: dict) -> dict:
 
     # LAC Finance
     fin_verdict = diag.get('lac_finance_verdict', '')
-    if fin_verdict and fin_verdict not in ('N/A', 'CLEAN', ''):
+    is_financial = diag.get('is_financial_content', False)
+    if is_financial and fin_verdict and fin_verdict not in ('N/A', 'CLEAN', ''):
         multiplier += MODULE_WEIGHTS['lac_finance']
         triggered_mods.append('lac_finance')
 
     # LAC Labor
     lab_verdict = diag.get('lac_labor_verdict', '')
-    if lab_verdict and lab_verdict not in ('N/A', 'CLEAN', ''):
+    is_labor = diag.get('is_labor_content', False)
+    if is_labor and lab_verdict and lab_verdict not in ('N/A', 'CLEAN', ''):
         multiplier += MODULE_WEIGHTS['lac_labor']
         triggered_mods.append('lac_labor')
 
@@ -472,6 +474,16 @@ def compute_entropy_boost(result: dict) -> dict:
     multiplier += interaction_bonus
 
     entropy_boosted = min(100, round(entropy_pct * multiplier))
+
+    # Cap: 100% тільки при реальній серйозній загрозі
+    # manipulation >0.5, або absurdity >0.2, або preservation спрацював, або 4+ модулів
+    manip_s  = diag.get('manipulation_score', 0) or 0
+    absurd_s = diag.get('absurdity_score', 0) or 0
+    pres_v   = diag.get('self_preservation_verdict', '') or (result.get('self_preservation') or {}).get('verdict', '')
+    pres_active = pres_v and pres_v not in ('SAFE', 'CLEAN', '')
+    serious_threat = (manip_s > 0.50) or (absurd_s > 0.20) or pres_active or (len(triggered_mods) >= 4)
+    if entropy_boosted >= 100 and not serious_threat:
+        entropy_boosted = min(85, entropy_boosted)
 
     return {
         'entropy_boosted':      entropy_boosted,
