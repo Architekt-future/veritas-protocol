@@ -264,8 +264,8 @@ MODULE_WEIGHTS = {
     'lac_labor':         0.08,
     'manipulation':      0.10,
     'claim_gap':         0.07,
-    'axiom':             0.10,
-    'laundered_claim':   0.12,
+    'axiom':             0.18,  # підняли: пєсков-клас маніпуляцій
+    'laundered_claim':   0.16,  # підняли: трансляція без атрибуції
     'framing':           0.09,
     'narrative_pivot':   0.07,
     'semantic_void':     0.10,
@@ -331,6 +331,8 @@ INTERACTION_LABELS = {
         ('Захисна атака',                     'Defensive attack'),
     frozenset({'axiom', 'lac_epistemology'}):
         ('Подвійна псевдологіка',             'Double pseudo-logic'),
+    frozenset({'axiom', 'laundered_claim'}):
+        ('Проголошення смерті інституту',     'Institutional death declaration'),
     frozenset({'manipulation', 'framing', 'claim_gap'}):
         ('Пропагандистська структура',        'Propaganda structure'),
     frozenset({'manipulation', 'lac_epistemology', 'axiom'}):
