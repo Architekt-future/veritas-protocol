@@ -68,6 +68,23 @@ class ClaimGapDetector:
 
     CLAIM_MARKERS_EN = [
         (r'\b(prophecy|prophesied|predicts|predicted)\b', 0.9),
+        # Alarm/danger framing
+        (r'\b(crossed.{0,20}red line|dangerous red line)\b', 0.80),
+        (r'\b(unprecedented|historic|never before seen)\b', 0.65),
+        (r'\b(warns?|warning).{0,30}(will|could|might).{0,30}(happen|occur|collapse|destroy)\b', 0.70),
+        (r'\b(triggers?|sparks?|ignites?).{0,30}(crisis|war|conflict|chaos)\b', 0.65),
+        # Conspiracy/mystery framing
+        (r'\b(mystery|suspicious|cannot rule out|foul play)\b', 0.65),
+        (r'\b(wiped.{0,20}(clean|out)|deleted.{0,20}(hours?|minutes?).{0,20}after)\b', 0.75),
+        (r'\b(no coincidence|suspicious timing|convenient timing)\b', 0.70),
+        (r'\b(cover.?up|coverup|silenced|suppressed)\b', 0.75),
+        # Escalation framing  
+        (r'\b(most (dangerous|serious|significant).{0,30}(ever|in history|in years))\b', 0.70),
+        (r'\b(could (start|trigger|spark).{0,30}(war|crisis|collapse))\b', 0.65),
+        (r'\b(point of no return|no going back|crossed the line)\b', 0.70),
+        # Attribution laundering as strong claim
+        (r'\b(some are (saying|claiming)|many believe|people are saying)\b', 0.60),
+        (r'\b(sources (say|claim|suggest)|insiders (say|reveal))\b', 0.65),
         (r'\b(forecast|forecasts|foresees)\b', 0.6),
         (r'\b(proven|confirmed|established|revealed)\b', 0.7),
         (r'\b(definitely|certainly|undoubtedly|no doubt)\b', 0.65),
@@ -82,6 +99,16 @@ class ClaimGapDetector:
     # Words that indicate ACTUAL EVIDENCE is being provided
 
     STRONG_EVIDENCE = [
+        # English strong evidence
+        r'\b(according to (the )?(study|research|data|report|survey))\b',
+        r'\b(researchers? (at|from) [A-Z][a-z]+)\b',  # "researchers at MIT"
+        r'\b(published in [A-Z])\b',  # "published in Nature"
+        r'\b(\d+ (people|participants|countries|cases|samples))\b',
+        r'\b(peer.reviewed|double.blind|meta.analysis|systematic review)\b',
+        r'\b(official (data|statistics|report|statement))\b',
+        r'\b(confirmed by (multiple|several|independent))\b',
+        r'\b(data (show|shows|suggest|confirm))\b',
+        r'\b(census|bureau|ministry|department) (data|report|figures)\b',
         # Verified sources
         r'\b(дослідження\s+(показало|виявило|підтвердило))\b',
         r'\b(за\s+даними\s+[А-ЯІЇЄҐ])',   # "за даними ООН/МОЗ/..."
@@ -96,6 +123,15 @@ class ClaimGapDetector:
     ]
 
     WEAK_EVIDENCE = [
+        # English weak evidence
+        r'\b(cannot rule out)\b',
+        r'\b(suspicious(ly)?|coincidence|no coincidence)\b',
+        r'\b(many on social media|social media (users|posts))\b',
+        r'\b(pointed to|some pointed|others pointed)\b',
+        r'\b(unconfirmed (reports?|sources?))\b',
+        r'\b(anonymous (source|official|insider))\b',
+        r'\b(it (seems|appears|looks like))\b',
+        r'\b(conspiracy theorists?|claim without evidence)\b',
         # Vague/single source
         r'\b(хтось\s+сказав|дехто\s+каже|кажуть|говорять)\b',
         r'\b(можливо|мабуть|здається|схоже|начебто|нібито)\b',
@@ -118,10 +154,10 @@ class ClaimGapDetector:
                 is_flagged=False
             )
 
-        # Split into HEADER (first ~150 chars) and BODY (rest)
+        # Split into HEADER (first ~200 chars) and BODY (rest)
         # Header = where claims live; Body = where evidence should live
-        header = text[:150]
-        body   = text[150:]
+        header = text[:200]
+        body   = text[200:]
 
         if len(body.split()) < 10:
             # Very short text — treat whole as body
@@ -140,8 +176,9 @@ class ClaimGapDetector:
                     claim_strength = weight
                     trigger_phrase = m.group(0)
 
-        # Also scan first full sentence of body for claims
-        first_sentence = re.split(r'[.!?]', body)[0] if body else ''
+        # Also scan first two sentences of body for claims
+        body_sentences = re.split(r'[.!?]', body) if body else []
+        first_sentence = ' '.join(body_sentences[:2])
         for pattern, weight in all_markers:
             m = re.search(pattern, first_sentence, re.IGNORECASE)
             if m:
