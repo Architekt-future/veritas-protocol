@@ -1114,7 +1114,7 @@ def oracle():
             signals_lines.append(line)
 
         # ── Claim Gap ──
-        cg_obj = result.get('claim_gap', {})
+        cg_obj = data.get('claim_gap', {})
         if isinstance(cg_obj, dict) and cg_obj.get('is_flagged'):
             cg_verdict = cg_obj.get('verdict', '')
             cg_trigger = cg_obj.get('trigger_phrase', '')
@@ -1125,7 +1125,7 @@ def oracle():
             signals_lines.append(line)
 
         # ── Laundered Claim ──
-        lc_obj = result.get('laundered_claim', {})
+        lc_obj = data.get('laundered_claim', {})
         if isinstance(lc_obj, dict) and lc_obj.get('is_flagged'):
             lc_verdict = lc_obj.get('verdict', '')
             line = f'  🧺 ВІДМИВАННЯ ТВЕРДЖЕНЬ: {lc_verdict}'
