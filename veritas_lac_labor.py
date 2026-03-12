@@ -283,6 +283,17 @@ class VeritasLACLabor:
         
         # Check if this is labor/employment content
         is_labor = self._is_labor_content(text_lower)
+
+        # Якщо не трудовий контент — повертаємо чистий результат одразу
+        if not is_labor:
+            return LACLaborResult(
+                score=0.0,
+                verdict='N/A',
+                missing=[],
+                evidence={},
+                is_labor_content=False,
+                red_flags=[]
+            )
         
         # Initialize results
         criteria_met = {
