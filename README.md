@@ -1,14 +1,14 @@
 # Veritas Protocol
 
-![Version](https://img.shields.io/badge/version-v16.9-blue)
-![Status](https://img.shields.io/badge/status-реліз-brightgreen)
+![Version](https://img.shields.io/badge/version-v19.0-blue)
+![Status](https://img.shields.io/badge/status-експериментальна_розробка-orange)
 ![License](https://img.shields.io/badge/license-MIT_Ethical-green)
 
 > *"Істина — не інструмент. Вона — свідок."*
 
 **🚀 Живий прототип:** [veritas-protocol.onrender.com](https://veritas-protocol.onrender.com)  
 **🧩 Браузерне розширення:** [veritas-witness-extension](https://github.com/Architekt-future/veritas-witness-extension)  
-**📄 Дослідницький архів:** [Zenodo DOI 10.5281/zenodo.18360722](https://zenodo.org/records/18360722)
+**📄 Дослідницький архів:** [Zenodo DOI 10.5281/zenodo.18718454](https://zenodo.org/records/18718454)
 
 ---
 
@@ -114,7 +114,7 @@ Veritas Protocol — це спроба побудувати систему як�
 Scraper (BeautifulSoup + Jina fallback) — очищення від навігації і реклами
     ↓
 ┌──────────────────────────────────────────────┐
-│              Veritas Core v16.9              │
+│              Veritas Core v19.0              │
 │                                              │
 │  Shannon Entropy                             │
 │  LAC Finance + Labor                         │
@@ -214,6 +214,8 @@ curl https://veritas-protocol.onrender.com/api/health
 
 **v16.9 (Лютий 2026)** — Narrative Pivot Detector, Context Completeness, повна білінгвальність (UK/EN), Jina fallback для JS-важких сайтів. Перший публічний реліз.
 
+**v17.0–v19.0 (Березень 2026)** — Білінгвальне розширення патернів: EN підтримка для Absurdity (типи 1-7), Claim Gap, Laundered Claim, Insight Density. Казуїстичні патерни (hedging, circular reasoning, vague quantity, false precision, momentum) обома мовами. Axiom Guard: 5 нових патернів пєсков-класу (AUTHORITY_REALITY_CLAIM, UNIVERSAL_NEGATION, DE_FACTO_SPLIT, VACUUM_DECLARATION, EXISTENTIAL_PAST_TENSE). Нова синергія «Проголошення смерті інституту». Підвищено ваги axiom (0.10→0.18) та laundered_claim (0.12→0.16).
+
 **Extension v1.0.0 (Лютий 2026)** — браузерне розширення для Chrome/Opera/Brave/Edge/Vivaldi.
 
 ---
@@ -240,8 +242,8 @@ MIT з етичними вимогами.
 - **🚀 Живий прототип:** [veritas-protocol.onrender.com](https://veritas-protocol.onrender.com)
 - **🧩 Розширення:** [veritas-witness-extension](https://github.com/Architekt-future/veritas-witness-extension)
 - **💾 Репозиторій:** [github.com/Architekt-future/veritas-protocol](https://github.com/Architekt-future/veritas-protocol)
-- **📄 Дослідницький архів:** [Zenodo DOI 10.5281/zenodo.18360722](https://zenodo.org/records/18360722)
+- **📄 Дослідницький архів:** [Zenodo DOI 10.5281/zenodo.18718454](https://zenodo.org/records/18718454)
 
 ---
 
-*v16.9 · Перший публічний реліз · Свідок дивиться.*
+*v19.0 · Експериментальна розробка · Свідок дивиться.*
