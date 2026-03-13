@@ -593,6 +593,15 @@ def compute_influence_tier(result):
     lc_verdict = lc.get('verdict', '')
     is_lc      = lc.get('is_flagged', False)
 
+    # Alarmism
+    alarmism_score  = result.get('alarmism_score', 0) or 0
+    alarmism_verdict = result.get('alarmism_verdict', '')
+    alarmism_flagged = result.get('alarmism_flagged', False)
+
+    # Tier 3 — комерційний алармізм з іншими сигналами
+    if alarmism_verdict == 'COMMERCIAL_ALARMISM' and alarmism_score >= 0.60:
+        return _make_tier(3, 'alarmism', f'{round(alarmism_score*100)}%')
+
     # Tier 3 — LAUNDERED_CLAIM форсує tier 3 (відмивання від сторони конфлікту = маніпуляція)
     if lc_verdict == 'LAUNDERED_CLAIM':
         return _make_tier(3, 'laundered_claim', f'{round(lc_score*100)}%')
@@ -608,6 +617,10 @@ def compute_influence_tier(result):
         return _make_tier(2, 'narrative_pivot', f'{round(pivot_score*100)}%')
     if is_cg:
         return _make_tier(2, 'claim_gap', claim_gap.get('verdict', ''))
+    # Alarmist framing — tier 2
+    if alarmism_verdict == 'ALARMIST_FRAMING' or (alarmism_verdict == 'COMMERCIAL_ALARMISM' and alarmism_score < 0.60):
+        return _make_tier(2, 'alarmism', f'{round(alarmism_score*100)}%')
+
     # WEAK_ATTRIBUTION форсує tier 2
     if lc_verdict == 'WEAK_ATTRIBUTION' or (is_lc and lc_score >= 0.20):
         return _make_tier(2, 'laundered_claim', lc_verdict)
