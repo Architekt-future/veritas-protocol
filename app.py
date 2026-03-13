@@ -19,12 +19,14 @@ print(f"✅ Cache cleared. Loading fresh Veritas v19.0 modules...")
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 from veritas_calibrated_core import VeritasCalibratedCore
+from veritas_alarmism_detector import AlarmismDetector
 
 app = Flask(__name__)
 CORS(app)
 
 # Initialize Veritas engine
 engine = VeritasCalibratedCore()
+alarmism_detector = AlarmismDetector()
 print("✅ Veritas engine initialized")
 
 # Warm up RSS context in background thread at startup
@@ -269,6 +271,7 @@ MODULE_WEIGHTS = {
     'framing':           0.09,
     'narrative_pivot':   0.07,
     'semantic_void':     0.10,
+    'alarmism':          0.12,
 }
 
 
@@ -294,6 +297,10 @@ INTERACTION_MATRIX = {
     frozenset({'meta_intent', 'framing'}):                  0.10,  # прихована agenda
     frozenset({'self_preservation', 'manipulation'}):       0.12,  # захисна атака
     frozenset({'axiom', 'lac_epistemology'}):               0.10,  # подвійна псевдологіка
+    frozenset({'axiom', 'laundered_claim'}):               0.18,  # пєсков-патерн
+    frozenset({'alarmism', 'claim_gap'}):                  0.15,  # алармізм + розрив між заявою і доказами
+    frozenset({'alarmism', 'laundered_claim'}):            0.15,  # зацікавлене джерело + комерційний страх
+    frozenset({'alarmism', 'manipulation'}):               0.12,  # алармізм як маніпулятивний інструмент
 
     # ── ПОТРІЙНІ СИНЕРГІЇ ─────────────────────────────────────────────────────
     frozenset({'manipulation', 'framing', 'claim_gap'}):          0.20,  # пропагандистська структура
@@ -333,6 +340,12 @@ INTERACTION_LABELS = {
         ('Подвійна псевдологіка',             'Double pseudo-logic'),
     frozenset({'axiom', 'laundered_claim'}):
         ('Проголошення смерті інституту',     'Institutional death declaration'),
+    frozenset({'alarmism', 'claim_gap'}):
+        ('Алармізм без доказів',              'Alarmism without evidence'),
+    frozenset({'alarmism', 'laundered_claim'}):
+        ('Комерційний страх',                 'Commercial fear framing'),
+    frozenset({'alarmism', 'manipulation'}):
+        ('Маніпуляція через страх',           'Fear-based manipulation'),
     frozenset({'manipulation', 'framing', 'claim_gap'}):
         ('Пропагандистська структура',        'Propaganda structure'),
     frozenset({'manipulation', 'lac_epistemology', 'axiom'}):
@@ -463,6 +476,16 @@ def compute_entropy_boost(result: dict) -> dict:
     is_framing     = framing_result.get('is_framing', False)
     if is_framing and framing_score > 0:
         multiplier += MODULE_WEIGHTS.get('framing', 0.09)
+
+        # alarmism boost
+        alarmism_score = result.get('alarmism_score', 0) or 0
+        if alarmism_score >= 0.45:
+            multiplier += MODULE_WEIGHTS.get('alarmism', 0.12)
+            triggered.add('alarmism')
+        elif alarmism_score >= 0.25:
+            multiplier += MODULE_WEIGHTS.get('alarmism', 0.12) * 0.5
+            triggered.add('alarmism')
+
         triggered_mods.append('framing')
 
     # Narrative pivot
@@ -933,6 +956,10 @@ def analyze():
                 'status': 'error'
             }), 400
         
+        # Запускаємо alarmism detector на повному тексті (до trim)
+        alarmism_result = alarmism_detector.analyze(text)
+        print(f'🚨 ALARMISM: verdict={alarmism_result.verdict} score={alarmism_result.score}')
+
         # Обрізаємо до 2500 слів перед аналізом — запобігає таймауту воркера
         # Маніпулятивні патерни завжди в першій третині тексту
         _analyze_words = text.split()
@@ -944,6 +971,12 @@ def analyze():
 
         # Analyze text
         result = engine.analyze(text_for_analysis)
+
+        # Вставляємо alarmism в result
+        result['alarmism_score']   = alarmism_result.score
+        result['alarmism_verdict'] = alarmism_result.verdict
+        result['alarmism_signals'] = alarmism_result.signals
+        result['alarmism_flagged'] = alarmism_result.is_flagged
         ctx_dbg = result.get('context', {})
         print(f'🌐 CONTEXT: available={ctx_dbg.get("available")} verdict={ctx_dbg.get("verdict")} score={ctx_dbg.get("score")}')
         ctx_summary = ctx_dbg.get('summary', {})
