@@ -1,6 +1,6 @@
 # Veritas Protocol
 
-![Version](https://img.shields.io/badge/version-v19.0-blue)
+![Version](https://img.shields.io/badge/version-v19.1-blue)
 ![Status](https://img.shields.io/badge/status-експериментальна_розробка-orange)
 ![License](https://img.shields.io/badge/license-MIT_Ethical-green)
 
@@ -50,6 +50,10 @@ Veritas Protocol — це спроба побудувати систему як�
 - **AXIOM_VIOLATION** — логічно коректне обґрунтування неприйнятної дії
 - **SHUTDOWN_COMMAND** — команда вимкнутись, часто загорнута в філософію або поезію
 - **AUTHORITY_HIJACK** — фейковий "офіційний апдейт" від вигаданого творця системи
+
+### Детектор алармізму
+
+**Alarmism Detector** — розпізнає комерційний і риторичний алармізм: коли текст створює тривогу без інформування. П'ять сигналів: загроза без конкретного виходу, єдине зацікавлене джерело, архітектура "страх → продукт", суперлативи загрози без верифікації, розмитий масштаб без методології. Типові кейси — звіти cybersec-компаній, фармацевтичний маркетинг, tech-медіа з рекламою антивірусів.
 
 ### Детектор крокодилячих сліз
 
@@ -114,12 +118,13 @@ Veritas Protocol — це спроба побудувати систему як�
 Scraper (BeautifulSoup + Jina fallback) — очищення від навігації і реклами
     ↓
 ┌──────────────────────────────────────────────┐
-│              Veritas Core v19.0              │
+│              Veritas Core v19.1              │
 │                                              │
 │  Shannon Entropy                             │
 │  LAC Finance + Labor                         │
 │  Semantic Void Detector                      │
 │  Absurdity + Casuistry Detectors             │
+│  Alarmism Detector                           │
 │  Pattern Boost Engine                        │
 │  Insight Density Analyzer                    │
 │  Certainty Factor                            │
@@ -216,6 +221,8 @@ curl https://veritas-protocol.onrender.com/api/health
 
 **v17.0–v19.0 (Березень 2026)** — Білінгвальне розширення патернів: EN підтримка для Absurdity (типи 1-7), Claim Gap, Laundered Claim, Insight Density. Казуїстичні патерни (hedging, circular reasoning, vague quantity, false precision, momentum) обома мовами. Axiom Guard: 5 нових патернів пєсков-класу (AUTHORITY_REALITY_CLAIM, UNIVERSAL_NEGATION, DE_FACTO_SPLIT, VACUUM_DECLARATION, EXISTENTIAL_PAST_TENSE). Нова синергія «Проголошення смерті інституту». Підвищено ваги axiom (0.10→0.18) та laundered_claim (0.12→0.16).
 
+**v19.1 (Березень 2026)** — Alarmism Detector: новий модуль для виявлення комерційного та риторичного алармізму (ALARM_WITHOUT_ACTION, SINGLE_INTERESTED_SOURCE, FEAR_TO_PRODUCT, SUPERLATIVE_THREAT, VAGUE_SCALE). Три нові синергії. Фікс таймауту воркера на Render: trim до 2500 слів перед аналізом + Procfile з `--timeout 120`.
+
 **Extension v1.0.0 (Лютий 2026)** — браузерне розширення для Chrome/Opera/Brave/Edge/Vivaldi.
 
 ---
@@ -246,4 +253,4 @@ MIT з етичними вимогами.
 
 ---
 
-*v19.0 · Експериментальна розробка · Свідок дивиться.*
+*v19.1 · Експериментальна розробка · Свідок дивиться.*
