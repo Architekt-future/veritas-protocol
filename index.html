@@ -1525,6 +1525,7 @@ function renderInteractionCombos(data) {
         'lac_finance':       '💰',
         'lac_labor':         '⚙️',
         'narrative_pivot':   '🔄',
+        'alarmism':          '🚨',
     };
 
     const rows = combos.map(c => {
@@ -1554,6 +1555,7 @@ const TIER_MODULE_LABELS_UK = {
     'performative':      'Performative',
     'narrative_pivot':   'Наративний Pivot',
     'claim_gap':         'Заяви без доказів',
+    'alarmism':          'Алармізм',
     'entropy':           'Ентропія',
 };
 const TIER_MODULE_LABELS_EN = {
@@ -1566,6 +1568,7 @@ const TIER_MODULE_LABELS_EN = {
     'performative':      'Performative',
     'narrative_pivot':   'Narrative Pivot',
     'claim_gap':         'Claim Gap',
+    'alarmism':          'Alarmism',
     'entropy':           'Entropy',
 };
 
@@ -1828,6 +1831,14 @@ function renderResults(data) {
                 : (isUk ? 'СЛАБКА АТРИБУЦІЯ' : 'WEAK ATTRIBUTION');
             badges.push(badge('🪣', lVerdict, lVerdict, 'tier-framing'));
         }
+        // Alarmism
+        if (data.alarmism_flagged) {
+            const alPct = Math.round((data.alarmism_score || 0) * 100);
+            const alVerdict = data.alarmism_verdict === 'COMMERCIAL_ALARMISM'
+                ? (isUk ? `КОМЕРЦІЙНИЙ АЛАРМІЗМ ${alPct}%` : `COMMERCIAL ALARMISM ${alPct}%`)
+                : (isUk ? `АЛАРМІСТСЬКИЙ ФРЕЙМІНГ ${alPct}%` : `ALARMIST FRAMING ${alPct}%`);
+            badges.push(badge('🚨', alVerdict, alVerdict, 'tier-framing'));
+        }
 
         if (badges.length) {
             wrap.innerHTML = badges.join('');
@@ -1869,7 +1880,7 @@ function renderResults(data) {
 
     // LAC Labor
     const lacLabPanel = document.getElementById('lacLaborPanel');
-    if (diag.is_labor_content && diag.lac_labor_score !== undefined) {
+    if (diag.is_labor_content && diag.lac_labor_score !== undefined && !['N/A',''].includes(diag.lac_labor_verdict)) {
         document.getElementById('lacLaborScore').textContent   = diag.lac_labor_score.toFixed(2);
         document.getElementById('lacLaborVerdict').textContent = translateLacVerdict(diag.lac_labor_verdict);
         const lmEl = document.getElementById('lacLaborMissing');
