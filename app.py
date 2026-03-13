@@ -933,8 +933,17 @@ def analyze():
                 'status': 'error'
             }), 400
         
+        # Обрізаємо до 2500 слів перед аналізом — запобігає таймауту воркера
+        # Маніпулятивні патерни завжди в першій третині тексту
+        _analyze_words = text.split()
+        if len(_analyze_words) > 2500:
+            print(f'✂️  Text trimmed for analysis: {len(_analyze_words)} → 2500 words')
+            text_for_analysis = ' '.join(_analyze_words[:2500])
+        else:
+            text_for_analysis = text
+
         # Analyze text
-        result = engine.analyze(text)
+        result = engine.analyze(text_for_analysis)
         ctx_dbg = result.get('context', {})
         print(f'🌐 CONTEXT: available={ctx_dbg.get("available")} verdict={ctx_dbg.get("verdict")} score={ctx_dbg.get("score")}')
         ctx_summary = ctx_dbg.get('summary', {})
