@@ -475,7 +475,7 @@ class ManipulationDetector:
                 ],
             },
 
-                        # ── RATIONAL INEVITABILITY ───────────────────────────────────
+            # ── RATIONAL INEVITABILITY ───────────────────────────────────
             # "Альтернативи немає", "це не питання вибору" — спокійне, логічне закриття дискусії
             {
                 'name': 'RATIONAL_INEVITABILITY',
