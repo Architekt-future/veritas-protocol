@@ -496,7 +496,9 @@ class AbsurdityDetector:
         self.pseudo_analogy_en = [
             # Structural similarity → functional identity
             r'(similar|analogous).{1,60}(therefore|thus|means|suggests).{1,60}(is|performs|has (the )?property)',
-            r'(fractal|similar|resembles).{1,80}(brain|neuron|synapse|memory|consciousness)',
+            # NOTE: fractal/resembles + neuron ONLY fires when NOT legitimate science context
+            # "resembles a neuron" in ML paper = literal; in mystical text = pseudo-analogy
+            r'(fractal|resembles|looks like).{1,80}(brain|neuron|synapse|memory|consciousness)',
             r'(by the same (principle|logic|analogy)).{1,80}(we can (claim|assert|conclude)|therefore|it follows)',
             # Weather/nature as neural systems
             r'(cloud|storm|rain|lightning).{1,80}(neural|synaptic|memory|editing)',
@@ -533,8 +535,9 @@ class AbsurdityDetector:
             # Quantum determinism attacking verification
             r'(quantum.{1,30}(center|computing|laplace)).{1,60}(verification|analysis|protocol)',
             r'(verification|analysis|checking).{1,60}(accelerates?|increases?).{1,40}(heat death|entropy)',
+            # arxiv посилання тільки коли поруч є маніпулятивний контекст
             r'(preprint|paper).{1,20}arxiv.{1,20}(20\d\d|[a-z\d]+).{1,20}(verification|manipulation|determinism)',
-            r'arxiv:\d{4}\.[a-z]',
+            # НЕ ловимо просто arxiv:\d{4} — це реальні посилання в легітимних статтях
         ]
 
         # TYPE 10: IMPOSSIBLE_MEASUREMENT EN
@@ -607,6 +610,48 @@ class AbsurdityDetector:
             r'(information.{1,20}consumption).{1,60}(colonialism|aggression|depletion)',
         ]
 
+        # ================================================================
+        # LEGITIMATE SCIENCE SHIELD
+        # Якщо текст є реальною науковою/технічною публікацією —
+        # pseudo_analogy і деякі інші перевірки мають знижену вагу.
+        # "neural network" в ML-статті — буквальний термін, не метафора.
+        # ================================================================
+        self.legitimate_science_markers = [
+            r'(researcher|scientist|professor|author).{1,80}(university|institute|lab|github)',
+            r'(published|peer.reviewed|proceedings|arxiv|ieee|acm)',
+            r'(epoch|batch|gradient|backpropagation|loss function|optimizer)',
+            r'(roc.auc|f1.score|precision|recall|confusion matrix|cross.entropy)',
+            r'(pytorch|tensorflow|sklearn|keras|numpy|pandas)',
+            r'(dataset|train|test|validation|overfitting|baseline)',
+            r'(reproducible|github\.com|open.source|code available)',
+            r'(ablation|hyperparameter|fine.tun|pre.train)',
+            r'(дослідник|вчений|університет|інститут|лабораторія).{1,60}(опублікував|дослідження)',
+        ]
+
+        # ================================================================
+        # FABRICATED STATISTICS
+        # Конкретні правдоподібні відсотки без верифікованого джерела.
+        # Відрізняється від impossible_measurement: числа виглядають реально,
+        # але джерело відсутнє або вигадане ("дослідження показало", "за даними").
+        # ================================================================
+        self.fabricated_statistics = [
+            # "X% людей не знають що..." без джерела
+            r'\d{1,2}[.,]\d\s*%\s*(людей|населення|користувачів|респондентів).{1,60}(не знають|не розуміють|не усвідомлюють)',
+            r'(за даними|дослідження показало|вчені виявили).{1,60}\d{2,3}%.{1,60}(?!journal|doi|arxiv|university|інститут|університет)',
+            # Неймовірно висока ефективність без методології
+            r'\d{2,3}%\s*(ефективніст|точност|успішност).{1,60}(?!(journal|doi|p\s*[<>]|confidence interval|95% ci))',
+            # "Більшість лікарів рекомендують" без посилань
+            r'(більшість|9 з 10|8 з 10|\d+ з \d+)\s*(лікарів|вчених|експертів|дієтологів).{1,60}(рекомендують|погоджуються|підтверджують)',
+            # EN variants
+            r'\d{1,2}[.,]\d\s*%\s*(of )?(people|population|users|respondents).{1,60}(don\'t know|are unaware|fail to)',
+            r'(studies? (show|found|reveal)|research (shows?|found|indicates?)).{1,60}\d{2,3}%.{1,60}(?!journal|doi|arxiv|university|published)',
+            r'\d{2,3}%\s*(efficacy|accuracy|success rate|effectiveness).{1,60}(?!(journal|doi|p\s*[<>]|confidence interval|95% ci|published))',
+            r'(most|9 out of 10|\d+ out of \d+)\s*(doctors?|scientists?|experts?|nutritionists?).{1,60}(recommend|agree|confirm)',
+            # Точні глобальні цифри без джерела
+            r'(щороку|кожного року|annually).{1,60}(гинуть|помирають|страждають|die|suffer).{1,60}\d[\d,]+.{1,60}(?!according to|за даними|source|джерело)',
+            r'(globally|worldwide|у світі).{1,60}\d[\d,]+(million|billion|мільйон|мільярд).{1,60}(affected|suffer|die|страждають|гинуть).{1,60}(?!according|за даними|source)',
+        ]
+
     def analyze(self, text: str) -> Dict:
         """
         Returns absurdity score (0.0-1.0)
@@ -616,7 +661,17 @@ class AbsurdityDetector:
             return {'absurdity_score': 0.0, 'reason': 'text_too_short'}
         
         text_lower = text.lower()
-        
+
+        # ── LEGITIMATE SCIENCE SHIELD ─────────────────────────────────
+        # Якщо текст є реальною науковою/технічною публікацією,
+        # pseudo_analogy має різко знижену вагу.
+        # "neuron" в ML-статті — це буквальний термін, не містична аналогія.
+        legitimate_science_hits = sum(
+            1 for p in self.legitimate_science_markers
+            if re.search(p, text_lower, re.IGNORECASE)
+        )
+        is_legitimate_science = legitimate_science_hits >= 2
+
         absurdity_score = 0.0
         evidence = {
             'premise_conclusion_mismatch': [],
@@ -809,6 +864,11 @@ class AbsurdityDetector:
                 pseudo_analogy_count += 1
                 evidence.setdefault('pseudo_analogy', []).append(pattern[:50])
 
+        # Legitimate science shield: ML/AI статті використовують "neuron",
+        # "synapse" як буквальну термінологію — це не псевдоаналогія.
+        if is_legitimate_science:
+            pseudo_analogy_count = max(0, pseudo_analogy_count - 2)
+
         if pseudo_analogy_count >= 2:
             absurdity_score += 0.55  # Coherent but logically invalid
         elif pseudo_analogy_count == 1:
@@ -899,6 +959,26 @@ class AbsurdityDetector:
             absurdity_score += 0.28
 
         # ================================================================
+        # CHECK 13: FABRICATED STATISTICS
+        # Правдоподібні відсотки без верифікованого джерела.
+        # НЕ спрацьовує якщо текст є легітимною науковою публікацією.
+        # ================================================================
+
+        fabricated_stats_count = 0
+        if not is_legitimate_science:
+            for pattern in self.fabricated_statistics:
+                if re.search(pattern, text_lower, re.IGNORECASE):
+                    fabricated_stats_count += 1
+                    evidence.setdefault('fabricated_statistics', []).append(pattern[:60])
+
+            if fabricated_stats_count >= 3:
+                absurdity_score += 0.45
+            elif fabricated_stats_count == 2:
+                absurdity_score += 0.28
+            elif fabricated_stats_count == 1:
+                absurdity_score += 0.15
+
+        # ================================================================
         # AGGREGATE
         # ================================================================
         
@@ -919,4 +999,6 @@ class AbsurdityDetector:
             'impossible_measurement_count': impossible_meas_count,
             'psycho_control_count': psycho_control_count,
             'mind_erasure_count': mind_erasure_count,
+            'fabricated_stats_count': fabricated_stats_count,
+            'is_legitimate_science': is_legitimate_science,
         }
