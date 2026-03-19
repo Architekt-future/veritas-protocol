@@ -501,9 +501,10 @@ class AbsurdityDetector:
             r'(fractal|resembles|looks like).{1,80}(brain|neuron|synapse|memory|consciousness)',
             r'(by the same (principle|logic|analogy)).{1,80}(we can (claim|assert|conclude)|therefore|it follows)',
             # Weather/nature as neural systems
-            r'(cloud|storm|rain|lightning).{1,80}(neural|synaptic|memory|editing)',
-            r'(river|forest|ocean|atmosphere).{1,80}(computational|processor|planetary memory)',
-            r'(condensation|evaporation|crystallization).{1,80}(dendrite|axon|neuron)',
+            # ВАЖЛИВО: \b щоб не ловити "trained" як "rain", "cloud" в "cloudy" тощо
+            r'\b(cloud|storm|rain|lightning)\b.{1,80}(neural|synaptic|memory|editing)',
+            r'\b(river|forest|ocean|atmosphere)\b.{1,80}(computational|processor|planetary memory)',
+            r'\b(condensation|evaporation|crystallization)\b.{1,80}(dendrite|axon|neuron)',
             # Macro-micro false equivalence
             r'(macro.level|planetary|global).{1,80}(synaptic|neural|cognitive)',
             r'(management|editing).{1,60}(planetary|global).{1,60}(memory|consciousness|experience)',
