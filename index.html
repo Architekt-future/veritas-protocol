@@ -2467,6 +2467,12 @@ async function consultARD() {
     }
 }
 
+window.consultARD = consultARD;
+document.addEventListener('DOMContentLoaded', function() {
+    var b = document.getElementById('ardBtn');
+    if (b) { b.removeAttribute('onclick'); b.addEventListener('click', consultARD); }
+});
+
 </script>
 </body>
 </html>
