@@ -410,6 +410,22 @@ class VeritasLACLabor:
             if _re.search(p, text, _re.IGNORECASE)
         )
 
+        # Tech-article signals — engineering/dev content uses "work", "task",
+        # "platform", "agreement" as everyday vocabulary, not labor terms.
+        # If text is clearly a tech article, raise the threshold aggressively.
+        tech_signals = [
+            r'\b(engineer|developer|devex|deployment|ci.?cd)\b',
+            r'\b(kubernetes|docker|microservice|repository|pull.request)\b',
+            r'\b(sprint|scrum|agile|backlog|okr|okrs)\b',
+            r'\b(cloud.first|tech.stack|codebase|refactor|latency)\b',
+            r'\b(llm|gpt|deepseek|chatgpt|neural.network|machine.learning)\b',
+            r'\b(vulnerability|container|devops|sre|platform.engineer)\b',
+        ]
+        tech_hits = sum(
+            1 for p in tech_signals
+            if _re.search(p, text, _re.IGNORECASE)
+        )
+
         # General labor terms — need many AND no dominant non-labor topic
         general_labor = [
             'work', 'worker', 'employee', 'employer', 'job',
@@ -418,6 +434,9 @@ class VeritasLACLabor:
         ]
         general_hits = sum(1 for term in general_labor if term in text)
 
+        # Tech article: threshold rises sharply — need unambiguous labor density
+        if tech_hits >= 2:
+            return general_hits >= 10
         if non_labor_hits >= 2:
             return general_hits >= 8
         return general_hits >= 5
