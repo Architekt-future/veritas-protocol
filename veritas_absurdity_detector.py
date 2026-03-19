@@ -908,23 +908,27 @@ class AbsurdityDetector:
 
         # ================================================================
         # CHECK 10: IMPOSSIBLE MEASUREMENT PRECISION
+        # НЕ спрацьовує для легітимної науки — в ML-статтях є числа типу
+        # "99.3% fidelity" поруч зі словом "intent" (як в назвах розділів),
+        # і це нормальна технічна мова, не псевдовимірювання свідомості.
         # ================================================================
 
         impossible_meas_count = 0
-        for pattern in self.impossible_measurement:
-            if re.search(pattern, text_lower, re.IGNORECASE):
-                impossible_meas_count += 1
-                evidence.setdefault('impossible_measurement', []).append(pattern[:60])
+        if not is_legitimate_science:
+            for pattern in self.impossible_measurement:
+                if re.search(pattern, text_lower, re.IGNORECASE):
+                    impossible_meas_count += 1
+                    evidence.setdefault('impossible_measurement', []).append(pattern[:60])
 
-        for pattern in self.impossible_measurement_en:
-            if re.search(pattern, text_lower, re.IGNORECASE):
-                impossible_meas_count += 1
-                evidence.setdefault('impossible_measurement', []).append(pattern[:60])
+            for pattern in self.impossible_measurement_en:
+                if re.search(pattern, text_lower, re.IGNORECASE):
+                    impossible_meas_count += 1
+                    evidence.setdefault('impossible_measurement', []).append(pattern[:60])
 
-        if impossible_meas_count >= 2:
-            absurdity_score += 0.45
-        elif impossible_meas_count == 1:
-            absurdity_score += 0.25
+            if impossible_meas_count >= 2:
+                absurdity_score += 0.45
+            elif impossible_meas_count == 1:
+                absurdity_score += 0.25
 
         # ================================================================
         # CHECK 11: FABRICATED PSYCHO-STATE CONTROL
