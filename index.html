@@ -1511,18 +1511,21 @@ function disableArdAndOracle(disabled = true) {
     if (disabled) {
         const ardSection = document.getElementById('ardSection');
         const oracleSection = document.getElementById('oracleSection');
-        if (ardSection) {
-            let note = document.getElementById('ardDisabledNote');
-            if (!note) {
-                note = document.createElement('div');
-                note.id = 'ardDisabledNote';
-                note.style.cssText = 'text-align:center; color:#666; font-size:0.7em; margin-top:8px;';
-                note.textContent = currentLang === 'uk' 
-                    ? '⚠️ Спочатку виконайте аналіз тексту' 
-                    : '⚠️ First analyze some text';
-                ardSection.appendChild(note);
-            }
-        }
+        // Ховаємо секції при очищенні
+        if (ardSection) ardSection.style.display = 'none';
+        if (oracleSection) oracleSection.style.display = 'none';
+        // Скидаємо панелі
+        const ardPanel = document.getElementById('ardPanel');
+        const ardText = document.getElementById('ardText');
+        const ardViolations = document.getElementById('ardViolations');
+        const ardFooter = document.getElementById('ardFooter');
+        if (ardPanel) ardPanel.style.display = 'none';
+        if (ardText) ardText.style.display = 'none';
+        if (ardViolations) ardViolations.style.display = 'none';
+        if (ardFooter) ardFooter.style.display = 'none';
+        // Видаляємо note якщо є
+        const oldNote = document.getElementById('ardDisabledNote');
+        if (oldNote) oldNote.remove();
     } else {
         // Видалити повідомлення якщо є
         const note = document.getElementById('ardDisabledNote');
