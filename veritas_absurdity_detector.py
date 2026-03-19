@@ -664,12 +664,13 @@ class AbsurdityDetector:
         text_lower = text.lower()
 
         # ── LEGITIMATE SCIENCE SHIELD ─────────────────────────────────
-        # Якщо текст є реальною науковою/технічною публікацією,
-        # pseudo_analogy має різко знижену вагу.
-        # "neuron" в ML-статті — це буквальний термін, не містична аналогія.
+        # Перевіряємо в першій 2/3 тексту — навігаційний footer сайту
+        # не має скасовувати shield який спрацював на основний контент.
+        # "roc-auc", "pytorch", "github" — в статті, не в "Recommended from Medium"
+        science_check_text = text_lower[:int(len(text_lower) * 0.75)]
         legitimate_science_hits = sum(
             1 for p in self.legitimate_science_markers
-            if re.search(p, text_lower, re.IGNORECASE)
+            if re.search(p, science_check_text, re.IGNORECASE)
         )
         is_legitimate_science = legitimate_science_hits >= 2
 
