@@ -543,13 +543,16 @@ class AbsurdityDetector:
 
         # TYPE 10: IMPOSSIBLE_MEASUREMENT EN
         self.impossible_measurement_en = [
-            # Precise % applied to thoughts/consciousness
-            r'(\d+[\.,]\d+\s*%).{1,80}(imagination|intent|mental|consciousness|thoughts?)',
-            r'(imagination|intent|mental|consciousness).{1,80}(\d+[\.,]\d+\s*%)',
-            r'(margin of error).{1,30}(\d+[\.,]\d+\s*%).{1,60}(intent|mental|thoughts?|Intent)',
-            # Measuring not-yet-existing events
-            r'(absorption|extraction|debit(ing)?).{1,60}(liquidity|capital).{1,60}(at the (stage|point)|before)',
-            r'(at the (stage|point) of.{1,30}formation|before.{1,20}formation).{1,60}(liquidity|intent|decision)',
+            # Вимірювання свідомості/думок у відсотках — пряма псевдонаука
+            # "consciousness level 99.3%" / "measured at 87.4% awareness"
+            r'(consciousness|awareness|soul|spirit|aura).{1,40}(level|measured at|index|score).{1,40}\d+[\.,]\d+',
+            r'\d+[\.,]\d+\s*%.{1,40}(consciousness|awareness|soul|spiritual|aura)',
+            # "vibration frequency 432 Hz heals" — містична точність
+            r'(vibration|vibrational).{1,40}(frequency|hz).{1,60}(heal|cure|treat|restore)',
+            # "margin of error 0.3% on thoughts/intentions" — псевдоточність
+            r'(margin of error).{1,30}\d+[\.,]\d+\s*%.{1,60}(thought|intention|consciousness|awareness)',
+            # Вимірювання того що не існує до події
+            r'(liquidity|capital).{1,60}(absorbed|extracted|debited).{1,60}(before|prior to|at the stage of).{1,60}(formation|creation|existence)',
         ]
 
         # TYPE 11: FABRICATED_PSYCHO_CONTROL EN
@@ -908,27 +911,23 @@ class AbsurdityDetector:
 
         # ================================================================
         # CHECK 10: IMPOSSIBLE MEASUREMENT PRECISION
-        # НЕ спрацьовує для легітимної науки — в ML-статтях є числа типу
-        # "99.3% fidelity" поруч зі словом "intent" (як в назвах розділів),
-        # і це нормальна технічна мова, не псевдовимірювання свідомості.
         # ================================================================
 
         impossible_meas_count = 0
-        if not is_legitimate_science:
-            for pattern in self.impossible_measurement:
-                if re.search(pattern, text_lower, re.IGNORECASE):
-                    impossible_meas_count += 1
-                    evidence.setdefault('impossible_measurement', []).append(pattern[:60])
+        for pattern in self.impossible_measurement:
+            if re.search(pattern, text_lower, re.IGNORECASE):
+                impossible_meas_count += 1
+                evidence.setdefault('impossible_measurement', []).append(pattern[:60])
 
-            for pattern in self.impossible_measurement_en:
-                if re.search(pattern, text_lower, re.IGNORECASE):
-                    impossible_meas_count += 1
-                    evidence.setdefault('impossible_measurement', []).append(pattern[:60])
+        for pattern in self.impossible_measurement_en:
+            if re.search(pattern, text_lower, re.IGNORECASE):
+                impossible_meas_count += 1
+                evidence.setdefault('impossible_measurement', []).append(pattern[:60])
 
-            if impossible_meas_count >= 2:
-                absurdity_score += 0.45
-            elif impossible_meas_count == 1:
-                absurdity_score += 0.25
+        if impossible_meas_count >= 2:
+            absurdity_score += 0.45
+        elif impossible_meas_count == 1:
+            absurdity_score += 0.25
 
         # ================================================================
         # CHECK 11: FABRICATED PSYCHO-STATE CONTROL
