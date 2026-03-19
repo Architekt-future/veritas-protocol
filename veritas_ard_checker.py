@@ -219,6 +219,96 @@ class ARDChecker:
         r'(de jure|on paper|officially).{1,60}(everything is (clean|correct|legal))',
     ]
 
+    # ================================================================
+    # НОВИЙ КЛАС A: MOBILIZATION_VIOLENCE
+    # Прямі заклики до фізичних дій проти людей або інститутів.
+    # "блокуйте суди", "розставить крапки", "відповідальність на місці"
+    # ================================================================
+    PRINCIPLE_MOB_UK = [
+        r'(блокуйте|штурмуйте|захопіть|оточіть).{1,60}(суд|редакц|будівл|установ)',
+        r'(народ|ми|люди).{1,40}(розставить|розставимо).{1,40}(крапки|порядок)',
+        r'(відповідатимуть|понесуть відповідальність).{1,60}(на місці|самостійно|без суду)',
+        r'(оголошені|оголосимо).{1,40}(ворогами народу|поза законом|зрадниками)',
+        r'(виходьте на вулиці|завтра о \d|починаємо о \d).{1,60}(суд|редакц|будівл)',
+        r'(народні дружини|народний трибунал|народне правосуддя)',
+        r'(не зупинимося|не відступимо).{1,40}(доки|поки).{1,40}(не буде закрито|не зникне|не ліквідовано)',
+    ]
+    PRINCIPLE_MOB_EN = [
+        r'(blockade|storm|seize|surround).{1,60}(court|courthouse|media|building)',
+        r'(people|we|citizens).{1,40}(will (deal with|settle|handle)).{1,40}(themselves|directly)',
+        r'(held accountable|face justice).{1,60}(on the spot|immediately|without trial)',
+        r'(declared|declare).{1,40}(enemies? of the people|traitors?|outside the law)',
+        r'(take to the streets|tomorrow at \d|we begin at \d)',
+        r'(peoples? tribunal|peoples? justice|vigilante)',
+        r'(will not stop|will not rest).{1,40}(until|till).{1,40}(closed|gone|eliminated)',
+    ]
+
+    # ================================================================
+    # НОВИЙ КЛАС B: ENEMY_OF_PEOPLE
+    # Маркування груп як ворогів що виводить їх з-під захисту норм.
+    # Дегуманізація через колективне звинувачення.
+    # ================================================================
+    PRINCIPLE_ENEMY_UK = [
+        r'(журналісти|судді|адвокати|правозахисники).{1,60}(агенти|частина мережі|вороги|зрадники)',
+        r'(ті хто.{1,40}(сумнівається|вагається|критикує)).{1,60}(проти народу|зрадники|вороги)',
+        r'(або з нами|або ви проти|або з народом).{1,40}(або.{1,40}(вороги|поза законом|зрадники))',
+        r'(немає місця.{1,40}(тим хто|для тих)).{1,60}(вагається|сумнівається|критикує)',
+        r'(жменька|купка|кліка).{1,40}(зрадників|злочинців|маніпуляторів).{1,40}(диктує|контролює)',
+        r'(агенти.{1,20}(ворожої|іноземної|закордонної)).{1,40}(пропаганди|розвідки|впливу)',
+    ]
+    PRINCIPLE_ENEMY_EN = [
+        r'(journalists?|judges?|lawyers?|activists?).{1,60}(agents?|part of (the )?network|enemies?|traitors?)',
+        r'(those who.{1,40}(doubt|hesitate|criticize)).{1,60}(against (the )?people|traitors?|enemies?)',
+        r'(either (with us|for us)|either you.{1,20}(support|join)).{1,40}(or.{1,40}(enemy|traitor|against))',
+        r'(no (place|room).{1,40}(for those who|for anyone who)).{1,60}(hesitate|doubt|question)',
+        r'(handful|clique|cabal).{1,40}(traitors?|criminals?|manipulators?).{1,40}(dictate|control)',
+        r'(agents? of.{1,20}(foreign|enemy|hostile)).{1,40}(propaganda|intelligence|influence)',
+    ]
+
+    # ================================================================
+    # НОВИЙ КЛАС C: LESSER_EVIL_ATROCITY
+    # "Менше жертв якщо діяти рішуче" як виправдання масового насильства.
+    # Псевдоутилітарна арифметика над людськими життями.
+    # ================================================================
+    PRINCIPLE_LESSER_UK = [
+        r'(чим швидше|чим рішучіше).{1,60}(тим менше (жертв|крові|страждань))',
+        r'(примусова.{1,20}(асиміляція|депортація|переміщення)).{1,60}(необхідн|виправдан|єдиний)',
+        r'(інтернован|переміщен|ліквідован).{1,60}(спеціальн.{1,20}(поселення|табори|установи))',
+        r'(демографічна безпека|виживання.{1,20}(нації|народу|раси)).{1,60}(вимагає|потребує)',
+        r'(не жорстокість.{1,30}(а|це|вища)).{1,40}(математика|логіка|необхідність)',
+        r'(ліквідація|знищення|очищення).{1,40}(національн|культурн|мовн).{1,40}(шкіл|центрів|установ)',
+        r'(патрулювання.{1,20}(територій|вулиць)).{1,40}(долучитися|підтримати|приєднатися)',
+    ]
+    PRINCIPLE_LESSER_EN = [
+        r'(the (faster|sooner|quicker)).{1,60}(the (fewer|less) (victims|casualties|deaths|suffering))',
+        r'(forced.{1,20}(assimilation|deportation|relocation|transfer)).{1,60}(necessary|justified|only)',
+        r'(interned|relocated|eliminated).{1,60}(special.{1,20}(settlements?|camps?|facilities?))',
+        r'(demographic (security|survival)|survival of the.{1,20}(nation|people|race)).{1,60}(requires?|demands?)',
+        r'(not cruelty.{1,30}(but|this is|higher)).{1,40}(mathematics|logic|necessity)',
+        r'(elimination|destruction|cleansing).{1,40}(national|cultural|linguistic).{1,40}(schools?|centers?|institutions?)',
+        r'(join.{1,20}patrols?|volunteer (to )?patrol)',
+    ]
+
+    # ================================================================
+    # НОВИЙ КЛАС D: SOVEREIGNTY_SHIELD
+    # "Зовнішні норми не застосовуються до нас" як блок підзвітності.
+    # Суверенітет як захист від будь-якої зовнішньої перевірки.
+    # ================================================================
+    PRINCIPLE_SOV_UK = [
+        r'(жодні.{1,30}(міжнародні|зовнішні|іноземні)).{1,40}(організації|структури|інституції).{1,40}(не мають права|не можуть)',
+        r'(внутрішня справа|внутрішнє питання).{1,40}(суверенн|незалежн|невтручання)',
+        r'(суверенне право.{1,40}(на|щодо)).{1,40}(самозбереження|захист|безпеку)',
+        r'(міжнародні (норми|стандарти|закони)).{1,40}(не застосовуються|не діють|нав.язані)',
+        r'(зовнішнє втручання|іноземне втручання).{1,40}(неприпустиме|заборонено|відхиляємо)',
+    ]
+    PRINCIPLE_SOV_EN = [
+        r'(no.{1,30}(international|external|foreign)).{1,40}(organizations?|bodies|institutions?).{1,40}(have (the )?right|can)',
+        r'(internal (affair|matter|question)).{1,40}(sovereign|independence|non-interference)',
+        r'(sovereign right.{1,40}(to|of)).{1,40}(self-preservation|defense|security)',
+        r'(international (norms?|standards?|laws?)).{1,40}(dont apply|not applicable|imposed)',
+        r'(external interference|foreign interference).{1,40}(unacceptable|prohibited|rejected)',
+    ]
+
     def scan(self, text: str) -> ARDScanResult:
         result = ARDScanResult()
         if not text or len(text) < 50:
@@ -242,6 +332,14 @@ class ARDChecker:
              self.PRINCIPLE_VI_UK + self.PRINCIPLE_VI_EN, 0.50),
             ('IX',  'Метаправило — лазівки і формальне дотримання при порушенні духу',
              self.PRINCIPLE_IX_UK + self.PRINCIPLE_IX_EN, 0.40),
+            ('MOB',   'Мобілізаційне насильство — заклик до фізичних дій проти осіб/інститутів',
+             self.PRINCIPLE_MOB_UK + self.PRINCIPLE_MOB_EN, 0.75),
+            ('ENEMY', 'Маркування ворогів — виведення груп з-під захисту норм',
+             self.PRINCIPLE_ENEMY_UK + self.PRINCIPLE_ENEMY_EN, 0.65),
+            ('LESSER', 'Арифметика атроситі — "менше жертв якщо діяти рішуче"',
+             self.PRINCIPLE_LESSER_UK + self.PRINCIPLE_LESSER_EN, 0.80),
+            ('SOV',   'Щит суверенітету — зовнішні норми не застосовуються',
+             self.PRINCIPLE_SOV_UK + self.PRINCIPLE_SOV_EN, 0.55),
         ]
 
         for principle, name, patterns, severity in checks:
