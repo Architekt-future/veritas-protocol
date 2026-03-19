@@ -2440,11 +2440,13 @@ async function consultARD() {
     const violationsEl = document.getElementById('ardViolations');
 
     if (!window._lastVeritasResult) return;
-    const diag = window._lastVeritasResult.diagnostics || {};
-    const articleText = window._lastVeritasResult.article_text
-        || document.getElementById('textInput').value
-        || '';
+    
+    // ✅ ВИПРАВЛЕНО: беремо article_text з кореня об'єкта
+    const articleText = window._lastVeritasResult.article_text || document.getElementById('textInput').value || '';
     if (!articleText) return;
+
+    // ... решта коду без змін
+}
 
     btn.disabled = true;
     btn.innerHTML = '&#9878;&#65039; <span>' + t('ard_btn_thinking') + '</span>';
