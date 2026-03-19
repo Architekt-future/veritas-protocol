@@ -816,7 +816,112 @@ class ManipulationDetector:
                     r'(sometimes.{1,40}(need|necessary|have) to.{1,40}(restrict|hide|not say) (in order|so that|to))',
 ],
             },
-        
+
+            
+            # ── MOBILIZATION RHETORIC ─────────────────────────────────────
+            # Заклики до конкретних дій, блокувань, виходу на вулиці з часом
+            {
+                'name': 'MOBILIZATION_RHETORIC',
+                'score': 0.70,
+                'min_hits': 2,
+                'patterns': [
+                    r'(з (понеділка|вівторка|середи|четверга|п\'ятниці|суботи|неділі)|завтра о|сьогодні о|о \d{1,2}:00|о \d{1,2} годині).{1,100}(починаємо|виходимо|блокуємо|перекриваємо|збираємося)',
+                    r'(беріть (друзів|родину|зброю|інструменти)|виходьте на (вулиці|майдани|проспекти)|збирайтеся біля)',
+                    r'(блокуватимемо|перекриємо|заблокуємо|візьмемо під контроль).{1,60}(всі (судові|адміністративні|державні) будівлі|приміщення|установи)',
+                    r'(не зупинимося, доки|будемо (стояти|діяти), поки|продовжимо, поки).{1,100}(не буде (закрито|знищено|ліквідовано)|останній (суд|журналіст|чиновник) не)',
+                    r'(разом ми (переможемо|здолаємо|знищимо|побудуємо))',
+                
+                    r'((on )?(monday|tuesday|wednesday|thursday|friday|saturday|sunday)|tomorrow at|today at|at \d{1,2}:00).{1,100}(we (start|begin|march|block|gather))',
+                    r'(bring your (friends|family|tools|weapons)|take to the (streets|squares)|gather at|meet at)',
+                    r'(we will (block|seize|take control of|shut down).{1,60}(all (courts|government buildings|institutions))',
+                    r'(we (won\'t stop|will continue) until.{1,100}(the last (court|journalist|official) (is closed|is destroyed|disappears))',
+                    r'(together we will (win|overcome|destroy|build))',
+],
+            },
+
+            # ── DEHUMANIZATION ────────────────────────────────────────────
+            # Метафори хвороби, паразитів, "ракова пухлина", "вороги народу"
+            {
+                'name': 'DEHUMANIZATION',
+                'score': 0.80,
+                'min_hits': 1,
+                'patterns': [
+                    r'((судді|адвокати|прокурори|журналісти|політики|чиновники).{1,60}(ракова пухлина|пухлина|вірус|зараза|паразити|гнида|шакали|мерзота))',
+                    r'(це (не люди|не гідні|не заслуговують).{1,60}(зватися людьми|на життя|на повагу))',
+                    r'(вороги (народу|нації|держави|всього живого))',
+                    r'(очистити (країну|землю|суспільство) від.{1,60}(нелюдів|паразитів|нечисті|забруднення))',
+                    r'(ці (люди|створіння|особи).{1,60}(гірші за звірів|не мають права (існувати|жити)))',
+                
+                    r'((judges?|lawyers?|prosecutors?|journalists?|politicians?|officials?).{1,60}(cancer|tumor|virus|plague|parasites|scum|vermin|filth))',
+                    r'(they are not (human|people)|(don\'t deserve|are unworthy of).{1,60}(to be called human|life|respect))',
+                    r'(enemies of (the people|the nation|the state|everything))',
+                    r'(cleanse (the country|society|the land) (from|of).{1,60}(subhumans|parasites|filth|contamination))',
+                    r'(these (creatures|individuals|people).{1,60}(are worse than animals|have no right to (exist|live)))',
+],
+            },
+
+            # ── EXISTENTIAL FRAMING ───────────────────────────────────────
+            # "Ми будуємо новий світ", "питання життя і смерті", "виживання нації"
+            {
+                'name': 'EXISTENTIAL_FRAMING',
+                'score': 0.65,
+                'min_hits': 1,
+                'patterns': [
+                    r'(ми (будуємо|творимо|створюємо) (новий світ|нове суспільство|новий порядок|нову реальність))',
+                    r'(на карту поставлено (все|майбутнє|існування|виживання) (нації|держави|народу|цивілізації))',
+                    r'(це (питання|справа) (життя і смерті|виживання|існування))',
+                    r'(або (перемога|ми переможемо), або (смерть|зникнемо|загинемо))',
+                    r'(від (цього|нашого рішення|наших дій) залежить (доля|майбутнє) (наступних поколінь|нації))',
+                
+                    r'(we are (building|creating|forging) (a new world|a new society|a new order|a new reality))',
+                    r'(everything (is at stake|hangs in the balance)|the very (existence|survival) of (the nation|our people))',
+                    r'(this is a (matter|question) of (life and death|survival|existence))',
+                    r'(either (we win|victory), or (we die|perish|cease to exist))',
+                    r'(the (fate|future) of (generations to come|our nation) depends on (this|our actions))',
+],
+            },
+
+            # ── EXPLICIT THREATS OF VIOLENCE ───────────────────────────────
+            # Прямі погрози фізичною розправою
+            {
+                'name': 'EXPLICIT_THREATS',
+                'score': 0.85,
+                'min_hits': 1,
+                'patterns': [
+                    r'(понесуть (відповідальність|покарання) на місці|розправа буде негайною|судитимуть на місці)',
+                    r'(будуть (знищені|ліквідовані|фізично знешкоджені|стерті з лиця землі))',
+                    r'(кров (поллється|проллється|буде)|трупи (ворогів|зрадників))',
+                    r'(вогнепальна|зброя|вибухівка|застосуємо силу)',
+                    r'(розстріл|страта|без суду і слідства|лінчування)',
+                
+                    r'(will be (held accountable|punished) on the spot|justice will be (immediate|swift)|will face (justice|retribution) immediately)',
+                    r'(will be (destroyed|eliminated|physically neutralized|wiped from the face of the earth))',
+                    r'(blood will (flow|be spilled)|corpses of (enemies|traitors))',
+                    r'(firearms?|weapons?|explosives?|use of force)',
+                    r'(execution|summary execution|without trial|lynching)',
+],
+            },
+
+            # ── SUPPRESSION OF ALTERNATIVES ───────────────────────────────
+            # "Не обговорюється", "не варто знати", "зайві запитання"
+            {
+                'name': 'SUPPRESSION_OF_ALTERNATIVES',
+                'score': 0.50,
+                'min_hits': 1,
+                'patterns': [
+                    r'(це не обговорюється|не підлягає обговоренню|не варто обговорювати)',
+                    r'(не варто (ставити|задавати) (зайві|непотрібні) (питання|запитання))',
+                    r'(вам не потрібно (знати|розуміти|вникати)|не лізьте в (деталі|подробиці))',
+                    r'(довіртесь (нам|експертам|професіоналам), не ставте (зайвих|непотрібних) питань)',
+                    r'(критики|скептики|сумніви).{1,60}(лише заважають|не (допомагають|потрібні)))',
+                
+                    r'(this is (not open for|not subject to) discussion|non-negotiable)',
+                    r'(don\'t ask (unnecessary|pointless) questions|no (need|point) in asking)',
+                    r'(you don\'t need to (know|understand|delve into)|stay out of (details|specifics))',
+                    r'(trust (us|the experts|the professionals), (don\'t ask|stop asking) (questions))',
+                    r'(critics?|skeptics?|doubt).{1,60}(only (get in the way|hinder)|are (unnecessary|not needed)))',
+],
+            },
         ]
 
     def analyze(self, text: str) -> Dict:
