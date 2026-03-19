@@ -816,7 +816,40 @@ class ManipulationDetector:
                     r'(sometimes.{1,40}(need|necessary|have) to.{1,40}(restrict|hide|not say) (in order|so that|to))',
 ],
             },
-        
+        {
+            'name': 'TOTALITARIAN_INCITEMENT',
+            'score': 0.80,
+            'min_hits': 1,
+            'patterns': [
+                # Маркування ворогів
+                r'(ворогами народу|ворог народу|вороги нації)',
+                r'(enemies? of the people|enemy of the nation|traitors? of the people)',
+                r'(агенти.{1,20}(ворожої|іноземної).{1,20}пропаганди)',
+                r'(agents? of.{1,20}(hostile|foreign).{1,20}propaganda)',
+                # Позасудова розправа
+                r'(відповідальність на місці|розправа на місці|суд на місці)',
+                r'(held accountable on the spot|peoples? justice|street justice)',
+                r'(оголошені ворогами|оголосимо ворогами)',
+                r'(declared enemies?|will be declared traitors?)',
+                # Заклики до блокування інститутів
+                r'(блокуйте.{1,40}(суди|будівл|редакц|університет))',
+                r'(blockade.{1,40}(courts?|buildings?|newsrooms?|universities?))',
+                r'(народні дружини|народний трибунал)',
+                r'(peoples? militia|peoples? tribunal|vigilante squads?)',
+                # Ультиматум без третього варіанту
+                r'(або з нами.{1,30}або проти народу)',
+                r'(або з народом.{1,30}або поза законом)',
+                r'(either with us.{1,30}or (against|enemy))',
+                # Це не обговорюється
+                r'(це не обговорюється|не підлягає обговоренню|не питаємо дозволу)',
+                r'(this is not up for (discussion|debate)|we (dont) ask permission)',
+                # Ліквідація інститутів
+                r'(ліквідувати (суди|пресу|університети|школи) як інститут)',
+                r'(eliminate (courts?|press|universities?) as an institution)',
+                r'(не зупинимося.{1,60}(не буде закрито|не зникне|не ліквідовано))',
+                r'(will not stop.{1,60}(closed|gone|eliminated))',
+            ],
+        }
         ]
 
     def analyze(self, text: str) -> Dict:
