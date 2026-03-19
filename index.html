@@ -2441,7 +2441,7 @@ async function consultARD() {
 
     if (!window._lastVeritasResult) return;
     const diag = window._lastVeritasResult.diagnostics || {};
-    const articleText = diag.article_text
+    const articleText = window._lastVeritasResult.article_text
         || document.getElementById('textInput').value
         || '';
     if (!articleText) return;
