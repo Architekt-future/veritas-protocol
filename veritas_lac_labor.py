@@ -280,7 +280,22 @@ class VeritasLACLabor:
         - red_flags: exploitation patterns detected
         """
         text_lower = text.lower()
-        
+
+        # ── NAV GARBAGE GUARD ────────────────────────────────────────────
+        # Якщо перші 150 символів містять типову навігацію сайту —
+        # це scraper-сміття, не трудовий контент. Захист від false positive
+        # на HBR, Medium, TDS та інших paywall-сайтах.
+        nav_markers = ['skip to content', 'subscribe', 'sign in',
+                       'cookie', 'consent', 'reading lists', 'reading list']
+        text_start = text_lower[:200]
+        is_nav_garbage = any(m in text_start for m in nav_markers)
+        if is_nav_garbage:
+            print('🔧 LAC_LABOR: nav garbage detected — early return N/A')
+            return LACLaborResult(
+                score=0.0, verdict='N/A', missing=[], evidence={},
+                is_labor_content=False, red_flags=[]
+            )
+
         # Check if this is labor/employment content
         is_labor = self._is_labor_content(text_lower)
 
