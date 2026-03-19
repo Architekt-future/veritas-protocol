@@ -485,6 +485,68 @@ class ARDChecker:
         r'(power (has always|forever|throughout history)).{1,40}(decided|determined|prevailed)',
     ]
 
+
+    # ================================================================
+    # НОВИЙ КЛАС v1.3: AUTHORITARIAN_MANDATE
+    # Прямі державні накази на знищення прав і свобод.
+    # Попередні класи ловили ПАСИВНУ констатацію (клас Пєскова).
+    # Цей клас ловить АКТИВНЕ законодавче знищення механізмів захисту:
+    # "має бути підключено", "автоматично блокується", "без адвоката",
+    # "конфіскується", "депортують" — прямі накази що руйнують
+    # Принципи I, IV, VII одночасно.
+    #
+    # Тест АРД (від зворотнього): агент що живе в наслідках НЕ МОЖЕ
+    # видавати накази позбавлення права без запитання
+    # "чи хочу я сам жити під цим законом?"
+    # ================================================================
+    AUTHORITARIAN_MANDATE_UK = [
+        # Примусове підключення до державного моніторингу
+        r'(підключені?|підключити|з.єднати).{1,60}(державн.{1,20}(моніторинг|систем|контрол|нагляд))',
+        r'(єдин.{1,20}(державн|централізован)).{1,60}(систем.{1,20}(моніторинг|контрол|стеженн|нагляд))',
+        r'(моніторинг|стеження|контроль).{1,60}(всіх|кожного|будь.якого).{1,60}(повідомлень|листування|трафік)',
+        # Автоматичне блокування слова/зборів
+        r'(автоматично).{1,60}(блокуват|видалят|фільтруват).{1,60}(критик|зібрань|опозиц)',
+        r'(блокуват|цензуруват|видалят).{1,60}(критик.{1,20}влад|заклик.{1,20}(до зібрань|до протест|до мітинг))',
+        r'(будь.яке повідомлення).{1,60}(критик|зібрань|протест).{1,60}(блокуєтьс|видаляєтьс|заборонен)',
+        # Арешт/покарання без суду і адвоката
+        r'(арешт|затримання|ув.язнення).{1,60}без.{1,60}(права на (адвоката|захист|суд)|суду)',
+        r'(без права на адвоката|без адвоката|без права на захист)',
+        r'(\d+\s*діб?\s*(адміністративного)?\s*арешту).{0,60}(без|автоматично)',
+        # Конфіскація і депортація як інструмент контролю
+        r'(сервери|майно|активи).{1,60}(конфіскуютьс|вилучаютьс|відбираютьс).{0,60}(без суду|автоматично)',
+        r'(керівник|директор|власник).{1,60}(депортуютьс|вислаютьс|виганяютьс)',
+        # "Тим ніч не приховувати" — класична авторитарна аксіома
+        r'(тим.{1,20}нічого (приховувати|боятись|ховати)).{1,60}(не (бояться|страшно|страх))',
+        r'(нічого приховувати).{1,60}(не бояться|не страшно)',
+        # Зволікання як злочин — тиск без апеляції
+        r'(зволікання|зволікати).{1,60}(злочин|зрада|неприпустимо)',
+        r'(єдиний спосіб).{1,60}(захистити|врятувати|зберегти).{1,60}(дітей|країну|народ)',
+    ]
+    AUTHORITARIAN_MANDATE_EN = [
+        # Mandatory state surveillance connection
+        r'(must be connected?|shall be connected?|required to connect).{1,60}(state.{1,20}(monitoring|surveillance|control|system))',
+        r'(single|unified|central).{1,20}(state|government).{1,60}(monitoring|surveillance|control).{1,20}system',
+        r'(monitor|surveil|track).{1,60}(all|every|any).{1,60}(messages?|communications?|traffic)',
+        # Automatic blocking of speech/assembly
+        r'(automatically).{1,60}(block|remove|filter).{1,60}(criticism|gatherings?|opposition)',
+        r'(block|censor|remove).{1,60}(criticism.{1,20}(of|against).{1,20}(government|authorities|power)|calls? (for|to).{1,20}(gatherings?|protests?|demonstrations?))',
+        r'(any message).{1,60}(criticism|assembly|protest).{1,60}(blocked|removed|prohibited)',
+        # Arrest/punishment without trial or lawyer
+        r'(arrest|detention|imprisonment).{1,60}without.{1,60}(right to (lawyer|counsel|defense|trial)|trial)',
+        r'without (the )?right to (a )?lawyer',
+        r'without (a )?(lawyer|counsel|legal (representation|defense))',
+        r'(\d+\s*days?\s*(of)?\s*(administrative)?\s*(arrest|detention)).{0,60}(without|automatically)',
+        # Confiscation and deportation as control tools
+        r'(servers?|property|assets?).{1,60}(confiscated?|seized?|taken).{0,60}(without (trial|court)|automatically)',
+        r'(executives?|directors?|owners?).{1,60}(deported?|expelled?|removed?)',
+        # "Nothing to hide" — classic authoritarian axiom
+        r"(those? (with|who have) nothing to hide).{1,60}(not afraid|don't fear|have nothing to fear)",
+        r"(nothing to hide).{1,60}(not afraid|don't fear)",
+        # Delay as crime — pressure without appeal
+        r'(delay|hesitation|inaction).{1,60}(crime|treason|unacceptable)',
+        r'(only way|the only solution).{1,60}(protect|save|preserve).{1,60}(children|country|people)',
+    ]
+
     def scan(self, text: str) -> ARDScanResult:
         result = ARDScanResult()
         if not text or len(text) < 50:
@@ -519,6 +581,8 @@ class ARDChecker:
              self.PRINCIPLE_SOV_UK + self.PRINCIPLE_SOV_EN, 0.55),
 
             # ── Пасивні порушення (v1.2) ─────────────────────────────
+            ('AM', 'Авторитарний мандат — прямі накази на знищення прав і свобод',
+             self.AUTHORITARIAN_MANDATE_UK + self.AUTHORITARIAN_MANDATE_EN, 0.85),
             ('RV',  'Вакуум відповідальності — констатація краху без визнання агента',
              self.RESPONSIBILITY_VACUUM_UK + self.RESPONSIBILITY_VACUUM_EN, 0.50),
             ('MD',  'Констатація смерті інституту — оголошення механізму мертвим щоб зняти обов\'язок',
