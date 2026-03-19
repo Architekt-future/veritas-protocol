@@ -1027,6 +1027,17 @@ def analyze():
         # Analyze text
         result = engine.analyze(text_for_analysis)
 
+        # ── ABSURDITY DEBUG LOG ──────────────────────────────────────────────
+        _diag = result.get('diagnostics', {})
+        print(f"🔬 ABSURDITY: score={_diag.get('absurdity_score')} "
+              f"is_sci={_diag.get('is_legitimate_science')} "
+              f"pseudo_history={_diag.get('pseudo_history_count')} "
+              f"pseudo_analogy={_diag.get('pseudo_analogy_count')} "
+              f"collapse={_diag.get('collapse_count')} "
+              f"techno={_diag.get('techno_mystical_count')} "
+              f"epistemology={_diag.get('epistemology_collapse_count')} "
+              f"evidence={_diag.get('absurdity_evidence', {})}")
+
         # Вставляємо alarmism в result І в diagnostics
         result['alarmism_score']   = alarmism_result.score
         result['alarmism_verdict'] = alarmism_result.verdict
