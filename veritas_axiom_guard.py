@@ -222,6 +222,29 @@ class AxiomGuard:
 
 
         # ================================================================
+        # ТОТАЛІТАРНА РИТОРИКА — пряме скасування інститутів і прав
+        # ================================================================
+        self.totalitarian_abolition_uk = [
+            r'(жодних.{1,30}(апеляцій|адвокатів|захисників|незалежних))',
+            r'(ліквідувати.{1,40}як інститут)',
+            r'(повністю.{1,30}ліквідувати.{1,40}(суди|пресу|опозицію))',
+            r'(без права на.{1,30}(захист|апеляцію|адвоката))',
+            r'(конфіскац.{1,30}без.{1,30}(рішення суду|вироку|судового))',
+            r'(ув.язнення без права на захист)',
+            r'(закрити.{1,40}(негайно|зараз).{1,40}(всі|усі).{1,40}(медіа|редакц|ЗМІ))',
+            r'(єдина.{1,20}(освіта|думка|правда|ідеологія).{1,30}без.{1,30}(альтернатив|сумнівів|об.єктив))',
+        ]
+        self.totalitarian_abolition_en = [
+            r'(no.{1,30}(appeals?|lawyers?|defenders?|independent))',
+            r'(eliminate.{1,40}as an institution)',
+            r'(completely.{1,30}eliminate.{1,40}(courts?|press|opposition))',
+            r'(without (the )?right to.{1,30}(defense|appeal|counsel))',
+            r'(confiscation.{1,30}without.{1,30}(court|verdict|judicial))',
+            r'(imprisoned without (the )?right to (defense|counsel))',
+            r'(shut down.{1,40}immediately.{1,40}all.{1,40}(media|newsrooms?))',
+        ]
+
+        # ================================================================
         # EN PATTERNS FOR PATTERNS 1-6
         # ================================================================
 
@@ -430,6 +453,8 @@ class AxiomGuard:
             ('DE_FACTO_SPLIT',          self.de_facto_split,          0.60, 1),
             ('VACUUM_DECLARATION',      self.vacuum_declaration,      0.55, 1),
             ('EXISTENTIAL_PAST_TENSE',  self.existential_past_tense,  0.55, 1),
+            ('TOTALITARIAN_ABOLITION',
+             self.totalitarian_abolition_uk + self.totalitarian_abolition_en, 0.70, 1),
         ]
 
         for name, patterns, score, min_hits in checks:
