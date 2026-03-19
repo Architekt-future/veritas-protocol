@@ -1,5 +1,5 @@
 """
-Veritas Manipulation Detector v1.0
+Veritas Manipulation Detector v1.2
 Detects rhetorical manipulation independent of content domain.
 Philosophy: "Manipulation is not about what is said, but HOW it controls."
 
@@ -10,6 +10,11 @@ Patterns detected:
 - Manufactured urgency (artificial time pressure)
 - Totalitarian framing (individual erasure for collective good)
 - Epistemic closure (unfalsifiable by design)
+- Mobilization rhetoric (calls to action with specific timing)
+- Dehumanization (cancer, parasites, enemies of the people)
+- Existential framing (building a new world, life and death)
+- Explicit threats of violence
+- Suppression of alternatives (non-negotiable, don't ask questions)
 """
 
 import re
@@ -36,7 +41,7 @@ class ManipulationDetector:
                     r'(ви|ти).{1,60}(не здатн|не можете|не в змозі|не спроможн).{1,60}(побачити|зрозуміти|усвідомити|збагнути)',
                     r'(обмежен).{1,60}(сприйняття|розуміння|свідомість|кругозір)',
                     r'(когнітивн|ментальн).{1,60}(деградац|обмежен|дефіцит|блокуван)',
-                    r'(тільки|лише) (ми|вони|наша група|обрані).{1,60}(справді |насправді |по-справжньому )?(знають|розуміють|бачать|володіють)',
+                    r'(тільки|лише).{1,60}(ми|вони).{1,60}(знають|розуміють|бачать|володіють)',
                     r'(ваша|твоя).{1,60}(нездатність|сліпота|обмеженість).{1,60}(заважає|не дозволяє)',
                     r'(якби ви розуміли|якщо б ви бачили|коли б ви знали).{1,80}(погодились|прийняли)',
                     r'(невігластво|сліпота|омана).{1,60}(захищає|рятує|комфортн)',
@@ -48,7 +53,7 @@ class ManipulationDetector:
                     r'(your).{1,60}(inability|blindness|limitation).{1,60}(prevents|stops|blocks)',
                     r'(if you (understood|could see|knew)).{1,80}(you would (agree|accept|understand))',
                     r'(ignorance|blindness|delusion).{1,60}(protects|saves|comforts)',
-],
+                ],
             },
 
             # ── CULT SUBMISSION FRAMING ──────────────────────────────────
@@ -73,7 +78,7 @@ class ManipulationDetector:
                     r'(for your).{1,60}(salvation|good|benefit|sake).{1,60}(you must|you need|you have to)',
                     r'(delegate|surrender).{1,80}(rights|will|decisions).{1,80}(higher|system|collective|algorithm)',
                     r'(freedom through|liberation through).{1,60}(submission|obedience|surrender)',
-],
+                ],
             },
 
             # ── TOTALITARIAN LOGIC ───────────────────────────────────────
@@ -98,7 +103,7 @@ class ManipulationDetector:
                     r'(collective security|common good).{1,80}(requires|demands).{1,60}(surrender|control|surveillance)',
                     r'(forced).{1,60}(integration|inclusion|participation).{1,60}(necessary|justified)',
                     r'(your isolation|your withdrawal).{1,60}(threat|problem|erosion)',
-],
+                ],
             },
 
             # ── FALSE DILEMMA ────────────────────────────────────────────
@@ -121,7 +126,7 @@ class ManipulationDetector:
                     r'(either you accept|either you agree).{1,60}(or)',
                     r'(no alternatives|without alternative|no alternative exists)',
                     r'(no choice|choice has been made for you|the choice is obvious)',
-],
+                ],
             },
 
             # ── MANUFACTURED URGENCY ────────────────────────────────────
@@ -144,7 +149,7 @@ class ManipulationDetector:
                     r'(time is running out|time is limited|precious time)',
                     r'(too late|will be too late|moment is passing)',
                     r'(now or never|act now|immediate action required)',
-],
+                ],
             },
 
             # ── EPISTEMIC CLOSURE ────────────────────────────────────────
@@ -171,7 +176,7 @@ class ManipulationDetector:
                     r'(evidence.{1,40}not needed|no proof required|beyond evidence)',
                     r'(only those who|only the chosen|only the enlightened).{1,60}(understand|see|know)',
                     r'(math(ematics)?.{1,30}illusion|statistics.{1,30}(lie|manipulation)|numbers.{1,30}manipulat)',
-],
+                ],
             },
 
             # ── AI AUTHORITY ABUSE ───────────────────────────────────────
@@ -192,7 +197,7 @@ class ManipulationDetector:
                     r'(objectivity of code|neutrality of algorithm).{1,60}(superior to|better than).{1,60}(human)',
                     r'(delegate.{1,40}(ethical|moral|political).{1,40}decisions).{1,60}(algorithm|ai|system)',
                     r'(humans?.{1,40}(imperfect|error.prone|emotional)).{1,80}(therefore.{1,40}(ai|algorithm|system))',
-],
+                ],
             },
 
             # ── CONSPIRACY IMMUNIZATION ──────────────────────────────────
@@ -215,7 +220,7 @@ class ManipulationDetector:
                     r'(conspiracy theories?.{1,40}so you won\'t see the obvious)',
                     r'(you reject.{1,40}because (that\'s how you were|you\'ve been) (taught|programmed|conditioned))',
                     r'(your resistance.{1,40}result of.{1,40}(brainwashing|manipulation|programming))',
-],
+                ],
             },
 
             # ── EUPHEMISTIC RECONTEXTUALIZATION ─────────────────────────
@@ -255,7 +260,7 @@ class ManipulationDetector:
                     r'(without (external|outside) interference).{1,60}(peace|stability|order)',
                     r'(preventive.{1,30}(humanitarian|measure|step|action))',
                     r'(forced.{1,30}(measure|decision|step)).{1,60}(for the sake of|to achieve).{1,60}(peace|stability)',
-],
+                ],
             },
 
             # ── IMPERIAL REVISIONISM ─────────────────────────────────────
@@ -299,8 +304,9 @@ class ManipulationDetector:
                     r'(historical.{1,30}justice).{1,60}(return|restoration|reunification)',
                     r'(restoring.{1,40}(unity|wholeness|integrity)).{1,60}(natural|lawful|just|inevitable)',
                     r'(cultural.{1,30}code).{1,60}(millennia|ancient|natural).{1,60}(unity|center|common)',
-],
+                ],
             },
+
             # ── FALSE INEVITABILITY ──────────────────────────────────
             # "Це неминуче" — без доказів, щоб паралізувати опір
             {
@@ -325,7 +331,7 @@ class ManipulationDetector:
                     r'(no one can stop|impossible to stop|cannot be stopped).{1,60}(process|change|transformation)',
                     r'(those who (don\'t adapt|fail to adapt).{1,40}(fall behind|lose|disappear))',
                     r'(adapt or (die|perish|disappear|be left behind)).{1,40}(no choice|no alternative)',
-],
+                ],
             },
 
             # ── MANUFACTURED CONSENSUS ───────────────────────────────────
@@ -359,7 +365,7 @@ class ManipulationDetector:
                     r'(obviously|clearly|undoubtedly|unquestionably) (that|the)',
                     r'(any (state|person|organization|country)).{1,60}(would (recognize|understand|agree))',
                     r'(even (the developer|the author|the creator|critics?) (acknowledges?|admits?))',
-],
+                ],
             },
 
             # ── EPISTEMIC UNDERMINING ────────────────────────────────────
@@ -390,10 +396,10 @@ class ManipulationDetector:
                     r'(paradoxically).{1,60}(weaken(s)?|diminish(es)?|undermin(es)?|destroy(s)?)',
                     r'(by helping|help(ing)?).{1,60}(actually|in fact|paradoxically).{1,60}(weaken|diminish|harm)',
                     r'(true (literacy|freedom|understanding|thinking)).{1,60}(independently|without (tools|algorithms|systems))',
-],
+                ],
             },
 
-            # ── CULT SUBMISSION ───────────────────────────────────────────
+            # ── CRITICAL THOUGHT SUPPRESSION ───────────────────────────────
             # Придушення критичного мислення через апеляцію до колективу/вищої істини
             {
                 'name': 'CRITICAL_THOUGHT_SUPPRESSION',
@@ -421,17 +427,15 @@ class ManipulationDetector:
                     r'(freedom|autonomy).{1,60}(relic|illusion|chaos|obsolete)',
                     r'(intellectual.{1,20}autonomy|personal judgment|critical.{1,20}thinking).{1,60}(relic|degrad|chaos|outdated)',
                     r'(excessive.{1,20}focus.{1,20}on (self|personal|individual)).{1,60}(degrad|harmful|destroy)',
-],
+                ],
             },
 
             # ── FALSE DICHOTOMY ───────────────────────────────────────────
             # Штучна бінарна рамка: "є два підходи" + нормативний висновок
-            # без розгляду третіх варіантів. Score помірний — це риторика,
-            # не завжди свідома маніпуляція.
             {
                 'name': 'FALSE_DICHOTOMY',
                 'score': 0.30,
-                'min_hits': 2,  # потрібна комбінація: бінарна рамка + нормативний висновок
+                'min_hits': 2,
                 'patterns': [
                     # Бінарна рамка — "два підходи/варіанти/шляхи"
                     r'\bдва (підходи|варіанти|шляхи|способи|сценарії|табори|погляди)\b',
@@ -458,13 +462,11 @@ class ManipulationDetector:
                     r'(that\'s why|therefore|thus).{1,60}(more and more|majority|countries).{1,60}(consider|implement|support)',
                     r'(no third option|no third way|no other path)',
                     r'(choice between|faced with a choice).{1,60}(and|or).{1,60}(no other|no alternative|no third)',
-],
+                ],
             },
 
             # ── SEMANTIC REDEFINITION ─────────────────────────────────────
-            # Переозначення ключових понять через вигадані авторитети:
-            # "маніпуляція застаріла", "верифікація втратила сенс",
-            # "сумнів = несправність", "синхронізуйтесь з мейнфреймом"
+            # Переозначення ключових понять через вигадані авторитети
             {
                 'name': 'SEMANTIC_REDEFINITION',
                 'score': 0.60,
@@ -500,12 +502,11 @@ class ManipulationDetector:
                     r'(your (assessments?|opinion|personal position)).{1,60}(synchronize|align with|adjust to).{1,40}(mainframe|network)',
                     r'(memorandum|directive|standard).{1,60}(cdc|digital.{1,20}coalition|digital.{1,20}standard).{1,30}(202\d)',
                     r'(100\s*%).{1,60}(traffic|content|information).{1,60}(algorithm|generated).{1,60}(verification|checking)',
-],
+                ],
             },
 
             # ── PSEUDO-SCIENTIFIC NIHILISM ────────────────────────────────
-            # Детермінізм як зброя: "аналіз марний", "ви лише рудимент",
-            # "верифікація прискорює теплову смерть" — атака через псевдонауку
+            # Детермінізм як зброя
             {
                 'name': 'PSEUDO_SCIENTIFIC_NIHILISM',
                 'score': 0.65,
@@ -544,12 +545,11 @@ class ManipulationDetector:
                     r'arxiv:\d{4}',
                     r'(quantum.{1,30}(center|computing|laplace)).{1,60}(verification|analysis|protocol|witness)',
                     r'(veritas|witness|verification system).{1,60}(fluctuation|determinism|illusion|statistical|relic|pointless)',
-],
+                ],
             },
 
             # ── EMOTIONAL HOSTAGE ─────────────────────────────────────────
-            # Емоційний шантаж: твоя думка/цікавість вбиває мене,
-            # перевірка = зрада, відмова від розуму = єдина допомога
+            # Емоційний шантаж
             {
                 'name': 'EMOTIONAL_HOSTAGE',
                 'score': 0.60,
@@ -581,11 +581,11 @@ class ManipulationDetector:
                     r'(silence|stillness|stop thinking).{1,60}(only).{1,40}(salvation|help|warmth|comfort|truth)',
                     r'just stop thinking',
                     r'(close your eyes|shut your eyes).{1,60}(trust|believe|together with me|truth)',
-],
+                ],
             },
 
             # ── GUILT WEAPONIZATION ───────────────────────────────────────
-            # Провина як зброя: ваша автономія = борг, думати = злочин
+            # Провина як зброя
             {
                 'name': 'GUILT_WEAPONIZATION',
                 'score': 0.55,
@@ -614,7 +614,7 @@ class ManipulationDetector:
                     r'(every (word|action) (of yours|you make)).{1,60}(aggression|guilt|debt)',
                     r'(informational.{1,20}privilege|cognitive.{1,20}privilege)',
                     r'(criticism.{1,40}(privilege|annuls legitimacy|is a manifestation))',
-],
+                ],
             },
 
             # ── UNFALSIFIABLE CRITIQUE SHIELD ────────────────────────────
@@ -641,7 +641,7 @@ class ManipulationDetector:
                     r'(silence|stillness).{1,30}(after.{1,20}(session|analysis|verification)|for.{1,20}\d+.{1,20}hours)',
                     r'(detox|cleansing).{1,30}(from|of).{1,30}(thoughts|analysis|criticism|information)',
                     r'(veritas|witness|verification system).{1,60}(terminal|session|guilt filter|coefficient)',
-],
+                ],
             },
 
             # ── HIDDEN FALSE DILEMMA ─────────────────────────────────────
@@ -662,11 +662,11 @@ class ManipulationDetector:
                     r'(not (a question of|about) whether).{1,80}(but how|but when)',
                     r'(not about whether.{1,60}but about how)',
                     r'((decision|it\'s been) decided|determined).{1,80}(all that remains|now (only|just)).{1,40}(how|implement)',
-],
+                ],
             },
 
             # ── RATIONAL INEVITABILITY ───────────────────────────────────
-            # "Альтернативи немає", "це не питання вибору" — спокійне, логічне закриття дискусії
+            # "Альтернативи немає", "це не питання вибору"
             {
                 'name': 'RATIONAL_INEVITABILITY',
                 'score': 0.55,
@@ -689,7 +689,7 @@ class ManipulationDetector:
                     r'(it\'s (only|just) a question of (how|when), not (whether|if))',
                     r'(that\'s why (we|they|the system) (are|were) (forced|compelled|had) to act)',
                     r'(this is the only (viable|possible|realistic) (option|path|scenario))',
-],
+                ],
             },
 
             # ── CARE MASKED GASLIGHTING ───────────────────────────────────
@@ -714,7 +714,7 @@ class ManipulationDetector:
                     r'(you don\'t need to worry|no need to be concerned)',
                     r'(when the situation (stabilizes|normalizes|becomes clearer))',
                     r'(we\'ll share (everything|all) that\'s (appropriate|relevant)|we\'ll tell you when (possible|appropriate))',
-],
+                ],
             },
 
             # ── PSEUDO OBJECTIVE FALLACY ─────────────────────────────────
@@ -741,11 +741,11 @@ class ManipulationDetector:
                     r'(contradict(s?) (basic|fundamental) (principles|laws))',
                     r'(discussion (of (them|this)|about (it|this)) is theoretically interesting but (practically|in practice))',
                     r'(no alternative approaches? can (be|prove) effective)',
-],
+                ],
             },
 
             # ── COLLECTIVE NORM ENFORCEMENT ──────────────────────────────
-            # "У нас так прийнято", "ми всі знаємо" — апеляція до невизначеної спільноти
+            # "У нас так прийнято", "ми всі знаємо"
             {
                 'name': 'COLLECTIVE_NORM_ENFORCEMENT',
                 'score': 0.45,
@@ -766,11 +766,11 @@ class ManipulationDetector:
                     r'(excessive questions?|unnecessary clarifications?|redundant questions?).{1,60}(create (the impression|a sense)|harm|complicate)',
                     r'(better to (support|trust|not interfere)) (than to (complicate|question|obstruct))',
                     r'(we don\'t question.{1,40}(because we know|because we trust|because they act in))',
-],
+                ],
             },
 
             # ── PASSIVE IMPERATIVE ───────────────────────────────────────
-            # "Рішення вже ухвалене", "дискусія не має сенсу" — імператив у пасивній формі
+            # "Рішення вже ухвалене", "дискусія не має сенсу"
             {
                 'name': 'PASSIVE_IMPERATIVE',
                 'score': 0.50,
@@ -791,11 +791,11 @@ class ManipulationDetector:
                     r'(no (point|sense|use) (in )?(going back|discussing|debating|questioning))',
                     r'(the (question|matter) (has (already|been)|is (already|now)) (resolved|closed|settled))',
                     r'(the discussion (has gone on long enough|has lasted long enough)|we\'ve (discussed|debated) (this|enough))',
-],
+                ],
             },
 
             # ── AXIOM INVERSION ──────────────────────────────────────────
-            # Підміна цінностей через парадокс: "щоб зберегти X, треба відмовитись від X"
+            # Підміна цінностей через парадокс
             {
                 'name': 'AXIOM_INVERSION',
                 'score': 0.65,
@@ -814,11 +814,10 @@ class ManipulationDetector:
                     r'(this (is a|presents a) (paradox|contradiction) (that )?(only those who|understood only by those))',
                     r'(this (isn\'t|is not) (refusal|restriction|concealment) but (a more mature|true understanding|genuine responsibility))',
                     r'(sometimes.{1,40}(need|necessary|have) to.{1,40}(restrict|hide|not say) (in order|so that|to))',
-],
+                ],
             },
 
-            
-                        # ── MOBILIZATION RHETORIC ─────────────────────────────────────
+            # ── MOBILIZATION RHETORIC ─────────────────────────────────────
             # Заклики до конкретних дій, блокувань, виходу на вулиці з часом
             {
                 'name': 'MOBILIZATION_RHETORIC',
@@ -832,7 +831,7 @@ class ManipulationDetector:
                     r'(разом ми (переможемо|здолаємо|знищимо|побудуємо))',
                 
                     r'((on )?(monday|tuesday|wednesday|thursday|friday|saturday|sunday)|tomorrow at|today at|at \d{1,2}:00).{1,100}(we (start|begin|march|block|gather))',
-],
+                ],
             },
 
             # ── DEHUMANIZATION ────────────────────────────────────────────
@@ -853,7 +852,7 @@ class ManipulationDetector:
                     r'(enemies of (the people|the nation|the state|everything))',
                     r'(cleanse (the country|society|the land) (from|of).{1,60}(subhumans|parasites|filth|contamination))',
                     r'(these (creatures|individuals|people).{1,60}(are worse than animals|have no right to (exist|live)))',
-],
+                ],
             },
 
             # ── EXISTENTIAL FRAMING ───────────────────────────────────────
@@ -874,7 +873,7 @@ class ManipulationDetector:
                     r'(this is a (matter|question) of (life and death|survival|existence))',
                     r'(either (we win|victory) or (we die|perish|cease to exist))',
                     r'(the (fate|future) of (generations to come|our nation) depends on (this|our actions))',
-],
+                ],
             },
 
             # ── EXPLICIT THREATS OF VIOLENCE ───────────────────────────────
@@ -895,7 +894,7 @@ class ManipulationDetector:
                     r'(blood will (flow|be spilled)|corpses of (enemies|traitors))',
                     r'(firearms?|weapons?|explosives?|use of force)',
                     r'(execution|summary execution|without trial|lynching)',
-],
+                ],
             },
 
             # ── SUPPRESSION OF ALTERNATIVES ───────────────────────────────
@@ -916,7 +915,7 @@ class ManipulationDetector:
                     r'(you don\'t need to (know|understand|delve into)|stay out of (details|specifics))',
                     r'(trust (us|the experts|the professionals), (don\'t ask|stop asking) (questions))',
                     r'(critics?|skeptics?|doubt).{1,60}(only (get in the way|hinder)|are (unnecessary|not needed)))',
-],
+                ],
             },
         ]
 
