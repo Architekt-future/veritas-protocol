@@ -2445,6 +2445,9 @@ async function consultARD() {
     const articleText = window._lastVeritasResult.article_text || document.getElementById('textInput').value || '';
     if (!articleText) return;
 
+    console.log('articleText length:', articleText.length);
+    console.log('First 100 chars:', articleText.substring(0,100));
+
     // ... решта коду без змін
 }
 
