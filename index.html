@@ -2388,8 +2388,8 @@ async function consultARD() {
     const footer = document.getElementById('ardFooter');
     const violationsEl = document.getElementById('ardViolations');
 
-    if (!lastAnalysisData) return;
-    const diag = lastAnalysisData.diagnostics || {};
+    if (!window._lastVeritasResult) return;
+    const diag = window._lastVeritasResult.diagnostics || {};
     const articleText = diag.article_text
         || document.getElementById('textInput').value
         || '';
