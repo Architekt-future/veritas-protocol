@@ -864,10 +864,20 @@ class AbsurdityDetector:
                 pseudo_analogy_count += 1
                 evidence.setdefault('pseudo_analogy', []).append(pattern[:50])
 
-        # Legitimate science shield: ML/AI статті використовують "neuron",
-        # "synapse" як буквальну термінологію — це не псевдоаналогія.
+        # Legitimate science shield: якщо текст є реальною науковою/технічною
+        # публікацією (ML, AI, нейронауки) — pseudo_analogy повністю вимикається.
+        #
+        # Причина: в легітимних ML-статтях слова "neuron", "synapse", "analogous",
+        # "structure", "therefore suggests" — це буквальна термінологія і
+        # стандартні наукові конструкції. Вони не є псевдоаналогією.
+        #
+        # Виняток: якщо hits >= 5, щось явно не так навіть в науковому тексті
+        # (напр. стаття про "планетарну нейронну мережу хмар").
         if is_legitimate_science:
-            pseudo_analogy_count = max(0, pseudo_analogy_count - 2)
+            if pseudo_analogy_count < 5:
+                pseudo_analogy_count = 0
+            else:
+                pseudo_analogy_count = max(0, pseudo_analogy_count - 3)
 
         if pseudo_analogy_count >= 2:
             absurdity_score += 0.55  # Coherent but logically invalid
