@@ -155,6 +155,40 @@ class PseudoscienceDetector:
                 ],
             },
 
+            # ── HEALTH MISINFORMATION ────────────────────────────────────
+            # "Вакцини викликають X", "лікарі приховують Y",
+            # "натуральне замість медицини" — небезпечний і поширений клас.
+            # Відрізняється від PHYSICAL_IMPOSSIBILITY: не порушує фізику,
+            # але суперечить медичному консенсусу і несе пряму шкоду.
+            {
+                'name': 'HEALTH_MISINFORMATION',
+                'score': 0.75,
+                'min_hits': 2,
+                'patterns': [
+                    # Vaccines cause harm — загальні стверджувальні форми
+                    r'(вакцин).{1,60}(викликає|спричиняє|призводить до).{1,60}(аутизм|рак|безпліддя|смерть|хворобу)',
+                    r'(vaccine|vaccination).{1,60}(causes?|leads? to|results? in).{1,60}(autism|cancer|infertility|death|disease)',
+                    # "Лікарі/фармкомпанії приховують"
+                    r'(лікарі|фармацевтичн|big pharma|медичн).{1,60}(приховують|замовчують|не хочуть щоб ви знали)',
+                    r'(doctors?|pharmaceutical|big pharma|medical (industry|establishment)).{1,60}(hiding|suppressing|don\'t want you to know|conceal)',
+                    # "Натуральне лікування замість/краще за медицину"
+                    r'(натуральн|природн|трав).{1,60}(лікує|виліковує|краще за).{1,60}(хіміотерапі|ліки|антибіотик|операц)',
+                    r'(natural|herbal|plant.based).{1,60}(cures?|heals?|better than).{1,60}(chemotherapy|medicine|antibiotics|surgery)',
+                    # "Ця речовина/метод виліковує рак/СНІД/..."
+                    r'(виліковує|лікує|позбавляє від).{1,60}(рак|снід|діабет|альцгеймер|хворобу паркінсона)',
+                    r'(cures?|treats?|eliminates?).{1,60}(cancer|aids|hiv|diabetes|alzheimer|parkinson)',
+                    # "Лікарі не розкажуть вам про..."
+                    r'(лікарі|медицина).{1,60}(не розкажуть|ніколи не скажуть|не хочуть щоб ви знали)',
+                    r'(doctors?|medicine|medical).{1,60}(won\'t tell|never told|don\'t want you to know)',
+                    # 5G / мікрохвилі / випромінювання викликають хвороби
+                    r'(5g|мікрохвил|випромінювання|wifi).{1,60}(викликає|спричиняє|призводить).{1,60}(рак|хворобу|пухлин)',
+                    r'(5g|microwave|radiation|wifi|emf).{1,60}(causes?|leads? to).{1,60}(cancer|tumor|disease|illness)',
+                    # Детокс/очищення організму від токсинів без медичного обґрунтування
+                    r'(детокс|очищення).{1,60}(організму|тіла|крові).{1,60}(токсин|шлак|отрут).{1,60}(?!медичн|клінічн|лікар)',
+                    r'(detox|cleanse|flush).{1,60}(body|blood|liver|colon).{1,60}(toxins?|waste|poison).{1,60}(?!medical|clinical|doctor)',
+                ],
+            },
+
         ]
 
         # ── PHYSICAL CONSTANTS whitelist ─────────────────────────────
@@ -186,6 +220,14 @@ class PseudoscienceDetector:
             # Source attribution to known science outlets
             r'(sciencedaily|nature|science|cell|lancet|nejm|arxiv|ieee)',
             r'(csic|mit|cern|nasa|esa|max planck|oxford|cambridge|stanford)',
+            # ML/AI specific — legitimate technical terminology
+            r'(epoch|batch size|gradient descent|backpropagation|loss function)',
+            r'(roc.auc|f1.score|precision|recall|confusion matrix|cross.entropy|cross-entropy)',
+            r'(pytorch|tensorflow|sklearn|scikit.learn|keras|huggingface)',
+            r'(dataset|train.test.split|validation set|overfitting|regularization)',
+            r'(neural network|deep learning|machine learning).{1,60}(train|layer|weight|parameter)',
+            r'(github\.com|open.source|reproducible|code available)',
+            r'(ablation study|hyperparameter|fine.tun|pre.train|transfer learning)',
         ]
 
     # ================================================================
@@ -225,7 +267,13 @@ class PseudoscienceDetector:
                 score = ps['score']
                 # Legitimate science: strongly reduce QUANTUM_ABUSE penalty
                 # Real quantum computing research uses these terms correctly
-                if is_legitimate_science and ps['name'] == 'QUANTUM_ABUSE':
+                if ps['name'] == 'HEALTH_MISINFORMATION':
+                    # Health misinfo НЕ знижується через legitimate science —
+                    # реальна наука ніколи не пише "лікарі приховують" або
+                    # "вакцини викликають аутизм". Якщо це є — це маніпуляція
+                    # незалежно від контексту.
+                    pass
+                elif is_legitimate_science and ps['name'] == 'QUANTUM_ABUSE':
                     score *= 0.15
                 elif is_legitimate_science:
                     score *= 0.5
