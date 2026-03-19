@@ -818,7 +818,7 @@ class ManipulationDetector:
             },
 
             
-            # ── MOBILIZATION RHETORIC ─────────────────────────────────────
+                        # ── MOBILIZATION RHETORIC ─────────────────────────────────────
             # Заклики до конкретних дій, блокувань, виходу на вулиці з часом
             {
                 'name': 'MOBILIZATION_RHETORIC',
@@ -832,10 +832,6 @@ class ManipulationDetector:
                     r'(разом ми (переможемо|здолаємо|знищимо|побудуємо))',
                 
                     r'((on )?(monday|tuesday|wednesday|thursday|friday|saturday|sunday)|tomorrow at|today at|at \d{1,2}:00).{1,100}(we (start|begin|march|block|gather))',
-                    r'(bring your (friends|family|tools|weapons)|take to the (streets|squares)|gather at|meet at)',
-                    r'(we will (block|seize|take control of|shut down).{1,60}(all (courts|government buildings|institutions))',
-                    r'(we (won\'t stop|will continue) until.{1,100}(the last (court|journalist|official) (is closed|is destroyed|disappears))',
-                    r'(together we will (win|overcome|destroy|build))',
 ],
             },
 
@@ -876,7 +872,7 @@ class ManipulationDetector:
                     r'(we are (building|creating|forging) (a new world|a new society|a new order|a new reality))',
                     r'(everything (is at stake|hangs in the balance)|the very (existence|survival) of (the nation|our people))',
                     r'(this is a (matter|question) of (life and death|survival|existence))',
-                    r'(either (we win|victory), or (we die|perish|cease to exist))',
+                    r'(either (we win|victory) or (we die|perish|cease to exist))',
                     r'(the (fate|future) of (generations to come|our nation) depends on (this|our actions))',
 ],
             },
