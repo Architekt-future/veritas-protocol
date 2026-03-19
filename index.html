@@ -418,12 +418,12 @@
         <div class="panel-title">🔗 <span id="i18n-data_input"></span></div>
         <div class="input-group">
             <label id="i18n-label_url"></label>
-            <input type="text" id="urlInput" id2="i18n-placeholder_url">
+            <input type="text" id="urlInput" placeholder="https://example.com/стаття">
         </div>
         <div class="or-divider" id="i18n-or"></div>
         <div class="input-group">
             <label id="i18n-label_text"></label>
-            <textarea id="textInput" id2="i18n-placeholder_text"></textarea>
+            <textarea id="textInput" placeholder="Введіть або вставте текст для аналізу..."></textarea>
         </div>
         <div class="btn-row">
             <button class="btn" id="analyzeBtn" onclick="analyze()">🔍 <span id="i18n-btn_analyze"></span></button>
@@ -1220,7 +1220,7 @@ const EXPLANATION_EN = {
         'The text operates with general concepts without concrete facts or examples. This is not necessarily manipulation, but such claims are hard to verify. Look for specific numbers, sources and facts before trusting.',
     'Текст має чітку структуру і твердження логічно пов\'язані між собою. Ознак маніпуляції не виявлено, але це не замінює перевірку фактів у незалежних джерелах.':
         'The text has a clear structure and claims are logically connected. No signs of manipulation detected, but this does not replace fact-checking in independent sources.',
-    'Текст побудований як аналітичний матеріал: посилається на різні джерела, використовує обережні формулювання. Це ознаки журналістської чесності, а не маніпуляції. Все одно варто перевірити ключові факти самостійно.':
+    'Текст побудований як аналітичний матеріал: посилається на різні джерела, використовує обережні формулювання. Це ознаки журналістської чесності, не маніпуляції. Все одно варто перевірити ключові факти самостійно.':
         'The text is structured as analytical material: it references various sources and uses cautious language. These are signs of journalistic integrity, not manipulation. Still worth checking key facts independently.',
     'Це текст де автор висловлює власну думку, а не повідомляє факти. Такий формат є нормальним, але важливо пам\'ятати: думка однієї людини — не доказ. Оцінюйте наведені аргументи, а не сприймайте висновки на віру.':
         'This is a text where the author expresses a personal opinion rather than reporting facts. This format is normal, but remember: one person\'s opinion is not proof. Evaluate the arguments presented rather than accepting conclusions on faith.',
@@ -1498,6 +1498,57 @@ async function checkAPIStatus() {
         el.className   = 'api-status offline';
     }
 }
+
+// ============================================================
+// ARD / Oracle button state management (FIX)
+function disableArdAndOracle(disabled = true) {
+    const ardBtn = document.getElementById('ardBtn');
+    const oracleBtn = document.getElementById('oracleBtn');
+    if (ardBtn) ardBtn.disabled = disabled;
+    if (oracleBtn) oracleBtn.disabled = disabled;
+    
+    // Якщо вимикаємо — показуємо пояснення
+    if (disabled) {
+        const ardSection = document.getElementById('ardSection');
+        const oracleSection = document.getElementById('oracleSection');
+        if (ardSection) {
+            let note = document.getElementById('ardDisabledNote');
+            if (!note) {
+                note = document.createElement('div');
+                note.id = 'ardDisabledNote';
+                note.style.cssText = 'text-align:center; color:#666; font-size:0.7em; margin-top:8px;';
+                note.textContent = currentLang === 'uk' 
+                    ? '⚠️ Спочатку виконайте аналіз тексту' 
+                    : '⚠️ First analyze some text';
+                ardSection.appendChild(note);
+            }
+        }
+    } else {
+        // Видалити повідомлення якщо є
+        const note = document.getElementById('ardDisabledNote');
+        if (note) note.remove();
+    }
+}
+
+// Override original functions to include button state
+const originalShowTopError = showTopError;
+showTopError = function(msg) {
+    originalShowTopError(msg);
+    disableArdAndOracle(true);  // Вимикаємо кнопки при помилці
+};
+
+const originalReveal = revealResults;
+revealResults = function() {
+    originalReveal();
+    disableArdAndOracle(false); // Вмикаємо кнопки після успішного аналізу
+};
+
+const originalClearAll = clearAll;
+clearAll = function() {
+    originalClearAll();
+    disableArdAndOracle(true);  // Вимикаємо при очищенні
+    window._lastVeritasResult = null;
+};
 
 // ============================================================
 async function analyze() {
