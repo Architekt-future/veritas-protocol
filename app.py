@@ -1193,7 +1193,15 @@ def analyze():
                             '"witness_text":"3-5 речень пояснення для нетехнічного читача"}'
                         )
 
-                                        # Парсимо JSON
+                    _client = _anthropic.Anthropic(api_key=_api_key)
+                    _msg = _client.messages.create(
+                        model="claude-haiku-4-5-20251001",
+                        max_tokens=600,
+                        messages=[{"role": "user", "content": _synth_prompt}]
+                    )
+                    _raw = _msg.content[0].text if _msg.content else ''
+
+                    # Парсимо JSON
                     try:
                         # Видаляємо можливі markdown фенси
                         _clean = _raw.strip()
