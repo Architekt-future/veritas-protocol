@@ -1644,6 +1644,13 @@ async function analyze() {
         renderResults(data);
         applyTranslations();
         revealResults();
+
+        // ── AUTO-SYNTHESIS ───────────────────────────────────────────
+        // Якщо тригери спрацювали — викликаємо /api/synthesis асинхронно
+        // після того як основний результат вже показаний користувачу.
+        if (data.auto_witness_triggered) {
+            callWitnessSynthesis(data);
+        }
     } catch (err) {
         setLoading(false);
         showTopError(err.message);
@@ -1655,6 +1662,93 @@ async function analyze() {
 
 // ============================================================
 
+
+// ── WITNESS SYNTHESIS ASYNC CALL ─────────────────────────────────────────────
+async function callWitnessSynthesis(data) {
+    try {
+        const diag = data.diagnostics || {};
+        const isUk = currentLang === 'uk';
+        const lang = isUk ? 'UK' : 'EN';
+
+        // Збираємо активні модулі
+        const activeMods = [];
+        if (data.media_bias_flagged) activeMods.push('MEDIA_BIAS(' + (data.media_bias_verdict||'?') + ')');
+        if (data.alarmism_flagged) activeMods.push('ALARMISM(' + (data.alarmism_verdict||'?') + ')');
+        if (data.ard_is_flagged) activeMods.push('ARD(' + (data.ard_verdict||'?') + ')');
+        if ((data.framing_risk||0) > 0.3) activeMods.push('FRAMING(' + (data.framing_type||'?') + ')');
+        if ((diag.lac_finance_score||0) > 0.3) activeMods.push('LAC_FINANCE');
+        if ((diag.lac_labor_score||0) > 0.3) activeMods.push('LAC_LABOR');
+
+        const entropyBase = Math.round((data.entropy||0) * 100);
+        const entropyBoosted = data.entropy_boosted !== undefined ? data.entropy_boosted : entropyBase;
+
+        const resp = await fetch('/api/synthesis', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                article_text:       data.article_text || '',
+                language:           lang,
+                active_modules:     activeMods,
+                entropy_base:       entropyBase,
+                entropy_boosted:    entropyBoosted,
+                verdict:            data.verdict || '?',
+                ard_principles:     data.ard_principles || [],
+                media_bias_verdict: data.media_bias_verdict || 'CLEAN',
+                alarmism_verdict:   data.alarmism_verdict || 'CLEAN',
+            })
+        });
+
+        if (!resp.ok) return;
+        const result = await resp.json();
+        const synth = result.witness_synthesis;
+        if (!synth) return;
+
+        // Оновлюємо _lastVeritasResult
+        if (window._lastVeritasResult) {
+            window._lastVeritasResult.witness_synthesis = synth;
+        }
+
+        // Рендеримо synthesis UI
+        const synthInfo = document.getElementById('entropySynthesisInfo');
+        const synthBlock = document.getElementById('witnessSynthesisBlock');
+        const synthReason = document.getElementById('witnessSynthesisReason');
+        const synthModules = document.getElementById('witnessSynthesisModules');
+
+        const adj = synth.entropy_adjustment || 0;
+        const synthVal = synth.entropy_synthesized || entropyBoosted;
+        const arrow = adj > 0 ? '\u2191' : '\u2193';
+        const adjAbs = Math.abs(adj);
+
+        if (synthInfo && adj !== 0) {
+            synthInfo.textContent = isUk
+                ? entropyBoosted + '% → ' + synthVal + '% ' + arrow + ' ' + adjAbs + '% (Свідок)'
+                : entropyBoosted + '% → ' + synthVal + '% ' + arrow + ' ' + adjAbs + '% (Witness)';
+            synthInfo.style.display = 'inline';
+        }
+
+        if (synthBlock) synthBlock.style.display = 'block';
+        if (synthReason) synthReason.textContent = synth.adjustment_reason || '';
+
+        if (synthModules && synth.triggered_explanation) {
+            var lines = '';
+            for (var key in synth.triggered_explanation) {
+                lines += '- ' + key + ': ' + synth.triggered_explanation[key] + '\n';
+            }
+            synthModules.textContent = lines.trim();
+            synthModules.style.display = lines ? 'block' : 'none';
+        }
+
+        // Оновлюємо шкалу до синтезованого значення
+        if (adj !== 0) {
+            updateWitness(synthVal / 100, data.status || 'UNKNOWN');
+        }
+
+        console.log('AUTO-WITNESS synthesized:', synth.verdict, 'adj:', adj + '%', '->', synthVal + '%');
+
+    } catch(e) {
+        console.warn('Synthesis error (non-fatal):', e);
+    }
+}
 
 // ── INTERACTION COMBOS RENDERER ───────────────────────────────────────────────
 function renderInteractionCombos(data) {
