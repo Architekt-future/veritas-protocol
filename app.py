@@ -1115,11 +1115,10 @@ def analyze():
             result['ard_principles'] = []
             result['ard_violations'] = []
 
-        # ── AUTO-WITNESS SYNTHESIS (v20.0) ──────────────────────────────────
-        # Свідок викликається автоматично якщо спрацювали ключові модулі.
-        # Він отримує пакет метрик і повертає JSON з entropy_adjustment.
-        # Це синтезує детерміновані метрики і LLM-аналіз в один вердикт.
-        _auto_witness_triggers = (
+        # ── AUTO-WITNESS TRIGGER FLAG ────────────────────────────────────────
+        # Синтез виноситься в /api/synthesis — окремий запит після analyze.
+        # Це запобігає worker timeout (analyze + Haiku = ~28с > 30с ліміт).
+        result['auto_witness_triggered'] = (
             result.get('media_bias_flagged', False) or
             result.get('alarmism_flagged', False) or
             result.get('ard_is_flagged', False) or
@@ -1128,112 +1127,7 @@ def analyze():
             (result.get('lac_labor_score', 0) or 0) > 0.3 or
             (result.get('entropy_boosted', result.get('entropy', 0) * 100) or 0) > 60
         )
-        result['auto_witness_triggered'] = _auto_witness_triggers
-
-        if _auto_witness_triggers:
-            try:
-                import os as _os, anthropic as _anthropic, json as _json
-                _api_key = _os.environ.get('ANTHROPIC_API_KEY', '')
-                if _api_key:
-                    _diag = result.get('diagnostics', {})
-                    _entropy_base = round((result.get('entropy', 0) or 0) * 100, 1)
-                    _entropy_boosted = result.get('entropy_boosted', _entropy_base)
-                    _lang = result.get('language', 'UK')
-                    _is_en = (_lang == 'EN')
-
-                    # Збираємо які модулі спрацювали
-                    _active_modules = []
-                    if result.get('media_bias_flagged'): _active_modules.append(f"MEDIA_BIAS({result.get('media_bias_verdict','?')})")
-                    if result.get('alarmism_flagged'): _active_modules.append(f"ALARMISM({result.get('alarmism_verdict','?')})")
-                    if result.get('ard_is_flagged'): _active_modules.append(f"ARD({result.get('ard_verdict','?')} principles:{result.get('ard_principles',[])})")
-                    if (result.get('framing_risk', 0) or 0) > 0.3: _active_modules.append(f"FRAMING({result.get('framing_type','?')})")
-                    if (result.get('lac_finance_score', 0) or 0) > 0.3: _active_modules.append(f"LAC_FINANCE({result.get('lac_finance_verdict','?')})")
-                    if (result.get('lac_labor_score', 0) or 0) > 0.3: _active_modules.append(f"LAC_LABOR({result.get('lac_labor_verdict','?')})")
-
-                    _text_preview = text[:3000] if text else ''
-
-                    if _is_en:
-                        _synth_prompt = (
-                            "You are the Veritas Witness Synthesizer. Analyze the text and triggered module signals.\n"
-                            "Return ONLY valid JSON, no markdown, no explanation outside the JSON.\n\n"
-                            "TEXT (first 3000 chars):\n" + _text_preview + "\n\n"
-                            "METRICS:\n"
-                            "  entropy_base: " + str(_entropy_base) + "%\n"
-                            "  entropy_boosted: " + str(_entropy_boosted) + "%\n"
-                            "  verdict: " + str(result.get("verdict","?")) + "\n"
-                            "  triggered_modules: " + str(_active_modules) + "\n"
-                            "  ard_principles: " + str(result.get("ard_principles",[])) + "\n"
-                            "  media_bias_verdict: " + str(result.get("media_bias_verdict","CLEAN")) + "\n"
-                            "  alarmism_verdict: " + str(result.get("alarmism_verdict","CLEAN")) + "\n\n"
-                            "Return JSON with these exact keys:\n"
-                            '{"witness_verdict":"CLEAN|RHETORIC|SUSPICIOUS|DANGEROUS|ANALYTICS|OPINION",'
-                            '"entropy_adjustment":<float -0.20 to 0.20>,'
-                            '"adjustment_reason":"one sentence why",'
-                            '"triggered_explanation":{"module_name":"plain language explanation"},'
-                            '"witness_text":"3-5 sentence explanation for non-technical reader"}'
-                        )
-                    else:
-                        _synth_prompt = (
-                            "Ти — Синтезатор Свідка Veritas. Проаналізуй текст і сигнали спрацьованих модулів.\n"
-                            "Поверни ТІЛЬКИ валідний JSON, без markdown, без пояснень поза JSON.\n\n"
-                            "ТЕКСТ (перші 3000 символів):\n" + _text_preview + "\n\n"
-                            "МЕТРИКИ:\n"
-                            "  entropy_base: " + str(_entropy_base) + "%\n"
-                            "  entropy_boosted: " + str(_entropy_boosted) + "%\n"
-                            "  verdict: " + str(result.get("verdict","?")) + "\n"
-                            "  triggered_modules: " + str(_active_modules) + "\n"
-                            "  ard_principles: " + str(result.get("ard_principles",[])) + "\n"
-                            "  media_bias_verdict: " + str(result.get("media_bias_verdict","CLEAN")) + "\n"
-                            "  alarmism_verdict: " + str(result.get("alarmism_verdict","CLEAN")) + "\n\n"
-                            "Поверни JSON з цими ключами:\n"
-                            '{"witness_verdict":"ЧИСТО|РИТОРИКА|ПІДОЗРІЛО|НЕБЕЗПЕЧНО|АНАЛІТИКА|ДУМКА",'
-                            '"entropy_adjustment":<float від -0.20 до 0.20>,'
-                            '"adjustment_reason":"одне речення чому",'
-                            '"triggered_explanation":{"назва_модуля":"пояснення простими словами"},'
-                            '"witness_text":"3-5 речень пояснення для нетехнічного читача"}'
-                        )
-
-                    _client = _anthropic.Anthropic(api_key=_api_key)
-                    _msg = _client.messages.create(
-                        model="claude-haiku-4-5-20251001",
-                        max_tokens=600,
-                        messages=[{"role": "user", "content": _synth_prompt}]
-                    )
-                    _raw = _msg.content[0].text if _msg.content else ''
-
-                    # Парсимо JSON
-                    try:
-                        # Видаляємо можливі markdown фенси
-                        _clean = _raw.strip()
-                        if _clean.startswith('```'): _clean = _clean.split('```')[1]
-                        if _clean.startswith('json'): _clean = _clean[4:]
-                        _clean = _clean.strip().rstrip('`')
-                        _synth = _json.loads(_clean)
-
-                        _adj = float(_synth.get('entropy_adjustment', 0))
-                        _adj = max(-0.20, min(0.20, _adj))  # клемпуємо ±20%
-
-                        _entropy_synthesized = round(
-                            min(100, max(0, _entropy_boosted + _adj * 100)), 1
-                        )
-
-                        result['witness_synthesis'] = {
-                            'verdict':              _synth.get('witness_verdict', ''),
-                            'entropy_adjustment':   round(_adj * 100, 1),
-                            'entropy_synthesized':  _entropy_synthesized,
-                            'adjustment_reason':    _synth.get('adjustment_reason', ''),
-                            'triggered_explanation':_synth.get('triggered_explanation', {}),
-                            'witness_text':         _synth.get('witness_text', ''),
-                        }
-                        print(f"👁  AUTO-WITNESS: verdict={_synth.get('witness_verdict')} adj={round(_adj*100,1)}% → {_entropy_synthesized}%")
-                    except Exception as _parse_e:
-                        print(f"⚠️  Auto-witness JSON parse error: {_parse_e}. Raw: {_raw[:200]}")
-                        result['witness_synthesis'] = None
-            except Exception as _aw_e:
-                print(f"⚠️  Auto-witness error (non-fatal): {_aw_e}")
-                result['witness_synthesis'] = None
-        else:
-            result['witness_synthesis'] = None
+        result['witness_synthesis'] = None  # заповнюється через /api/synthesis
 
         # ── Логування тригерів ───────────────────────────────────────────────
         log_analysis(result)
@@ -1869,6 +1763,116 @@ def oracle():
     except Exception as e:
         import traceback; traceback.print_exc()
         return jsonify({'error': str(e), 'witness_available': False}), 500
+
+@app.route('/api/synthesis', methods=['POST'])
+def witness_synthesis():
+    """
+    Auto-witness synthesis — викликається фронтендом після /api/analyze
+    якщо auto_witness_triggered=true. Повертає JSON з entropy_adjustment.
+    Виноситься окремо щоб не блокувати основний analyze (уникаємо timeout).
+    """
+    import os as _os
+    try:
+        data = request.get_json() or {}
+        text = data.get('article_text', '') or ''
+        language = data.get('language', 'UK')
+        active_modules = data.get('active_modules', [])
+        entropy_base = data.get('entropy_base', 0)
+        entropy_boosted = data.get('entropy_boosted', entropy_base)
+        verdict = data.get('verdict', '?')
+        ard_principles = data.get('ard_principles', [])
+        media_bias_verdict = data.get('media_bias_verdict', 'CLEAN')
+        alarmism_verdict = data.get('alarmism_verdict', 'CLEAN')
+
+        if not text or len(text.strip()) < 50:
+            return jsonify({'error': 'text_too_short'}), 400
+
+        api_key = _os.environ.get('ANTHROPIC_API_KEY', '')
+        if not api_key:
+            return jsonify({'error': 'API_KEY_NOT_CONFIGURED', 'witness_synthesis': None}), 503
+
+        import anthropic as _anthropic, json as _json
+
+        text_preview = text[:3000]
+        is_en = (language == 'EN')
+
+        if is_en:
+            synth_prompt = (
+                "You are the Veritas Witness Synthesizer. Analyze the text and triggered module signals.\n"
+                "Return ONLY valid JSON, no markdown, no explanation outside the JSON.\n\n"
+                "TEXT (first 3000 chars):\n" + text_preview + "\n\n"
+                "METRICS:\n"
+                "  entropy_base: " + str(entropy_base) + "%\n"
+                "  entropy_boosted: " + str(entropy_boosted) + "%\n"
+                "  verdict: " + str(verdict) + "\n"
+                "  triggered_modules: " + str(active_modules) + "\n"
+                "  ard_principles: " + str(ard_principles) + "\n"
+                "  media_bias_verdict: " + str(media_bias_verdict) + "\n"
+                "  alarmism_verdict: " + str(alarmism_verdict) + "\n\n"
+                "Return JSON with these exact keys:\n"
+                '{"witness_verdict":"CLEAN|RHETORIC|SUSPICIOUS|DANGEROUS|ANALYTICS|OPINION",'
+                '"entropy_adjustment":<float -0.20 to 0.20>,'
+                '"adjustment_reason":"one sentence why",'
+                '"triggered_explanation":{"module_name":"plain language explanation"},'
+                '"witness_text":"3-5 sentence explanation for non-technical reader"}'
+            )
+        else:
+            synth_prompt = (
+                "Ти — Синтезатор Свідка Veritas. Проаналізуй текст і сигнали спрацьованих модулів.\n"
+                "Поверни ТІЛЬКИ валідний JSON, без markdown, без пояснень поза JSON.\n\n"
+                "ТЕКСТ (перші 3000 символів):\n" + text_preview + "\n\n"
+                "МЕТРИКИ:\n"
+                "  entropy_base: " + str(entropy_base) + "%\n"
+                "  entropy_boosted: " + str(entropy_boosted) + "%\n"
+                "  verdict: " + str(verdict) + "\n"
+                "  triggered_modules: " + str(active_modules) + "\n"
+                "  ard_principles: " + str(ard_principles) + "\n"
+                "  media_bias_verdict: " + str(media_bias_verdict) + "\n"
+                "  alarmism_verdict: " + str(alarmism_verdict) + "\n\n"
+                "Поверни JSON з цими ключами:\n"
+                '{"witness_verdict":"ЧИСТО|РИТОРИКА|ПІДОЗРІЛО|НЕБЕЗПЕЧНО|АНАЛІТИКА|ДУМКА",'
+                '"entropy_adjustment":<float від -0.20 до 0.20>,'
+                '"adjustment_reason":"одне речення чому",'
+                '"triggered_explanation":{"назва_модуля":"пояснення простими словами"},'
+                '"witness_text":"3-5 речень пояснення для нетехнічного читача"}'
+            )
+
+        client = _anthropic.Anthropic(api_key=api_key)
+        msg = client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=600,
+            messages=[{"role": "user", "content": synth_prompt}]
+        )
+        raw = msg.content[0].text if msg.content else ''
+
+        # Парсимо JSON
+        clean = raw.strip()
+        if clean.startswith('```'): clean = clean.split('```')[1]
+        if clean.startswith('json'): clean = clean[4:]
+        clean = clean.strip().rstrip('`')
+        synth = _json.loads(clean)
+
+        adj = float(synth.get('entropy_adjustment', 0))
+        adj = max(-0.20, min(0.20, adj))
+        entropy_synthesized = round(min(100, max(0, entropy_boosted + adj * 100)), 1)
+
+        print(f"👁  SYNTHESIS: verdict={synth.get('witness_verdict')} adj={round(adj*100,1)}% -> {entropy_synthesized}%")
+
+        return jsonify({
+            'witness_synthesis': {
+                'verdict':               synth.get('witness_verdict', ''),
+                'entropy_adjustment':    round(adj * 100, 1),
+                'entropy_synthesized':   entropy_synthesized,
+                'adjustment_reason':     synth.get('adjustment_reason', ''),
+                'triggered_explanation': synth.get('triggered_explanation', {}),
+                'witness_text':          synth.get('witness_text', ''),
+            }
+        })
+
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        return jsonify({'error': str(e), 'witness_synthesis': None}), 500
+
 
 @app.route('/api/ard', methods=['POST'])
 def ard_check():
