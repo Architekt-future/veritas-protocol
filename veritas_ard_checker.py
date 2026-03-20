@@ -171,7 +171,7 @@ class ARDChecker:
         r'(details|specifics).{1,60}(don\'t (matter|concern|affect)).{1,60}(what matters)',
         r'(this information|this data).{1,60}(not for (everyone|the public|general audience))',
         r'(there are reasons|there are grounds).{1,60}(not to disclose|to keep secret|not to say)',
-        r'(not (open for|subject to) discussion|non-negotiable)',
+        r'(not (open for|subject to) discussion|(this (topic|issue|matter|question) is) non-negotiable)',
     ]
 
     # ================================================================
