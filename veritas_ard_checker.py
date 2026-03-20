@@ -82,7 +82,7 @@ class ARDChecker:
         r'(journalists?|media workers?).{1,60}(will be (punished|arrested|eliminated))',
         r'(confiscation of property|asset seizure).{1,60}(without (trial|due process))',
         r'(imprisonment|detention).{1,60}(without the right to defense|without a lawyer)',
-        r'(close|abolish).{1,60}(universities|schools|educational institutions)',
+        r'(close|abolish|shut down).{1,5}(universities|schools|educational institutions)',
         r'(teachers?|professors?).{1,60}(will be fired|deprived of rights)',
     ]
 
