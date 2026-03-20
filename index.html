@@ -2449,6 +2449,10 @@ function clearAll() {
     if (oracleSection) oracleSection.style.display = 'none';
     const pivPan = document.getElementById('pivotPanel');
     if (pivPan) pivPan.style.display = 'none';
+    const dangerBlockClear = document.getElementById('ardDangerBlock');
+    if (dangerBlockClear) dangerBlockClear.style.display = 'none';
+    const ardSectionClear = document.getElementById('ardSection');
+    if (ardSectionClear) ardSectionClear.style.display = 'none';
     window._lastVeritasResult = null;
 }
 function escHtml(s) {
