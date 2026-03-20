@@ -1086,6 +1086,35 @@ def analyze():
         tier = compute_influence_tier(result)
         result.update(tier)
 
+        # ── ARD scan в основному аналізі ────────────────────────────────────
+        # Запускаємо ARD checker на повному тексті і додаємо в result.
+        # Це дозволяє фронтенду показати червоний блок НЕБЕЗПЕЧНИЙ ЗМІСТ
+        # незалежно від ентропії — бо низька ентропія + ARD_SYSTEMIC =
+        # "переконливий текст що виправдовує насильство" (найнебезпечніше).
+        try:
+            ard_scan = ard_checker.scan(text)
+            result['ard_score']       = round(ard_scan.score, 3)
+            result['ard_verdict']     = ard_scan.verdict
+            result['ard_is_flagged']  = ard_scan.is_flagged
+            result['ard_principles']  = ard_scan.principles_violated
+            result['ard_violations']  = [
+                {
+                    'principle': v.principle,
+                    'name': v.principle_name,
+                    'snippet': v.snippet,
+                    'severity': v.severity,
+                }
+                for v in ard_scan.violations
+            ]
+            print(f'⚖️  ARD: verdict={ard_scan.verdict} score={ard_scan.score} principles={ard_scan.principles_violated}')
+        except Exception as _ard_e:
+            print(f'⚠️  ARD scan error (non-fatal): {_ard_e}')
+            result['ard_score']      = 0.0
+            result['ard_verdict']    = 'N/A'
+            result['ard_is_flagged'] = False
+            result['ard_principles'] = []
+            result['ard_violations'] = []
+
         # ── Логування тригерів ───────────────────────────────────────────────
         log_analysis(result)
 
