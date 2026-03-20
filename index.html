@@ -797,6 +797,36 @@
         </div>
     </div>
 
+
+    <!-- ARD DANGER BLOCK — показується автоматично якщо ard_is_flagged -->
+    <div id="ardDangerBlock" style="display:none; margin-top:12px;">
+        <div style="
+            background: linear-gradient(160deg, rgba(30,5,5,0.97), rgba(25,8,8,0.97));
+            border: 1px solid rgba(220,60,60,0.5);
+            border-left: 3px solid rgba(220,60,60,0.9);
+            border-radius: 6px;
+            padding: 18px 22px;
+        ">
+            <div style="font-size:9px; letter-spacing:4px; color:#660000; margin-bottom:12px;">
+                ⚠️ <span id="ardDangerTitle">НЕБЕЗПЕЧНИЙ ЗМІСТ · АРД</span>
+            </div>
+            <div id="ardDangerPrinciples" style="
+                display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px;
+            "></div>
+            <div id="ardDangerText" style="
+                font-family: 'Courier New', monospace;
+                font-size: 0.82em;
+                line-height: 1.8;
+                color: #cc6666;
+            "></div>
+            <div style="
+                margin-top:14px; padding-top:10px;
+                border-top:1px solid rgba(220,60,60,0.15);
+                font-size:9px; color:#440000; letter-spacing:2px;
+            ">VERITAS ARD v1.3 · АВТОМАТИЧНИЙ СКАН</div>
+        </div>
+    </div>
+
     <!-- ARD SECTION -->
     <div id="ardSection" style="display:none; margin-top:12px;">
         <div style="text-align:center; margin-bottom:12px;">
@@ -2259,7 +2289,83 @@ function revealResults() {
             ardBtn.disabled = false;
             ardBtn.innerHTML = '&#9878;&#65039; <span id="i18n-ard_btn">' + t('ard_btn') + '</span>';
         }
+        // ── ARD DANGER BLOCK ─────────────────────────────────────────
+        const dangerBlock = document.getElementById('ardDangerBlock');
+        if (dangerBlock) {
+            const d = window._lastVeritasResult || {};
+            if (d.ard_is_flagged) {
+                const verdict = d.ard_verdict || '';
+                const principles = d.ard_principles || [];
+                const violations = d.ard_violations || [];
+                const isUk = currentLang === 'uk';
+
+                // Заголовок
+                const titleEl = document.getElementById('ardDangerTitle');
+                if (titleEl) {
+                    if (verdict === 'ARD_SYSTEMIC') {
+                        titleEl.textContent = isUk ? '⚠️ СИСТЕМНЕ ПОРУШЕННЯ АРД' : '⚠️ SYSTEMIC ARD VIOLATION';
+                    } else if (verdict === 'ARD_VIOLATION') {
+                        titleEl.textContent = isUk ? '⚠️ ПОРУШЕННЯ АРД' : '⚠️ ARD VIOLATION';
+                    } else {
+                        titleEl.textContent = isUk ? '⚠️ НАПРУГА АРД' : '⚠️ ARD TENSION';
+                    }
+                }
+
+                // Принципи як бейджі
+                const prEl = document.getElementById('ardDangerPrinciples');
+                if (prEl && principles.length > 0) {
+                    const names = {
+                        'I': 'Базовий інваріант', 'II': 'Тест обернення',
+                        'III': 'Відповідальність', 'IV': 'Межа впливу',
+                        'V': 'Принцип зупинки', 'VI': 'Антимесія',
+                        'IX': 'Метаправило', 'MOB': 'Мобілізація насильства',
+                        'ENEMY': 'Маркування ворогів', 'LESSER': 'Арифметика атроситі',
+                        'SOV': 'Щит суверенітету', 'RV': 'Вакуум відповідальності',
+                        'MD': 'Смерть інституту', 'SE': 'Самовилучення з норм',
+                        'CA': 'Криза без агента', 'EI': 'Інверсія емпатії',
+                        'IA': 'Неминучість як відпущення', 'AM': 'Авторитарний мандат',
+                    };
+                    var badges = '';
+                    for (var i = 0; i < principles.length; i++) {
+                        var p = principles[i];
+                        var label = names[p] || p;
+                        badges += '<span style="display:inline-block;padding:3px 8px;background:rgba(180,30,30,0.15);border:1px solid rgba(180,30,30,0.4);border-radius:3px;font-size:8px;letter-spacing:2px;color:#cc4444;">&#9878; ' + p + ': ' + label + '</span>';
+                    }
+                    prEl.innerHTML = badges;
+                    prEl.style.display = 'flex';
+                }
+
+                // Текст з поясненням
+                const textEl = document.getElementById('ardDangerText');
+                if (textEl) {
+                    var entropy = d.entropy || 0;
+                    var entropyPct = Math.round(d.entropy_boosted !== undefined ? d.entropy_boosted : entropy * 100);
+                    var lowEntropy = entropyPct < 40;
+                    var msg = isUk
+                        ? 'АРД-сканер виявив порушення принципів раціональної дії.'
+                        : 'ARD scanner detected violations of rational action principles.';
+                    if (lowEntropy && verdict === 'ARD_SYSTEMIC') {
+                        msg += isUk
+                            ? '\n\n\u26a0\ufe0f Увага: ентропія тексту низька (' + entropyPct + '%) — текст логічно побудований і переконливий. Саме це робить його небезпечнішим: маніпуляція через холодну риторику важча для розпізнавання ніж через емоції.'
+                            : '\n\n\u26a0\ufe0f Note: text entropy is low (' + entropyPct + '%) — the text is logically structured and persuasive. This makes it more dangerous: manipulation through cold rhetoric is harder to detect than emotional appeals.';
+                    }
+                    if (violations.length > 0) {
+                        var snip = violations[0].snippet;
+                        msg += isUk
+                            ? '\n\nЗнайдений фрагмент: "' + snip + '"'
+                            : '\n\nFound fragment: "' + snip + '"';
+                    }
+                    textEl.textContent = msg;
+                }
+
+                dangerBlock.style.display = 'block';
+            } else {
+                dangerBlock.style.display = 'none';
+            }
+        }
+
         document.getElementById('ardPanel').style.display = 'none';
+
         document.getElementById('ardText').style.display = 'none';
         if (document.getElementById('ardViolations')) document.getElementById('ardViolations').style.display = 'none';
         if (document.getElementById('ardFooter')) document.getElementById('ardFooter').style.display = 'none';
