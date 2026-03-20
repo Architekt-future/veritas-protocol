@@ -452,6 +452,14 @@
                     </div>
                     <div style="margin-top:4px; font-size:0.7em; color:#aaa; text-align:right; min-height:1em;">
                         <span id="entropyMultiplierInfo" style="display:none; color:#ffaa44; letter-spacing:1px;"></span>
+                        <span id="entropySynthesisInfo" style="display:none; color:#88ccff; letter-spacing:1px; margin-left:8px;"></span>
+                    </div>
+                    <div id="witnessSynthesisBlock" style="display:none; margin-top:8px; padding:10px 14px;
+                        background:rgba(20,40,80,0.6); border:1px solid rgba(100,160,255,0.25);
+                        border-left:2px solid rgba(100,160,255,0.6); border-radius:4px;">
+                        <div style="font-size:8px; letter-spacing:3px; color:#446688; margin-bottom:6px;">👁 СВІДОК СИНТЕЗ</div>
+                        <div id="witnessSynthesisReason" style="font-size:0.78em; color:#88aacc; line-height:1.7;"></div>
+                        <div id="witnessSynthesisModules" style="margin-top:6px; font-size:0.75em; color:#667799; line-height:1.6;"></div>
                     </div>
                     <div id="interactionCombos" style="display:none; margin-top:5px;"></div>
 
@@ -1847,6 +1855,52 @@ function renderResults(data) {
         }
     }
 
+    // ── WITNESS SYNTHESIS UI ─────────────────────────────────────
+    const synthInfo = document.getElementById('entropySynthesisInfo');
+    const synthBlock = document.getElementById('witnessSynthesisBlock');
+    const synthReason = document.getElementById('witnessSynthesisReason');
+    const synthModules = document.getElementById('witnessSynthesisModules');
+    const synth = data.witness_synthesis;
+
+    if (synth && synth.entropy_adjustment !== undefined && synth.entropy_adjustment !== 0) {
+        const baseVal = data.entropy_boosted !== undefined ? data.entropy_boosted : Math.round(entropy * 100);
+        const adj = synth.entropy_adjustment;
+        const synthVal = synth.entropy_synthesized;
+        const arrow = adj > 0 ? '↑' : '↓';
+        const adjAbs = Math.abs(adj);
+        const isUk = currentLang === 'uk';
+
+        if (synthInfo) {
+            synthInfo.textContent = isUk
+                ? `${baseVal}% → ${synthVal}% ${arrow} ${adjAbs}% (Свідок)`
+                : `${baseVal}% → ${synthVal}% ${arrow} ${adjAbs}% (Witness)`;
+            synthInfo.style.display = 'inline';
+        }
+
+        if (synthBlock) synthBlock.style.display = 'block';
+
+        if (synthReason) {
+            synthReason.textContent = synth.adjustment_reason || '';
+        }
+
+        if (synthModules && synth.triggered_explanation) {
+            var modLines = '';
+            var explanations = synth.triggered_explanation;
+            for (var key in explanations) {
+                modLines += '- ' + key + ': ' + explanations[key] + '\n';
+            }
+            synthModules.textContent = modLines.trim();
+            synthModules.style.display = modLines ? 'block' : 'none';
+        }
+
+        // Оновлюємо шкалу ентропії до синтезованого значення
+        updateWitness(synthVal / 100, status);
+
+    } else {
+        if (synthInfo) { synthInfo.style.display = 'none'; synthInfo.textContent = ''; }
+        if (synthBlock) synthBlock.style.display = 'none';
+    }
+
     // Interaction combos
     renderInteractionCombos(data);
 
@@ -2449,6 +2503,10 @@ function clearAll() {
     if (oracleSection) oracleSection.style.display = 'none';
     const pivPan = document.getElementById('pivotPanel');
     if (pivPan) pivPan.style.display = 'none';
+    const synthBlockClear = document.getElementById('witnessSynthesisBlock');
+    if (synthBlockClear) synthBlockClear.style.display = 'none';
+    const synthInfoClear = document.getElementById('entropySynthesisInfo');
+    if (synthInfoClear) { synthInfoClear.style.display = 'none'; synthInfoClear.textContent = ''; }
     const dangerBlockClear = document.getElementById('ardDangerBlock');
     if (dangerBlockClear) dangerBlockClear.style.display = 'none';
     const ardSectionClear = document.getElementById('ardSection');
