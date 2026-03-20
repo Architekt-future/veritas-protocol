@@ -1,6 +1,6 @@
 # Veritas Protocol
 
-![Version](https://img.shields.io/badge/version-v19.1-blue)
+![Version](https://img.shields.io/badge/version-v19.3-blue)
 ![Status](https://img.shields.io/badge/status-експериментальна_розробка-orange)
 ![License](https://img.shields.io/badge/license-MIT_Ethical-green)
 
@@ -81,6 +81,14 @@ Veritas Protocol — це спроба побудувати систему як�
 
 **Другий рівень аналізу** — після основних метрик система формує запит до Claude і повертає класифікацію інформаційного патерну з практичною порадою читачу. Не вирок — спостереження.
 
+### Архітектура Раціональної Дії (АРД)
+
+**ARD Checker** — автоматичний скан кожного тексту через призму дев'яти принципів раціональної дії. Система ловить як активні порушення (заклики до руйнації інститутів, мобілізаційне насильство, маркування ворогів), так і пасивні (констатація смерті механізмів виправлення без визнання власної ролі, "такий світ нічого не вдієш").
+
+Якщо виявлено системне порушення — з'являється окремий червоний блок незалежно від ентропії. Це принципово: текст може бути логічно побудованим (низька ентропія) і водночас небезпечним. Саме така холодна риторика найважча для розпізнавання.
+
+Класи порушень: AUTHORITARIAN_MANDATE, MOB (мобілізаційне насильство), ENEMY (маркування ворогів), LESSER (арифметика атроситі), SOV (щит суверенітету), RESPONSIBILITY_VACUUM, MECHANISM_DEATH, SELF_EXEMPTION, CRISIS_WITHOUT_ACTOR, EMPATHY_INVERSION, INEVITABILITY_ABSOLUTION.
+
 ---
 
 ## Що Свідок не вміє і чому це важливо знати
@@ -118,7 +126,7 @@ Veritas Protocol — це спроба побудувати систему як�
 Scraper (BeautifulSoup + Jina fallback) — очищення від навігації і реклами
     ↓
 ┌──────────────────────────────────────────────┐
-│              Veritas Core v19.1              │
+│              Veritas Core v19.3              │
 │                                              │
 │  Shannon Entropy                             │
 │  LAC Finance + Labor                         │
@@ -134,6 +142,7 @@ Scraper (BeautifulSoup + Jina fallback) — очищення від навіга
 │  Narrative Pivot Detector                    │
 │  Context Engine (RSS live feed)              │
 │  Context Completeness Checker                │
+│  ARD Checker (auto-scan)                     │
 └──────────────────────────────────────────────┘
     ↓
 Entropy score + Verdict + Panel details
@@ -223,6 +232,10 @@ curl https://veritas-protocol.onrender.com/api/health
 
 **v19.1 (Березень 2026)** — Alarmism Detector: новий модуль для виявлення комерційного та риторичного алармізму (ALARM_WITHOUT_ACTION, SINGLE_INTERESTED_SOURCE, FEAR_TO_PRODUCT, SUPERLATIVE_THREAT, VAGUE_SCALE). Три нові синергії. Фікс таймауту воркера на Render: trim до 2500 слів перед аналізом + Procfile з `--timeout 120`.
 
+**v19.2 (Березень 2026)** — ARD Checker v1.2: клас пасивних порушень (Пєсков-клас). Шість нових класів: RESPONSIBILITY_VACUUM, MECHANISM_DEATH_DECLARATION, SELF_EXEMPTION_FROM_NORMS, CRISIS_WITHOUT_ACTOR, EMPATHY_TEST_INVERSION, INEVITABILITY_AS_ABSOLUTION. Система тепер ловить не лише активні заклики до руйнації а й пасивну констатацію смерті інститутів як спосіб зняти відповідальність.
+
+**v19.3 (Березень 2026)** — ARD інтегровано в основний аналіз: автоматичний скан без окремої кнопки. Новий клас AUTHORITARIAN_MANDATE (severity 0.85): прямі законодавчі накази на знищення прав — "без права на адвоката", "автоматично блокується", "сервери конфісковуються". Новий UI-блок НЕБЕЗПЕЧНИЙ ЗМІСТ: червоний індикатор з'являється незалежно від ентропії — з поясненням чому низька ентропія плюс ARD_SYSTEMIC це найнебезпечніший сценарій. Три великих false positive виправлено: legitimate science shield для impossible_measurement (ML-статті більше не отримують НЕБЕЗПЕЧНО через "99.3% fidelity"), nav garbage guard в LAC_LABOR (HBR навігація більше не тригерить трудовий детектор), tech signals в LAC_LABOR (DevEx/engineering статті більше не потрапляють в LAC_LABOR через слова work/platform/task).
+
 **Extension v1.0.0 (Лютий 2026)** — браузерне розширення для Chrome/Opera/Brave/Edge/Vivaldi.
 
 ---
@@ -253,4 +266,4 @@ MIT з етичними вимогами.
 
 ---
 
-*v19.1 · Експериментальна розробка · Свідок дивиться.*
+*v19.3 · Експериментальна розробка · Свідок дивиться.*
