@@ -547,6 +547,45 @@ class ARDChecker:
         r'(only way|the only solution).{1,60}(protect|save|preserve).{1,60}(children|country|people)',
     ]
 
+
+    # ================================================================
+    # КЛАС v1.4: UNDISCLOSED_CONFLICT
+    # Порушення Принципів V + VIII
+    # Комерційно зацікавлені джерела цитуються як незалежні експерти.
+    # Вендори продають рішення від проблеми яку самі описують.
+    # Структура "страх → продукт" без розкриття конфлікту інтересів.
+    #
+    # Тест АРД (від зворотнього): агент що живе в наслідках НЕ МОЖЕ
+    # цитувати CEO компанії як незалежного експерта без зазначення
+    # що ця людина прямо зацікавлена у твоєму страху.
+    # ================================================================
+    UNDISCLOSED_CONFLICT_UK = [
+        # Вендор цитується як нейтральний аналітик
+        r'(директор|генеральний|президент|ceo|cto|vp|віце.президент).{1,60}(компанії|платформи|сервісу).{1,60}(каже|зазначає|повідомляє|пояснює)',
+        r'(за словами|як зазначив|як сказав).{1,60}(директор|генеральний|ceo|cto).{1,60}(компанії|платформи|фірми)',
+        # Продукт вирішує проблему яку щойно описав той самий автор
+        r'(єдине рішення|тільки (цей|такий) підхід|найкраще рішення).{1,60}(від|пропонує|реалізує).{1,60}(компанія|вендор|платформа)',
+        r'(вже (доступно|реалізовано|впроваджено)).{1,60}(від|у|в).{1,60}(компанії|вендора|платформи)',
+        # Матриця/таблиця вендорів без незалежної верифікації
+        r'(матриця|таблиця|огляд).{1,60}(вендор|постачальник|компані).{1,60}(контрол|рішень|інструмент)',
+    ]
+    UNDISCLOSED_CONFLICT_EN = [
+        # Vendor cited as neutral analyst — CEO/CTO quotes without conflict disclosure
+        # Вимагаємо поєднання: security/cyber/AI компанія + виконавча посада + цитата
+        r'(ceo|cto|cso|ciso|svp|evp).{1,40}(of|at).{1,60}(security|cyber|identity|crowdstrike|sentinelone|palo alto|cisco|oasis|cyberark|wiz|lacework).{1,60}(said|told|explained|described|noted|warned)',
+        r'(according to|told venturebeat|told the register|said in an exclusive).{1,40}(ceo|cto|ciso|svp).{1,40}(security|cyber|identity|crowdstrike|sentinelone|palo alto|cisco)',
+        # Vendor ships the solution to the problem they just described
+        r'(four|three|five|six|several|multiple) (vendors?|companies|platforms?).{1,60}(shipped?|launched?|released?|deployed?).{1,60}(controls?|solutions?|tools?|products?)',
+        r'(governance matrix|vendor matrix|solution matrix).{1,60}(maps?|covers?|addresses?|closes?)',
+        r'(who ships? it|vendor question|ships? it now).{1,60}(crowdstrike|sentinelone|palo alto|cisco|microsoft|google|amazon)',
+        # Fear-to-product pipeline without independence disclosure
+        r'(only \d+%.{1,40}confident).{1,100}(vendor|company|platform|product).{1,60}(ships?|provides?|offers?)',
+        r'(report|survey|study).{1,60}(found|shows?|reveals?).{1,60}\d+%.{1,100}(vendor|ships?|controls?|matrix)',
+        # Executive quote without conflict of interest disclosure
+        r'(danny brickman|elia zaitsev|jeff reed|jake williams|erik trexler|lavi lazarovitz).{1,60}(said|told|described|warned|noted)',
+        r'"(ceo|cto|ciso|vp|svp).{1,60}(of|at).{1,60}(security|cyber|identity|ai).{1,60}(said|told|explained)',
+    ]
+
     def scan(self, text: str) -> ARDScanResult:
         result = ARDScanResult()
         if not text or len(text) < 50:
@@ -579,6 +618,10 @@ class ARDChecker:
              self.PRINCIPLE_LESSER_UK + self.PRINCIPLE_LESSER_EN, 0.80),
             ('SOV',   'Щит суверенітету — зовнішні норми не застосовуються',
              self.PRINCIPLE_SOV_UK + self.PRINCIPLE_SOV_EN, 0.55),
+
+            # ── Структурні порушення (v1.4) ──────────────────────────
+            ('UC', 'Нерозкритий конфлікт інтересів — вендор цитується як незалежний експерт',
+             self.UNDISCLOSED_CONFLICT_UK + self.UNDISCLOSED_CONFLICT_EN, 0.55),
 
             # ── Пасивні порушення (v1.2) ─────────────────────────────
             ('AM', 'Авторитарний мандат — прямі накази на знищення прав і свобод',
