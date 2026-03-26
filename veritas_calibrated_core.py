@@ -364,6 +364,7 @@ class VeritasCalibratedCore:
         ]
 
         self.ANONYMOUS_AUTHORITY_PATTERNS = [
+            # Фольклорні анонімні джерела
             r'дехто каже',
             r'хтось сказав',
             r'поширена думка',
@@ -372,7 +373,16 @@ class VeritasCalibratedCore:
             r'they say',
             r'people say',
             r'вважають',
-            r'вважається'
+            r'вважається',
+            # Журналістські анонімні джерела — Bloomberg, Reuters, NYT стиль
+            r'(поінформован|обізнан).{1,30}(джерел|осіб|людин)',
+            r'(за словами|на думку|як повідомляє).{1,40}(джерел|осіб|представник).{1,30}(анонімн|не (уповноважен|мають права))',
+            r'(source|sources).{1,60}(condition of anonymity|not authorized|not permitted).{1,60}(speak|talk|comment)',
+            r'(told|said).{1,60}(condition of anonymity|spoke on condition|not authorized to speak)',
+            r'(according to|per).{1,40}(source|sources|official|officials).{1,60}(familiar with|briefed on|knowledge of)',
+            r'(people|officials|insiders).{1,60}(familiar with|knowledge of|briefed on).{1,60}(matter|situation|development)',
+            # Широкі анонімні посилання без уточнення
+            r'(experts|analysts|officials|sources).{1,30}(say|said|told|suggest|believe).{1,60}(?!their name|identified)',
         ]
 
         # ============================================================
