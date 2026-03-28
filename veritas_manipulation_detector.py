@@ -852,6 +852,68 @@ class ManipulationDetector:
         }
         ]
 
+    # ================================================================
+    # ATTRIBUTION SHIELD v1.0
+    # Розрізняємо авторський голос і чужу мову.
+    # Маніпулятивний патерн у цитаті — це репортаж про маніпуляцію,
+    # а не маніпуляція самого тексту.
+    #
+    # Три рівні атрибуції (з різними множниками):
+    #   AUTHOR     ×1.0  — авторська позиція, пряма мова тексту
+    #   ATTRIBUTED ×0.45 — непряма мова ("organization said that...")
+    #   QUOTED     ×0.25 — пряма цитата (в лапках)
+    #
+    # Логіка: якщо після знайденого патерну більшість контексту
+    # знаходиться всередині attribution-зони — знижуємо вагу.
+    # ================================================================
+
+    # Маркери що починають attributed speech (непряма мова)
+    _ATTRIBUTION_VERBS = re.compile(
+        r'\b('
+        r'said|told|stated|noted|wrote|argued|warned|stressed|urged|added|'
+        r'described|explained|called|claimed|insisted|suggested|emphasized|'
+        r'declared|announced|confirmed|reported|according to|'
+        # Ukrainian
+        r'сказав|сказала|сказали|заявив|заявила|заявили|зазначив|зазначила|'
+        r'повідомив|повідомила|написав|написала|стверджує|стверджують|'
+        r'підкреслив|підкреслила|наголосив|наголосила|описав|описала|'
+        r'назвав|назвала|закликав|закликала|додав|додала|пояснив|пояснила|'
+        r'за словами|за даними|за твердженням|згідно з'
+        r')\b',
+        re.IGNORECASE
+    )
+
+    # Відкриваючі лапки (всі варіанти що зустрічаються в текстах)
+    _OPEN_QUOTES  = re.compile(r'["\u201c\u00ab\u2018«]')
+    _CLOSE_QUOTES = re.compile(r'["\u201d\u00bb\u2019»]')
+
+    def _get_attribution_weight(self, text: str, match_start: int) -> float:
+        """
+        Визначає множник для патерну знайденого на позиції match_start.
+
+        Алгоритм:
+        1. Якщо позиція всередині прямої цитати (непарні лапки) → QUOTED (×0.25)
+        2. Якщо у вікні 120 символів до позиції є attribution verb → ATTRIBUTED (×0.45)
+        3. Інакше → AUTHOR (×1.0)
+        """
+        before = text[:match_start]
+
+        # ── Перевірка QUOTED: непарна кількість відкритих лапок ──────
+        open_count  = len(self._OPEN_QUOTES.findall(before))
+        close_count = len(self._CLOSE_QUOTES.findall(before))
+        if open_count > close_count:
+            return 0.25  # всередині прямої цитати
+
+        # ── Перевірка ATTRIBUTED: attribution verb у вікні 120 символів ──
+        # Беремо 120 символів до позиції і шукаємо attribution verb.
+        # 120 символів = ~1-1.5 речення — достатньо щоб зловити
+        # "Amnesty International said in a statement that..."
+        window = before[-120:] if len(before) > 120 else before
+        if self._ATTRIBUTION_VERBS.search(window):
+            return 0.45  # непряма мова
+
+        return 1.0  # авторська позиція
+
     def analyze(self, text: str) -> Dict:
         if len(text) < 30:
             return {
@@ -865,20 +927,36 @@ class ManipulationDetector:
         matched_patterns = []
 
         for ps in self.pattern_sets:
-            hits = 0
+            weighted_hits = 0.0   # сума ваг (враховує attribution)
+            raw_hits = 0          # кількість знайдених патернів (для min_hits)
             hit_snippets = []
+
             for pattern in ps['patterns']:
                 m = re.search(pattern, text_lower, re.IGNORECASE)
                 if m:
-                    hits += 1
-                    hit_snippets.append(m.group(0)[:60])
+                    raw_hits += 1
+                    weight = self._get_attribution_weight(text_lower, m.start())
+                    weighted_hits += weight
+                    hit_snippets.append((m.group(0)[:60], weight))
 
-            if hits >= ps['min_hits']:
-                total_score += ps['score']
+            # min_hits перевіряємо по raw_hits (знайдено чи ні),
+            # але score множимо на середню attribution weight.
+            # Це дозволяє: патерн знайдено (raw) але вага знижена (attribution).
+            if raw_hits >= ps['min_hits']:
+                avg_weight = weighted_hits / raw_hits
+                pattern_score = ps['score'] * avg_weight
+                total_score += pattern_score
+
+                # Додаємо лише ті сніпети де attribution weight >= 0.45
+                # (не показуємо в UI цитати що "тягнуть" вниз)
+                authored_snippets = [
+                    snippet for snippet, w in hit_snippets if w >= 0.45
+                ]
                 matched_patterns.append({
                     'name': ps['name'],
-                    'hits': hits,
-                    'examples': hit_snippets[:2],
+                    'hits': raw_hits,
+                    'attribution_weight': round(avg_weight, 2),
+                    'examples': authored_snippets[:2] or [hit_snippets[0][0]],
                 })
 
         manipulation_score = min(1.0, total_score)
