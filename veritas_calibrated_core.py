@@ -777,9 +777,12 @@ class VeritasCalibratedCore:
         # News/opinion/conspiracy genres often contain financial keywords (files,
         # records, funding) that trigger false positives — LAC Finance is designed
         # for actual financial documents, reports, and investment pitches.
+        # UNKNOWN жанр теж скіпаємо — 82% текстів UNKNOWN, і більшість не фінансові.
+        # LAC Finance запускається тільки якщо жанр явно фінансовий або не визначений
+        # через конкретні hard indicators (це перевіряє сам модуль всередині).
         LAC_FINANCE_SKIP_GENRES = {
             'CONSPIRACY_NEWS', 'REPORT', 'OPINION', 'SPORT',
-            'CULTURE', 'LIFESTYLE', 'SATIRE', 'SCIENCE',
+            'CULTURE', 'LIFESTYLE', 'SATIRE', 'SCIENCE', 'UNKNOWN',
         }
         lac_finance_result = {
             'score': 0.0,
@@ -1022,6 +1025,7 @@ class VeritasCalibratedCore:
 
         # ---- PHASE 10j: CONTEXT ENGINE (v16.7) ----
         # Displacement detection — is this text suspicious given the field?
+        # Timeout guard: якщо RSS або обчислення зависають — не вбиваємо воркер
         context_result = {
             'displacement_score':   0.0,
             'displacement_verdict': 'NO_CONTEXT',
@@ -1032,7 +1036,15 @@ class VeritasCalibratedCore:
             'explanation_en':       '',
         }
         if self.context_engine:
-            context_result = self.context_engine.analyze_displacement(text, genre=_genre)
+            try:
+                import concurrent.futures as _ctx_cf
+                with _ctx_cf.ThreadPoolExecutor(max_workers=1) as _ctx_ex:
+                    _ctx_future = _ctx_ex.submit(
+                        self.context_engine.analyze_displacement, text, _genre
+                    )
+                    context_result = _ctx_future.result(timeout=8)
+            except Exception as _ctx_e:
+                print(f'⚠️  context_engine timeout/error (non-fatal): {_ctx_e}')
         
         # Pre-extract axiom_score to outer scope (prevents UnboundLocalError
         # when is_protected_science branch skips the scoring block)
