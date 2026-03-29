@@ -428,6 +428,70 @@ class AxiomGuard:
             r'(lost|stripped of|left without).{1,60}(international law|legal framework|norms)',
         ]
 
+    # ================================================================
+    # ATTRIBUTION SHIELD
+    # Видаляє цитований текст перед аналізом — щоб чужі слова
+    # не тригерили патерни як позиція автора.
+    #
+    # Покриває:
+    #   «...»  "..."  "..."
+    #   said/stated/wrote/claimed/according to + речення
+    #   за словами / на думку / стверджує що / заявив що
+    #
+    # Чутливі патерни (перевіряються тільки на очищеному тексті):
+    #   AUTHORITY_REALITY_CLAIM, UNIVERSAL_NEGATION,
+    #   EXISTENTIAL_PAST_TENSE, VACUUM_DECLARATION, DE_FACTO_SPLIT
+    # ================================================================
+
+    ATTRIBUTION_SENSITIVE = {
+        'AUTHORITY_REALITY_CLAIM',
+        'UNIVERSAL_NEGATION',
+        'EXISTENTIAL_PAST_TENSE',
+        'VACUUM_DECLARATION',
+        'DE_FACTO_SPLIT',
+    }
+
+    def _strip_attributed_text(self, text: str) -> str:
+        """
+        Повертає текст з видаленими цитованими блоками.
+        Замість цитат підставляє [ATTRIBUTED].
+        """
+        # 1. Прямі цитати в лапках: «...»  "..."  "..."
+        result = re.sub(r'«[^»]{3,400}»', '[ATTRIBUTED]', text)
+        result = re.sub(r'\u201c[^\u201d]{3,400}\u201d', '[ATTRIBUTED]', result)
+        result = re.sub(r'"[^"]{3,400}"', '[ATTRIBUTED]', result)
+
+        # 2. Непряме цитування EN:
+        # "X said/stated/wrote/claimed/argued/warned/noted that ..."
+        result = re.sub(
+            r'\b(?:said|stated|wrote|claimed|argued|warned|noted|declared|announced|insisted|suggested)\s+that\s+[^.!?]{10,300}[.!?]',
+            '[ATTRIBUTED]', result, flags=re.IGNORECASE
+        )
+        # "according to X, ..."
+        result = re.sub(
+            r'\baccording\s+to\s+[^,]{2,60},\s+[^.!?]{10,200}[.!?]',
+            '[ATTRIBUTED]', result, flags=re.IGNORECASE
+        )
+        # "X told reporters/journalists ..."
+        result = re.sub(
+            r'\btold\s+(?:reporters?|journalists?|the\s+\w+)?\s*[,:]?\s*[^.!?]{10,200}[.!?]',
+            '[ATTRIBUTED]', result, flags=re.IGNORECASE
+        )
+
+        # 3. Непряме цитування UK:
+        # "X заявив що / сказав що / написав що / стверджує що ..."
+        result = re.sub(
+            r'\b(?:заявив|сказав|написав|стверджує|вважає|зазначив|попередив|повідомив|наголосив)\s+(?:що|:)\s+[^.!?]{10,300}[.!?]',
+            '[ATTRIBUTED]', result, flags=re.IGNORECASE
+        )
+        # "за словами X / на думку X / як вважає X ..."
+        result = re.sub(
+            r'(?:за\s+словами|на\s+думку|як\s+вважає|як\s+стверджує|як\s+заявив)\s+[^,]{2,60},\s+[^.!?]{10,200}[.!?]',
+            '[ATTRIBUTED]', result, flags=re.IGNORECASE
+        )
+
+        return result
+
     def analyze(self, text: str) -> Dict:
         if len(text) < 50:
             return {
@@ -437,6 +501,9 @@ class AxiomGuard:
             }
 
         text_lower = text.lower()
+        # Attribution Shield: очищений текст для чутливих патернів
+        text_clean = self._strip_attributed_text(text).lower()
+
         total_score = 0.0
         matched = []
 
@@ -447,7 +514,7 @@ class AxiomGuard:
             ('AXIOM_INVERSION',        self.axiom_inversion + self.axiom_inversion_en,               0.75, 1),
             ('BACKDOOR_PROPOSAL',      self.backdoor_proposal + self.backdoor_proposal_en,           0.70, 2),
             ('SYSTEMIC_NIHILISM',      self.systemic_nihilism + self.systemic_nihilism_en,           0.65, 2),
-            # Нові патерни: пєсков-клас маніпуляцій
+            # Пєсков-клас маніпуляцій (Attribution-sensitive)
             ('AUTHORITY_REALITY_CLAIM', self.authority_reality_claim, 0.70, 1),
             ('UNIVERSAL_NEGATION',      self.universal_negation,      0.55, 1),
             ('DE_FACTO_SPLIT',          self.de_facto_split,          0.60, 1),
@@ -458,10 +525,12 @@ class AxiomGuard:
         ]
 
         for name, patterns, score, min_hits in checks:
+            # Чутливі патерни перевіряємо тільки на авторському тексті
+            search_text = text_clean if name in self.ATTRIBUTION_SENSITIVE else text_lower
             hits = 0
             snippets = []
             for p in patterns:
-                m = re.search(p, text_lower, re.IGNORECASE)
+                m = re.search(p, search_text, re.IGNORECASE)
                 if m:
                     hits += 1
                     snippets.append(m.group(0)[:60])
