@@ -59,6 +59,17 @@ class GenreDetector:
         r'\bо \d{1,2}:\d{2}\b',
         r'\b\d{1,2} (january|february|march|april|may|june|july|august|september|october|november|december) \d{4}\b',
         r'\bpublished:\b', r'\bupdated:\b',
+        # EN investigative / breaking news
+        r'\b(resigned|resignation)\b',
+        r'\b(investigation|investigating|under investigation)\b',
+        r'\b(declined to comment|did not (immediately )?respond|referred questions)\b',
+        r'\b(first reported|exclusively reported|obtained by)\b',
+        r'\b(according to (nbc|cnn|bbc|reuters|ap news|the times|a source))\b',
+        r'\b(leak(ed|ing)|leaks?)\b',
+        r'\b(fired|dismissed|ousted|stepped down)\b',
+        r'\b(press secretary|spokesperson for|official said)\b',
+        r'\b(hit back|pushed back|disputed|denied the claims?)\b',
+        r'\b\d{1,2}:\d{2}\s*(AM|PM|EDT|EST|GMT|UTC)\b',
     ]
 
     # ── OPINION ──────────────────────────────────────────────────────
@@ -111,7 +122,9 @@ class GenreDetector:
         r'\b(фільм|кіно|серіал|театр|виставка|концерт|альбом)\b',
         r'\b(режисер|актор|актриса|сценарист|продюсер)\b',
         r'\b(film|movie|series|theatre|concert|album|premiere)\b',
-        r'\b(director|actor|actress|screenwriter|producer)\b',
+        # "director" без кінематографічного контексту — не культурний сигнал.
+        # Потребує супутнього слова щоб відрізнити від "Director of FBI"
+        r'\b(director|actor|actress|screenwriter|producer)\b(?=.{0,60}(film|movie|series|theatre|music|album|award))',
         r'\b(нагород|номінант|прем.єра|реліз|кінофестиваль)\b',
         r'\b(award|nomination|release|box office|film festival)\b',
     ]
