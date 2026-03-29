@@ -204,6 +204,58 @@ class MediaBiasDetector:
         r'(a whopping|an impressive|a substantial).{1,30}(\d+GB|\d+TB|\d+ cores)',
     ]
 
+    # ================================================================
+    # NEWS ATTRIBUTION SHIELD
+    # Репортаж де джерело говорить більше — це не PR.
+    # Розрізняємо: "Кент сказав X" (репортаж) vs "Компанія каже X" (PR).
+    #
+    # Новинний репортаж має характерні маркери:
+    #   - Відмова від коментарів ("declined to comment", "did not respond")
+    #   - Кілька сторін ("pushed back", "hit back", "disputed")
+    #   - Журналістське джерело з умовою анонімності
+    #   - Конкретні факти: дати, посади, імена
+    #   - Розслідувальні конструкції ("first reported", "obtained by")
+    #
+    # Якщо текст є новинним репортажем — QUOTE_DOMINANCE і
+    # ANNOUNCEMENT_WITHOUT_ACCOUNTABILITY не тригерять.
+    # ================================================================
+
+    NEWS_MARKERS = [
+        # Відмова від коментарів (ключовий маркер)
+        r'(declined to comment|did not (immediately )?respond|referred questions)',
+        r'(не (надав|надала|надали) коментар|відмовив(ся|лась|лись) коментувати)',
+        r'(did not reply|had no comment|was not available)',
+
+        # Кілька сторін (баланс)
+        r'(pushed back|hit back|disputed|denied|rejected).{1,60}(claim|report|statement|said)',
+        r'(відкинув|заперечив|спростував|відреагував).{1,60}(заяв|звинувач|твердж)',
+
+        # Журналістське джерело
+        r'(first reported by|exclusively reported|obtained by)',
+        r'(source (familiar with|briefed on|with knowledge of))',
+        r'(condition of anonymity|not authorized to speak)',
+
+        # Розслідувальні конструкції
+        r'(according to (a|two|three|multiple|several) (source|official|person))',
+        r'(documents? (obtained|reviewed|seen) by)',
+        r'(за даними|за інформацією).{1,30}(джерел|видання|редакції)',
+
+        # Конкретні посади/ролі (ознака репортажу, не PR)
+        r'(director of|secretary of|spokesperson for|press secretary)',
+        r'(директор|міністр|речник|прес-секретар).{1,40}(заявив|повідомив|сказав)',
+    ]
+
+    def _is_news_report(self, text: str) -> bool:
+        """
+        Визначає чи текст є новинним репортажем а не PR/рекламою.
+        Мінімум 2 новинних маркери = вважається репортажем.
+        """
+        hits = sum(
+            1 for p in self.NEWS_MARKERS
+            if re.search(p, text, re.IGNORECASE)
+        )
+        return hits >= 2
+
     def analyze(self, text: str) -> MediaBiasResult:
         result = MediaBiasResult()
         if not text or len(text) < 80:
@@ -213,6 +265,9 @@ class MediaBiasDetector:
         signals = []
         patterns_found = []
         score = 0.0
+
+        # News Attribution Shield — визначаємо до аналізу патернів
+        is_news = self._is_news_report(text)
 
         # ── SIGNAL 1: SPONSORED CONTENT LAUNDERING ───────────────────
         sp_patterns = self.SPONSORED_LAUNDERING_UK + self.SPONSORED_LAUNDERING_EN
@@ -241,12 +296,15 @@ class MediaBiasDetector:
             score += 0.20
 
         # ── SIGNAL 3: ANNOUNCEMENT WITHOUT ACCOUNTABILITY ─────────────
+        # Shield: новинний репортаж може містити "said/will" без термінів —
+        # це цитування джерела, не PR-анонс без підзвітності.
         ann_patterns = self.ANNOUNCEMENT_NO_ACCOUNTABILITY_UK + self.ANNOUNCEMENT_NO_ACCOUNTABILITY_EN
         ann_hits = []
-        for p in ann_patterns:
-            m = re.search(p, text_lower, re.IGNORECASE)
-            if m:
-                ann_hits.append(m.group(0)[:60])
+        if not is_news:  # пропускаємо для новинних репортажів
+            for p in ann_patterns:
+                m = re.search(p, text_lower, re.IGNORECASE)
+                if m:
+                    ann_hits.append(m.group(0)[:60])
 
         if len(ann_hits) >= 2:
             signals.append(f'Анонс без підзвітності ({len(ann_hits)} патернів): «{ann_hits[0][:50]}»')
@@ -271,12 +329,24 @@ class MediaBiasDetector:
             score += 0.25
 
         # ── SIGNAL 5: QUOTE DOMINANCE / FALSE ATTRIBUTION ─────────────
+        # Shield: в новинному репортажі домінування цитат однієї сторони —
+        # норма (особливо якщо ця сторона є news). Тригеримо тільки якщо
+        # є ПРЯМА FALSE ATTRIBUTION (суд сказав X — але суд цього не казав).
         qd_patterns = self.QUOTE_DOMINANCE_UK + self.QUOTE_DOMINANCE_EN
         qd_hits = []
         for p in qd_patterns:
             m = re.search(p, text_lower, re.IGNORECASE)
             if m:
                 qd_hits.append(m.group(0)[:60])
+
+        # Для новинних репортажів — тільки false attribution (перші 2 патерни кожної групи)
+        if is_news and qd_hits:
+            false_attr_patterns = self.QUOTE_DOMINANCE_UK[:2] + self.QUOTE_DOMINANCE_EN[:3]
+            qd_hits = [
+                m.group(0)[:60]
+                for p in false_attr_patterns
+                if (m := re.search(p, text_lower, re.IGNORECASE))
+            ]
 
         if qd_hits:
             signals.append(f'Хибна атрибуція або домінування цитати: «{qd_hits[0][:55]}»')
