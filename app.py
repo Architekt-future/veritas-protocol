@@ -1025,8 +1025,20 @@ def analyze():
         else:
             text_for_analysis = text
 
-        # Analyze text
-        result = engine.analyze(text_for_analysis)
+        # Analyze text — з timeout guard щоб regex backtracking не вбивав воркер
+        import concurrent.futures as _cf
+        _ANALYZE_TIMEOUT = 22  # секунд — gunicorn worker timeout = 30s, лишаємо буфер
+        try:
+            with _cf.ThreadPoolExecutor(max_workers=1) as _executor:
+                _future = _executor.submit(engine.analyze, text_for_analysis)
+                result = _future.result(timeout=_ANALYZE_TIMEOUT)
+        except _cf.TimeoutError:
+            print(f'⏱️  engine.analyze() TIMEOUT після {_ANALYZE_TIMEOUT}с — повертаємо базовий результат')
+            return jsonify({
+                'error': 'Аналіз зайняв надто довго. Спробуйте коротший текст або повторіть запит.',
+                'status': 'timeout',
+                'hint': 'analysis_timeout'
+            }), 503
 
         # ── ABSURDITY DEBUG LOG ──────────────────────────────────────────────
         _diag = result.get('diagnostics', {})
