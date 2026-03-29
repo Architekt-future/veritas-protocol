@@ -51,7 +51,10 @@ class VeritasLACEpistemology:
         r'\bджерел\w*\s+(повідомил|розповіл|підтвердил)\w*\s+на\s+(умовах?|прохання)',
         r'\bанонімн\w+\s+(джерел|коментар|повідомлення)',
     ]
-    ANON_PATTERNS_EN = [
+
+    # Псевдонаукові анонімні авторитети — "some experts say" без видання
+    # Тригерять ЗАВЖДИ незалежно від жанру
+    ANON_PATTERNS_EN_PSEUDO = [
         r'\bsome\s+experts?\b',
         r'\bsome\s+researchers?\b',
         r'\bsome\s+analysts?\b',
@@ -62,13 +65,17 @@ class VeritasLACEpistemology:
         r'\bscientists?\s+warn\b',
         r'\bcritics?\s+say\b',
         r'\bobservers?\s+(note|say|warn)\b',
-        # ── Журналістський анонімний жаргон ──────────────────────────────
+    ]
+
+    # Журналістські анонімні джерела — легітимна практика захисту джерела
+    # Тригерять тільки для НЕ-новинних жанрів (REPORT, ANALYTICS отримують щит)
+    ANON_PATTERNS_EN_JOURNALISTIC = [
         r'\bsources?\s+familiar\s+with\b',
         r'\bpeople\s+familiar\s+with\b',
         r'\bsource\s+close\s+to\b',
         r'\bsources?\s+close\s+to\b',
-        r'\bone\s+\w{2,20}\s+official\b',          # "one Trump official", "one senior official"
-        r'\b\w{2,20}\s+official\s+(told|said)\b',  # "official told CNN"
+        r'\bone\s+\w{2,20}\s+official\b',
+        r'\b\w{2,20}\s+official\s+(told|said)\b',
         r'\bsenior\s+\w{0,20}\s*official\b',
         r'\bsources?\s+who\s+(spoke|requested|asked)\b',
         r'\bofficials?\s+who\s+(spoke|declined|requested)\b',
@@ -78,6 +85,9 @@ class VeritasLACEpistemology:
         r'\bdeclined\s+to\s+be\s+(named|identified)\b',
         r'\bwho\s+(asked|requested)\s+(not\s+to\s+be\s+named|anonymity)\b',
     ]
+
+    # Жанри де журналістські анонімні джерела — норма, не маніпуляція
+    JOURNALISTIC_GENRES = {'REPORT', 'ANALYTICS'}
 
     # ── Pattern 2: Correlation-as-causation ─────────────────────────────────
     CORR_PATTERNS_UK = [
@@ -171,7 +181,7 @@ class VeritasLACEpistemology:
     LEAP_THRESHOLD = 1
     UNVERIFIED_CITE_THRESHOLD = 1
 
-    def analyze(self, text: str) -> EpistemologyResult:
+    def analyze(self, text: str, genre: str = 'UNKNOWN') -> EpistemologyResult:
         if not text or len(text.strip()) < 50:
             return EpistemologyResult(
                 score=0.0,
@@ -181,8 +191,18 @@ class VeritasLACEpistemology:
 
         t = text.lower()
 
+        # Journalistic Shield: для REPORT/ANALYTICS журналістські анонімні
+        # джерела — норма. Тільки псевдонаукові "some experts" тригерять.
+        is_journalistic_genre = genre in self.JOURNALISTIC_GENRES
+        if is_journalistic_genre:
+            anon_patterns = self.ANON_PATTERNS_UK + self.ANON_PATTERNS_EN_PSEUDO
+        else:
+            anon_patterns = (self.ANON_PATTERNS_UK +
+                             self.ANON_PATTERNS_EN_PSEUDO +
+                             self.ANON_PATTERNS_EN_JOURNALISTIC)
+
         # Count hits per pattern group
-        anon_hits        = self._count_hits(t, self.ANON_PATTERNS_UK + self.ANON_PATTERNS_EN)
+        anon_hits        = self._count_hits(t, anon_patterns)
         corr_hits        = self._count_hits(t, self.CORR_PATTERNS_UK + self.CORR_PATTERNS_EN)
         unfals_hits      = self._count_hits(t, self.UNFALS_PATTERNS_UK + self.UNFALS_PATTERNS_EN)
         leap_hits        = self._count_hits(t, self.LEAP_PATTERNS_UK + self.LEAP_PATTERNS_EN)
