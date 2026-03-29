@@ -1,5 +1,5 @@
 """
-Veritas LAC — Labor & Employment Edition v1.0
+Veritas LAC — Labor & Employment Edition v5.0
 Logic Authenticity Check for Work Relationships
 
 Purpose:
@@ -393,7 +393,7 @@ class VeritasLACLabor:
             'виконавець', 'замовник', 'найм',
         ]
         soft_hits = sum(1 for term in soft_indicators if term in text)
-        if soft_hits >= 2:
+        if soft_hits >= 3:  # підвищено з 2 — менше false positives на економічних новинах
             return True
 
         # Non-labor topic signals — suppress false positives
@@ -404,6 +404,9 @@ class VeritasLACLabor:
             r'(climate|renewable|carbon|emission|wind\s+farm|solar)',
             r'(lawsuit|indictment|criminal|prosecutor|verdict|trial)',
             r'(депутат|парламент|суд|вибор|президент|прокурор)',
+            # Science / research — дослідники, команда, робота ≠ трудові відносини
+            r'(дослідник|науков|лабораторі|experiment|research\s+team|study\s+found|published)',
+            r'(peer.reviewed|journal|findings|дані\s+показують|вчені|scientists?)',
         ]
         non_labor_hits = sum(
             1 for p in non_labor_signals
