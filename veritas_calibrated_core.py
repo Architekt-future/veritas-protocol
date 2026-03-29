@@ -831,7 +831,7 @@ class VeritasCalibratedCore:
             'pattern_hits': {}
         }
         if self.lac_epistemology:
-            epist_analysis = self.lac_epistemology.analyze(text)
+            epist_analysis = self.lac_epistemology.analyze(text, genre=_genre)
             lac_epistemology_result = {
                 'score': epist_analysis.score,
                 'verdict': epist_analysis.verdict,
