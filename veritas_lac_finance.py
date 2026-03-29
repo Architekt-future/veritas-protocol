@@ -1,5 +1,5 @@
 """
-Veritas LAC — Finance Edition v1.0
+Veritas LAC — Finance Edition v2.0
 Logic Authenticity Check for Financial Narratives
 
 Purpose:
@@ -239,8 +239,10 @@ class VeritasLACFinance:
 
         # Broad terms that need CONTEXT to be financial
         # Only count if appear alongside other financial terms
+        # NOTE: 'ринок'/'market' видалені — занадто широкі, тригеряться на будь-яких новинах
+        # NOTE: 'інвестиці' перенесено сюди з hard — є в кожній економічній новині
         self.finance_context_terms = [
-            'investment', 'investor', 'прибуток', 'ринок', 'market',
+            'investment', 'investor', 'прибуток', 'інвестиці',
             'fund', 'фонд', 'asset', 'актив', 'stock', 'акці',
             'trading', 'торгівл', 'yield', 'return',
         ]
@@ -317,13 +319,14 @@ class VeritasLACFinance:
             'bitcoin', 'ethereum', 'crypto', 'blockchain',
             'біткоїн', 'біткойн', 'крипто', 'блокчейн',
             'etf', 'портфел', 'portfolio',
-            'інвестиці', 'дохідність', 'облігаці',
+            'дохідність', 'облігаці',
             'волатильн', 'ліквідн', 'liquidity',
             'dividend', 'дивіденд', 'фондов', 'біржа', 'торги',
             'курс валют', 'акціонер', 'капіталіз',
             'hedge fund', 'stock market', 'exchange rate',
             'capital gains', 'interest rate', 'p/e ratio',
             'bull market', 'bear market',
+            # NOTE: 'інвестиці' перенесено до context_terms — занадто широке
         ]
         for term in hard_indicators_simple:
             if term in text:
@@ -365,7 +368,7 @@ class VeritasLACFinance:
         # If strong non-financial topic detected, raise threshold significantly
         if non_fin_hits >= 2:
             return context_hits >= 6
-        return context_hits >= 4
+        return context_hits >= 6  # підвищено з 4 — після видалення 'ринок'/'market' поріг вирівняно
     
     def _test_tradeoff(self, text: str) -> Tuple[bool, List[str]]:
         """Test for explicit trade-off disclosure"""
