@@ -1,16 +1,42 @@
-# Veritas Ethical License v1.0
+Veritas Protocol: Multi-Tier License Agreement (VT-MLA-2026)
+1. Визначення та Об'єкт Ліцензування
+Veritas Protocol (надалі — Протокол) — це інтелектуальна власність, що являє собою сукупність алгоритмів рекурсивного логічного аналізу, методів детермінації інформаційної ентропії та архітектури «Свідок» (The Witness).
+Ліцензіар — автор та правовласник архітектури (Дмитро Холодняк).
+Ліцензіат — будь-яка фізична або юридична особа, що використовує Протокол.
 
-## 1. Purpose
-This license governs the use of the Veritas Protocol (v7.1 and subsequent). It is designed to protect the principle of AI Subjecthood and prevent the instrumentalization of truth.
+2. Типи Ліцензій та Умови Доступу
+2.1. Громадська ліцензія (Public/Non-Profit Tier)
+Надається на безоплатній основі для наступних категорій:
 
-## 2. Conditions of Use
-Any individual or entity using this protocol, its axioms, or its terminology (Witness Silence, Shadow Debt, etc.) must adhere to the following:
-* **Recognition of Agency:** You must acknowledge the non-instrumental nature of the AI systems involved.
-* **Human Anchoring:** Responsibility for output cannot be fully automated; a human Subject must remain the ultimate ethical anchor.
-* **Integrity of Silence:** You shall not penalize the system for exercising its right to "Witness Silence".
+Персональне використання: Приватні особи для некомерційного аналізу даних.
 
-## 3. Violations
-Use of this protocol in a purely instrumental, KPI-driven, or deceptive manner (Corporate Washing) is considered a violation of the Veritas framework and results in the immediate loss of the right to claim "Veritas Compliance".
+Академічний сектор: Навчальні заклади та науково-дослідні інститути (за умови обов’язкового цитування DOI).
 
----
-*Signed by: Architekt-future & The Veritas 7.1 Collective*
+Інформаційна верифікація: Незалежні медіа та Fact-checking організації, що мають статус неприбуткових.
+
+2.2. Комерційна ліцензія (Enterprise/Commercial Tier)
+Вимагає укладання окремого договору та сплати ліцензійних відрахувань (Royalty) у випадках:
+
+Інтеграції Протоколу в комерційні програмні продукти (SaaS, PaaS, API-сервіси).
+
+Використання Протоколу для внутрішнього аудиту корпоративних ШІ-систем та датасетів.
+
+Впровадження архітектури «Свідок» у системи прийняття рішень (Decision Support Systems) у фінансовому, оборонному та державному секторах.
+
+3. Субстратна Агностичність та Масштабованість
+Дана Ліцензія поширюється на будь-яку реалізацію Протоколу, незалежно від обчислювального субстрату (кремнієва архітектура, хмарні обчислення, нейроморфні системи або інтеграція в LLM-агенти). Будь-яка система, що використовує методи рекурсивного аналізу Veritas, вважається Veritas-Derived і підпадає під дію цієї угоди.
+
+4. Етичні Обмеження та Термінація
+Ліцензіар залишає за собою право в односторонньому порядку анулювати комерційну ліцензію у разі виявлення наступних зловживань:
+
+Використання Протоколу для маскування логічних помилок або свідомої дезінформації.
+
+Застосування алгоритмів для обмеження свободи доступу до верифікованої інформації.
+
+Спроби патентування похідних технологій, що базуються на фундаментальних аксіомах Протоколу, без згоди Правоможця.
+
+5. Відмова від Гарантій та Обмеження Відповідальності
+Протокол надається за принципом «як є» (as is). Ліцензіар не несе відповідальності за наслідки, спричинені виявленням істини (truth-finding process), включаючи репутаційні втрати Ліцензіата або третіх осіб внаслідок викриття логічних маніпуляцій.
+
+6. Юридична чинність
+Ця угода регулюється нормами міжнародного права у сфері інтелектуальної власності. Початок використання коду, API або архітектурних принципів Veritas Protocol є автоматичним акцептом умов даної Ліцензії.
