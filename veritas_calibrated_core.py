@@ -801,6 +801,12 @@ class VeritasCalibratedCore:
             }
         
         # ---- PHASE 10: LAC LABOR (employment/contract responsibility check) ----
+        # ---- PHASE 10: LAC LABOR ----
+        # SPORT, CULTURE, SCIENCE, SATIRE — трудові відносини нерелевантні
+        # OPINION — авторська колонка не є трудовим договором
+        LAC_LABOR_SKIP_GENRES = {
+            'SPORT', 'CULTURE', 'SCIENCE', 'SATIRE', 'OPINION',
+        }
         lac_labor_result = {
             'score': 0.0,
             'verdict': 'N/A',
@@ -808,7 +814,7 @@ class VeritasCalibratedCore:
             'is_labor': False,
             'red_flags': []
         }
-        if self.lac_labor:
+        if self.lac_labor and _genre not in LAC_LABOR_SKIP_GENRES:
             labor_analysis = self.lac_labor.analyze(text)
             lac_labor_result = {
                 'score': labor_analysis.score,
@@ -821,6 +827,11 @@ class VeritasCalibratedCore:
 
         # ---- PHASE 10e2: LAC EPISTEMOLOGY ----
         # Detects: anonymous authority / correlation-causation / unfalsifiable framing
+        # SPORT, CULTURE, SATIRE — епістемічна маніпуляція нерелевантна
+        # SCIENCE — має власний академічний shield, LAC Epist. тут дає false positives
+        LAC_EPIST_SKIP_GENRES = {
+            'SPORT', 'CULTURE', 'SATIRE', 'SCIENCE',
+        }
         lac_epistemology_result = {
             'score': 0.0,
             'verdict': 'N/A',
@@ -830,7 +841,7 @@ class VeritasCalibratedCore:
             'evidence': [],
             'pattern_hits': {}
         }
-        if self.lac_epistemology:
+        if self.lac_epistemology and _genre not in LAC_EPIST_SKIP_GENRES:
             epist_analysis = self.lac_epistemology.analyze(text, genre=_genre)
             lac_epistemology_result = {
                 'score': epist_analysis.score,
@@ -1038,13 +1049,18 @@ class VeritasCalibratedCore:
         if self.context_engine:
             try:
                 import concurrent.futures as _ctx_cf
+                import time as _ctx_time
+                _ctx_t0 = _ctx_time.monotonic()
                 with _ctx_cf.ThreadPoolExecutor(max_workers=1) as _ctx_ex:
                     _ctx_future = _ctx_ex.submit(
                         self.context_engine.analyze_displacement, text, _genre
                     )
                     context_result = _ctx_future.result(timeout=8)
+                _ctx_ms = round((_ctx_time.monotonic() - _ctx_t0) * 1000)
+                print(f'⏱️  context_engine: {_ctx_ms}ms')
             except Exception as _ctx_e:
-                print(f'⚠️  context_engine timeout/error (non-fatal): {_ctx_e}')
+                _ctx_ms = round((_ctx_time.monotonic() - _ctx_t0) * 1000) if '_ctx_t0' in dir() else '?'
+                print(f'⚠️  context_engine timeout/error after {_ctx_ms}ms: {_ctx_e}')
         
         # Pre-extract axiom_score to outer scope (prevents UnboundLocalError
         # when is_protected_science branch skips the scoring block)
