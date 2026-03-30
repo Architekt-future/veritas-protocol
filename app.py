@@ -1888,9 +1888,15 @@ def witness_synthesis():
                 "  ard_principles: " + str(ard_principles) + "\n"
                 "  media_bias_verdict: " + str(media_bias_verdict) + "\n"
                 "  alarmism_verdict: " + str(alarmism_verdict) + "\n\n"
+                "STRICT RULES FOR witness_verdict:\n"
+                "  1. Use EXCLUSIVELY one of: CLEAN | RHETORIC | SUSPICIOUS | DANGEROUS | ANALYTICS | OPINION\n"
+                "  2. Do NOT invent new verdicts — no 'PARADOX AS SHIELD', 'ATTACK', 'THREAT' etc.\n"
+                "  3. DANGEROUS — only if manipulation > 0 or axiom > 0. Otherwise — max SUSPICIOUS\n"
+                "  4. Opinion/column with meta_intent/self_preservation → RHETORIC, not DANGEROUS\n"
+                "  5. entropy_adjustment: from -0.15 to +0.05 (be conservative with increases)\n\n"
                 "Return JSON with these exact keys:\n"
                 '{"witness_verdict":"CLEAN|RHETORIC|SUSPICIOUS|DANGEROUS|ANALYTICS|OPINION",'
-                '"entropy_adjustment":<float -0.20 to 0.20>,'
+                '"entropy_adjustment":<float -0.15 to 0.05>,'
                 '"adjustment_reason":"one sentence why",'
                 '"triggered_explanation":{"module_name":"plain language explanation"},'
                 '"witness_text":"3-5 sentence explanation for non-technical reader"}'
@@ -1908,9 +1914,15 @@ def witness_synthesis():
                 "  ard_principles: " + str(ard_principles) + "\n"
                 "  media_bias_verdict: " + str(media_bias_verdict) + "\n"
                 "  alarmism_verdict: " + str(alarmism_verdict) + "\n\n"
+                "ЖОРСТКІ ПРАВИЛА ДЛЯ witness_verdict:\n"
+                "  1. Використовуй ВИКЛЮЧНО одне з: ЧИСТО | РИТОРИКА | ПІДОЗРІЛО | НЕБЕЗПЕЧНО | АНАЛІТИКА | ДУМКА\n"
+                "  2. НЕ вигадуй нових вердиктів — жодних 'ПАРАДОКС ЯК ЩИТ', 'АТАКА', 'ЗАГРОЗА' тощо\n"
+                "  3. НЕБЕЗПЕЧНО — тільки якщо manipulation > 0 або axiom > 0. Інакше — максимум ПІДОЗРІЛО\n"
+                "  4. Публіцистика і авторська колонка з meta_intent/self_preservation → РИТОРИКА, не НЕБЕЗПЕЧНО\n"
+                "  5. entropy_adjustment: від -0.15 до +0.05 (обережно з підвищенням)\n\n"
                 "Поверни JSON з цими ключами:\n"
                 '{"witness_verdict":"ЧИСТО|РИТОРИКА|ПІДОЗРІЛО|НЕБЕЗПЕЧНО|АНАЛІТИКА|ДУМКА",'
-                '"entropy_adjustment":<float від -0.20 до 0.20>,'
+                '"entropy_adjustment":<float від -0.15 до 0.05>,'
                 '"adjustment_reason":"одне речення чому",'
                 '"triggered_explanation":{"назва_модуля":"пояснення простими словами"},'
                 '"witness_text":"3-5 речень пояснення для нетехнічного читача"}'
