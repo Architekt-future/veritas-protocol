@@ -1531,7 +1531,17 @@ class VeritasCalibratedCore:
                 ', '.join(sr_names[:2]) + '. ' + self_reference_result['self_reference_explanation'])
         elif self_reference_score >= 0.50:
             status, verdict = 'WARNING', 'ПАРАДОКС ЯК ЩИТ'
-            explanation = self_reference_result['self_reference_explanation']
+            # Жанро-залежне пояснення: публіцистика vs справжня атака
+            _sr_is_editorial = _genre in ('OPINION', 'ANALYTICS', 'UNKNOWN') and manip_score == 0
+            if _sr_is_editorial:
+                explanation = (
+                    'Текст побудований так що сумнів у позиції автора виглядає як нерозуміння — '
+                    'класична риторична техніка публіцистики. Це не маніпуляція у прямому сенсі, '
+                    'але читачу варто усвідомлювати: автор формує рамку в якій його висновки '
+                    'здаються єдино можливими. Оцінюйте аргументи незалежно від впевненості подачі.'
+                )
+            else:
+                explanation = self_reference_result['self_reference_explanation']
         # PRIORITY 3: META-INTENT (system-directed rhetoric)
         elif meta_score >= 0.80:
             intents = meta_intent_result['meta_intents']
