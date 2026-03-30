@@ -2105,11 +2105,13 @@ function renderResults(data) {
         if (diag.lac_epistemology_verdict && !['N/A','CLEAN',''].includes(diag.lac_epistemology_verdict))
             badges.push(badge('🔬', 'ЕПІСТЕМОЛОГІЯ', 'EPISTEMOLOGY', 'tier-framing'));
         // LAC Finance
-        // LAC Finance — показуємо тільки для реального фінансового контенту
-        if (diag.is_financial_content && diag.lac_finance_verdict && !['N/A','CLEAN','IMITATION OF LOGIC',''].includes(diag.lac_finance_verdict))
+        // LAC Finance — показуємо для реального фінансового контенту з проблемою
+        if (diag.is_financial_content && diag.lac_finance_verdict && 
+            !['N/A','CLEAN',''].includes(diag.lac_finance_verdict))
             badges.push(badge('💰', 'ФІНАНСИ', 'FINANCE', 'tier-framing'));
-        // LAC Labor — показуємо тільки для реального трудового контенту
-        if (diag.is_labor_content && diag.lac_labor_verdict && !['N/A','CLEAN','IMITATION OF RESPONSIBILITY',''].includes(diag.lac_labor_verdict))
+        // LAC Labor — показуємо для реального трудового контенту з проблемою
+        if (diag.is_labor_content && diag.lac_labor_verdict && 
+            !['N/A','CLEAN',''].includes(diag.lac_labor_verdict))
             badges.push(badge('⚙️', 'ПРАЦЯ', 'LABOR', 'tier-framing'));
         // Performative
         if (data.performative && data.performative.is_performative)
