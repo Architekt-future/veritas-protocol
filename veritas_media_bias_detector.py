@@ -256,6 +256,58 @@ class MediaBiasDetector:
         )
         return hits >= 2
 
+    # ================================================================
+    # CRITICAL JOURNALISM SHIELD
+    # Комерційні терміни в контексті критики — це не PR.
+    # "startup витратив €100k і збожеволів" ≠ "стартап пропонує рішення"
+    #
+    # Критична журналістика має:
+    #   - Негативні наслідки (lawsuit, hospitalization, suicide, harm)
+    #   - Жертви або постраждалі (victim, survivor, affected)
+    #   - Критичні цитати регуляторів або експертів
+    #   - Розслідувальний фрейм (wrecked, derailed, damaged, destroyed)
+    #
+    # Якщо текст є критичною журналістикою — ANNOUNCEMENT_WITHOUT_ACCOUNTABILITY,
+    # CATEGORY_CREATION і THOUGHT_LEADERSHIP не тригерять.
+    # ================================================================
+
+    CRITICAL_JOURNALISM_MARKERS = [
+        # Правові та регуляторні наслідки
+        r'(lawsuit|sued|suing|legal action|wrongful.death|estate of)',
+        r'(судов|позов|подала до суду|притягнут)',
+
+        # Медичні наслідки
+        r'(hospitali[sz]|suicide|suicidal|mental breakdown|psychosis|delusion)',
+        r'(госпіталіз|самогубств|психоз|маячн|розлад психіки)',
+
+        # Шкода та руйнування
+        r'(wrecked|derailed|destroyed|ruined|devastated).{1,60}(life|marriage|career|family)',
+        r'(зруйнував|знищив|занапастив).{1,60}(життя|шлюб|кар)',
+
+        # Жертви та постраждалі
+        r'(victim|survivor|affected user|harmed by)',
+        r'(постраждал|жертв|потерпіл)',
+
+        # Критичні наукові або регуляторні голоси
+        r'(researcher|psychiatrist|regulator).{1,60}(warn|concern|alarm|danger|risk)',
+        r'(дослідник|психіатр|регулятор).{1,60}(попереджа|занепокоєн|небезпек)',
+
+        # Смерті або арешти
+        r'(death|died|killed|arrested|convicted).{1,60}(chatbot|AI|algorithm|platform)',
+        r'(\d+\s*(death|suicide|hospitali[sz]))',
+    ]
+
+    def _is_critical_journalism(self, text: str) -> bool:
+        """
+        Визначає чи текст є критичною журналістикою про шкоду технологій/компаній.
+        Мінімум 3 маркери = вважається критичним розслідуванням.
+        """
+        hits = sum(
+            1 for p in self.CRITICAL_JOURNALISM_MARKERS
+            if re.search(p, text, re.IGNORECASE)
+        )
+        return hits >= 3
+
     def analyze(self, text: str) -> MediaBiasResult:
         result = MediaBiasResult()
         if not text or len(text) < 80:
@@ -268,6 +320,8 @@ class MediaBiasDetector:
 
         # News Attribution Shield — визначаємо до аналізу патернів
         is_news = self._is_news_report(text)
+        # Critical Journalism Shield — критика технологій/компаній ≠ PR
+        is_critical = self._is_critical_journalism(text)
 
         # ── SIGNAL 1: SPONSORED CONTENT LAUNDERING ───────────────────
         sp_patterns = self.SPONSORED_LAUNDERING_UK + self.SPONSORED_LAUNDERING_EN
@@ -283,12 +337,15 @@ class MediaBiasDetector:
             score += 0.40
 
         # ── SIGNAL 2: CATEGORY CREATION ──────────────────────────────
+        # Shield: критична журналістика може цитувати маркетингові терміни компаній
+        # як частину опису проблеми — це не трансляція їх як факту.
         cat_patterns = self.CATEGORY_CREATION_UK + self.CATEGORY_CREATION_EN
         cat_hits = []
-        for p in cat_patterns:
-            m = re.search(p, text_lower, re.IGNORECASE)
-            if m:
-                cat_hits.append(m.group(0)[:60])
+        if not is_critical:
+            for p in cat_patterns:
+                m = re.search(p, text_lower, re.IGNORECASE)
+                if m:
+                    cat_hits.append(m.group(0)[:60])
 
         if cat_hits:
             signals.append(f'Маркетинговий термін як об\'єктивна категорія: «{cat_hits[0][:55]}»')
@@ -296,11 +353,11 @@ class MediaBiasDetector:
             score += 0.20
 
         # ── SIGNAL 3: ANNOUNCEMENT WITHOUT ACCOUNTABILITY ─────────────
-        # Shield: новинний репортаж може містити "said/will" без термінів —
-        # це цитування джерела, не PR-анонс без підзвітності.
+        # Shield: новинний репортаж або критична журналістика можуть містити
+        # цитати про плани без термінів — це репортаж про чужі заяви, не PR.
         ann_patterns = self.ANNOUNCEMENT_NO_ACCOUNTABILITY_UK + self.ANNOUNCEMENT_NO_ACCOUNTABILITY_EN
         ann_hits = []
-        if not is_news:  # пропускаємо для новинних репортажів
+        if not is_news and not is_critical:
             for p in ann_patterns:
                 m = re.search(p, text_lower, re.IGNORECASE)
                 if m:
@@ -316,12 +373,15 @@ class MediaBiasDetector:
             score += 0.12
 
         # ── SIGNAL 4: THOUGHT LEADERSHIP LAUNDERING ──────────────────
+        # Shield: критична журналістика може згадувати "contributing writer" або
+        # "helps companies" як частину розкриття конфлікту — не як його прояв.
         tl_patterns = self.THOUGHT_LEADERSHIP_UK + self.THOUGHT_LEADERSHIP_EN
         tl_hits = []
-        for p in tl_patterns:
-            m = re.search(p, text_lower, re.IGNORECASE)
-            if m:
-                tl_hits.append(m.group(0)[:60])
+        if not is_critical:
+            for p in tl_patterns:
+                m = re.search(p, text_lower, re.IGNORECASE)
+                if m:
+                    tl_hits.append(m.group(0)[:60])
 
         if tl_hits:
             signals.append(f'Прихований конфлікт інтересів автора: «{tl_hits[0][:55]}»')
