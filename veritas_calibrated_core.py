@@ -783,6 +783,8 @@ class VeritasCalibratedCore:
         LAC_FINANCE_SKIP_GENRES = {
             'CONSPIRACY_NEWS', 'REPORT', 'OPINION', 'SPORT',
             'CULTURE', 'LIFESTYLE', 'SATIRE', 'SCIENCE', 'UNKNOWN',
+            'INTERVIEW', 'GEOPOLITICS', 'INVESTIGATION',
+            # ECONOMY — може мати фінансовий контент, залишаємо активним
         }
         lac_finance_result = {
             'score': 0.0,
@@ -803,9 +805,11 @@ class VeritasCalibratedCore:
         # ---- PHASE 10: LAC LABOR (employment/contract responsibility check) ----
         # ---- PHASE 10: LAC LABOR ----
         # SPORT, CULTURE, SCIENCE, SATIRE — трудові відносини нерелевантні
-        # OPINION — авторська колонка не є трудовим договором
+        # OPINION, INTERVIEW — авторська колонка/інтерв'ю не є трудовим договором
+        # GEOPOLITICS, INVESTIGATION, ECONOMY — нерелевантні жанри
         LAC_LABOR_SKIP_GENRES = {
             'SPORT', 'CULTURE', 'SCIENCE', 'SATIRE', 'OPINION',
+            'INTERVIEW', 'GEOPOLITICS', 'INVESTIGATION', 'ECONOMY',
         }
         lac_labor_result = {
             'score': 0.0,
@@ -829,8 +833,9 @@ class VeritasCalibratedCore:
         # Detects: anonymous authority / correlation-causation / unfalsifiable framing
         # SPORT, CULTURE, SATIRE — епістемічна маніпуляція нерелевантна
         # SCIENCE — має власний академічний shield, LAC Epist. тут дає false positives
+        # INVESTIGATION — анонімні жертви це норма, не маніпуляція
         LAC_EPIST_SKIP_GENRES = {
-            'SPORT', 'CULTURE', 'SATIRE', 'SCIENCE',
+            'SPORT', 'CULTURE', 'SATIRE', 'SCIENCE', 'INVESTIGATION',
         }
         lac_epistemology_result = {
             'score': 0.0,
@@ -887,11 +892,10 @@ class VeritasCalibratedCore:
 
         # PHASE 10e: PSEUDOSCIENCE DETECTOR (v16.1)
         # Detects fabricated reality / deepfake of facts
-        # Skip for CONSPIRACY_NEWS and ANALYTICS — these genres legitimately contain
-        # sensational claims, anonymous sources, and journalistic hedges that
-        # trigger PRECISION_ILLUSION false positives (e.g. "all systems confirm").
-        # Pseudoscience detector is designed for lab-coat-of-truth attacks, not tabloids.
-        PSEUDOSCIENCE_SKIP_GENRES = {'CONSPIRACY_NEWS', 'ANALYTICS', 'REPORT', 'OPINION', 'SATIRE'}
+        PSEUDOSCIENCE_SKIP_GENRES = {
+            'CONSPIRACY_NEWS', 'ANALYTICS', 'REPORT', 'OPINION', 'SATIRE',
+            'INTERVIEW', 'GEOPOLITICS', 'INVESTIGATION', 'ECONOMY',
+        }
         pseudoscience_result = {
             'pseudoscience_score': 0.0,
             'pseudoscience_verdict': 'CLEAN',
