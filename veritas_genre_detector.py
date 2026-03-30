@@ -166,6 +166,68 @@ class GenreDetector:
         r'\b(truth (finally|about)|reveal(ed)? the truth)\b',
     ]
 
+    # ── INTERVIEW ────────────────────────────────────────────────────
+    # Питання-відповідь структура: тире або Q/A мітки
+    INTERVIEW_SIGNALS = [
+        r'^\s*—\s+.{10,}',                          # тире на початку рядка (UK стиль)
+        r'\b(запитує|відповідає|розповідає|пояснює)\b',
+        r'\b(в розмові|в інтерв.ю|в бесіді)\b',
+        r'\b(Q:|A:|Question:|Answer:)\b',
+        r'\b(says?\s+in\s+an?\s+interview|spoke\s+(to|with)\s+\w+\s+(about|on))\b',
+        r'\b(tells?\s+(me|us)|told\s+(me|us)\b)',
+        r'\bvarosh\s+talks?\b',
+        r'\b(у\s+розмові|розмовляє\s+з|бесідує\s+з)\b',
+    ]
+
+    # ── GEOPOLITICS ──────────────────────────────────────────────────
+    # Міжнародні відносини, безпека, дипломатія
+    GEOPOLITICS_SIGNALS = [
+        r'\b(nato|нато)\b',
+        r'\b(sanctions?|санкці)\b',
+        r'\b(diplomatic|дипломатичн)\b',
+        r'\b(sovereignty|суверенітет)\b',
+        r'\b(ceasefire|перемир.я)\b',
+        r'\b(kremlin|кремл)\b',
+        r'\b(geopolit|геополіт)\b',
+        r'\b(international\s+(law|order|community)|міжнародн\w+\s+(право|порядок|спільнот))\b',
+        r'\b(war\s+crimes?|воєнн\w+\s+злочин)\b',
+        r'\b(allies?|alliance|альянс|союзник)\b',
+        r'\b(annexation|анексі)\b',
+        r'\b(occupation|окупац)\b',
+    ]
+
+    # ── ECONOMY ──────────────────────────────────────────────────────
+    # Макроекономіка — без фінансових інструментів (відрізняємо від фінансів)
+    ECONOMY_SIGNALS = [
+        r'\b(gdp|ввп|gross\s+domestic\s+product)\b',
+        r'\b(inflation|інфляці)\b',
+        r'\b(central\s+bank|центральн\w+\s+банк)\b',
+        r'\b(interest\s+rate|облікова\s+ставка)\b',
+        r'\b(imf|мвф|international\s+monetary\s+fund)\b',
+        r'\b(export|import|експорт|імпорт)\b',
+        r'\b(budget\s+deficit|бюджетн\w+\s+дефіцит)\b',
+        r'\b(foreign\s+(direct\s+)?investment|прям\w+\s+іноземн\w+\s+інвестиці)\b',
+        r'\b(unemployment|безробітт)\b',
+        r'\b(fiscal|фіскальн)\b',
+        r'\b(recession|рецесі)\b',
+        r'\b(monetary\s+policy|монетарн\w+\s+політик)\b',
+    ]
+
+    # ── INVESTIGATION ────────────────────────────────────────────────
+    # Журналістське розслідування з жертвами, даними, судовими справами
+    INVESTIGATION_SIGNALS = [
+        r'\b(lawsuit|sued|suing|wrongful.death)\b',
+        r'\b(hospitali[sz]ed?|suicide|suicidal)\b',
+        r'\b(wrecked|derailed|destroyed).{1,40}(life|marriage|career|family)\b',
+        r'\b(victim|survivor|affected)\b',
+        r'\b(\d+\s*(suicides?|deaths?|hospitali[sz]))\b',
+        r'\b(psychiatrist|psychologist|researcher).{1,60}(warn|concern|alarm)\b',
+        r'\b(support\s+group|advocacy\s+group)\b',
+        r'\b(estate\s+of|filed\s+in\s+(california|court))\b',
+        r'\b(delusion|psychosis|mental\s+breakdown)\b',
+        r'\b(lives?\s+(ruined|wrecked|destroyed|derailed))\b',
+    ]
+
     # ── Calibration presets ──────────────────────────────────────────
 
     CALIBRATION = {
@@ -235,6 +297,34 @@ class GenreDetector:
             'entropy_damper':   True,
             'entropy_cap':      1.0,
         },
+        'INTERVIEW': {
+            'absurdity_weight': 0.5,
+            'anon_authority':   False,  # інтерв'ю = іменований спікер
+            'unanchored_claim': False,
+            'entropy_damper':   True,
+            'entropy_cap':      0.90,
+        },
+        'GEOPOLITICS': {
+            'absurdity_weight': 0.8,
+            'anon_authority':   True,   # анонімні дипломатичні джерела — норма
+            'unanchored_claim': True,
+            'entropy_damper':   True,
+            'entropy_cap':      1.0,
+        },
+        'ECONOMY': {
+            'absurdity_weight': 0.5,
+            'anon_authority':   False,
+            'unanchored_claim': False,
+            'entropy_damper':   True,
+            'entropy_cap':      0.85,
+        },
+        'INVESTIGATION': {
+            'absurdity_weight': 1.0,
+            'anon_authority':   True,   # анонімні жертви — норма в розслідуваннях
+            'unanchored_claim': True,
+            'entropy_damper':   False,
+            'entropy_cap':      1.0,
+        },
     }
 
     # ── Verdict labels (for clean texts of this genre) ───────────────
@@ -256,6 +346,18 @@ class GenreDetector:
                       'Текст є спортивним репортажем або результатами змагань.'),
         'CULTURE':   ('VERIFIED', 'КУЛЬТУРНИЙ КОНТЕНТ',
                       'Текст є культурним оглядом або рецензією.'),
+        'INTERVIEW': ('VERIFIED', 'ІНТЕРВ\'Ю',
+                      'Текст є інтерв\'ю або бесідою. Оцінюйте позицію спікера '
+                      'як суб\'єктивну думку, а не об\'єктивний факт.'),
+        'GEOPOLITICS': ('VERIFIED', 'ГЕОПОЛІТИЧНИЙ АНАЛІЗ',
+                      'Текст стосується міжнародних відносин або безпеки. '
+                      'Перевіряйте факти в офіційних джерелах.'),
+        'ECONOMY':   ('VERIFIED', 'ЕКОНОМІЧНИЙ ОГЛЯД',
+                      'Текст містить макроекономічні дані або аналіз. '
+                      'Перевіряйте цифри у первинних джерелах (МВФ, ЦБ, Мінфін).'),
+        'INVESTIGATION': ('VERIFIED', 'ЖУРНАЛІСТСЬКЕ РОЗСЛІДУВАННЯ',
+                      'Текст є розслідуванням із задокументованими випадками. '
+                      'Перевіряйте конкретні факти у судових реєстрах та офіційних джерелах.'),
         'CONSPIRACY_NEWS': ('SUSPICIOUS', 'НОВИНИ З ІМПЛІКОВАНОЮ ПРИЧИННІСТЮ',
                       'Текст містить реальні факти, але подані через "дивний збіг" або '
                       'анонімні джерела без прямих доказів зв\'язку між подіями. '
@@ -275,6 +377,10 @@ class GenreDetector:
         sport           = sum(1 for p in self.SPORT_SIGNALS            if re.search(p, t, re.I))
         culture         = sum(1 for p in self.CULTURE_SIGNALS          if re.search(p, t, re.I))
         conspiracy_news = sum(1 for p in self.CONSPIRACY_NEWS_SIGNALS  if re.search(p, t, re.I))
+        interview       = sum(1 for p in self.INTERVIEW_SIGNALS        if re.search(p, t, re.I | re.MULTILINE))
+        geopolitics     = sum(1 for p in self.GEOPOLITICS_SIGNALS      if re.search(p, t, re.I))
+        economy         = sum(1 for p in self.ECONOMY_SIGNALS          if re.search(p, t, re.I))
+        investigation   = sum(1 for p in self.INVESTIGATION_SIGNALS    if re.search(p, t, re.I))
 
         signals = {
             'analytics':       analytics,
@@ -285,6 +391,10 @@ class GenreDetector:
             'sport':           sport,
             'culture':         culture,
             'conspiracy_news': conspiracy_news,
+            'interview':       interview,
+            'geopolitics':     geopolitics,
+            'economy':         economy,
+            'investigation':   investigation,
         }
 
         # ── Genre selection logic ────────────────────────────────────
@@ -298,7 +408,6 @@ class GenreDetector:
             genre, conf = 'SATIRE',          min(satire / 4, 1.0)
 
         elif conspiracy_news >= 4:
-            # Strong conspiracy framing overrides even if report signals present
             genre, conf = 'CONSPIRACY_NEWS', min(conspiracy_news / 10, 1.0)
 
         elif opinion >= 2 and opinion > analytics:
@@ -308,15 +417,26 @@ class GenreDetector:
             genre, conf = 'SCIENCE',         min(science / 8, 1.0)
 
         elif sport >= 3:
-            # Requires 3 hits — prevents "score", "match" false positives
             genre, conf = 'SPORT',           min(sport / 6, 1.0)
 
         elif culture >= 3:
             genre, conf = 'CULTURE',         min(culture / 6, 1.0)
 
+        elif investigation >= 4:
+            # Розслідування з задокументованими жертвами — специфічний жанр
+            genre, conf = 'INVESTIGATION',   min(investigation / 8, 1.0)
+
+        elif interview >= 3:
+            # Інтерв'ю: тире + контекст розмови
+            genre, conf = 'INTERVIEW',       min(interview / 6, 1.0)
+
+        elif geopolitics >= 4:
+            genre, conf = 'GEOPOLITICS',     min(geopolitics / 10, 1.0)
+
+        elif economy >= 4:
+            genre, conf = 'ECONOMY',         min(economy / 10, 1.0)
+
         elif analytics >= 3:
-            # Raised from 2 to 3 — was triggering too easily
-            # But if conspiracy signals also present, blend toward CONSPIRACY_NEWS
             if conspiracy_news >= 2:
                 genre, conf = 'CONSPIRACY_NEWS', min((analytics + conspiracy_news) / 14, 1.0)
             else:
@@ -328,8 +448,16 @@ class GenreDetector:
             else:
                 genre, conf = 'REPORT',      min(report / 8, 1.0)
 
+        elif geopolitics >= 2:
+            genre, conf = 'GEOPOLITICS',     min(geopolitics / 10, 0.5)
+
+        elif economy >= 2:
+            genre, conf = 'ECONOMY',         min(economy / 10, 0.5)
+
+        elif interview >= 2:
+            genre, conf = 'INTERVIEW',       min(interview / 6, 0.5)
+
         elif conspiracy_news >= 2:
-            # Weak but present conspiracy signals
             genre, conf = 'CONSPIRACY_NEWS', min(conspiracy_news / 10, 0.5)
 
         return GenreResult(
