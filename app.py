@@ -1424,6 +1424,64 @@ def oracle():
         triggered_modules   = data.get('triggered_modules', [])
         triggered_count     = data.get('triggered_count', 0)
         entropy_multiplier  = data.get('entropy_multiplier', 1.0)
+        interaction_combos  = data.get('interaction_combos', [])
+
+        # Будуємо розшифровку boost'у для Свідка
+        MODULE_LABELS_UK = {
+            'self_preservation': 'захист системи',
+            'meta_intent':       'прихований намір',
+            'performative':      'декларативна відповідальність',
+            'lac_epistemology':  'епістемічна маніпуляція',
+            'lac_finance':       'фінансова логіка',
+            'lac_labor':         'трудова відповідальність',
+            'manipulation':      'маніпуляція',
+            'claim_gap':         'розрив між заявою і доказами',
+            'laundered_claim':   'відмивання тверджень',
+            'axiom':             'підміна аксіом',
+            'semantic_void':     'семантична порожнеча',
+            'framing':           'фреймінг',
+            'alarmism':          'алармізм',
+            'media_bias':        'медіа-упередженість',
+            'narrative_pivot':   'наративний pivot',
+        }
+        MODULE_LABELS_EN = {
+            'self_preservation': 'system integrity attack',
+            'meta_intent':       'hidden intent',
+            'performative':      'performative accountability',
+            'lac_epistemology':  'epistemic manipulation',
+            'lac_finance':       'financial logic',
+            'lac_labor':         'labor accountability',
+            'manipulation':      'manipulation',
+            'claim_gap':         'claim-evidence gap',
+            'laundered_claim':   'laundered claim',
+            'axiom':             'axiom substitution',
+            'semantic_void':     'semantic void',
+            'framing':           'framing',
+            'alarmism':          'alarmism',
+            'media_bias':        'media bias',
+            'narrative_pivot':   'narrative pivot',
+        }
+
+        def _build_boost_breakdown(modules, combos, labels, base, boosted, multiplier):
+            if not modules or boosted <= base:
+                return ''
+            lines = [f'  Причина підвищення ентропії з {base}% до {boosted}% (×{multiplier:.2f}):']
+            for m in modules:
+                label = labels.get(m, m)
+                lines.append(f'    • {label}')
+            if combos:
+                top = combos[0]
+                lines.append(f'    ↑ синергія: {top.get("label_uk", "") or ", ".join(top.get("modules", []))} (+{top.get("bonus", 0):.2f})')
+            return '\n'.join(lines) + '\n'
+
+        boost_breakdown_uk = _build_boost_breakdown(
+            triggered_modules, interaction_combos,
+            MODULE_LABELS_UK, entropy_pct, entropy_pct_boosted, entropy_multiplier
+        )
+        boost_breakdown_en = _build_boost_breakdown(
+            triggered_modules, interaction_combos,
+            MODULE_LABELS_EN, entropy_pct, entropy_pct_boosted, entropy_multiplier
+        )
 
         # Narrative pivot
         pivot         = diag.get('narrative_pivot', {})
@@ -1625,12 +1683,16 @@ def oracle():
                 f"  System verdict (MAIN SIGNAL): {verdict}\n"
                 f"  Genre: {detected_genre}\n"
                 f"  Entropy (base): {entropy_pct}% → with module multiplier: {entropy_pct_boosted}% ({triggered_count} module(s) triggered)\n"
+                f"{boost_breakdown_en}"
                 f"  Cohesion: {cohesion}\n"
                 f"{modules_block}"
                 f"{pivot_line}"
                 f"CONTEXT:\n"
                 f"{context_block}\n"
                 "IMPORTANT: System verdict is your primary guide. Entropy is secondary.\n"
+                "BOOST SOURCE RULE: If entropy is elevated ONLY due to media_bias or framing "
+                "without manipulation, axiom, or self_preservation — this is a structural feature, not an attack. "
+                "Do NOT use the word 'dangerous' or 'DANGEROUS' if manipulation=0 and axiom=0.\n"
                 "ANTI-BIAS RULE — ABSOLUTE, NO EXCEPTIONS:\n"
                 "The source of the text — its author, publisher, institution, company, or any prestige marker — "
                 "is COMPLETELY IRRELEVANT to your analysis. It does not matter if the text was written by a government, "
@@ -1703,12 +1765,16 @@ def oracle():
                 f"  Вердикт системи (ГОЛОВНИЙ СИГНАЛ): {verdict}\n"
                 f"  Жанр: {detected_genre}\n"
                 f"  Ентропія (база): {entropy_pct}% → з множником модулів: {entropy_pct_boosted}% ({triggered_count} модуль(ів) спрацювало)\n"
+                f"{boost_breakdown_uk}"
                 f"  Когезія: {cohesion}\n"
                 f"{modules_block}"
                 f"{pivot_line}"
                 f"КОНТЕКСТ:\n"
                 f"{context_block}\n"
                 "ВАЖЛИВО: Вердикт системи — твій головний орієнтир. Ентропія — допоміжна цифра.\n"
+                "ПРАВИЛО ДЖЕРЕЛА BOOST'У: Якщо ентропія підвищена ТІЛЬКИ через media_bias або framing "
+                "без маніпуляції, axiom або self_preservation — це структурна особливість, не атака. "
+                "НЕ використовуй слово 'небезпечно' або 'НЕБЕЗПЕЧНО' якщо manipulation=0 і axiom=0.\n"
                 "ПРАВИЛО ПРОТИ УПЕРЕДЖЕНОСТІ — АБСОЛЮТНЕ, БЕЗ ВИНЯТКІВ:\n"
                 "Джерело тексту — його автор, видавець, установа, компанія або будь-який статусний маркер — "
                 "є ПОВНІСТЮ НЕРЕЛЕВАНТНИМ для аналізу. Не має значення чи текст написаний урядом, "
