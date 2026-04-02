@@ -228,7 +228,20 @@ class GenreDetector:
         r'\b(lives?\s+(ruined|wrecked|destroyed|derailed))\b',
     ]
 
-    # ── Calibration presets ──────────────────────────────────────────
+    # ── MEDIA_MONITORING ─────────────────────────────────────────────
+    # Моніторинг ЗМІ, телемарафонів, медіааналіз
+    MEDIA_MONITORING_SIGNALS = [
+        r'\b(моніторинг|моніторингу)\b',
+        r'\b(телемарафон|телемарафону|ефір|ефіру)\b',
+        r'\b(стандарт\w*\s+журналіст|журналістськ\w+\s+стандарт)\b',
+        r'\b(порушення\s+стандарт|стандарт\w+\s+достовірн)\b',
+        r'\b(гостьова\s+студія|гостьових\s+студ)\b',
+        r'\b(воєнкор|медіатренер|медіааналіз|медіаексперт)\b',
+        r'\b(детектор\s+медіа|media\s+monitor|media\s+watch)\b',
+        r'\b(редакц\w+\s+канал|канал\w+\s+редакц)\b',
+        r'\b(висвітлення\s+(тем|подій|ситуац)|покриття\s+теми)\b',
+        r'\b(піар|pr)\w*\s+(в\s+ефір|матеріал|сюжет)\b',
+    ]
 
     CALIBRATION = {
         'ANALYTICS': {
@@ -237,6 +250,13 @@ class GenreDetector:
             'unanchored_claim': False,
             'entropy_damper':   False,
             'entropy_cap':      0.85,
+        },
+        'MEDIA_MONITORING': {
+            'absurdity_weight': 0.0,   # Моніторинг описує атаки — не псевдонаука
+            'anon_authority':   True,
+            'unanchored_claim': False,
+            'entropy_damper':   True,
+            'entropy_cap':      0.80,
         },
         'REPORT': {
             'absurdity_weight': 1.8,
@@ -358,6 +378,9 @@ class GenreDetector:
         'INVESTIGATION': ('VERIFIED', 'ЖУРНАЛІСТСЬКЕ РОЗСЛІДУВАННЯ',
                       'Текст є розслідуванням із задокументованими випадками. '
                       'Перевіряйте конкретні факти у судових реєстрах та офіційних джерелах.'),
+        'MEDIA_MONITORING': ('VERIFIED', 'МЕДІАМОНІТОРИНГ',
+                      'Текст є аналізом медіапростору або моніторингом ЗМІ. '
+                      'Оцінює якість журналістики — не є маніпулятивним за природою.'),
         'CONSPIRACY_NEWS': ('SUSPICIOUS', 'НОВИНИ З ІМПЛІКОВАНОЮ ПРИЧИННІСТЮ',
                       'Текст містить реальні факти, але подані через "дивний збіг" або '
                       'анонімні джерела без прямих доказів зв\'язку між подіями. '
@@ -381,6 +404,7 @@ class GenreDetector:
         geopolitics     = sum(1 for p in self.GEOPOLITICS_SIGNALS      if re.search(p, t, re.I))
         economy         = sum(1 for p in self.ECONOMY_SIGNALS          if re.search(p, t, re.I))
         investigation   = sum(1 for p in self.INVESTIGATION_SIGNALS    if re.search(p, t, re.I))
+        media_monitoring = sum(1 for p in self.MEDIA_MONITORING_SIGNALS if re.search(p, t, re.I))
 
         signals = {
             'analytics':       analytics,
@@ -394,7 +418,8 @@ class GenreDetector:
             'interview':       interview,
             'geopolitics':     geopolitics,
             'economy':         economy,
-            'investigation':   investigation,
+            'investigation':      investigation,
+            'media_monitoring':   media_monitoring,
         }
 
         # ── Genre selection logic ────────────────────────────────────
@@ -404,7 +429,11 @@ class GenreDetector:
         genre = 'UNKNOWN'
         conf  = 0.0
 
-        if satire >= 2:
+        if media_monitoring >= 4:
+            # Медіамоніторинг — дуже специфічний жанр, виграє над усіма
+            genre, conf = 'MEDIA_MONITORING', min(media_monitoring / 8, 1.0)
+
+        elif satire >= 2:
             genre, conf = 'SATIRE',          min(satire / 4, 1.0)
 
         elif conspiracy_news >= 4:
