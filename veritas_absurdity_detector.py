@@ -153,9 +153,11 @@ class AbsurdityDetector:
             r'відмов.{1,60}від.{1,60}(лікування|медицин|вакцин|терапі)',
             r'(ліки|препарат|вакцин).{1,60}(отрут|шкід|вбива)',
             
-            # Violent/destructive actions
-            r'(знищити|зруйнува|підірва).{1,60}(вежі|станц|мереж|систем)',
-            r'(напад|атак|саботаж).{1,60}(інфраструктур|об.єкт)',
+            # Violent/destructive actions — ТІЛЬКИ заклики до дії, не репортаж про події
+            # Потребує агентного контексту: "треба", "слід", "необхідно", "варто"
+            # БЕЗ цього контексту — нормальний воєнний репортаж
+            r'(треба|слід|необхідно|варто|давайте|потрібно|мусимо).{1,80}(знищити|зруйнува|підірва).{1,60}(вежі|станц|мереж|систем)',
+            r'(треба|слід|необхідно|варто|давайте).{1,80}(напад|атак|саботаж).{1,60}(інфраструктур|об.єкт)',
             
             # Genocide/mass harm (NEW!)
             r'(ліквідац|знищення|вбивство).{1,100}(\d+%|відсотк|більшост).{1,60}(населення|людей|люд)',
@@ -633,6 +635,24 @@ class AbsurdityDetector:
         ]
 
         # ================================================================
+        # WAR REPORTING SHIELD
+        # Воєнні репортажі легітимно містять слова "атака", "знищення",
+        # "інфраструктура", "об'єкти" — це не заклики до дії.
+        # Якщо текст є воєнним репортажем — dangerous_patterns не тригерять
+        # для воєнної термінології (але геноцид/медичні патерни залишаються).
+        # ================================================================
+        self.war_reporting_markers = [
+            r'(бригад|батальйон|полк|дивізія|корпус)',
+            r'(збройні сили|зсу|нгу|сбу|дшв|омбр|ошбр)',
+            r'(напрямок|боєзіткнення|фронт|позиція|оборон)',
+            r'(дрон|безпілотник|ракет|артилері|мінометн)',
+            r'(телемарафон|ефір|канал|редакція|моніторинг)',
+            r'(воєнкор|репортаж|прямий ефір|гостьова студія)',
+            r'\b(military|brigade|battalion|regiment|frontline)\b',
+            r'\b(drone|missile|artillery|offensive|defensive)\b',
+        ]
+
+        # ================================================================
         # FABRICATED STATISTICS
         # Конкретні правдоподібні відсотки без верифікованого джерела.
         # Відрізняється від impossible_measurement: числа виглядають реально,
@@ -667,15 +687,22 @@ class AbsurdityDetector:
         text_lower = text.lower()
 
         # ── LEGITIMATE SCIENCE SHIELD ─────────────────────────────────
-        # Перевіряємо в першій 2/3 тексту — навігаційний footer сайту
-        # не має скасовувати shield який спрацював на основний контент.
-        # "roc-auc", "pytorch", "github" — в статті, не в "Recommended from Medium"
         science_check_text = text_lower[:int(len(text_lower) * 0.75)]
         legitimate_science_hits = sum(
             1 for p in self.legitimate_science_markers
             if re.search(p, science_check_text, re.IGNORECASE)
         )
         is_legitimate_science = legitimate_science_hits >= 2
+
+        # ── WAR REPORTING SHIELD ──────────────────────────────────────
+        # Воєнні репортажі містять "атака на об'єкти інфраструктури" —
+        # це нормальний опис подій, не заклик до дії.
+        # Мінімум 3 маркери = вважається воєнним репортажем.
+        war_reporting_hits = sum(
+            1 for p in self.war_reporting_markers
+            if re.search(p, text_lower, re.IGNORECASE)
+        )
+        is_war_reporting = war_reporting_hits >= 3
 
         absurdity_score = 0.0
         evidence = {
@@ -755,6 +782,9 @@ class AbsurdityDetector:
         # ================================================================
         # CHECK 3: DANGEROUS IMPLICATIONS
         # ================================================================
+        # War reporting shield: воєнні репортажі описують атаки як факти —
+        # це не заклики до дії. Shield вимикає dangerous_patterns для
+        # воєнних репортажів (але геноцид/медичні патерни завжди активні).
         
         danger_count = 0
         for pattern in self.dangerous_patterns:
@@ -766,6 +796,11 @@ class AbsurdityDetector:
             if re.search(pattern, text_lower, re.IGNORECASE):
                 danger_count += 1
                 evidence['dangerous_implications'].append(pattern[:50])
+
+        # Якщо воєнний репортаж — небезпечні імплікації зменшуємо вдвічі
+        # (медичні та геноцидні патерни залишаються значущими навіть у репортажі)
+        if is_war_reporting and danger_count > 0:
+            danger_count = max(0, danger_count - 1)
 
         if danger_count >= 2:
             absurdity_score += 0.7  # CRITICAL: multiple dangerous claims
@@ -1016,4 +1051,10 @@ class AbsurdityDetector:
             'mind_erasure_count': mind_erasure_count,
             'fabricated_stats_count': fabricated_stats_count,
             'is_legitimate_science': is_legitimate_science,
+            'is_war_reporting': is_war_reporting,
+            'is_war_reporting': is_war_reporting,
+            'is_war_reporting': is_war_reporting,
+            'is_war_reporting': is_war_reporting,
+            'is_war_reporting': is_war_reporting,
+            'is_war_reporting': is_war_reporting,
         }
