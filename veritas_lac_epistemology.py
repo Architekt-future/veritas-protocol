@@ -87,7 +87,7 @@ class VeritasLACEpistemology:
     ]
 
     # Жанри де журналістські анонімні джерела — норма, не маніпуляція
-    JOURNALISTIC_GENRES = {'REPORT', 'ANALYTICS', 'INVESTIGATION', 'GEOPOLITICS'}
+    JOURNALISTIC_GENRES = {'REPORT', 'ANALYTICS', 'INVESTIGATION', 'GEOPOLITICS', 'MEDIA_MONITORING'}
 
     # ── Pattern 2: Correlation-as-causation ─────────────────────────────────
     CORR_PATTERNS_UK = [
