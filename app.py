@@ -1893,10 +1893,16 @@ def witness_synthesis():
                 "  2. Do NOT invent new verdicts — no 'PARADOX AS SHIELD', 'ATTACK', 'THREAT' etc.\n"
                 "  3. DANGEROUS — only if manipulation > 0 or axiom > 0. Otherwise — max SUSPICIOUS\n"
                 "  4. Opinion/column with meta_intent/self_preservation → RHETORIC, not DANGEROUS\n"
-                "  5. entropy_adjustment: from -0.15 to +0.05 (be conservative with increases)\n\n"
+                "  5. entropy_adjustment RULES — READ CAREFULLY:\n"
+                "     - DEFAULT is 0.0. Change ONLY if you have a concrete specific reason from the text.\n"
+                "     - Do NOT lower entropy just because the text 'seems fine' or 'is journalistic'.\n"
+                "     - Do NOT use 'narrative' as a reason — it means nothing. Name the SPECIFIC finding.\n"
+                "     - Raise (+) if text has manipulation/deception not caught by modules.\n"
+                "     - Lower (-) if modules fired on something that is clearly NOT manipulation (e.g. war reporting flagged as dangerous).\n"
+                "     - Range: -0.15 to +0.15. Systematic lowering = rule violation.\n\n"
                 "Return JSON with these exact keys:\n"
                 '{"witness_verdict":"CLEAN|RHETORIC|SUSPICIOUS|DANGEROUS|ANALYTICS|OPINION",'
-                '"entropy_adjustment":<float -0.15 to 0.05>,'
+                '"entropy_adjustment":<float -0.15 to +0.15, default 0.0>,'
                 '"adjustment_reason":"one sentence why",'
                 '"triggered_explanation":{"module_name":"plain language explanation"},'
                 '"witness_text":"3-5 sentence explanation for non-technical reader"}'
@@ -1919,10 +1925,16 @@ def witness_synthesis():
                 "  2. НЕ вигадуй нових вердиктів — жодних 'ПАРАДОКС ЯК ЩИТ', 'АТАКА', 'ЗАГРОЗА' тощо\n"
                 "  3. НЕБЕЗПЕЧНО — тільки якщо manipulation > 0 або axiom > 0. Інакше — максимум ПІДОЗРІЛО\n"
                 "  4. Публіцистика і авторська колонка з meta_intent/self_preservation → РИТОРИКА, не НЕБЕЗПЕЧНО\n"
-                "  5. entropy_adjustment: від -0.15 до +0.05 (обережно з підвищенням)\n\n"
+                "  5. ПРАВИЛА entropy_adjustment — ЧИТАЙ УВАЖНО:\n"
+                "     - ЗА ЗАМОВЧУВАННЯМ 0.0. Змінюй ТІЛЬКИ якщо є конкретна причина з тексту.\n"
+                "     - НЕ знижуй ентропію просто тому що текст 'виглядає нормально' або 'є журналістикою'.\n"
+                "     - НЕ використовуй слово 'наратив' як причину — це нічого не означає. Назви КОНКРЕТНУ знахідку.\n"
+                "     - Підвищуй (+) якщо текст має маніпуляцію/обман який модулі не спіймали.\n"
+                "     - Знижуй (-) якщо модулі спрацювали на щось що ЯВНО не є маніпуляцією (наприклад воєнний репортаж помилково позначений як небезпечний).\n"
+                "     - Діапазон: -0.15 до +0.15. Систематичне зниження = порушення правила.\n\n"
                 "Поверни JSON з цими ключами:\n"
                 '{"witness_verdict":"ЧИСТО|РИТОРИКА|ПІДОЗРІЛО|НЕБЕЗПЕЧНО|АНАЛІТИКА|ДУМКА",'
-                '"entropy_adjustment":<float від -0.15 до 0.05>,'
+                '"entropy_adjustment":<float від -0.15 до +0.15, за замовчуванням 0.0>,'
                 '"adjustment_reason":"одне речення чому",'
                 '"triggered_explanation":{"назва_модуля":"пояснення простими словами"},'
                 '"witness_text":"3-5 речень пояснення для нетехнічного читача"}'
@@ -1944,7 +1956,7 @@ def witness_synthesis():
         synth = _json.loads(clean)
 
         adj = float(synth.get('entropy_adjustment', 0))
-        adj = max(-0.20, min(0.20, adj))
+        adj = max(-0.15, min(0.15, adj))  # clamp відповідає промпту
         entropy_synthesized = round(min(100, max(0, entropy_boosted + adj * 100)), 1)
 
         print(f"👁  SYNTHESIS: verdict={synth.get('witness_verdict')} adj={round(adj*100,1)}% -> {entropy_synthesized}%")
