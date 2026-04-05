@@ -1323,6 +1323,7 @@ const EPIST_VERDICT_UK = {
     'UNFALSIFIABLE':         'НЕЗАПЕРЕЧНА ТЕЗА',
     'CONCLUSION_LEAP':       'СТРИБОК У ВИСНОВКАХ',
     'UNVERIFIED_CITATION':   'НЕПЕРЕВІРЕНА ЦИТАТА',
+    'EPISTEMIC_CONFLATION':  'ЕПІСТЕМІЧНЕ ЗМІШУВАННЯ',
     'COMBINED':              'КОМБІНОВАНИЙ',
     'CLEAN':                 'ЧИСТО',
     'N/A':                   'N/A',
@@ -1333,6 +1334,7 @@ const EPIST_PATTERNS_UK = {
     'unfalsifiable':         'незаперечна теза — заперечення = доказ змови',
     'conclusion_leap':       'стрибок у висновках ("логічно припустити", "таким чином")',
     'unverified_citation':   'цитовані дослідження без посилань або DOI',
+    'epistemic_conflation':  'змішування рівнів достовірності — припущення подані як факти',
 };
 const EPIST_PATTERNS_EN = {
     'anonymous_authority':   'anonymous authorities (no names or institutions)',
@@ -1340,6 +1342,7 @@ const EPIST_PATTERNS_EN = {
     'unfalsifiable':         'unfalsifiable claim — denial = proof of conspiracy',
     'conclusion_leap':       'conclusion leap ("logically follows", "thus") without causal chain',
     'unverified_citation':   'named studies cited without verifiable link or DOI',
+    'epistemic_conflation':  'epistemic level mixing — speculation presented as established fact',
 };
 function translateEpistVerdict(v) {
     if (!v) return 'N/A';
