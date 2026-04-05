@@ -64,10 +64,14 @@ except ImportError:
 
 # Import LAC Epistemology detector
 try:
-    from veritas_lac_epistemology import VeritasLACEpistemology
+    from veritas_lac_epistemology_v3 import VeritasLACEpistemology
     LAC_EPISTEMOLOGY_AVAILABLE = True
 except ImportError:
-    LAC_EPISTEMOLOGY_AVAILABLE = False
+    try:
+        from veritas_lac_epistemology import VeritasLACEpistemology
+        LAC_EPISTEMOLOGY_AVAILABLE = True
+    except ImportError:
+        LAC_EPISTEMOLOGY_AVAILABLE = False
 
 # Import Framing detector
 try:
@@ -784,6 +788,8 @@ class VeritasCalibratedCore:
             'CONSPIRACY_NEWS', 'REPORT', 'OPINION', 'SPORT',
             'CULTURE', 'LIFESTYLE', 'SATIRE', 'SCIENCE', 'UNKNOWN',
             'INTERVIEW', 'GEOPOLITICS', 'INVESTIGATION', 'MEDIA_MONITORING',
+            'GOVERNMENT', 'LEGAL', 'HEALTH', 'ENVIRONMENT', 'TECH_NEWS',
+            # BUSINESS і ECONOMY — можуть мати фінансовий контент, залишаємо активними
         }
         lac_finance_result = {
             'score': 0.0,
@@ -809,7 +815,8 @@ class VeritasCalibratedCore:
         LAC_LABOR_SKIP_GENRES = {
             'SPORT', 'CULTURE', 'SCIENCE', 'SATIRE', 'OPINION',
             'INTERVIEW', 'GEOPOLITICS', 'INVESTIGATION', 'ECONOMY',
-            'MEDIA_MONITORING',
+            'MEDIA_MONITORING', 'GOVERNMENT', 'BUSINESS', 'LEGAL',
+            'TECH_NEWS', 'HEALTH', 'ENVIRONMENT',
         }
         lac_labor_result = {
             'score': 0.0,
@@ -836,7 +843,7 @@ class VeritasCalibratedCore:
         # INVESTIGATION — анонімні жертви це норма, не маніпуляція
         LAC_EPIST_SKIP_GENRES = {
             'SPORT', 'CULTURE', 'SATIRE', 'SCIENCE', 'INVESTIGATION',
-            'MEDIA_MONITORING',
+            'MEDIA_MONITORING', 'LEGAL', 'GOVERNMENT',
         }
         lac_epistemology_result = {
             'score': 0.0,
@@ -896,7 +903,8 @@ class VeritasCalibratedCore:
         PSEUDOSCIENCE_SKIP_GENRES = {
             'CONSPIRACY_NEWS', 'ANALYTICS', 'REPORT', 'OPINION', 'SATIRE',
             'INTERVIEW', 'GEOPOLITICS', 'INVESTIGATION', 'ECONOMY',
-            'MEDIA_MONITORING',
+            'MEDIA_MONITORING', 'GOVERNMENT', 'BUSINESS', 'LEGAL',
+            'TECH_NEWS', 'HEALTH', 'ENVIRONMENT',
         }
         pseudoscience_result = {
             'pseudoscience_score': 0.0,
