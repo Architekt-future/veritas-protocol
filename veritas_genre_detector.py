@@ -59,7 +59,6 @@ class GenreDetector:
         r'\bо \d{1,2}:\d{2}\b',
         r'\b\d{1,2} (january|february|march|april|may|june|july|august|september|october|november|december) \d{4}\b',
         r'\bpublished:\b', r'\bupdated:\b',
-        # EN investigative / breaking news
         r'\b(resigned|resignation)\b',
         r'\b(investigation|investigating|under investigation)\b',
         r'\b(declined to comment|did not (immediately )?respond|referred questions)\b',
@@ -70,6 +69,11 @@ class GenreDetector:
         r'\b(press secretary|spokesperson for|official said)\b',
         r'\b(hit back|pushed back|disputed|denied the claims?)\b',
         r'\b\d{1,2}:\d{2}\s*(AM|PM|EDT|EST|GMT|UTC)\b',
+        # Воєнний репортаж — Генштаб, ЗСУ, ураження
+        r'\b(генштаб|збройні\s+сили|зсу|нгу|сили\s+оборони)\b',
+        r'\b(ураження|обстріл|атакував|бойових\s+зіткнень|дронів)\b',
+        r'\b(killed|wounded|injured|strike|shelling|troops)\b',
+        r'\b(military|forces|troops|soldiers)\s+(confirmed|announced|said)\b',
     ]
 
     # ── OPINION ──────────────────────────────────────────────────────
@@ -115,6 +119,12 @@ class GenreDetector:
         r'\b(спортсмен|атлет|гравець команди|футболіст|баскетболіст)\b',
         r'\b(медальний залік|таблиця чемпіонату|груповий етап)\b',
         r'\b(transfer window|match day|league table|hat.trick)\b',
+        # Додаткові — для коротких RSS текстів
+        r'\b(atp|wta|ufc|nba|nfl|nhl|fifa|uefa)\b',
+        r'\b(тенісист|хокеїст|боксер|призер|чемпіон\s+світу)\w*\b',
+        r'\b(перемог|програв|нічия|рахунок)\w*\b',
+        r'\b(won|defeated|beat|scored|victory|drew)\b',
+        r'\b(Challenger|Grand\s+Prix|World\s+Cup|Super\s+Bowl)\b',
     ]
 
     # ── CULTURE ──────────────────────────────────────────────────────
@@ -122,11 +132,14 @@ class GenreDetector:
         r'\b(фільм|кіно|серіал|театр|виставка|концерт|альбом)\b',
         r'\b(режисер|актор|актриса|сценарист|продюсер)\b',
         r'\b(film|movie|series|theatre|concert|album|premiere)\b',
-        # "director" без кінематографічного контексту — не культурний сигнал.
-        # Потребує супутнього слова щоб відрізнити від "Director of FBI"
         r'\b(director|actor|actress|screenwriter|producer)\b(?=.{0,60}(film|movie|series|theatre|music|album|award))',
         r'\b(нагород|номінант|прем.єра|реліз|кінофестиваль)\b',
         r'\b(award|nomination|release|box office|film festival)\b',
+        # Додаткові
+        r'\b(музикант|художник|митець|письменник|скульптор)\w*\b',
+        r'\b(musician|artist|painter|author|sculptor|rapper)\b',
+        r'\b(festival|gallery|museum|exhibition|antisemit)\b',
+        r'\b(фестиваль|галерея|музей|антисемітизм)\b',
     ]
 
     # ── CONSPIRACY_NEWS ──────────────────────────────────────────────
@@ -194,6 +207,13 @@ class GenreDetector:
         r'\b(allies?|alliance|альянс|союзник)\b',
         r'\b(annexation|анексі)\b',
         r'\b(occupation|окупац)\b',
+        # Додаткові — переворот, вибори, демократія
+        r'\b(coup|military\s+(rule|junta|president|leader))\b',
+        r'\b(election|ballot|polls?|voter|incumbent)\b',
+        r'\b(democracy|democratic|authoritar)\b',
+        r'\b(president|prime\s+minister|chancellor|parliament)\b',
+        r'\b(вибор|голосування|президент|прем.єр.міністр)\w*\b',
+        r'\b(переворот|хунта|диктатор|авторитар)\w*\b',
     ]
 
     # ── ECONOMY ──────────────────────────────────────────────────────
@@ -211,6 +231,12 @@ class GenreDetector:
         r'\b(fiscal|фіскальн)\b',
         r'\b(recession|рецесі)\b',
         r'\b(monetary\s+policy|монетарн\w+\s+політик)\b',
+        # Паливна криза та енергія — економічний вимір
+        r'\b(fuel\s+shortage|fuel\s+crisis|petrol\s+station|gas\s+prices?)\b',
+        r'\b(oil\s+(price|supply|market|shortage|crisis))\b',
+        r'\b(energy\s+(price|crisis|shortage|cost|supply))\b',
+        r'\b(дефіцит\s+пального|ціни\s+на\s+пальне|нафтовий\s+ринок)\b',
+        r'\b(cost\s+of\s+living|purchasing\s+power|economic\s+impact)\b',
     ]
 
     # ── INVESTIGATION ────────────────────────────────────────────────
@@ -283,6 +309,11 @@ class GenreDetector:
         r'\b(звинувачен\w+|обвинувачен\w+|підозрюван)\w*\b',
         r'\b(charged\s+with|indicted|acquitted|pleaded)\b',
         r'\b(верховний\s+суд|конституційний\s+суд|supreme\s+court)\b',
+        # Трудове право та регулювання
+        r'\b(employment\s+(law|rights?|act|agency|watchdog))\b',
+        r'\b(workers?\s+rights?|labour\s+law|labor\s+law|minimum\s+wage)\b',
+        r'\b(regulatory\s+(burden|body|agency)|regulator)\b',
+        r'\b(трудов\w+\s+(право|законодавство)|мінімальна\s+зарплата)\b',
     ]
 
     # ── TECH_NEWS ────────────────────────────────────────────────────
@@ -325,6 +356,19 @@ class GenreDetector:
         r'\b(відновлювана\s+енергія|сонячна\s+панель|вітрова\s+турбіна)\b',
         r'\b(renewable\s+energy|solar\s+panel|wind\s+turbine)\b',
         r'\b(биорізноманіття|екосистем|coral\s+reef|biodiversity)\b',
+        # Ядерна енергетика та енергетична незалежність
+        r'\b(nuclear\s+(power|plant|energy|reactor))\b',
+        r'\b(energy\s+independence|energy\s+security)\b',
+        r'\b(fossil\s+fuel|coal\s+plant|carbon\s+neutral)\b',
+        r'\b(ядерн\w+\s+(енергетика|реактор|станція))\b',
+        r'\b(енергетична\s+незалежність|вугільна\s+станція)\b',
+        # Природні катастрофи та погода
+        r'\b(earthquake|tsunami|hurricane|tornado|cyclone)\b',
+        r'\b(землетрус|цунамі|ураган|смерч)\b',
+        r'\b(storm|blizzard|heatwave|temperature\s+record)\b',
+        r'\b(буря|хуртовина|спека|температурний\s+рекорд)\b',
+        r'\b(wildlife|mammal|species|conservation|endangered)\b',
+        r'\b(тварин|ссавець|вид\s+під\s+загрозою|заповідник)\b',
     ]
 
     # ── Calibration presets ──────────────────────────────────────────
@@ -538,6 +582,11 @@ class GenreDetector:
     def analyze(self, text: str) -> GenreResult:
         t = text.lower()
 
+        # Short-text mode: RSS заголовки та анотації (~50-150 слів)
+        # Знижуємо пороги вдвічі — один сильний сигнал достатній
+        word_count = len(text.split())
+        is_short = word_count < 150
+
         analytics        = sum(1 for p in self.ANALYTICS_SIGNALS        if re.search(p, t, re.I))
         science          = sum(1 for p in self.SCIENCE_SIGNALS           if re.search(p, t, re.I))
         report           = sum(1 for p in self.REPORT_SIGNALS            if re.search(p, t, re.I))
@@ -599,45 +648,40 @@ class GenreDetector:
         elif science >= 3:
             genre, conf = 'SCIENCE',         min(science / 8, 1.0)
 
-        elif sport >= 3:
+        elif sport >= (1 if is_short else 3):
             genre, conf = 'SPORT',           min(sport / 6, 1.0)
 
-        elif legal >= 3:
+        elif legal >= (1 if is_short else 3):
             genre, conf = 'LEGAL',           min(legal / 6, 1.0)
 
-        elif investigation >= 4:
+        elif investigation >= (1 if is_short else 4):
             genre, conf = 'INVESTIGATION',   min(investigation / 8, 1.0)
 
         elif interview >= 3:
             genre, conf = 'INTERVIEW',       min(interview / 6, 1.0)
 
-        elif tech_news >= 3:
+        elif tech_news >= (1 if is_short else 3):
             genre, conf = 'TECH_NEWS',       min(tech_news / 6, 1.0)
 
-        elif health >= 3:
+        elif health >= (1 if is_short else 3):
             genre, conf = 'HEALTH',          min(health / 6, 1.0)
 
-        elif government >= 3:
+        elif government >= (1 if is_short else 3):
             genre, conf = 'GOVERNMENT',      min(government / 6, 1.0)
 
-        elif environment >= 3:
+        elif environment >= (1 if is_short else 3):
             genre, conf = 'ENVIRONMENT',     min(environment / 6, 1.0)
 
-        elif business >= 3:
+        elif business >= (1 if is_short else 3):
             genre, conf = 'BUSINESS',        min(business / 6, 1.0)
 
-        elif geopolitics >= 4:
+        elif geopolitics >= (1 if is_short else 4):
             genre, conf = 'GEOPOLITICS',     min(geopolitics / 10, 1.0)
 
-        elif culture >= 3:
+        elif culture >= (1 if is_short else 3):
             genre, conf = 'CULTURE',         min(culture / 6, 1.0)
-            # Інтерв'ю: тире + контекст розмови
-            genre, conf = 'INTERVIEW',       min(interview / 6, 1.0)
 
-        elif geopolitics >= 4:
-            genre, conf = 'GEOPOLITICS',     min(geopolitics / 10, 1.0)
-
-        elif economy >= 4:
+        elif economy >= (1 if is_short else 4):
             genre, conf = 'ECONOMY',         min(economy / 10, 1.0)
 
         elif analytics >= 3:
@@ -646,7 +690,7 @@ class GenreDetector:
             else:
                 genre, conf = 'ANALYTICS',   min(analytics / 8, 1.0)
 
-        elif report >= 2:
+        elif report >= (1 if is_short else 2):
             if conspiracy_news >= 2:
                 genre, conf = 'CONSPIRACY_NEWS', min((report + conspiracy_news) / 12, 1.0)
             else:
