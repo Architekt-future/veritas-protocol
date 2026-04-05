@@ -243,6 +243,92 @@ class GenreDetector:
         r'\b(піар|pr)\w*\s+(в\s+ефір|матеріал|сюжет)\b',
     ]
 
+    # ── GOVERNMENT ───────────────────────────────────────────────────
+    # Урядові анонси, програми, міністерства
+    GOVERNMENT_SIGNALS = [
+        r'\b(міністерств|міністр|кабінет\s+міністр|уряд)\w*\b',
+        r'\b(ministry|minister|cabinet|government\s+announced)\b',
+        r'\b(програм\w+\s+(підтримки|розвитку|фінансування))\b',
+        r'\b(виділено|виділяється)\w*\s+\d',
+        r'\b(зареєструватись|подати\s+заявку|для\s+участі\s+необхідно)\b',
+        r'\b(офіційний\s+портал|офіційний\s+сайт|gov\.ua|\.gov\.)\b',
+        r'\b(постанов|указ|розпорядженн|наказ)\w*\b',
+        r'\b(держпрограм|держзакупівл|тендер)\w*\b',
+    ]
+
+    # ── BUSINESS ─────────────────────────────────────────────────────
+    # Корпоративні новини, акції, фінансові результати
+    BUSINESS_SIGNALS = [
+        r'\b(ceo|cfo|cto|chief\s+executive)\b',
+        r'\b(акці\w+\s+(зрос|впал|подорожч))\b',
+        r'\b(прибуток|збиток|виручка|капіталіз)\w*\s+\d',
+        r'\b(квартальн\w+\s+(результат|звіт|прибуток))\b',
+        r'\b(quarterly\s+(results?|earnings?|revenue))\b',
+        r'\b(shares?\s+(rose|fell|gained|dropped))\b',
+        r'\b(компанія\s+(повідомила|оголосила|представила))\b',
+        r'\b(IPO|злиття|поглинання|merger|acquisition)\b',
+        r'\b(аналітики\s+(підвищили|знизили|рекомендують))\b',
+        r'\b(Goldman\s+Sachs|Morgan\s+Stanley|JP\s+Morgan|Bloomberg)\b',
+    ]
+
+    # ── LEGAL ────────────────────────────────────────────────────────
+    # Судові рішення, апеляції, вироки
+    LEGAL_SIGNALS = [
+        r'\b(суд\w*\s+(відхилив|ухвалив|постановив|вирішив))\b',
+        r'\b(court\s+(ruled|rejected|upheld|dismissed))\b',
+        r'\b(апеляці\w+|оскарженн\w+|вирок)\w*\b',
+        r'\b(appeal|verdict|ruling|sentence|conviction)\b',
+        r'\b(суддів|суддя|прокурор|адвокат|захисник)\w*\b',
+        r'\b(judge|prosecutor|defense\s+attorney|counsel)\b',
+        r'\b(звинувачен\w+|обвинувачен\w+|підозрюван)\w*\b',
+        r'\b(charged\s+with|indicted|acquitted|pleaded)\b',
+        r'\b(верховний\s+суд|конституційний\s+суд|supreme\s+court)\b',
+    ]
+
+    # ── TECH_NEWS ────────────────────────────────────────────────────
+    # Технологічні новини (не наукові статті, не ML papers)
+    TECH_NEWS_SIGNALS = [
+        r'\b(Apple|Google|Microsoft|OpenAI|Meta|Amazon|Tesla|Samsung|Nvidia)\b',
+        r'\b(iPhone|MacBook|Android|Windows|ChatGPT|Gemini|Claude)\b',
+        r'\b(модель|версія|оновлення)\w*\s+(GPT|Claude|Gemini|AI|ШІ)\b',
+        r'\b(benchmark|API|launch(ed)?|release[sd]?)\b',
+        r'\b(токен|параметр|контекстне\s+вікно)\w*\b',
+        r'\b(стартап|венчурн|раунд\s+фінансування)\w*\b',
+        r'\b(startup|venture|funding\s+round|valuation)\b',
+        r'\b(додаток|застосунок|платформ)\w*\s+(запустив|оновив|представив)\b',
+    ]
+
+    # ── HEALTH ───────────────────────────────────────────────────────
+    # Медичні новини, охорона здоров'я (не наукові статті)
+    HEALTH_SIGNALS = [
+        r'\b(ВООЗ|МОЗ|CDC|WHO)\b',
+        r'\b(захворюваність|епідемі\w+|пандемі\w+|спалах)\b',
+        r'\b(epidemic|pandemic|outbreak|infection\s+rate)\b',
+        r'\b(вакцинаці\w+|щеплення|вакцин\w+\s+кампані)\b',
+        r'\b(vaccination\s+campaign|vaccine\s+rollout)\b',
+        r'\b(лікарі\s+рекомендують|МОЗ\s+закликає|ВООЗ\s+попереджає)\b',
+        r'\b(doctors?\s+recommend|health\s+officials?\s+warn)\b',
+        r'\b(захворіло|одужало|госпіталізовано)\s+\d',
+        r'\b(cases?\s+(rose|increased|reported)|hospitaliz)\b',
+    ]
+
+    # ── ENVIRONMENT ──────────────────────────────────────────────────
+    # Клімат, екологія, навколишнє середовище
+    ENVIRONMENT_SIGNALS = [
+        r'\b(кліматичн\w+|глобальне\s+потеплення|парниковий\s+газ)\b',
+        r'\b(climate\s+change|global\s+warming|greenhouse\s+gas)\b',
+        r'\b(температура\s+(Землі|океану|атмосфери))\b',
+        r'\b(carbon\s+emission|net\s+zero|декарбонізац)\b',
+        r'\b(ООН\s+(закликає|попереджає|вимагає))\b',
+        r'\b(кліматичний\s+саміт|COP\d+|Paris\s+Agreement)\b',
+        r'\b(повінь|посуха|лісова\s+пожежа|flood|drought|wildfire)\b',
+        r'\b(відновлювана\s+енергія|сонячна\s+панель|вітрова\s+турбіна)\b',
+        r'\b(renewable\s+energy|solar\s+panel|wind\s+turbine)\b',
+        r'\b(биорізноманіття|екосистем|coral\s+reef|biodiversity)\b',
+    ]
+
+    # ── Calibration presets ──────────────────────────────────────────
+
     CALIBRATION = {
         'ANALYTICS': {
             'absurdity_weight': 0.0,
@@ -257,6 +343,48 @@ class GenreDetector:
             'unanchored_claim': False,
             'entropy_damper':   True,
             'entropy_cap':      0.80,
+        },
+        'GOVERNMENT': {
+            'absurdity_weight': 0.5,
+            'anon_authority':   False,
+            'unanchored_claim': True,
+            'entropy_damper':   True,
+            'entropy_cap':      0.85,
+        },
+        'BUSINESS': {
+            'absurdity_weight': 0.5,
+            'anon_authority':   False,
+            'unanchored_claim': False,
+            'entropy_damper':   True,
+            'entropy_cap':      0.85,
+        },
+        'LEGAL': {
+            'absurdity_weight': 0.5,
+            'anon_authority':   False,
+            'unanchored_claim': False,
+            'entropy_damper':   True,
+            'entropy_cap':      0.80,
+        },
+        'TECH_NEWS': {
+            'absurdity_weight': 0.5,
+            'anon_authority':   False,
+            'unanchored_claim': False,
+            'entropy_damper':   True,
+            'entropy_cap':      0.85,
+        },
+        'HEALTH': {
+            'absurdity_weight': 1.0,
+            'anon_authority':   True,
+            'unanchored_claim': True,
+            'entropy_damper':   True,
+            'entropy_cap':      0.90,
+        },
+        'ENVIRONMENT': {
+            'absurdity_weight': 0.5,
+            'anon_authority':   False,
+            'unanchored_claim': False,
+            'entropy_damper':   True,
+            'entropy_cap':      0.85,
         },
         'REPORT': {
             'absurdity_weight': 1.8,
@@ -381,6 +509,24 @@ class GenreDetector:
         'MEDIA_MONITORING': ('VERIFIED', 'МЕДІАМОНІТОРИНГ',
                       'Текст є аналізом медіапростору або моніторингом ЗМІ. '
                       'Оцінює якість журналістики — не є маніпулятивним за природою.'),
+        'GOVERNMENT': ('VERIFIED', 'УРЯДОВИЙ АНОНС',
+                      'Текст є офіційним повідомленням або програмою від державної установи. '
+                      'Перевіряйте деталі на офіційних порталах.'),
+        'BUSINESS':   ('VERIFIED', 'БІЗНЕС НОВИНИ',
+                      'Корпоративні новини або фінансові результати. '
+                      'Перевіряйте цифри в офіційних звітах компанії.'),
+        'LEGAL':      ('VERIFIED', 'СУДОВІ НОВИНИ',
+                      'Текст стосується судових рішень або правових процесів. '
+                      'Перевіряйте деталі в офіційних судових реєстрах.'),
+        'TECH_NEWS':  ('VERIFIED', 'ТЕХНОЛОГІЧНІ НОВИНИ',
+                      'Новини зі сфери технологій. '
+                      'Перевіряйте заяви компаній в офіційних джерелах.'),
+        'HEALTH':     ('VERIFIED', 'МЕДИЧНІ НОВИНИ',
+                      'Новини охорони здоров\'я. '
+                      'Для медичних рішень консультуйтесь з лікарем.'),
+        'ENVIRONMENT':('VERIFIED', 'ЕКОЛОГІЧНІ НОВИНИ',
+                      'Текст стосується екології або клімату. '
+                      'Перевіряйте дані в офіційних звітах ООН або наукових джерелах.'),
         'CONSPIRACY_NEWS': ('SUSPICIOUS', 'НОВИНИ З ІМПЛІКОВАНОЮ ПРИЧИННІСТЮ',
                       'Текст містить реальні факти, але подані через "дивний збіг" або '
                       'анонімні джерела без прямих доказів зв\'язку між подіями. '
@@ -392,45 +538,53 @@ class GenreDetector:
     def analyze(self, text: str) -> GenreResult:
         t = text.lower()
 
-        analytics       = sum(1 for p in self.ANALYTICS_SIGNALS       if re.search(p, t, re.I))
-        science         = sum(1 for p in self.SCIENCE_SIGNALS          if re.search(p, t, re.I))
-        report          = sum(1 for p in self.REPORT_SIGNALS           if re.search(p, t, re.I))
-        opinion         = sum(1 for p in self.OPINION_SIGNALS          if re.search(p, t, re.I))
-        satire          = sum(1 for p in self.SATIRE_SIGNALS           if re.search(p, t, re.I))
-        sport           = sum(1 for p in self.SPORT_SIGNALS            if re.search(p, t, re.I))
-        culture         = sum(1 for p in self.CULTURE_SIGNALS          if re.search(p, t, re.I))
-        conspiracy_news = sum(1 for p in self.CONSPIRACY_NEWS_SIGNALS  if re.search(p, t, re.I))
-        interview       = sum(1 for p in self.INTERVIEW_SIGNALS        if re.search(p, t, re.I | re.MULTILINE))
-        geopolitics     = sum(1 for p in self.GEOPOLITICS_SIGNALS      if re.search(p, t, re.I))
-        economy         = sum(1 for p in self.ECONOMY_SIGNALS          if re.search(p, t, re.I))
-        investigation   = sum(1 for p in self.INVESTIGATION_SIGNALS    if re.search(p, t, re.I))
-        media_monitoring = sum(1 for p in self.MEDIA_MONITORING_SIGNALS if re.search(p, t, re.I))
+        analytics        = sum(1 for p in self.ANALYTICS_SIGNALS        if re.search(p, t, re.I))
+        science          = sum(1 for p in self.SCIENCE_SIGNALS           if re.search(p, t, re.I))
+        report           = sum(1 for p in self.REPORT_SIGNALS            if re.search(p, t, re.I))
+        opinion          = sum(1 for p in self.OPINION_SIGNALS           if re.search(p, t, re.I))
+        satire           = sum(1 for p in self.SATIRE_SIGNALS            if re.search(p, t, re.I))
+        sport            = sum(1 for p in self.SPORT_SIGNALS             if re.search(p, t, re.I))
+        culture          = sum(1 for p in self.CULTURE_SIGNALS           if re.search(p, t, re.I))
+        conspiracy_news  = sum(1 for p in self.CONSPIRACY_NEWS_SIGNALS   if re.search(p, t, re.I))
+        interview        = sum(1 for p in self.INTERVIEW_SIGNALS         if re.search(p, t, re.I | re.MULTILINE))
+        geopolitics      = sum(1 for p in self.GEOPOLITICS_SIGNALS       if re.search(p, t, re.I))
+        economy          = sum(1 for p in self.ECONOMY_SIGNALS           if re.search(p, t, re.I))
+        investigation    = sum(1 for p in self.INVESTIGATION_SIGNALS     if re.search(p, t, re.I))
+        media_monitoring = sum(1 for p in self.MEDIA_MONITORING_SIGNALS  if re.search(p, t, re.I))
+        government       = sum(1 for p in self.GOVERNMENT_SIGNALS        if re.search(p, t, re.I))
+        business         = sum(1 for p in self.BUSINESS_SIGNALS          if re.search(p, t, re.I))
+        legal            = sum(1 for p in self.LEGAL_SIGNALS             if re.search(p, t, re.I))
+        tech_news        = sum(1 for p in self.TECH_NEWS_SIGNALS         if re.search(p, t, re.I))
+        health           = sum(1 for p in self.HEALTH_SIGNALS            if re.search(p, t, re.I))
+        environment      = sum(1 for p in self.ENVIRONMENT_SIGNALS       if re.search(p, t, re.I))
 
         signals = {
-            'analytics':       analytics,
-            'science':         science,
-            'report':          report,
-            'opinion':         opinion,
-            'satire':          satire,
-            'sport':           sport,
-            'culture':         culture,
-            'conspiracy_news': conspiracy_news,
-            'interview':       interview,
-            'geopolitics':     geopolitics,
-            'economy':         economy,
-            'investigation':      investigation,
-            'media_monitoring':   media_monitoring,
+            'analytics':        analytics,
+            'science':          science,
+            'report':           report,
+            'opinion':          opinion,
+            'satire':           satire,
+            'sport':            sport,
+            'culture':          culture,
+            'conspiracy_news':  conspiracy_news,
+            'interview':        interview,
+            'geopolitics':      geopolitics,
+            'economy':          economy,
+            'investigation':    investigation,
+            'media_monitoring': media_monitoring,
+            'government':       government,
+            'business':         business,
+            'legal':            legal,
+            'tech_news':        tech_news,
+            'health':           health,
+            'environment':      environment,
         }
 
         # ── Genre selection logic ────────────────────────────────────
-        # Priority order matters: more specific genres win over generic ones.
-        # CONSPIRACY_NEWS can overlay REPORT or ANALYTICS — it wins if strong enough.
-
         genre = 'UNKNOWN'
         conf  = 0.0
 
         if media_monitoring >= 4:
-            # Медіамоніторинг — дуже специфічний жанр, виграє над усіма
             genre, conf = 'MEDIA_MONITORING', min(media_monitoring / 8, 1.0)
 
         elif satire >= 2:
@@ -448,14 +602,35 @@ class GenreDetector:
         elif sport >= 3:
             genre, conf = 'SPORT',           min(sport / 6, 1.0)
 
-        elif culture >= 3:
-            genre, conf = 'CULTURE',         min(culture / 6, 1.0)
+        elif legal >= 3:
+            genre, conf = 'LEGAL',           min(legal / 6, 1.0)
 
         elif investigation >= 4:
-            # Розслідування з задокументованими жертвами — специфічний жанр
             genre, conf = 'INVESTIGATION',   min(investigation / 8, 1.0)
 
         elif interview >= 3:
+            genre, conf = 'INTERVIEW',       min(interview / 6, 1.0)
+
+        elif tech_news >= 3:
+            genre, conf = 'TECH_NEWS',       min(tech_news / 6, 1.0)
+
+        elif health >= 3:
+            genre, conf = 'HEALTH',          min(health / 6, 1.0)
+
+        elif government >= 3:
+            genre, conf = 'GOVERNMENT',      min(government / 6, 1.0)
+
+        elif environment >= 3:
+            genre, conf = 'ENVIRONMENT',     min(environment / 6, 1.0)
+
+        elif business >= 3:
+            genre, conf = 'BUSINESS',        min(business / 6, 1.0)
+
+        elif geopolitics >= 4:
+            genre, conf = 'GEOPOLITICS',     min(geopolitics / 10, 1.0)
+
+        elif culture >= 3:
+            genre, conf = 'CULTURE',         min(culture / 6, 1.0)
             # Інтерв'ю: тире + контекст розмови
             genre, conf = 'INTERVIEW',       min(interview / 6, 1.0)
 
