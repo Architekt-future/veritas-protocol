@@ -1,11 +1,13 @@
 """
-Veritas LAC Epistemology — v1.1
-Detects four classic epistemic manipulation patterns:
+Veritas LAC Epistemology — v1.2
+Detects six classic epistemic manipulation patterns:
   1. Anonymous authorities ("some experts", "independent researchers")
   2. Correlation-as-causation framing
   3. Unfalsifiable / conspiracy framing ("science doesn't recognize this — which is telling")
   4. Conclusion leap — logical jump from data to radical claim via "логічно припустити", "таким чином"
   5. Unverified citation — named sources cited without verifiable links
+  6. Epistemic Conflation — mixing speculation/forecast/report/fact without clear markers
+     (the UNIAN Taiwan problem: "may happen" → "already happening" without transition)
 
 Interface mirrors veritas_lac_labor / veritas_lac_finance.
 """
@@ -17,8 +19,8 @@ from typing import List
 
 @dataclass
 class EpistemologyResult:
-    score: float                  # 0.0 = clean, 1.0 = severe
-    verdict: str                  # CLEAN | ANONYMOUS_AUTHORITY | CORRELATION_CAUSATION | UNFALSIFIABLE | CONCLUSION_LEAP | COMBINED
+    score: float
+    verdict: str                  # CLEAN | ANONYMOUS_AUTHORITY | CORRELATION_CAUSATION | UNFALSIFIABLE | CONCLUSION_LEAP | UNVERIFIED_CITATION | EPISTEMIC_CONFLATION | COMBINED
     is_epistemic_content: bool
     missing: List[str] = field(default_factory=list)
     red_flags: List[str] = field(default_factory=list)
@@ -87,7 +89,11 @@ class VeritasLACEpistemology:
     ]
 
     # Жанри де журналістські анонімні джерела — норма, не маніпуляція
-    JOURNALISTIC_GENRES = {'REPORT', 'ANALYTICS', 'INVESTIGATION', 'GEOPOLITICS', 'MEDIA_MONITORING'}
+    JOURNALISTIC_GENRES = {
+        'REPORT', 'ANALYTICS', 'INVESTIGATION', 'GEOPOLITICS',
+        'MEDIA_MONITORING', 'BUSINESS', 'TECH_NEWS', 'HEALTH',
+        'ENVIRONMENT', 'GOVERNMENT',
+    }
 
     # ── Pattern 2: Correlation-as-causation ─────────────────────────────────
     CORR_PATTERNS_UK = [
@@ -174,6 +180,78 @@ class VeritasLACEpistemology:
         r'\b\w+\s+\(\d{4}\)\s+(found|showed|demonstrated|reported)\b',
     ]
 
+    # ── Pattern 6: Epistemic Conflation ─────────────────────────────────────
+    # Змішування рівнів достовірності без маркерів переходу.
+    # Ключовий патерн: SPECULATION → FACT без явного переходу.
+    #
+    # Рівні (зліва = слабше, справа = сильніше):
+    #   SPECULATION → FORECAST → REPORT → FACT
+    #
+    # Тригерить коли:
+    #   a) Speculation markers + Fact markers в одному тексті (ковзання вгору)
+    #   b) Confidence inflation: "деякі" → "більшість" → "всі" / "доведено"
+    #   c) Source laundering: слабке джерело + сильний факт без розмежування
+
+    # Маркери спекуляції / прогнозу (слабкі твердження)
+    SPECULATION_MARKERS_UK = [
+        r'\b(може|міг\s+би|могли\s+б|могла\s+б)\s+(бути|стати|призвести|використовувати)',
+        r'\b(можливо|можливий\s+сценарій|один\s+зі\s+сценаріїв)\b',
+        r'\b(якщо|у\s+разі|за\s+умови)\s+.{1,40}(то|тоді|може)\b',
+        r'\b(теоретично|гіпотетично|в\s+перспективі)\b',
+        r'\b(аналітики\s+вважають|експерти\s+припускають|на\s+думку)\b',
+        r'\b(подібна\s+стратегія\s+може|цей\s+сценарій\s+можна)\b',
+        r'\b(міг\s+би\s+використовувати|здатний\s+використовувати)\b',
+    ]
+    SPECULATION_MARKERS_EN = [
+        r'\b(could|might|may)\s+(be|become|lead|use|result)\b',
+        r'\b(possible|potentially|hypothetically|in\s+theory)\b',
+        r'\b(scenario|if.+then|in\s+the\s+event\s+of)\b',
+        r'\banalysts?\s+(believe|think|suggest|warn)\b',
+        r'\b(could\s+be\s+replicated|this\s+scenario\s+could)\b',
+        r'\b(experts?\s+say|according\s+to\s+analysts?)\b',
+    ]
+
+    # Маркери факту / підтвердженої події (сильні твердження)
+    FACT_MARKERS_UK = [
+        r'\b(зафіксовано|підтверджено|встановлено|задокументовано)\b',
+        r'\b(супутникові\s+знімки\s+зафіксували|знімки\s+показали)\b',
+        r'\b(розгорнув|розмістив|встановив|побудував)\s+.{1,40}(мереж|систем|баз|суден)',
+        r'\b(звіт|доповідь)\s+(показав|підтвердив|зафіксував)\b',
+        r'\bза\s+даними\s+(супутник|розвідк|моніторинг)\w+\b',
+        r'\b\d+\s+(суден|безпілотник|датчик|літак|дрон)\w*\s+(розгорнут|розміщен|встановлен)\b',
+    ]
+    FACT_MARKERS_EN = [
+        r'\b(confirmed|documented|verified|established)\b',
+        r'\b(satellite\s+images?\s+(showed|revealed|captured))\b',
+        r'\b(deployed|positioned|installed|launched)\s+.{1,40}(network|system|vessel|drone)',
+        r'\b(report|assessment)\s+(showed|confirmed|found|revealed)\b',
+        r'\baccording\s+to\s+(satellite|intelligence|surveillance)\b',
+        r'\b\d+\s+(vessels?|drones?|sensors?|aircraft)\s+(deployed|positioned)\b',
+    ]
+
+    # Confidence inflation markers — підвищення впевненості без нових доказів
+    CONFIDENCE_INFLATION_UK = [
+        r'\bдеяк[іи]\s+(аналітик|експерт)\w*.{1,150}більшість\s+(аналітик|експерт)\w*',
+        r'\bможливо\b.{1,200}\bочевидно\b',
+        r'\bпередбачається\b.{1,200}\bдоведено\b',
+        r'\bна\s+думку.{1,80}загальновизнано\b',
+        r'\bдеяк[іи].{1,100}(фактично|насправді|по\s+суті)\b',
+    ]
+    CONFIDENCE_INFLATION_EN = [
+        r'\bsome\s+analysts?\b.{1,200}\bmajority\s+of\s+(experts?|analysts?)\b',
+        r'\bpossibly\b.{1,200}\bobviously\b',
+        r'\bexpected\b.{1,200}\bproven\b',
+        r'\bsome\s+experts?\b.{1,100}\b(effectively|essentially|clearly)\b',
+        r'\bmight\b.{1,150}\b(has\s+been\s+confirmed|is\s+now\s+clear|it\s+is\s+(clear|obvious))\b',
+    ]
+
+    # Порогові значення для нового патерну
+    # Потребує ОБОХ: speculation + fact markers (ковзання)
+    # АБО confidence inflation (самостійно)
+    CONFLATION_SPECULATION_THRESHOLD = 2
+    CONFLATION_FACT_THRESHOLD = 2
+    CONFLATION_INFLATION_THRESHOLD = 1
+
     # Threshold: how many hits trigger each pattern
     ANON_THRESHOLD = 1
     CORR_THRESHOLD = 1
@@ -191,8 +269,7 @@ class VeritasLACEpistemology:
 
         t = text.lower()
 
-        # Journalistic Shield: для REPORT/ANALYTICS журналістські анонімні
-        # джерела — норма. Тільки псевдонаукові "some experts" тригерять.
+        # Journalistic Shield
         is_journalistic_genre = genre in self.JOURNALISTIC_GENRES
         if is_journalistic_genre:
             anon_patterns = self.ANON_PATTERNS_UK + self.ANON_PATTERNS_EN_PSEUDO
@@ -208,12 +285,40 @@ class VeritasLACEpistemology:
         leap_hits        = self._count_hits(t, self.LEAP_PATTERNS_UK + self.LEAP_PATTERNS_EN)
         unverified_hits  = self._count_hits(t, self.UNVERIFIED_CITE_PATTERNS_UK + self.UNVERIFIED_CITE_PATTERNS_EN)
 
+        # ── Pattern 6: Epistemic Conflation ──────────────────────────
+        speculation_hits = self._count_hits(t, self.SPECULATION_MARKERS_UK + self.SPECULATION_MARKERS_EN)
+        fact_hits        = self._count_hits(t, self.FACT_MARKERS_UK + self.FACT_MARKERS_EN)
+        inflation_hits   = self._count_hits(t, self.CONFIDENCE_INFLATION_UK + self.CONFIDENCE_INFLATION_EN)
+
+        # Shield: наукові тексти легітимно мають і "may" і "confirmed" — це норма
+        # Shield: журналістські репортажі мають факти — норма якщо немає speculation
+        is_science_genre = genre in ('SCIENCE', 'ANALYTICS')
+        if is_science_genre:
+            # В наукових текстах fact markers = нормальна мова, не ковзання
+            fact_hits = 0
+
+        # Тригерить якщо:
+        # a) є і speculation і fact markers — ковзання між рівнями
+        # б) АБО confidence inflation (потребує 2+ hits — щоб уникнути FP)
+        conflation_triggered = (
+            (speculation_hits >= self.CONFLATION_SPECULATION_THRESHOLD and
+             fact_hits >= self.CONFLATION_FACT_THRESHOLD)
+            or inflation_hits >= 2
+        )
+        conflation_hits = speculation_hits + fact_hits + inflation_hits
+
         pattern_hits = {
             'anonymous_authority':    anon_hits,
             'correlation_causation':  corr_hits,
             'unfalsifiable':          unfals_hits,
             'conclusion_leap':        leap_hits,
             'unverified_citation':    unverified_hits,
+            'epistemic_conflation':   conflation_hits,
+            '_conflation_detail': {
+                'speculation': speculation_hits,
+                'fact':        fact_hits,
+                'inflation':   inflation_hits,
+            },
         }
 
         triggered = []
@@ -251,6 +356,22 @@ class VeritasLACEpistemology:
             missing.append('verifiable URL, DOI, or direct link to cited study')
             evidence.append('Text cites named studies or authors without providing a verifiable link or DOI')
 
+        if conflation_triggered:
+            triggered.append('EPISTEMIC_CONFLATION')
+            red_flags.append(f'epistemic_conflation:spec={speculation_hits},fact={fact_hits},infl={inflation_hits}')
+            missing.append('clear markers distinguishing speculation from verified facts')
+            if inflation_hits >= self.CONFLATION_INFLATION_THRESHOLD:
+                evidence.append(
+                    'Text inflates confidence without new evidence: weak claims ("some analysts") '
+                    'escalate to strong assertions ("clearly", "effectively") within the same text'
+                )
+            else:
+                evidence.append(
+                    f'Text mixes speculation markers ({speculation_hits} hits: "may", "could", "scenario") '
+                    f'with fact markers ({fact_hits} hits: "confirmed", "deployed", "satellite images") '
+                    'without clear epistemic transitions — reader may mistake forecasts for established facts'
+                )
+
         is_epistemic = bool(triggered)
 
         if not triggered:
@@ -264,11 +385,12 @@ class VeritasLACEpistemology:
         # Score: each pattern adds weight
         # Leap and unverified citation are particularly deceptive — higher weight
         weights = {
-            'ANONYMOUS_AUTHORITY':  0.30,
+            'ANONYMOUS_AUTHORITY':   0.30,
             'CORRELATION_CAUSATION': 0.30,
-            'UNFALSIFIABLE':        0.35,
-            'CONCLUSION_LEAP':      0.35,
-            'UNVERIFIED_CITATION':  0.25,
+            'UNFALSIFIABLE':         0.35,
+            'CONCLUSION_LEAP':       0.35,
+            'UNVERIFIED_CITATION':   0.25,
+            'EPISTEMIC_CONFLATION':  0.35,
         }
         score = min(1.0, sum(weights.get(p, 0.30) for p in triggered))
 
