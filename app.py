@@ -913,6 +913,38 @@ def analyze():
                 )
                 text = _re.sub(r'\s+', ' ', text).strip()
 
+                # ── X / TWITTER scrape cleanup ─────────────────────────
+                # X повертає весь інтерфейс разом з твітом.
+                # Лишаємо тільки реальний контент твіту.
+                if any(x in (url or '') for x in ['x.com', 'twitter.com']):
+                    # Видаляємо X-навігацію і footer
+                    for x_noise in [
+                        r"Don'?t miss what'?s happening[^.]*\.",
+                        r'People on X are the first to know[^.]*\.',
+                        r'Log in\s+Sign up(\s+Post)?',
+                        r'New to X\?\s*Sign up now[^.]*\.',
+                        r'Sign up with (Apple|Google)[^.]*\.',
+                        r'By signing up,?\s*you agree[^.]*\.',
+                        r'Terms of Service\s*[|]\s*Privacy Policy[^.]*\.',
+                        r'© 20\d\d X Corp\.?',
+                        r'Read \d+ repl\w+',
+                        r'\d+\s*repl\w+',
+                        r'Show more\s+Terms',
+                        r'(Sports?|Entertainment|Trending)\s*[·•]\s*Trending[^\n]*',
+                        r'See new posts\s+Conversation\s+',
+                        r'\b\d+:\d{2}\s+(AM|PM)\s+[·•]\s+\w+\s+\d+,\s+\d{4}\b',  # timestamp
+                        r'\b\d+(\.\d+)?[KMB]\s+Views\b',                          # view count
+                        r'\b\d+\s+\d+(\.\d+)?[KMB]\s+\d+(\.\d+)?[KMB]\s+\d+(\.\d+)?[KMB]\b',  # metrics row
+                    ]:
+                        text = _re.sub(x_noise, '', text, flags=_re.IGNORECASE)
+                    # Видаляємо блок Trending і все після нього
+                    text = _re.sub(
+                        r'Trending now.*$', '', text,
+                        flags=_re.IGNORECASE | _re.DOTALL
+                    )
+                    text = _re.sub(r'\s+', ' ', text).strip()
+                    print(f'🐦 X/Twitter cleanup: {len(text.split())} words remaining')
+
                 # Limit to 5000 words
                 words = text.split()
                 if len(words) > 5000:
