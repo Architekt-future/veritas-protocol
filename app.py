@@ -988,6 +988,33 @@ def analyze():
                             )
                             if jina_res.status_code == 200 and len(jina_res.text.split()) > word_count_check:
                                 text = jina_res.text.strip()
+                                # ── X/Twitter cleanup для Jina результату ──
+                                if any(x in (url or '') for x in ['x.com', 'twitter.com']):
+                                    for x_noise in [
+                                        r"Don'?t miss what'?s happening[^.]*\.",
+                                        r'People on X are the first to know[^.]*\.',
+                                        r'Log in\s+Sign up(\s+Post)?',
+                                        r'See new posts\s+Conversation\s+',
+                                        r'New to X\?\s*Sign up now[^.]*\.',
+                                        r'Sign up with (Apple|Google)[^.]*\.',
+                                        r'By signing up,?\s*you agree[^.]*\.',
+                                        r'Terms of Service\s*[|]\s*Privacy Policy[^.]*\.',
+                                        r'© 20\d\d X Corp\.?',
+                                        r'Read \d+ repl\w+',
+                                        r'\d+\s*repl\w+',
+                                        r'Show more\s+Terms',
+                                        r'(Sports?|Entertainment|Politics|Trending)\s*[·•]\s*Trending[^\n]*',
+                                        r'\b\d+:\d{2}\s+(AM|PM)\s+[·•][^\n]*',
+                                        r'\b\d+(\.\d+)?[KMB]\s+Views\b',
+                                        r'\b\d+\s+\d+(\.\d+)?[KMB]\s+\d+(\.\d+)?[KMB]\s+\d+(\.\d+)?[KMB]\b',
+                                    ]:
+                                        text = _re.sub(x_noise, '', text, flags=_re.IGNORECASE)
+                                    text = _re.sub(
+                                        r'Trending now.*$', '', text,
+                                        flags=_re.IGNORECASE | _re.DOTALL
+                                    )
+                                    text = _re.sub(r'\s+', ' ', text).strip()
+                                    print(f'🐦 X/Twitter Jina cleanup: {len(text.split())} words remaining')
                                 # Trim to 5000 words
                                 words = text.split()
                                 if len(words) > 5000:
