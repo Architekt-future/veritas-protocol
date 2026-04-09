@@ -69,11 +69,22 @@ class GenreDetector:
         r'\b(press secretary|spokesperson for|official said)\b',
         r'\b(hit back|pushed back|disputed|denied the claims?)\b',
         r'\b\d{1,2}:\d{2}\s*(AM|PM|EDT|EST|GMT|UTC)\b',
-        # Воєнний репортаж — Генштаб, ЗСУ, ураження
+        # Воєнний репортаж
         r'\b(генштаб|збройні\s+сили|зсу|нгу|сили\s+оборони)\b',
         r'\b(ураження|обстріл|атакував|бойових\s+зіткнень|дронів)\b',
         r'\b(killed|wounded|injured|strike|shelling|troops)\b',
         r'\b(military|forces|troops|soldiers)\s+(confirmed|announced|said)\b',
+        # Новинний репортаж — українські агентства
+        r'\b(повідомляє|повідомляють)\s+(агентство|reuters|ap|афп|interfax)\b',
+        r'\b(reuters|associated press|bloomberg|afp)\b',
+        r'\b(заперечує|заперечують|спростовує|відкидає)\s+(звинувачення|твердження)\b',
+        r'\b(стверджують|стверджує)\s+(що|посадовці|чиновники)\b',
+        r'\b(посадовці|чиновники|представники)\s+(стверджують|заявляють|кажуть)\b',
+        r'\b(внесли|включили|додали)\s+до\s+(реєстру|списку|бази)\b',
+        r'\b(скандал|інцидент|порушення)\s+\d{4}\s+(року)?\b',
+        r'\b(denies?|rejected?|disputed?)\s+(the\s+)?(allegations?|claims?|accusations?)\b',
+        r'\b(officials?\s+(say|said|claim|stated))\b',
+        r'\b(ministry|minister|department)\s+of\b',
     ]
 
     # ── OPINION ──────────────────────────────────────────────────────
