@@ -1600,9 +1600,25 @@ class VeritasCalibratedCore:
             status, verdict = 'VOID', 'СЕМАНТИЧНА ПОРОЖНЕЧА'
             explanation = 'Текст складається переважно зі слів без конкретного змісту. Це може бути навмисна тактика — створити враження інформативності без реальних фактів. Не варто сприймати такий текст як джерело інформації.'
         elif final_score > 0.7:
-            # v14.3: Diplomat label (was "ЛОГІЧНИЙ КОЛАПС")
-            status, verdict = 'CRITICAL', 'СЕМАНТИЧНИЙ ШУМ'
-            explanation = 'Текст містить багато термінів і тверджень, які між собою не пов\'язані. Такий прийом використовується щоб приховати відсутність логіки за видимістю складності. Читайте уважно: якщо неможливо простими словами переказати суть — це тривожний сигнал.'
+            # ── SHORT JOURNALISTIC TEXT SHIELD ───────────────────────
+            # Короткі новинні тексти (< 250 слів) з REPORT/LEGAL/INVESTIGATION
+            # жанром механічно отримують низьку когезію через щільність фактів
+            # (багато власних назв, акторів, цифр на малій площі).
+            # Це не семантичний шум — це стислий репортаж.
+            _short_journalistic = (
+                word_count < 250 and
+                _genre in ('REPORT', 'LEGAL', 'INVESTIGATION', 'GOVERNMENT',
+                           'GEOPOLITICS', 'MEDIA_MONITORING', 'HEALTH', 'ENVIRONMENT')
+                and manipulation_result['manipulation_score'] < 0.15
+                and void_result['void_score'] < 0.15
+            )
+            if _short_journalistic:
+                status, verdict = 'INFO', 'ІНФОРМАЦІЙНИЙ ФОН'
+                explanation = 'Текст може мати неточності, але без навмисної архітектури впливу.'
+            else:
+                # v14.3: Diplomat label (was "ЛОГІЧНИЙ КОЛАПС")
+                status, verdict = 'CRITICAL', 'СЕМАНТИЧНИЙ ШУМ'
+                explanation = 'Текст містить багато термінів і тверджень, які між собою не пов\'язані. Такий прийом використовується щоб приховати відсутність логіки за видимістю складності. Читайте уважно: якщо неможливо простими словами переказати суть — це тривожний сигнал.'
         elif final_score > 0.5:
             # v14.3: Diplomat label (was "ДОМЕННЕ ПОРУШЕННЯ")
             # For ANALYTICS genre with IMITATION OF LOGIC — more precise verdict
