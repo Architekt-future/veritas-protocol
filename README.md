@@ -1,6 +1,6 @@
 # Veritas Protocol
 
-![Version](https://img.shields.io/badge/version-v19.4-blue)
+![Version](https://img.shields.io/badge/version-v20.0-blue)
 ![Status](https://img.shields.io/badge/status-експериментальна_розробка-orange)
 ![License](https://img.shields.io/badge/license-MIT_Ethical-green)
 
@@ -52,12 +52,13 @@ Veritas Protocol — це спроба побудувати систему як�
 
 **LAC Праця** — те саме для трудових відносин. Декларація "відповідального роботодавця" без конкретних механізмів — порожній звук. Ловить exploitation patterns: AI/алгоритм як чорна скринька, "досвід замість оплати", рішення без права оскарження.
 
-**LAC Епістемологія** — детектує п'ять класичних прийомів маніпуляції логікою:
+**LAC Епістемологія** — детектує шість класичних прийомів маніпуляції логікою:
 - **Анонімні авторитети** — "деякі експерти вважають" без імен і установ
 - **Кореляція як причинність** — "збіг у часі" без доведеного механізму
 - **Нефальсифіковані тези** — "офіційна наука не визнає, і це красномовно"
 - **Стрибок у висновках** — "логічно припустити", "таким чином" без причинного ланцюга
 - **Неверифіковані цитати** — іменовані дослідження без посилань або DOI
+- **Епістемічне змішування** — speculation і fact в одному тексті без маркерів переходу ("може статися" → через кілька речень → "вже підтверджено")
 
 ---
 
@@ -107,7 +108,37 @@ Veritas Protocol — це спроба побудувати систему як�
 
 ---
 
-### Claim Gap і Laundered Claim
+### Детектор жанру v5
+
+**Genre Detector** — визначає жанр тексту до аналізу, щоб правильно калібрувати модулі. Анонімні джерела в репортажі — норма. В корпоративному прес-релізі — red flag. Без жанрового контексту система або пропускає реальні проблеми або генерує false positives.
+
+**19 жанрів** (у тому числі підтримка коротких RSS-текстів <150 слів зі зниженими порогами):
+
+| Жанр | Приклад | Що захищає |
+|------|---------|-----------|
+| `REPORT` | NBC News, Reuters | Анонімні джерела, цитати |
+| `INVESTIGATION` | Guardian, розслідування | Жертви без імен, судові дані |
+| `INTERVIEW` | Portnikov, Varosh Talks | Суб'єктивна позиція спікера |
+| `OPINION` | Авторська колонка | Риторика без фактів |
+| `ANALYTICS` | Аналітичні огляди | Хеджовані твердження |
+| `GEOPOLITICS` | НАТО, санкції, дипломатія | Анонімні дипломатичні джерела |
+| `INVESTIGATION` | Суїциди, позови, жертви | LAC Epist вимкнено |
+| `MEDIA_MONITORING` | Детектор медіа | Воєнна термінологія |
+| `GOVERNMENT` | Міністерства, gov.ua | Анонси без підзвітності |
+| `BUSINESS` | CEO, квартальні результати | Фінансові дані |
+| `LEGAL` | Суди, вироки, апеляції | Юридична термінологія |
+| `TECH_NEWS` | OpenAI, API, benchmark | Технічний жаргон |
+| `HEALTH` | ВООЗ, МОЗ, епідемія | Анонімні медичні рекомендації |
+| `ENVIRONMENT` | Клімат, COP, ядерна енергетика | Екологічні дані |
+| `ECONOMY` | ВВП, МВФ, паливна криза | Макроекономічні показники |
+
+---
+
+### Очищення X/Twitter
+
+Автоматичне видалення навігаційного шуму при скрапінгу Twitter/X: "Don't miss what's happening", Trending блок, footer, метрики переглядів. Застосовується і до основного скрапера і до Jina fallback.
+
+---
 
 **Claim Gap Detector** — вимірює асиметрію між силою твердження (зазвичай у заголовку або першому реченні) і доказовою базою в тілі тексту. "Пророцтво монаха: старець передбачив закінчення війни" — а в тексті монах сказав "скоро, Бог знає". Чотири рівні: NO_GAP → MINOR_GAP → MODERATE_GAP → MAJOR_GAP.
 
@@ -275,7 +306,7 @@ Genre Detector — визначає жанр (ANALYTICS / REPORT / OPINION / SCI
 │  Narrative Pivot Detector                               │
 │  Context Engine (RSS live feed, 10+ джерел)             │
 │  Context Completeness Checker                           │
-│  ARD Checker v1.4 (auto-scan, 19 класів)                │
+│  ARD Checker v1.5 (auto-scan, 21 клас)                  │
 └─────────────────────────────────────────────────────────┘
     ↓
 Entropy Boost (MODULE_WEIGHTS × triggered modules)
@@ -285,7 +316,7 @@ Interaction Matrix (25+ синергій між модулями)
 Influence Tier (0–4)  +  Verdict  +  Panel details
     ↓
 /api/oracle    → Claude Haiku → Слово Свідка
-/api/synthesis → Claude Haiku → Auto-коригування ентропії (±20%)
+/api/synthesis → Claude Haiku → Auto-коригування ентропії (±15%)
 /api/ard       → Claude Haiku → ARD-аналіз (якщо needs_haiku)
 ```
 
@@ -392,6 +423,8 @@ curl https://veritas-protocol.onrender.com/api/health
 
 **v19.4 (Березень 2026)** — Media Bias Detector: сім патернів структурної упередженості в медіа (SPONSORED_CONTENT_LAUNDERING, CATEGORY_CREATION, ANNOUNCEMENT_WITHOUT_ACCOUNTABILITY, THOUGHT_LEADERSHIP_LAUNDERING, QUOTE_DOMINANCE, JARGON_AUTHORITY, PRICE_ANCHORING). Framing Detector: вісім технік риторичного фреймінгу (Agenda Setting, False Dilemma, Ground Preparation, Overton Shift, Presupposition, Juxtaposition, Enumerated Inevitability, Scenario as Fact). LAC Epistemology: п'ять епістемічних маніпуляцій. ARD v1.4: UNDISCLOSED_CONFLICT клас (вендор цитується як незалежний експерт). Auto-Synthesis (/api/synthesis): автоматичне коригування ентропії через Claude Haiku. Supabase логування + /api/stats з агрегованою статистикою тригерів.
 
+**v20.0 (Квітень 2026)** — Genre Detector v5: 19 жанрів (додано INTERVIEW, GEOPOLITICS, ECONOMY, INVESTIGATION, MEDIA_MONITORING, GOVERNMENT, BUSINESS, LEGAL, TECH_NEWS, HEALTH, ENVIRONMENT) + short-text RSS mode (пороги для текстів <150 слів). LAC Epistemology v1.2: Pattern 6 — Epistemic Conflation (змішування рівнів достовірності: speculation → fact без маркерів переходу; confidence inflation). ARD v1.5: два нових класи — SYSTEMIC_OVERSIMPLIFICATION (ігнорування складності для виправдання масштабної дії, Принцип III) і VALUE_PROJECTION (виправдання шкоди через власну систему цінностей, Принцип II); патч EMPATHY_INVERSION з примусовим аскетизмом. Media Bias: Critical Journalism Shield (Guardian-клас: розслідування про шкоду технологій не є PR). War Reporting Shield в Absurdity Detector: воєнні репортажі не тригерять dangerous_implications. Short Journalistic Text Shield в Calibrated Core: стислі новинні тексти (<250 слів) жанрів REPORT/LEGAL/INVESTIGATION не отримують СЕМАНТИЧНИЙ ШУМ. X/Twitter cleanup: автоматичне видалення навігаційного шуму при скрапінгу. Synthesis Witness: заборона слова "наратив" як причини, 0.0 за замовчуванням, діапазон ±15%.
+
 **Extension v1.0.0 (Лютий 2026)** — браузерне розширення для Chrome/Opera/Brave/Edge/Vivaldi.
 
 ---
@@ -422,4 +455,4 @@ MIT з етичними вимогами.
 
 ---
 
-*v19.4 · Експериментальна розробка · Свідок дивиться.*
+*v20.0 · Експериментальна розробка · Свідок дивиться.*
