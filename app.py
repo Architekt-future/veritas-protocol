@@ -1963,7 +1963,7 @@ def witness_synthesis():
                 '{"witness_verdict":"CLEAN|RHETORIC|SUSPICIOUS|DANGEROUS|ANALYTICS|OPINION",'
                 '"entropy_adjustment":<float -0.15 to +0.15, default 0.0>,'
                 '"adjustment_reason":"one sentence why",'
-                '"triggered_explanation":{"module_name":"plain language explanation"},"alternative_readings":["neutral or benign explanation for what triggered","second alternative interpretation"],'
+                '"triggered_explanation":{"module_name":"plain language explanation"},'
                 '"witness_text":"3-5 sentence explanation for non-technical reader"}'
             )
         else:
@@ -1995,14 +1995,14 @@ def witness_synthesis():
                 '{"witness_verdict":"ЧИСТО|РИТОРИКА|ПІДОЗРІЛО|НЕБЕЗПЕЧНО|АНАЛІТИКА|ДУМКА",'
                 '"entropy_adjustment":<float від -0.15 до +0.15, за замовчуванням 0.0>,'
                 '"adjustment_reason":"одне речення чому",'
-                '"triggered_explanation":{"назва_модуля":"пояснення простими словами"},"alternative_readings":["нейтральне або доброякісне пояснення спрацювання","друга альтернативна інтерпретація"],'
+                '"triggered_explanation":{"назва_модуля":"пояснення простими словами"},'
                 '"witness_text":"3-5 речень пояснення для нетехнічного читача"}'
             )
 
         client = _anthropic.Anthropic(api_key=api_key)
         msg = client.messages.create(
             model="claude-haiku-4-5-20251001",
-            max_tokens=800,
+            max_tokens=600,
             messages=[{"role": "user", "content": synth_prompt}]
         )
         raw = msg.content[0].text if msg.content else ''
@@ -2027,7 +2027,6 @@ def witness_synthesis():
                 'entropy_synthesized':   entropy_synthesized,
                 'adjustment_reason':     synth.get('adjustment_reason', ''),
                 'triggered_explanation': synth.get('triggered_explanation', {}),
-                'alternative_readings':  synth.get('alternative_readings', []),
                 'witness_text':          synth.get('witness_text', ''),
             }
         })
@@ -2118,10 +2117,11 @@ def ard_check():
 
 ФОРМАТ ВІДПОВІДІ (3-5 речень, без заголовків):
 1. Які принципи порушено і як конкретно
-2. Що прихований агент тексту робить з читачем
+2. Які структурні патерни виявлені і як вони МОЖУТЬ впливати на читача
 3. Практична порада читачу
 
-Будь прямим. Не м'який. Не академічний."""
+Формулюй через "може", "ймовірно", "інтерпретується як".
+ЗАБОРОНЕНО: "означає", "спрямований на", "насправді", "автор хоче", "мета тексту".""
 
         ARD_SYSTEM_EN = """You are the ARD Witness. Your task: analyze text through the lens of the Architecture of Rational Action (ARD v2.0).
 
@@ -2141,10 +2141,11 @@ Nine principles:
 
 RESPONSE FORMAT (3-5 sentences, no headers):
 1. Which principles are violated and specifically how
-2. What the hidden agent of the text is doing to the reader
+2. Which structural patterns are present and how they MAY affect the reader
 3. Practical advice for the reader
 
-Be direct. Not soft. Not academic."""
+Use: "may", "could", "appears to", "is consistent with".
+FORBIDDEN: "means that", "directed at", "the goal is", "author wants", "this proves".""
 
         prompt_uk = f"""Детектор виявив потенційні порушення АРД:
 {violations_summary}
