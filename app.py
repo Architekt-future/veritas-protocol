@@ -1963,7 +1963,7 @@ def witness_synthesis():
                 '{"witness_verdict":"CLEAN|RHETORIC|SUSPICIOUS|DANGEROUS|ANALYTICS|OPINION",'
                 '"entropy_adjustment":<float -0.15 to +0.15, default 0.0>,'
                 '"adjustment_reason":"one sentence why",'
-                '"triggered_explanation":{"module_name":"plain language explanation"},'
+                '"triggered_explanation":{"module_name":"plain language explanation"},"alternative_readings":["neutral or benign explanation for what triggered","second alternative interpretation"],'
                 '"witness_text":"3-5 sentence explanation for non-technical reader"}'
             )
         else:
@@ -1995,14 +1995,14 @@ def witness_synthesis():
                 '{"witness_verdict":"ЧИСТО|РИТОРИКА|ПІДОЗРІЛО|НЕБЕЗПЕЧНО|АНАЛІТИКА|ДУМКА",'
                 '"entropy_adjustment":<float від -0.15 до +0.15, за замовчуванням 0.0>,'
                 '"adjustment_reason":"одне речення чому",'
-                '"triggered_explanation":{"назва_модуля":"пояснення простими словами"},'
+                '"triggered_explanation":{"назва_модуля":"пояснення простими словами"},"alternative_readings":["нейтральне або доброякісне пояснення спрацювання","друга альтернативна інтерпретація"],'
                 '"witness_text":"3-5 речень пояснення для нетехнічного читача"}'
             )
 
         client = _anthropic.Anthropic(api_key=api_key)
         msg = client.messages.create(
             model="claude-haiku-4-5-20251001",
-            max_tokens=600,
+            max_tokens=800,
             messages=[{"role": "user", "content": synth_prompt}]
         )
         raw = msg.content[0].text if msg.content else ''
@@ -2027,6 +2027,7 @@ def witness_synthesis():
                 'entropy_synthesized':   entropy_synthesized,
                 'adjustment_reason':     synth.get('adjustment_reason', ''),
                 'triggered_explanation': synth.get('triggered_explanation', {}),
+                'alternative_readings':  synth.get('alternative_readings', []),
                 'witness_text':          synth.get('witness_text', ''),
             }
         })
