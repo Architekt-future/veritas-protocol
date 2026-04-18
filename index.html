@@ -460,6 +460,10 @@
                         <div style="font-size:8px; letter-spacing:3px; color:#446688; margin-bottom:6px;">👁 СВІДОК СИНТЕЗ</div>
                         <div id="witnessSynthesisReason" style="font-size:0.78em; color:#88aacc; line-height:1.7;"></div>
                         <div id="witnessSynthesisModules" style="margin-top:6px; font-size:0.75em; color:#667799; line-height:1.6;"></div>
+                        <div id="witnessAlternativeReadings" style="display:none; margin-top:8px; padding:6px 10px; background:rgba(30,50,30,0.4); border-left:2px solid rgba(100,200,100,0.4); border-radius:3px;">
+                            <div style="font-size:8px; letter-spacing:2px; color:#446644; margin-bottom:4px;">↻ АЛЬТЕРНАТИВНІ ЧИТАННЯ</div>
+                            <div id="witnessAlternativeList" style="font-size:0.75em; color:#669966; line-height:1.6;"></div>
+                        </div>
                     </div>
                     <div id="interactionCombos" style="display:none; margin-top:5px;"></div>
 
@@ -1741,6 +1745,17 @@ async function callWitnessSynthesis(data) {
             synthModules.style.display = lines ? 'block' : 'none';
         }
 
+        var altEl = document.getElementById('witnessAlternativeReadings');
+        var altList = document.getElementById('witnessAlternativeList');
+        if (altEl && altList && synth.alternative_readings && synth.alternative_readings.length > 0) {
+            altList.innerHTML = synth.alternative_readings.map(function(r, i) {
+                return '<span style="opacity:0.7">' + (i+1) + '.</span> ' + r;
+            }).join('<br>');
+            altEl.style.display = 'block';
+        } else if (altEl) {
+            altEl.style.display = 'none';
+        }
+
         // Оновлюємо шкалу до синтезованого значення
         if (adj !== 0) {
             updateWitness(synthVal / 100, data.status || 'UNKNOWN');
@@ -1988,6 +2003,17 @@ function renderResults(data) {
             }
             synthModules.textContent = modLines.trim();
             synthModules.style.display = modLines ? 'block' : 'none';
+        }
+
+        var altEl2 = document.getElementById('witnessAlternativeReadings');
+        var altList2 = document.getElementById('witnessAlternativeList');
+        if (altEl2 && altList2 && synth.alternative_readings && synth.alternative_readings.length > 0) {
+            altList2.innerHTML = synth.alternative_readings.map(function(r, i) {
+                return '<span style="opacity:0.7">' + (i+1) + '.</span> ' + escHtml(r);
+            }).join('<br>');
+            altEl2.style.display = 'block';
+        } else if (altEl2) {
+            altEl2.style.display = 'none';
         }
 
         // Оновлюємо шкалу ентропії до синтезованого значення
@@ -2604,6 +2630,8 @@ function clearAll() {
     if (pivPan) pivPan.style.display = 'none';
     const synthBlockClear = document.getElementById('witnessSynthesisBlock');
     if (synthBlockClear) synthBlockClear.style.display = 'none';
+    var altClear = document.getElementById('witnessAlternativeReadings');
+    if (altClear) altClear.style.display = 'none';
     const synthInfoClear = document.getElementById('entropySynthesisInfo');
     if (synthInfoClear) { synthInfoClear.style.display = 'none'; synthInfoClear.textContent = ''; }
     const dangerBlockClear = document.getElementById('ardDangerBlock');
