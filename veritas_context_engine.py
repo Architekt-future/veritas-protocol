@@ -51,6 +51,11 @@ RSS_FEEDS = [
     # Tech/Business
     ('Reuters Tech',     'https://feeds.reuters.com/reuters/technologyNews'),
     ('BBC Tech',         'http://feeds.bbci.co.uk/news/technology/rss.xml'),
+    # Ukrainian sources (Cyrillic) — потрібні для матчингу україномовних claim'ів.
+    # Без них find_related_events() працює лише через мовно-нейтральні якорі
+    # (числа, латинські абревіатури), бо keyword overlap на кирилиці проти
+    # чисто англомовного поля дає майже нульове перекриття.
+    ('Ukrainska Pravda', 'https://www.pravda.com.ua/rss/view_news/'),
 ]
 
 # Cache TTL — 30 minutes
@@ -210,15 +215,24 @@ class NewsEvent:
         )
 
     def _extract_keywords(self) -> List[str]:
-        """Extract meaningful keywords (no stopwords, 4+ chars)."""
+        """Extract meaningful keywords (no stopwords, 4+ chars). Latin + Cyrillic."""
         stopwords = {
+            # EN
             'that', 'this', 'with', 'from', 'have', 'will', 'been', 'were',
             'they', 'their', 'what', 'about', 'after', 'before', 'would',
             'could', 'should', 'says', 'said', 'says', 'more', 'also',
             'than', 'then', 'when', 'where', 'there', 'here', 'into',
             'over', 'under', 'some', 'many', 'much', 'very', 'just',
+            # UK/RU (найчастіші службові/загальні слова в заголовках)
+            'це', 'цей', 'ця', 'ці', 'його', 'її', 'їх', 'вони', 'вона',
+            'воно', 'який', 'яка', 'яке', 'які', 'тому', 'щоб', 'коли',
+            'після', 'перед', 'через', 'більше', 'менше', 'також',
+            'можуть', 'можна', 'треба', 'наразі', 'зараз', 'сьогодні',
+            'вчора', 'завтра', 'каже', 'кажуть', 'повідомляє', 'повідомили',
+            'заявив', 'заявила', 'заявили', 'стало', 'відомо', 'проти',
         }
-        words = re.findall(r'\b[a-zA-Z]{4,}\b', self.title_lower)
+        # a-zA-Z — латиниця; а-яіїєА-ЯІЇЄ — українська кирилиця (+ спільні з рос.)
+        words = re.findall(r'\b[a-zA-Zа-яіїєА-ЯІЇЄ]{4,}\b', self.title_lower)
         return [w for w in words if w not in stopwords]
 
 
@@ -285,6 +299,71 @@ class ContextState:
         )
         score = min(1.0, overlap / max(1, len(self.hot_topics) * 0.3))
         return overlap > 0, round(score, 3)
+
+    def find_related_events(self, claim_text: str, top_n: int = 3) -> List['NewsEvent']:
+        """
+        RSS fact-check matching — на відміну від is_topic_in_field() (яка рахує
+        загальний overlap з "гарячими темами" поля), цей метод шукає конкретні
+        заголовки релевантні ОДНОМУ фрагменту/твердженню тексту, щоб Свідок міг
+        сказати "це узгоджується з [джерело]" замість вгадування зі своїх
+        застарілих знань.
+
+        Матчинг двошаровий:
+          1. Мовно-нейтральні "якорі" — числа/відсотки та латинські токени
+             (власні назви, абревіатури типу AfD, Ceuta, NATO). Працюють
+             незалежно від мови тексту твердження.
+          2. Keyword overlap (кирилиця + латиниця) — дає результат тільки якщо
+             в RSS_FEEDS є джерела тією ж мовою що й claim_text.
+
+        ЧЕСНО ПРО ОБМЕЖЕННЯ: якщо твердження українською, а серед RSS-джерел
+        немає українських (або вони недоступні / фід впав) — знайдуться лише
+        збіги по числах і залишених латиницею назвах. Це частковий фактчекінг
+        ("чи це взагалі є в новинному потоці прямо зараз"), не повна верифікація.
+        """
+        if not claim_text or not claim_text.strip():
+            return []
+
+        # Шар 1а: числові якорі — НОРМАЛІЗОВАНІ до чистих цифр, бо укр. текст
+        # пише "50 000" (пробіл), англ. джерела — "50,000" (кома). Порівняння
+        # по сирому рядку пропускало б усі такі збіги.
+        numeric_anchors = set()   # без %: '50000', '180'
+        percent_anchors = set()   # з %:   '29%'
+        for raw in re.findall(r'\d[\d\s.,]*%?', claim_text):
+            raw = raw.strip()
+            is_pct = raw.endswith('%')
+            digits = re.sub(r'\D', '', raw)
+            if is_pct and digits:
+                percent_anchors.add(digits)
+            elif len(digits) >= 2:   # ігноруємо одинокі цифри — забагато шуму
+                numeric_anchors.add(digits)
+
+        # Шар 1б: латинські токени — власні назви, абревіатури (AfD, Ceuta, NATO)
+        latin_anchors = {
+            a for a in re.findall(r'\b[A-Za-z][A-Za-z\-]{1,}\b', claim_text)
+            if len(a) >= 2
+        }
+
+        # Шар 2: keyword overlap (кирилиця/латиниця, 4+ символи)
+        claim_words = set(re.findall(
+            r'\b[a-zA-Zа-яіїєА-ЯІЇЄ]{4,}\b', claim_text.lower()
+        ))
+
+        scored = []
+        for e in self.events:
+            title_digits_compact = re.sub(r'\D', '', e.title)
+            title_nospace = re.sub(r'\s+', '', e.title_lower)
+
+            numeric_hits = sum(1 for n in numeric_anchors if n in title_digits_compact)
+            percent_hits = sum(1 for p in percent_anchors if f'{p}%' in title_nospace)
+            latin_hits   = sum(1 for a in latin_anchors if a.lower() in e.title_lower)
+            keyword_hits = len(claim_words & set(e.keywords))
+
+            total = numeric_hits + percent_hits + latin_hits + keyword_hits
+            if total > 0:
+                scored.append((total, e))
+
+        scored.sort(key=lambda x: -x[0])
+        return [e for _, e in scored[:top_n]]
 
     def age_minutes(self) -> float:
         return (time.time() - self.built_at) / 60
@@ -400,6 +479,21 @@ class ContextEngine:
                     self._context_state = fresh
 
             return self._context_state
+
+    def get_related_events_for_text(self, text: str, top_n: int = 5) -> List[NewsEvent]:
+        """
+        Зручна обгортка для app.py: бере поточний (кешований/свіжий) ContextState
+        і повертає RSS-заголовки релевантні для конкретного тексту/твердження.
+        Повертає [] якщо контекст недоступний — виклик має лишатись безпечним
+        і не ламати основний Witness-флоу.
+        """
+        ctx = self.get_context()
+        if ctx is None or ctx.total_events == 0:
+            return []
+        try:
+            return ctx.find_related_events(text, top_n=top_n)
+        except Exception:
+            return []
 
     def inject_mock_context(self, events: List[NewsEvent]):
         """For testing: inject mock events as ContextState."""
