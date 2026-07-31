@@ -1290,6 +1290,49 @@ def oracle():
         # Full article text — no slicing. Fallback: article_text → text_preview → ''
         text_preview = data.get('article_text', '') or data.get('text_preview', '')
 
+        # ── RSS Fact-Check матчинг ────────────────────────────────────────
+        # Компроміс замість агентного пошуку: чистий Python-матчинг проти вже
+        # завантаженого (кешованого) RSS-поля. Нуль додаткових API-викликів,
+        # нуль ризику тайм-ауту — на відміну від Haiku, що сам робить запити.
+        # Дає Свідку РЕАЛЬНІ заголовки для конкретних тверджень замість
+        # вгадування зі своїх застарілих знань.
+        rss_matches = []
+        try:
+            _ce = getattr(engine, 'context_engine', None)
+            if _ce and text_preview:
+                rss_matches = _ce.get_related_events_for_text(text_preview, top_n=5)
+        except Exception:
+            rss_matches = []
+
+        if rss_matches:
+            rss_block_uk = (
+                "RSS-ЗБІГИ (реальні заголовки з новинного потоку прямо зараз):\n"
+                + '\n'.join(f'  • «{ev.title}» — {ev.source}' for ev in rss_matches) + '\n'
+                "Якщо збіг підтверджує чи уточнює КОНКРЕТНЕ твердження з тексту — можеш сказати "
+                "що це узгоджується з поточними повідомленнями (згадай джерело). "
+                "У заголовку немає повного тексту статті — не додумуй деталей яких там немає.\n"
+            )
+            rss_block_en = (
+                "RSS MATCHES (real headlines from the current news stream):\n"
+                + '\n'.join(f'  • "{ev.title}" — {ev.source}' for ev in rss_matches) + '\n'
+                "If a match confirms or clarifies a SPECIFIC claim in the text — you may note that "
+                "it is consistent with current reporting (name the source). "
+                "The headline has no full article body — do not invent details beyond it.\n"
+            )
+        else:
+            rss_block_uk = (
+                "RSS-ЗБІГИ: не знайдено в поточному новинному потоці.\n"
+                "Це НЕ доказ що твердження хибне — RSS покриває лише частину джерел і лише "
+                "останні ~30 хв. Якщо не можеш перевірити факт — чесно скажи читачу 'перевір "
+                "на офіційних джерелах', без здогадок і без тверджень що це вигадка.\n"
+            )
+            rss_block_en = (
+                "RSS MATCHES: none found in the current news stream.\n"
+                "This is NOT evidence the claim is false — RSS covers only a fraction of sources "
+                "and only the last ~30 min. If you cannot verify a fact, honestly tell the reader "
+                "to check official sources — do not guess and do not call it fabricated.\n"
+            )
+
         # All module signals for comprehensive witness analysis
         # LAC Finance — flat fields from diagnostics
         lac_fin_verdict  = diag.get('lac_finance_verdict', '')
@@ -1748,6 +1791,7 @@ def oracle():
                 f"{pivot_line}"
                 f"CONTEXT:\n"
                 f"{context_block}\n"
+                f"{rss_block_en}\n"
                 "IMPORTANT: System verdict is your primary guide. Entropy is secondary.\n"
                 "BOOST SOURCE RULE: If entropy is elevated ONLY due to media_bias or framing "
                 "without manipulation, axiom, or self_preservation — this is a structural feature, not an attack. "
@@ -1782,6 +1826,13 @@ def oracle():
                 "  — 'the module triggered but this is not a problem'\n"
                 "If a module triggered — it found a real structural issue. Explain it to the reader.\n"
                 "Genre and source do not cancel a trigger. A company PR can have manipulative structure just like a tabloid.\n"
+                "EXCEPTION — DOES NOT CONTRADICT THE RULE ABOVE:\n"
+                "If the text itself already contains an explicit counter-argument or balancing section "
+                "addressing the SAME issue a module flagged (look for markers like 'however', 'but', "
+                "'on the other hand', 'to be fair') — you MUST still explain what the module found, "
+                "AND you must also state that the author already offered this counterbalance. "
+                "This is reporting a structural fact about the text, not 'justifying the trigger' — "
+                "do not pretend the balancing section doesn't exist just to keep the verdict maximally negative.\n"
                 "FORMAT — strictly:\n"
                 "Line 1: one word IN CAPS — (CLEAN / SUSPICIOUS / DANGEROUS / ANALYTICS / OPINION / RHETORIC)\n"
                 "Empty line\n"
@@ -1830,6 +1881,7 @@ def oracle():
                 f"{pivot_line}"
                 f"КОНТЕКСТ:\n"
                 f"{context_block}\n"
+                f"{rss_block_uk}\n"
                 "ВАЖЛИВО: Вердикт системи — твій головний орієнтир. Ентропія — допоміжна цифра.\n"
                 "ПРАВИЛО ДЖЕРЕЛА BOOST'У: Якщо ентропія підвищена ТІЛЬКИ через media_bias або framing "
                 "без маніпуляції, axiom або self_preservation — це структурна особливість, не атака. "
@@ -1864,6 +1916,13 @@ def oracle():
                 "  — 'модуль спрацював, але це не є проблемою'\n"
                 "Якщо модуль спрацював — він знайшов реальну структурну проблему. Поясни її читачу.\n"
                 "Жанр і джерело не скасовують спрацювання. PR компанії може мати маніпулятивну структуру так само як таблоїд.\n"
+                "ВИНЯТОК — НЕ СУПЕРЕЧИТЬ ПРАВИЛУ ВИЩЕ:\n"
+                "Якщо текст УЖЕ містить явний контраргумент чи секцію балансу яка стосується САМЕ того, "
+                "на що спрацював модуль (шукай маркери типу 'але', 'проте', 'з іншого боку', 'варто "
+                "збалансувати') — ти ЗОБОВ'ЯЗАНИЙ все одно пояснити знахідку модуля, АЛЕ ТАКОЖ зазначити "
+                "що автор сам подав цю противагу. Це констатація структурного факту про текст, а не "
+                "'виправдання спрацювання' — не вдавай що секції балансу не існує лише щоб тримати "
+                "вердикт максимально негативним.\n"
                 "ФОРМАТ — суворо:\n"
                 "Рядок 1: одне слово ВЕЛИКИМИ — (ЧИСТО / ПІДОЗРІЛО / НЕБЕЗПЕЧНО / АНАЛІТИКА / ДУМКА / РИТОРИКА)\n"
                 "Порожній рядок\n"
