@@ -914,6 +914,37 @@ class ManipulationDetector:
 
         return 1.0  # авторська позиція
 
+    # ── SPECIFICITY SHIELD (для MANUFACTURED_CONSENSUS) ──────────────────
+    # "Більшість дослідників вважають" — анонімний тиск, якщо джерело не
+    # назване; але якщо поруч є конкретне ім'я (Інглгарт, Шафір) чи рік
+    # дослідження — це легітимне наукове цитування, не маніпуляція.
+    _NAMED_SOURCE_TOKEN = re.compile(r'[А-ЯІЇЄ][а-яіїєʼ\'\-]{2,}')
+    _YEAR_TOKEN = re.compile(r'\b(19|20)\d{2}\b')
+
+    def _has_named_source_nearby(self, original_text: str, start: int, end: int,
+                                   window: int = 160) -> bool:
+        """
+        Шукає власну назву (не на початку речення) або рік дослідження у вікні
+        навколо спрацювання. Працює на ОРИГІНАЛЬНОМУ (не lowercase) тексті —
+        великі літери є єдиним сигналом власної назви, який ми маємо.
+        """
+        lo = max(0, start - window)
+        hi = min(len(original_text), end + window)
+        before = original_text[lo:start]
+        after = original_text[end:hi]
+
+        for chunk in (before, after):
+            for m in self._NAMED_SOURCE_TOKEN.finditer(chunk):
+                prefix = chunk[:m.start()].rstrip()
+                # Якщо перед словом НЕ кінець речення — це власна назва
+                # посеред речення (Інглгарт), а не просто перша літера
+                # нового речення після крапки.
+                if prefix and prefix[-1] not in '.!?':
+                    return True
+            if self._YEAR_TOKEN.search(chunk):
+                return True
+        return False
+
     def analyze(self, text: str) -> Dict:
         if len(text) < 30:
             return {
@@ -936,6 +967,9 @@ class ManipulationDetector:
                 if m:
                     raw_hits += 1
                     weight = self._get_attribution_weight(text_lower, m.start())
+                    if ps['name'] == 'MANUFACTURED_CONSENSUS' and \
+                       self._has_named_source_nearby(text, m.start(), m.end()):
+                        weight *= 0.3  # назване джерело поруч — не анонімний тиск
                     weighted_hits += weight
                     hit_snippets.append((m.group(0)[:60], weight))
 
