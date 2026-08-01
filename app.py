@@ -1304,6 +1304,17 @@ def oracle():
         except Exception:
             rss_matches = []
 
+        # ── DEBUG-логування: що РЕАЛЬНО пішло в матчинг, буква-в-букву ──────
+        # Тимчасово, для перевірки чи Haiku додумує деталі яких немає в title.
+        # Прибрати або сховати за env-флагом (наприклад DEBUG_RSS=1) після тесту.
+        print(f"[RSS-DEBUG] claim_text (перші 200 симв.): {text_preview[:200]!r}")
+        if rss_matches:
+            print(f"[RSS-DEBUG] знайдено {len(rss_matches)} збігів:")
+            for i, ev in enumerate(rss_matches, 1):
+                print(f"[RSS-DEBUG]   {i}. title={ev.title!r} | source={ev.source!r}")
+        else:
+            print("[RSS-DEBUG] збігів не знайдено (rss_matches порожній)")
+
         if rss_matches:
             rss_block_uk = (
                 "RSS-ЗБІГИ (реальні заголовки з новинного потоку прямо зараз):\n"
@@ -1963,6 +1974,12 @@ def oracle():
             'triggered_modules':   triggered_modules,
             'triggered_count':     triggered_count,
             'entropy_multiplier':  round(entropy_multiplier, 3),
+            # ТИМЧАСОВО для дебагу RSS fact-check: реальні title'и що пішли в
+            # промпт Haiku, буква-в-букву. Прибрати з відповіді після тесту
+            # (це внутрішня кухня, не для кінцевого користувача UI).
+            'rss_debug': [
+                {'title': ev.title, 'source': ev.source} for ev in rss_matches
+            ],
         })
 
     except Exception as e:
