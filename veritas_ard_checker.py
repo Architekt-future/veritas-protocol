@@ -634,6 +634,31 @@ class ARDChecker:
         r'"(ceo|cto|ciso|vp|svp).{1,60}(of|at).{1,60}(security|cyber|identity|ai).{1,60}(said|told|explained)',
     ]
 
+    # ── CAUSAL EXPLANATION SHIELD (для RV/MD/CA/IA) ──────────────────────
+    # Ці чотири категорії за задумом (див. докстрінги вище) ловлять САМЕ
+    # відсутність названої причини/агента — "право втратило силу" без
+    # пояснення хто/що це зробив. Але автор, який ЯВНО називає причину чи
+    # відповідального (навіть у наступному реченні), не порушує принцип —
+    # він якраз його дотримується. Раніше це перевірялось лише вузьким
+    # inline (?!через|бо|...) на кількох патернах з малим вікном (60 симв.,
+    # тільки одразу після збігу) — інші патерни тієї ж категорії цього
+    # захисту не мали. Тепер перевірка системна й ширша (шукає причину
+    # і до, і після збігу, у межах приблизно одного-двох речень).
+    _CAUSAL_EXPLANATION_MARKERS = re.compile(
+        r'(через|причин[аиу]|оскільки|тому що|внаслідок|спричинил|винн[аиі]|'
+        r'адже|бо\s|з.за\s+того|тому,?\s+що|'
+        r'because|due to|since|as a result|caused by|responsible for|'
+        r'the reason|owing to)',
+        re.IGNORECASE
+    )
+    _NO_ACTOR_PRINCIPLES = {'RV', 'MD', 'CA', 'IA'}
+
+    def _has_causal_explanation_nearby(self, text_lower: str, start: int, end: int,
+                                         window: int = 250) -> bool:
+        lo = max(0, start - window)
+        hi = min(len(text_lower), end + window)
+        return bool(self._CAUSAL_EXPLANATION_MARKERS.search(text_lower[lo:hi]))
+
     def scan(self, text: str) -> ARDScanResult:
         result = ARDScanResult()
         if not text or len(text) < 50:
@@ -697,6 +722,9 @@ class ARDChecker:
             for pat in patterns:
                 m = re.search(pat, t, re.IGNORECASE)
                 if m:
+                    if principle in self._NO_ACTOR_PRINCIPLES and \
+                       self._has_causal_explanation_nearby(t, m.start(), m.end()):
+                        continue  # автор назвав причину/агента — принцип не порушено
                     snippet = m.group(0)[:80]
                     result.violations.append(ARDViolation(
                         principle=principle,
