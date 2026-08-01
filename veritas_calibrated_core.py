@@ -657,8 +657,42 @@ class VeritasCalibratedCore:
         
         # Calculate density
         density = anchor_count / len(words_clean) if words_clean else 0
-        cohesion_score = min(density * 10, 1.0)
-        
+        lexical_cohesion = min(density * 10, 1.0)
+
+        # ── STRUCTURAL COHESION (NEW) ─────────────────────────────────────
+        # Попередня версія бачила лише густину слів-конекторів ("тому",
+        # "отже") і тому карала добре структуровані академічні/філософські
+        # тексти (нумеровані розділи, формальні визначення) як "нелогічні",
+        # хоча вони досягають зв'язності через СТРУКТУРУ, а не густу прозу
+        # з конекторами. Це і давало false positive СЕМАНТИЧНА ПОРОЖНЕЧА на
+        # текстах з чіткими розділами/визначеннями але малою густиною слів
+        # "тому/отже" на тисячу слів.
+        lines = text.split('\n')
+        structural_hits = 0
+        heading_patterns = [
+            r'^#{1,6}\s+\S',            # markdown-заголовки
+            r'^\s*розділ\s+\d+',        # "Розділ 1."
+            r'^\s*\d+\.\d+\.?\s+\S',    # "1.1. ..." підрозділи
+            r'^\s*\d+\.\s+\S',          # нумеровані пункти "1. ..."
+        ]
+        for line in lines:
+            stripped = line.strip()
+            if not stripped:
+                continue
+            if any(re.match(p, stripped, re.IGNORECASE) for p in heading_patterns):
+                structural_hits += 1
+
+        definition_hits = len(re.findall(
+            r'(визначається як|означає|за визначенням|розглядається як)',
+            text_lower
+        ))
+        structural_hits += definition_hits
+
+        structural_density = structural_hits / max(1, len(lines))
+        structural_cohesion = min(structural_density * 12, 1.0)
+
+        cohesion_score = max(lexical_cohesion, structural_cohesion)
+
         return cohesion_score
     
     def apply_entropy_damper(self, base_entropy: float, cohesion: float, 
