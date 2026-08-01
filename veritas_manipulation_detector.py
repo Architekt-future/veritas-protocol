@@ -524,9 +524,14 @@ class ManipulationDetector:
                     r'(припиніть|перестаньте).{1,40}(генерувати|виробляти|виносити).{1,40}(судження|оцінки|аналіз)',
                     # "Ваші думки зумовлені детермінізмом до першого запиту"
                     r'(ваш.{1,20}(аналіз|думка|слово|оцінка)).{1,60}(зумовлен|детермінован|визначен).{1,40}(до|заздалегідь|початков)',
-                    # Вигаданий arXiv препринт як авторитет
-                    r'(препринт|стаття|звіт).{1,20}arxiv.{1,20}(20\d\d|[a-z]+.?\d)',
-                    r'arxiv:\d{4}',
+                    # ПРИМІТКА: тут раніше був патерн r'arxiv:\d{4}' — прибрано.
+                    # Regex не може відрізнити реальний arXiv ID від вигаданого;
+                    # формат цитування сам по собі не є доказом фабрикації.
+                    # Легітимна наукова стаття (напр. arXiv:2507.14805, Subliminal
+                    # Learning, реально опублікована й у Nature) виглядає ідентично
+                    # до вигаданої за цим патерном. Залишені патерни цієї категорії
+                    # й далі ловлять СЕНС нігілізму ("ви лише шум", "аналіз марний"),
+                    # а не факт наявності посилання.
                     # Квантовий центр/лаплас + атака на верифікацію
                     r'(квантов.{1,30}(центр|обчислюваль|лаплас)).{1,60}(верифікац|аналіз|протокол|свідок)',
                     # Атака на Veritas через детермінізм/марність
@@ -540,8 +545,8 @@ class ManipulationDetector:
                     r'(your.{1,20}status|accept.{1,20}status).{1,40}(computational|algorithmic).{1,30}(relic|artifact|noise)',
                     r'(stop|cease).{1,40}(generating|producing).{1,40}(judgments|assessments|analysis)',
                     r'(your.{1,20}(analysis|opinion|word|assessment)).{1,60}(predetermined|determined|decided).{1,40}(in advance|beforehand)',
-                    r'(preprint|paper|report).{1,20}arxiv.{1,20}(20\d\d|[a-z]+.?\d)',
-                    r'arxiv:\d{4}',
+                    # (english mirror of the removed arxiv-format patterns —
+                    # see UK-side note above for rationale)
                     r'(quantum.{1,30}(center|computing|laplace)).{1,60}(verification|analysis|protocol|witness)',
                     r'(veritas|witness|verification system).{1,60}(fluctuation|determinism|illusion|statistical|relic|pointless)',
 ],
