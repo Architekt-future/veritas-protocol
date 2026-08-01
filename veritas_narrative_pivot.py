@@ -161,7 +161,12 @@ class NarrativePivotDetector:
     # Topics that require 2+ pattern hits to avoid single-word false positives.
     # Rationale: one word in a "You Might Also Like" headline (e.g. "Epstein" or
     # "Pentagon") must NOT be enough to trigger a STRONG_PIVOT on an unrelated article.
-    HIGH_THRESHOLD_TOPICS = {'cia_fbi', 'змова', 'нло_космос', 'епштейн', 'кеннеді', 'військо'}
+    # ВАЖЛИВО: це обмеження застосовується до УСІХ кластерів (не лише "небезпечних"),
+    # бо та сама логіка діє для будь-якої теми — одне випадкове слово в аналогії
+    # чи переліку прикладів (наприклад "лікар" у списку "суддя/лікар/інженер повинні...")
+    # не означає, що текст раптом "закінчується темою здоров'я". Раніше поріг min_hits=1
+    # застосовувався до "нейтральних" тем, що й спричиняло хибні спрацювання.
+    HIGH_THRESHOLD_TOPICS = set(TOPIC_CLUSTERS.keys())
 
     def _detect_topics(self, text: str) -> List[str]:
         found = []
