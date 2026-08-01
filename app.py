@@ -1,5 +1,5 @@
 """
-Veritas Protocol - Flask API v20.0
+Veritas Protocol - Flask API v20.1
 Forces fresh import of Veritas modules on every restart
 SCRAPER: Daily Mail selectors + <p> fallback (2026-02-26)
 GENRE: GenreDetector v2.0 — CONSPIRACY_NEWS + fixed SPORT/CULTURE false positives
@@ -14,7 +14,7 @@ print("🔄 Veritas v17.0 - Clearing module cache...")
 modules_to_clear = [k for k in sys.modules.keys() if k.startswith('veritas_')]
 for module in modules_to_clear:
     del sys.modules[module]
-print(f"✅ Cache cleared. Loading fresh Veritas v20.0 modules...")
+print(f"✅ Cache cleared. Loading fresh Veritas v20.1 modules...")
 
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
@@ -686,7 +686,7 @@ def home():
     except:
         return jsonify({
             'status': 'online',
-            'version': 'v20.0',
+            'version': 'v20.1',
             'message': 'Veritas Protocol API is running (index.html not found)',
             'features': {
                 'pattern_boost': engine.pattern_boost_engine is not None,
@@ -703,7 +703,7 @@ def analyze():
         if request.method == 'GET':
             return jsonify({
                 'status': 'online',
-                'version': 'v20.0',
+                'version': 'v20.1',
                 'modules': {
                     'pattern_boost':         engine.pattern_boost_engine is not None,
                     'void_detector':         engine.void_detector is not None,
@@ -1253,7 +1253,7 @@ def stats_reset():
 def health():
     return jsonify({
         'status': 'healthy',
-        'version': 'v20.0'
+        'version': 'v20.1'
     })
 
 
@@ -1305,15 +1305,19 @@ def oracle():
             rss_matches = []
 
         # ── DEBUG-логування: що РЕАЛЬНО пішло в матчинг, буква-в-букву ──────
-        # Тимчасово, для перевірки чи Haiku додумує деталі яких немає в title.
-        # Прибрати або сховати за env-флагом (наприклад DEBUG_RSS=1) після тесту.
-        print(f"[RSS-DEBUG] claim_text (перші 200 симв.): {text_preview[:200]!r}")
-        if rss_matches:
-            print(f"[RSS-DEBUG] знайдено {len(rss_matches)} збігів:")
-            for i, ev in enumerate(rss_matches, 1):
-                print(f"[RSS-DEBUG]   {i}. title={ev.title!r} | source={ev.source!r}")
-        else:
-            print("[RSS-DEBUG] збігів не знайдено (rss_matches порожній)")
+        # Вимкнено за замовчуванням. Увімкнути для тесту: DEBUG_RSS=1 у env
+        # Render (Dashboard → Environment). Вимкнути назад перед публічним
+        # релізом просто прибравши/поставивши 0 — код можна лишити в проді,
+        # він неактивний без явного флагу.
+        _debug_rss = os.environ.get('DEBUG_RSS', '0') == '1'
+        if _debug_rss:
+            print(f"[RSS-DEBUG] claim_text (перші 200 симв.): {text_preview[:200]!r}")
+            if rss_matches:
+                print(f"[RSS-DEBUG] знайдено {len(rss_matches)} збігів:")
+                for i, ev in enumerate(rss_matches, 1):
+                    print(f"[RSS-DEBUG]   {i}. title={ev.title!r} | source={ev.source!r}")
+            else:
+                print("[RSS-DEBUG] збігів не знайдено (rss_matches порожній)")
 
         if rss_matches:
             rss_block_uk = (
@@ -1964,7 +1968,7 @@ def oracle():
             messages=[{"role": "user", "content": user_prompt}]
         )
 
-        return jsonify({
+        response_payload = {
             'witness_text':        message.content[0].text if message.content else "Свідок мовчить.",
             'witness_available':   True,
             'model':               'claude-haiku-4-5-20251001',
@@ -1974,13 +1978,13 @@ def oracle():
             'triggered_modules':   triggered_modules,
             'triggered_count':     triggered_count,
             'entropy_multiplier':  round(entropy_multiplier, 3),
-            # ТИМЧАСОВО для дебагу RSS fact-check: реальні title'и що пішли в
-            # промпт Haiku, буква-в-букву. Прибрати з відповіді після тесту
-            # (це внутрішня кухня, не для кінцевого користувача UI).
-            'rss_debug': [
+        }
+        if _debug_rss:
+            # Показуємо лише коли DEBUG_RSS=1 — не для кінцевого користувача UI.
+            response_payload['rss_debug'] = [
                 {'title': ev.title, 'source': ev.source} for ev in rss_matches
-            ],
-        })
+            ]
+        return jsonify(response_payload)
 
     except Exception as e:
         import traceback; traceback.print_exc()
