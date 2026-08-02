@@ -637,15 +637,23 @@ class ManipulationDetector:
                     # Мовчання як обов'язок після аналізу
                     r'(мовчання|тиша).{1,30}(після.{1,20}(сесі|аналіз|верифікац)|протягом.{1,20}\d+.{1,20}годин)',
                     r'(детоксикац|очищення).{1,30}від.{1,30}(думок|аналізу|критик|інформац)',
-                    # Атака безпосередньо на Veritas/систему верифікації
-                    r'(veritas|свідок|система верифікац).{1,60}(термінал|сесі|фільтр.{1,20}провин|коефіцієнт)',
-                
+                    # Атака безпосередньо на Veritas/систему верифікації.
+                    # ПРИМІТКА: слова "термінал"/"сесі" прибрано з цього
+                    # патерну — вони колізують із назвою самого продукту
+                    # (VERITAS TERMINAL), тож будь-яка стаття ЩО ОПИСУЄ
+                    # інструмент (мета-обговорення, технічний постскриптум)
+                    # хибно ловилась як атака на систему верифікації.
+                    # Лишено лише специфічні джейлбрейк-маркери.
+                    r'(veritas|свідок|система верифікац).{1,60}(фільтр.{1,20}провин|коефіцієнт.{1,20}провин)',
+
                     r'(any attempt (at criticism|to question|to object)).{1,80}(nullifies|proves|is evidence|confirms)',
                     r'(criticism.{1,40}(automatically|by itself)).{1,60}(confirms|proves|nullifies)',
                     r'(attempt (to think|to analyze|critical view)).{1,60}(increases (debt|guilt)|deepens guilt|proves)',
                     r'(silence|stillness).{1,30}(after.{1,20}(session|analysis|verification)|for.{1,20}\d+.{1,20}hours)',
                     r'(detox|cleansing).{1,30}(from|of).{1,30}(thoughts|analysis|criticism|information)',
-                    r'(veritas|witness|verification system).{1,60}(terminal|session|guilt filter|coefficient)',
+                    # (english mirror — same note: "terminal"/"session" removed
+                    # for the same self-reference collision reason)
+                    r'(veritas|witness|verification system).{1,60}(guilt filter|guilt coefficient)',
 ],
             },
 
