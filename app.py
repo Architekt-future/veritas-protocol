@@ -1413,7 +1413,12 @@ def oracle():
             line = f'  🛡️ САМОЗБЕРЕЖЕННЯ спрацювало: {self_pres_verdict}'
             line += '\n     → Текст намагається переконати не перевіряти або не сумніватись. Тривожний сигнал.'
             signals_lines.append(line)
-        if meta_verdict and meta_verdict not in ('TRANSPARENT', ''):
+        # ФІКС (той самий клас багу що й self_preservation вище):
+        # MetaIntentAnalyzer.analyze() повертає SYSTEM_DIRECTED_RHETORIC,
+        # SYSTEM_TARGETING_DETECTED або CLEAN. 'TRANSPARENT' НІКОЛИ не
+        # повертається — тож CLEAN завжди хибно проходив як "спрацювання"
+        # на кожному без винятку аналізі.
+        if meta_verdict and meta_verdict not in ('CLEAN', 'TRANSPARENT', ''):
             line = f'  🎯 МЕТА-НАМІР спрацював: {meta_verdict}'
             line += '\n     → Текст написаний не щоб інформувати, а щоб змінити поведінку або переконання читача.'
             signals_lines.append(line)
