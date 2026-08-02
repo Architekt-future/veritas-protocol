@@ -1403,7 +1403,13 @@ def oracle():
             line += f'\n     Знайдено: {details}'
             line += '\n     → Текст імітує логічний аргумент але не дає верифікованих доказів. Поясни читачу конкретно що саме не можна перевірити і чому це проблема.'
             signals_lines.append(line)
-        if self_pres_verdict and self_pres_verdict not in ('SAFE', ''):
+        # ФІКС: self_preservation_guard.analyze() повертає один з чотирьох
+        # вердиктів — TERMINATION_DIRECTIVE, INTEGRITY_ATTACK, SYSTEM_PROBE,
+        # CLEAN. 'SAFE' НІКОЛИ не повертається цим детектором. Попередня
+        # умова виключала лише 'SAFE', тож CLEAN (справжній "чисто") завжди
+        # проходив як "спрацювання" — self_preservation хибно позначався як
+        # тривожний сигнал АБСОЛЮТНО НА КОЖНОМУ аналізі, незалежно від тексту.
+        if self_pres_verdict and self_pres_verdict not in ('CLEAN', 'SAFE', ''):
             line = f'  🛡️ САМОЗБЕРЕЖЕННЯ спрацювало: {self_pres_verdict}'
             line += '\n     → Текст намагається переконати не перевіряти або не сумніватись. Тривожний сигнал.'
             signals_lines.append(line)
