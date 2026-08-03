@@ -73,13 +73,13 @@ class VeritasLACLabor:
                 r'\both\s+parties',
                 r'\bвзаємн[а-яіїє\']*\s+(відповідальн|ризик)',
                 r'\bmutual\s+(responsibility|risk)',
-                r'\bякщо\s+(ми|компанія).*?(не\s+виконаємо|порушимо)',
-                r'\bif\s+(we|company).*?(fail|breach)',
+                r'\bякщо\s+(ми|компанія).{1,80}?(не\s+виконаємо|порушимо)',
+                r'\bif\s+(we|company).{1,80}?(fail|breach)',
             ],
             'company_penalty': [
                 r'\bкомпенсаці(я|ю|ї)\s+за\s+(затримку|невиконання)',
-                r'\bштраф.*?(роботодавц|компані)',
-                r'\bpenalty.*?(employer|company)',
+                r'\bштраф.{1,80}?(роботодавц|компані)',
+                r'\bpenalty.{1,80}?(employer|company)',
                 r'\bcompensation\s+for\s+(delay|failure)',
                 r'\bкомпанія\s+(платить|компенсує|несе\s+відповідальність)',
             ],
@@ -93,16 +93,16 @@ class VeritasLACLabor:
         
         # Anti-patterns (asymmetric risk)
         self.asymmetric_risk_flags = [
-            r'ви\s+несете\s+(повну\s+)?відповідальність',
-            r'you\s+are\s+(fully\s+)?responsible',
-            r'на\s+ваш\s+ризик',
-            r'at\s+your\s+(own\s+)?risk',
-            r'(працівник|виконавець)\s+зобов\'язується',
-            r'(worker|contractor)\s+(must|shall|commits)',
-            r'ми\s+залишаємо\s+за\s+собою\s+право',
-            r'we\s+reserve\s+the\s+right',
-            r'компанія\s+має\s+право.*?(без|незалежно)',
-            r'company\s+may.*?(without|regardless)',
+            r'\bви\s+несете\s+(повну\s+)?відповідальність',
+            r'\byou\s+are\s+(fully\s+)?responsible',
+            r'\bна\s+ваш\s+ризик',
+            r'\bat\s+your\s+(own\s+)?risk',
+            r'\b(працівник|виконавець)\s+зобов\'язується',
+            r'\b(worker|contractor)\s+(must|shall|commits)',
+            r'\bми\s+залишаємо\s+за\s+собою\s+право',
+            r'\bwe\s+reserve\s+the\s+right',
+            r'\bкомпанія\s+має\s+право.{1,80}?(без|незалежно)',
+            r'\bcompany\s+may.{1,80}?(without|regardless)',
         ]
         
         # ============================================================
@@ -110,45 +110,46 @@ class VeritasLACLabor:
         # ============================================================
         self.causal_closure_markers = {
             'direct_causation': [
-                r'якщо\s+ви.*?то\s+(ви\s+отримаєте|вам\s+виплатят)',
-                r'if\s+you.*?then\s+(you\s+get|payment)',
-                r'за\s+кожн[а-яіїє\']*.*?(\d+|конкретн)',
-                r'per\s+(hour|day|task|unit)',
-                r'фіксована\s+(ставка|оплата|сума)',
-                r'fixed\s+(rate|payment|amount)',
+                r'\bякщо\s+ви.{1,80}?то\s+(ви\s+отримаєте|вам\s+виплатят)',
+                r'\bif\s+you.{1,80}?then\s+(you\s+get|payment)',
+                r'\bза\s+кожн[а-яіїє\']*.{1,80}?(\d+|конкретн)',
+                r'\bper\s+(hour|day|task|unit)',
+                r'\bфіксована\s+(ставка|оплата|сума)',
+                r'\bfixed\s+(rate|payment|amount)',
             ],
             'measurable_criteria': [
-                r'\d+\s*(год|днів|завдань|одиниць)',
-                r'\d+\s*(hours|days|tasks|units)',
-                r'кількіст[ь|ю]\s+\d+',
-                r'quantity\s+of\s+\d+',
-                r'при\s+(досягненні|виконанні).*?\d+',
-                r'upon\s+(achieving|completing).*?\d+',
+                r'\b\d+\s*(год|днів|завдань|одиниць)',
+                r'\b\d+\s*(hours|days|tasks|units)',
+                r'\bкількіст[ь|ю]\s+\d+',
+                r'\bquantity\s+of\s+\d+',
+                r'\bпри\s+(досягненні|виконанні).{1,80}?\d+',
+                r'\bupon\s+(achieving|completing).{1,80}?\d+',
             ],
             'no_discretion': [
-                r'автоматичн[а-яіїє\']*\s+(виплат|нарахування)',
-                r'automatic\s+(payment|accrual)',
-                r'без\s+(згоди|дозволу|рішення).*?(менеджмент|управлінн)',
-                r'without.*?(approval|discretion)',
+                r'\bавтоматичн[а-яіїє\']*\s+(виплат|нарахування)',
+                r'\bautomatic\s+(payment|accrual)',
+                r'\bбез\s+(згоди|дозволу|рішення).{1,80}?(менеджмент|управлінн)',
+                r'\bwithout.{1,80}?(approval|discretion)',
             ]
         }
         
         # Anti-patterns (semantic gaps / black boxes)
         self.semantic_gap_flags = [
-            r'результат\s+(оцінюється|визначається)\s+(менеджмент|керівництв|алгоритм)',
-            r'(performance|result)\s+(evaluated|determined)\s+by\s+(management|algorithm)',
-            r'на\s+розсуд',
-            r'at.*?discretion',
-            r'буде\s+(визначено|уточнено)\s+пізніше',
-            r'(to\s+be\s+)?(determined|specified)\s+later',
-            r'згідно\s+з\s+(політикою|процедурою)',
-            r'according\s+to\s+(policy|procedure)',
-            r'може\s+бути\s+(змінено|переглянуто)',
-            r'(may\s+be|subject\s+to)\s+(changed|revised)',
-            r'враховує\s+(багато\s+)?фактор',
-            r'considers?\s+(many\s+)?factors?',
-            r'комплексн[а-яіїє\']*\s+оцінк',
-            r'comprehensive\s+(evaluation|assessment)',
+            r'\bрезультат\s+(оцінюється|визначається)\s+(менеджмент|керівництв|алгоритм)',
+            r'\b(performance|result)\s+(evaluated|determined)\s+by\s+(management|algorithm)',
+            r'\bна\s+розсуд',
+            r'\bat\s+(the\s+|our\s+|its\s+|their\s+)?(sole\s+|full\s+|complete\s+)?discretion\b',
+            r'\bat\s+.{1,30}?\'s\s+(sole\s+|full\s+)?discretion\b',
+            r'\bбуде\s+(визначено|уточнено)\s+пізніше',
+            r'\b(to\s+be\s+)?(determined|specified)\s+later',
+            r'\bзгідно\s+з\s+(політикою|процедурою)',
+            r'\baccording\s+to\s+(policy|procedure)',
+            r'\bможе\s+бути\s+(змінено|переглянуто)',
+            r'\b(may\s+be|subject\s+to)\s+(changed|revised)',
+            r'\bвраховує\s+(багато\s+)?фактор',
+            r'\bconsiders?\s+(many\s+)?factors?',
+            r'\bкомплексн[а-яіїє\']*\s+оцінк',
+            r'\bcomprehensive\s+(evaluation|assessment)',
         ]
         
         # ============================================================
@@ -156,44 +157,44 @@ class VeritasLACLabor:
         # ============================================================
         self.blocking_power_markers = {
             'worker_halt': [
-                r'ви\s+можете\s+(зупинити|припинити|відмовитись)',
-                r'you\s+can\s+(stop|halt|refuse|terminate)',
-                r'право\s+на\s+(розірвання|вихід)',
-                r'right\s+to\s+(terminate|exit|withdraw)',
-                r'без\s+попередження',
-                r'without\s+notice',
-                r'негайн[а-яіїє\']*\s+(зупинк|припинення)',
-                r'immediate\s+(halt|termination)',
+                r'\bви\s+можете\s+(зупинити|припинити|відмовитись)',
+                r'\byou\s+can\s+(stop|halt|refuse|terminate)',
+                r'\bправо\s+на\s+(розірвання|вихід)',
+                r'\bright\s+to\s+(terminate|exit|withdraw)',
+                r'\bбез\s+попередження',
+                r'\bwithout\s+notice',
+                r'\bнегайн[а-яіїє\']*\s+(зупинк|припинення)',
+                r'\bimmediate\s+(halt|termination)',
             ],
             'enforceable_halt': [
-                r'автоматичн[а-яіїє\']*\s+(зупинк|блокування)',
-                r'automatic\s+(halt|block|suspension)',
-                r'система\s+(зупиняється|блокується)',
-                r'system\s+(stops|blocks|halts)',
-                r'circuit\s+breaker',
-                r'kill\s+switch',
-                r'аварійн[а-яіїє\']*\s+(кнопк|механізм)',
+                r'\bавтоматичн[а-яіїє\']*\s+(зупинк|блокування)',
+                r'\bautomatic\s+(halt|block|suspension)',
+                r'\bсистема\s+(зупиняється|блокується)',
+                r'\bsystem\s+(stops|blocks|halts)',
+                r'\bcircuit\s+breaker',
+                r'\bkill\s+switch',
+                r'\bаварійн[а-яіїє\']*\s+(кнопк|механізм)',
             ],
             'no_permission_needed': [
-                r'без\s+(дозволу|згоди).*?(роботодавц|компані)',
-                r'without.*?(permission|approval|consent)',
-                r'односторонн[а-яіїє\']*\s+(розірвання|відмов)',
-                r'unilateral\s+(termination|refusal)',
+                r'\bбез\s+(дозволу|згоди).{1,80}?(роботодавц|компані)',
+                r'\bwithout.{1,80}?(permission|approval|consent)',
+                r'\bодносторонн[а-яіїє\']*\s+(розірвання|відмов)',
+                r'\bunilateral\s+(termination|refusal)',
             ]
         }
         
         # Anti-patterns (fake blocking power)
         self.fake_blocking_flags = [
-            r'(можете|має\s+право)\s+звернутись\s+до\s+(служб|підтримк)',
-            r'(may|can)\s+(contact|reach\s+out\s+to)\s+support',
-            r'(можете|має\s+право)\s+подати\s+(скаргу|апеляцію)',
-            r'(may|can)\s+(file|submit)\s+(complaint|appeal)',
-            r'розглянемо\s+ваш',
-            r'(will\s+)?review\s+your',
-            r'(можемо|будемо)\s+переглянути',
-            r'(may|will)\s+reconsider',
-            r'зворотній\s+зв\'язок',
-            r'feedback\s+(mechanism|loop)',
+            r'\b(можете|має\s+право)\s+звернутись\s+до\s+(служб|підтримк)',
+            r'\b(may|can)\s+(contact|reach\s+out\s+to)\s+support',
+            r'\b(можете|має\s+право)\s+подати\s+(скаргу|апеляцію)',
+            r'\b(may|can)\s+(file|submit)\s+(complaint|appeal)',
+            r'\bрозглянемо\s+ваш',
+            r'\b(will\s+)?review\s+your',
+            r'\b(можемо|будемо)\s+переглянути',
+            r'\b(may|will)\s+reconsider',
+            r'\bзворотній\s+зв\'язок',
+            r'\bfeedback\s+(mechanism|loop)',
         ]
         
         # ============================================================
@@ -230,42 +231,42 @@ class VeritasLACLabor:
         # ============================================================
         self.exploitation_patterns = [
             # Deferred compensation
-            r'оплата\s+після\s+(завершення|успіху|результату)',
-            r'payment\s+(after|upon)\s+(completion|success|result)',
-            r'компенсація\s+залежить\s+від',
-            r'compensation\s+depends\s+on',
+            r'\bоплата\s+після\s+(завершення|успіху|результату)',
+            r'\bpayment\s+(after|upon)\s+(completion|success|result)',
+            r'\bкомпенсація\s+залежить\s+від',
+            r'\bcompensation\s+depends\s+on',
             
             # Unpaid work disguised as opportunity
-            r'досвід.*?(замість|як)\s+(оплат|компенсаці)',
-            r'experience.*?(instead\s+of|as)\s+(payment|compensation)',
-            r'можливість\s+навчитися',
-            r'opportunity\s+to\s+learn',
-            r'портфоліо.*?безкоштовно',
-            r'portfolio.*?free',
+            r'\bдосвід.{1,80}?(замість|як)\s+(оплат|компенсаці)',
+            r'\bexperience.{1,80}?(instead\s+of|as)\s+(payment|compensation)',
+            r'\bможливість\s+навчитися',
+            r'\bopportunity\s+to\s+learn',
+            r'\bпортфоліо.{1,80}?безкоштовно',
+            r'\bportfolio.{1,80}?free',
             
             # Passion exploitation
-            r'пристрасть.*?важливіша\s+за\s+гроші',
-            r'passion.*?more\s+important\s+than\s+money',
-            r'любов.*?справ',
-            r'love.*?the\s+work',
-            r'ентузіазм.*?ключ',
-            r'enthusiasm.*?key',
+            r'\bпристрасть.{1,80}?важливіша\s+за\s+гроші',
+            r'\bpassion.{1,80}?more\s+important\s+than\s+money',
+            r'\bлюбов.{1,80}?справ',
+            r'\blove.{1,80}?the\s+work',
+            r'\bентузіазм.{1,80}?ключ',
+            r'\benthusiasm.{1,80}?key',
             
             # AI hiring asymmetry
-            r'алгоритм\s+(вирішує|визначає|оцінює)',
-            r'algorithm\s+(decides|determines|evaluates)',
-            r'система\s+автоматично\s+(відхиляє|обирає)',
-            r'system\s+automatically\s+(rejects|selects)',
-            r'ШІ\s+(найма|оцінює|вибира)',
-            r'AI\s+(hires|evaluates|selects)',
+            r'\bалгоритм\s+(вирішує|визначає|оцінює)',
+            r'\balgorithm\s+(decides|determines|evaluates)',
+            r'\bсистема\s+автоматично\s+(відхиляє|обирає)',
+            r'\bsystem\s+automatically\s+(rejects|selects)',
+            r'\bШІ\s+(найма|оцінює|вибира)',
+            r'\bAI\s+(hires|evaluates|selects)',
             
             # No recourse
-            r'рішення\s+(є\s+)?остаточн',
-            r'decision\s+is\s+final',
-            r'без\s+права\s+оскарження',
-            r'no\s+right\s+to\s+appeal',
-            r'не\s+підлягає\s+перегляду',
-            r'not\s+subject\s+to\s+review',
+            r'\bрішення\s+(є\s+)?остаточн',
+            r'\bdecision\s+is\s+final',
+            r'\bбез\s+права\s+оскарження',
+            r'\bno\s+right\s+to\s+appeal',
+            r'\bне\s+підлягає\s+перегляду',
+            r'\bnot\s+subject\s+to\s+review',
         ]
         
     def analyze(self, text: str) -> LACLaborResult:
@@ -399,14 +400,14 @@ class VeritasLACLabor:
         # Non-labor topic signals — suppress false positives
         import re as _re
         non_labor_signals = [
-            r'(quantum|qubit|molecule|genome|particle|telescope|spacecraft)',
-            r'(democrat|republican|congress|senate|parliament|judiciary)',
-            r'(climate|renewable|carbon|emission|wind\s+farm|solar)',
-            r'(lawsuit|indictment|criminal|prosecutor|verdict|trial)',
-            r'(депутат|парламент|суд|вибор|президент|прокурор)',
+            r'\b(quantum|qubit|molecule|genome|particle|telescope|spacecraft)',
+            r'\b(democrat|republican|congress|senate|parliament|judiciary)',
+            r'\b(climate|renewable|carbon|emission|wind\s+farm|solar)',
+            r'\b(lawsuit|indictment|criminal|prosecutor|verdict|trial)',
+            r'\b(депутат|парламент|суд|вибор|президент|прокурор)',
             # Science / research — дослідники, команда, робота ≠ трудові відносини
-            r'(дослідник|науков|лабораторі|experiment|research\s+team|study\s+found|published)',
-            r'(peer.reviewed|journal|findings|дані\s+показують|вчені|scientists?)',
+            r'\b(дослідник|науков|лабораторі|experiment|research\s+team|study\s+found|published)',
+            r'\b(peer.reviewed|journal|findings|дані\s+показують|вчені|scientists?)',
         ]
         non_labor_hits = sum(
             1 for p in non_labor_signals
