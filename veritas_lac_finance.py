@@ -174,9 +174,9 @@ class VeritasLACFinance:
         # Anti-patterns (responsibility diffusion)
         self.responsibility_diffusion = [
             r'минулі\s+результати\s+не\s+гарантують',
-            r'past\s+performance.*not.*guarantee',
+            r'past\s+performance.{1,40}not.{1,20}guarantee',
             r'зверніться\s+до\s+(свого\s+)?радника',
-            r'consult.*advisor',
+            r'consult.{1,30}advisor',
             r'ринок\s+може\b',
             r'market\s+may\b',
             r'ніхто\s+не\s+може\s+передбачити',
