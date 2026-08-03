@@ -166,40 +166,40 @@ class VeritasFramingDetector:
     # "N причин чому X станеться" — нумерований список легітимізує гіпотезу як план
     # УНІАН: "Три причини чому Іран спробує потопити авіаносець"
     ENUMERATED_INEVITABILITY_UK = [
-        r'(причин|підстав|факторів|аргументів).{1,20}(чому|через що|для чого).{1,60}(спробує|зробить|піде на|вдарить|атакує)',
-        r'(три|пять|сім|\d+)\s+(причини|причин|підстав|аргументів).{1,60}(чому|для чого|через які)',
-        r'(причини|підстави|фактори).{1,60}(неминучост|неухильност|того що це станеться)',
-        r'(пояснює чому|розкриває причини|називає причини).{1,60}(буде|стане|зробить|спробує)',
-        r'перелік.{1,30}(причин|підстав|факторів).{1,60}(неминучост|чому це відбудеться)',
+        r'\b(причин|підстав|факторів|аргументів).{1,20}(чому|через що|для чого).{1,60}(спробує|зробить|піде на|вдарить|атакує)',
+        r'\b(три|пять|сім|\d+)\s+(причини|причин|підстав|аргументів).{1,60}(чому|для чого|через які)',
+        r'\b(причини|підстави|фактори).{1,60}(неминучост|неухильност|того що це станеться)',
+        r'\b(пояснює чому|розкриває причини|називає причини).{1,60}(буде|стане|зробить|спробує)',
+        r'\bперелік.{1,30}(причин|підстав|факторів).{1,60}(неминучост|чому це відбудеться)',
     ]
     ENUMERATED_INEVITABILITY_EN = [
-        r'(reasons?|factors?|arguments?).{1,20}(why|for which).{1,60}(will|is going to|plans? to|intends? to)',
-        r'(three|five|seven|\d+)\s+(reasons?|factors?|arguments?).{1,60}(why|that explain)',
-        r'(here.s why|this is why|the reason.s why).{1,60}(will|must|is going to)',
-        r'(explains? why|outlines? why|reveals? why).{1,60}(will|plans?|intends?)',
-        r'(the case for|making the case).{1,60}(why.{1,40}(will|must|should|is going to))',
-        r'number\s+\d+\s+(reason|factor|argument).{0,40}(why|for)',
+        r'\b(reasons?|factors?|arguments?).{1,20}(why|for which).{1,60}(will|is going to|plans? to|intends? to)',
+        r'\b(three|five|seven|\d+)\s+(reasons?|factors?|arguments?).{1,60}(why|that explain)',
+        r'\b(here.s why|this is why|the reason.s why).{1,60}(will|must|is going to)',
+        r'\b(explains? why|outlines? why|reveals? why).{1,60}(will|plans?|intends?)',
+        r'\b(the case for|making the case).{1,60}(why.{1,40}(will|must|should|is going to))',
+        r'\bnumber\s+\d+\s+(reason|factor|argument).{0,40}(why|for)',
     ]
 
     # ── Pattern 8: Scenario as Fact ──────────────────────────────────────────
     # Умовний або гіпотетичний сценарій описується з деталями реальної події
     # HBR: категорія "trendslop" вводиться як об'єктивний феномен
     SCENARIO_AS_FACT_UK = [
-        r'(якщо|коли|у разі).{1,60}(спробує|вдарить|атакує).{1,80}(призведе|стане|буде)',
-        r'(теоретично|гіпотетично).{1,60}(але|проте|однак).{0,30}(реально|насправді|цілком)',
-        r'(може|здатний|спроможний).{1,60}(змінити|вразити|знищити).{1,60}(стане|буде|призведе)',
-        r'(сценарій|варіант).{1,60}(не виключений|цілком реальний|має право на існування)',
-        r'(новий термін|нове поняття|нова категорія).{1,60}(описує|позначає|означає).{1,60}(реальн|існуюч)',
+        r'\b(якщо|коли|у разі).{1,60}(спробує|вдарить|атакує).{1,80}(призведе|стане|буде)',
+        r'\b(теоретично|гіпотетично).{1,60}(але|проте|однак).{0,30}(реально|насправді|цілком)',
+        r'\b(може|здатний|спроможний).{1,60}(змінити|вразити|знищити).{1,60}(стане|буде|призведе)',
+        r'\b(сценарій|варіант).{1,60}(не виключений|цілком реальний|має право на існування)',
+        r'\b(новий термін|нове поняття|нова категорія).{1,60}(описує|позначає|означає).{1,60}(реальн|існуюч)',
     ]
     SCENARIO_AS_FACT_EN = [
-        r'(if|when|should).{1,60}(attempts?|strikes?|attacks?).{1,80}(would|will|could become)',
-        r'(theoretically|hypothetically).{1,60}(but|however|yet).{0,30}(realistically|actually|quite)',
-        r'(could|capable of|able to).{1,60}(change|destroy|cripple).{1,60}(would|will|becomes?)',
-        r'(scenario|possibility).{1,60}(cannot be ruled out|entirely realistic|very real)',
-        r'(new term|new concept|new category).{1,60}(describes|refers to|captures).{1,60}(real|existing|actual)',
-        r'(trendslop|slop|hallucinated\s+strategy|strategy\s+theatre)',
-        r'(researchers?.{1,30}(found|discovered|identified)).{1,60}(new (phenomenon|pattern|problem))',
-        r'(what\s+we\s+call|we\s+term\s+it|dubbed).{1,60}(new|emerging|growing)\s+(phenomenon|trend|problem)',
+        r'\b(if|when|should).{1,60}(attempts?|strikes?|attacks?).{1,80}(would|will|could become)',
+        r'\b(theoretically|hypothetically).{1,60}(but|however|yet).{0,30}(realistically|actually|quite)',
+        r'\b(could|capable of|able to).{1,60}(change|destroy|cripple).{1,60}(would|will|becomes?)',
+        r'\b(scenario|possibility).{1,60}(cannot be ruled out|entirely realistic|very real)',
+        r'\b(new term|new concept|new category).{1,60}(describes|refers to|captures).{1,60}(real|existing|actual)',
+        r'\b(trendslop|slop|hallucinated\s+strategy|strategy\s+theatre)',
+        r'\b(researchers?.{1,30}(found|discovered|identified)).{1,60}(new (phenomenon|pattern|problem))',
+        r'\b(what\s+we\s+call|we\s+term\s+it|dubbed).{1,60}(new|emerging|growing)\s+(phenomenon|trend|problem)',
     ]
 
     WEIGHTS = {
