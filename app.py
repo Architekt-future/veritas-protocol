@@ -1,5 +1,5 @@
 """
-Veritas Protocol - Flask API v20.2
+Veritas Protocol - Flask API v20.3
 Forces fresh import of Veritas modules on every restart
 SCRAPER: Daily Mail selectors + <p> fallback (2026-02-26)
 GENRE: GenreDetector v2.0 — CONSPIRACY_NEWS + fixed SPORT/CULTURE false positives
