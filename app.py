@@ -10,11 +10,11 @@ import sys
 import os
 
 # CRITICAL: Clear module cache to force reload
-print("🔄 Veritas v17.0 - Clearing module cache...")
+print("🔄 Veritas v20.3 - Clearing module cache...")
 modules_to_clear = [k for k in sys.modules.keys() if k.startswith('veritas_')]
 for module in modules_to_clear:
     del sys.modules[module]
-print(f"✅ Cache cleared. Loading fresh Veritas v20.2 modules...")
+print(f"✅ Cache cleared. Loading fresh Veritas v20.3 modules...")
 
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
@@ -686,7 +686,7 @@ def home():
     except:
         return jsonify({
             'status': 'online',
-            'version': 'v20.2',
+            'version': 'v20.3',
             'message': 'Veritas Protocol API is running (index.html not found)',
             'features': {
                 'pattern_boost': engine.pattern_boost_engine is not None,
@@ -703,7 +703,7 @@ def analyze():
         if request.method == 'GET':
             return jsonify({
                 'status': 'online',
-                'version': 'v20.2',
+                'version': 'v20.3',
                 'modules': {
                     'pattern_boost':         engine.pattern_boost_engine is not None,
                     'void_detector':         engine.void_detector is not None,
@@ -1253,7 +1253,7 @@ def stats_reset():
 def health():
     return jsonify({
         'status': 'healthy',
-        'version': 'v20.2'
+        'version': 'v20.3'
     })
 
 
