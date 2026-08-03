@@ -144,15 +144,15 @@ class InsightDensityDetector:
 
         # Vague quantity замість цифр
         self.vague_quantity_en = [
-            r"many (?:people|experts|studies|countries|cases)",
-            r"some (?:argue|suggest|believe|claim|say)",
-            r"a number of",
-            r"various (?:factors|reasons|sources|experts)",
-            r"several (?:factors|reasons|experts|studies)",
-            r"countless",
-            r"numerous (?:studies|experts|factors|cases)",
-            r"some experts",
-            r"many analysts",
+            r"\bmany (?:people|experts|studies|countries|cases)\b",
+            r"\bsome (?:argue|suggest|believe|claim|say)\b",
+            r"\ba number of\b",
+            r"\bvarious (?:factors|reasons|sources|experts)\b",
+            r"\bseveral (?:factors|reasons|experts|studies)\b",
+            r"\bcountless\b",
+            r"\bnumerous (?:studies|experts|factors|cases)\b",
+            r"\bsome experts\b",
+            r"\bmany analysts\b",
         ]
 
         # False precision
@@ -169,17 +169,17 @@ class InsightDensityDetector:
         # Momentum — замість доказів
         self.momentum_en = [
             r"it is (?:clear|obvious|evident|apparent) that",
-            r"obviously",
+            r"obviously\b",
             r"as (?:we all|everyone) know",
-            r"undoubtedly",
-            r"certainly",
-            r"without (?:a )?doubt",
+            r"undoubtedly\b",
+            r"certainly\b",
+            r"without (?:a )?doubt\b",
             r"it goes without saying",
             r"(?:clearly|plainly|simply) put",
             r"make no mistake",
             r"the fact (?:is|remains) that",
             r"the truth (?:is|remains) that",
-            r"needless to say",
+            r"needless to say\b",
         ]
 
         # ================================================================
@@ -236,8 +236,8 @@ class InsightDensityDetector:
         self.momentum_uk = [
             r"(?:зрозуміло|очевидно|ясно) що",
             r"як (?:всі|усі|ми всі) знають",
-            r"безсумнівно",
-            r"безперечно",
+            r"безсумнівно\b",
+            r"безперечно\b",
             r"немає сумніву",
             r"не викликає сумніву",
             r"цілком (?:зрозуміло|очевидно)",
@@ -266,14 +266,14 @@ class InsightDensityDetector:
 
         self.concrete_markers_en = {
             'numbers': r'\d+(?:[.,]\d+)?(?:\s*%)?',
-            'years': r'(19|20)\d{2}',
+            'years': r'\b(19|20)\d{2}\b',
             'specific_amounts': r'\d+\s*(million|billion|thousand|percent|trillion)',
-            'names': r'[A-Z][a-z]+\s+[A-Z][a-z]+',
-            'locations': r'(united states|europe|china|russia|ukraine|washington|new york|london|brussels)',
-            'organizations': r'(UN|NATO|EU|UNESCO|WHO|NASA|FBI|CIA|IMF|WTO|Census Bureau)',
-            'specific_actions': r'(built|created|invented|measured|recorded|published|signed|passed|launched|founded)',
-            'verifiable_sources': r'(university|institute|study|research|experiment|publication|journal|report|data|survey)',
-            'dates': r'(january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{1,2}',
+            'names': r'\b[A-Z][a-z]+\s+[A-Z][a-z]+\b',
+            'locations': r'\b(united states|europe|china|russia|ukraine|washington|new york|london|brussels)\b',
+            'organizations': r'\b(UN|NATO|EU|UNESCO|WHO|NASA|FBI|CIA|IMF|WTO|Census Bureau)\b',
+            'specific_actions': r'\b(built|created|invented|measured|recorded|published|signed|passed|launched|founded)\b',
+            'verifiable_sources': r'\b(university|institute|study|research|experiment|publication|journal|report|data|survey)\b',
+            'dates': r'\b(january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{1,2}\b',
         }
         
         # ================================================================
@@ -313,14 +313,21 @@ class InsightDensityDetector:
         
         fact_count = 0
         found_facts = []
-        
+
+        # 'names' та 'organizations' вимагають великих літер (власні назви,
+        # абревіатури типу NATO/ООН) — їх треба звіряти з ОРИГІНАЛЬНИМ текстом,
+        # бо проти text_lower (де регістр вже знищено) вони НІКОЛИ не спрацюють.
+        CASE_SENSITIVE_TYPES = {'names', 'organizations'}
+
         for fact_type, pattern in self.concrete_markers.items():
-            matches = re.findall(pattern, text_lower)
+            source = text if fact_type in CASE_SENSITIVE_TYPES else text_lower
+            matches = re.findall(pattern, source)
             if matches:
                 fact_count += len(matches)
                 found_facts.append(f"{fact_type}:{len(matches)}")
         for fact_type, pattern in self.concrete_markers_en.items():
-            matches = re.findall(pattern, text_lower)
+            source = text if fact_type in CASE_SENSITIVE_TYPES else text_lower
+            matches = re.findall(pattern, source)
             if matches:
                 fact_count += len(matches)
                 found_facts.append(f"en_{fact_type}:{len(matches)}")
@@ -332,15 +339,19 @@ class InsightDensityDetector:
         complexity_count = 0
         
         # 1. Complex terminology
+        # UK-основи навмисно "обрізані" (щоб ловити відмінкові форми),
+        # тому \b лише на початку. EN — повні слова, \b з обох боків,
+        # інакше 'factor' ловиться всередині 'satisfactory', 'concept' —
+        # всередині 'misconception', 'model' — всередині 'remodeling'.
         for category, terms in self.complexity_markers.items():
             for term in terms:
-                if term in text_lower:
+                if re.search(r'\b' + re.escape(term), text_lower):
                     complexity_count += 1
-        
+
         # 1b. English complexity markers
         for category, terms in self.complexity_markers_en.items():
             for term in terms:
-                if term in text_lower:
+                if re.search(r'\b' + re.escape(term) + r'\b', text_lower):
                     complexity_count += 1
 
         # 2. Long compound words
