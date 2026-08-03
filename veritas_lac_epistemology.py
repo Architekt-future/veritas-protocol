@@ -126,21 +126,21 @@ class VeritasLACEpistemology:
 
     # ── Pattern 3: Unfalsifiable / conspiracy framing ───────────────────────
     UNFALS_PATTERNS_UK = [
-        r'офіційн\w+\s+(наук|медицин|влад)\w+\s+(не|поки\s+не)\s+(визнає|підтверджує|визнала)',
-        r'(мовчання|замовчування)\s+(офіційн|науков|медіа)\w+',
-        r'(це|що)\s+(само\s+по\s+собі|саме\s+по\s+собі)\s+(є|стає)\s+(показов|промовист|тривожн)\w+',
-        r'наукови[йх]\s+консенсус\s+(поки|ще)\s+не\s+(сформував|визнав|підтвердив)',
-        r'системн[іі]\s+трудно[шщ][іц]\w+\s+з\s+рецензуванням',
-        r'намагав(ся|шись)\s+опублікувати.{0,60}(відмов|блокув|цензур)',
+        r'\bофіційн\w+\s+(наук|медицин|влад)\w+\s+(не|поки\s+не)\s+(визнає|підтверджує|визнала)',
+        r'\b(мовчання|замовчування)\s+(офіційн|науков|медіа)\w+',
+        r'\b(це|що)\s+(само\s+по\s+собі|саме\s+по\s+собі)\s+(є|стає)\s+(показов|промовист|тривожн)\w+',
+        r'\bнаукови[йх]\s+консенсус\s+(поки|ще)\s+не\s+(сформував|визнав|підтвердив)',
+        r'\bсистемн[іі]\s+трудно[шщ][іц]\w+\s+з\s+рецензуванням',
+        r'\bнамагав(ся|шись)\s+опублікувати.{0,60}(відмов|блокув|цензур)',
     ]
     UNFALS_PATTERNS_EN = [
-        r'official\s+science\s+(does\s+not|hasn\'t|has\s+not|refuses\s+to)\s+(acknowledge|recognize|confirm)',
-        r'(silence|suppression)\s+(of|by|from)\s+(mainstream|official|corporate)\b',
-        r'(which|that)\s+is\s+(itself|in\s+itself)\s+(telling|revealing|suspicious|notable)',
-        r'scientific\s+consensus\s+(has\s+not|hasn\'t|doesn\'t)\s+(formed|accepted|acknowledged)',
-        r'systematic\s+(difficulties|obstacles|barriers)\s+(with|in)\s+(peer.review|publishing)',
-        r'tried\s+to\s+publish.{0,60}(refused|blocked|rejected|censored)',
-        r'those\s+who\s+question\s+(are|get|were)\s+(silenced|dismissed|ridiculed)',
+        r'\bofficial\s+science\s+(does\s+not|hasn\'t|has\s+not|refuses\s+to)\s+(acknowledge|recognize|confirm)',
+        r'\b(silence|suppression)\s+(of|by|from)\s+(mainstream|official|corporate)\b',
+        r'\b(which|that)\s+is\s+(itself|in\s+itself)\s+(telling|revealing|suspicious|notable)',
+        r'\bscientific\s+consensus\s+(has\s+not|hasn\'t|doesn\'t)\s+(formed|accepted|acknowledged)',
+        r'\bsystematic\s+(difficulties|obstacles|barriers)\s+(with|in)\s+(peer.review|publishing)',
+        r'\btried\s+to\s+publish.{0,60}(refused|blocked|rejected|censored)',
+        r'\bthose\s+who\s+question\s+(are|get|were)\s+(silenced|dismissed|ridiculed)',
     ]
 
     # ── Pattern 4: Conclusion leap ───────────────────────────────────────────
