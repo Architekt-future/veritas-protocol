@@ -308,6 +308,23 @@ class MediaBiasDetector:
         )
         return hits >= 3
 
+    # ── ATTRIBUTION VERB CHECK ────────────────────────────────────────
+    # «...» в українському тексті — не лише пряма мова: це й стандартна
+    # типографія власних назв («Укрзалізниця», «Нафтогаз») і дистанційовані
+    # /іронічні лапки навколо критикованої концепції. Патерн "3+ цитати
+    # поспіль" сам по собі сліпий до цього — тому для НЬОГО (на відміну
+    # від інших QUOTE_DOMINANCE-патернів, де атрибуція вже в самому
+    # патерні) вимагаємо дієслово атрибуції десь у збігу.
+    _ATTRIBUTION_VERBS = re.compile(
+        r'(сказав|сказала|заявив|заявила|повідомив|повідомила|зазначив|зазначила|'
+        r'наголосив|наголосила|додав|додала|стверджу|заяви[лвб]|прокоментував|'
+        r'said|stated|told|claimed|announced|according to|spokesperson|spokesman)',
+        re.IGNORECASE
+    )
+
+    def _has_attribution_verb(self, span: str) -> bool:
+        return bool(self._ATTRIBUTION_VERBS.search(span))
+
     def analyze(self, text: str) -> MediaBiasResult:
         result = MediaBiasResult()
         if not text or len(text) < 80:
@@ -393,20 +410,28 @@ class MediaBiasDetector:
         # норма (особливо якщо ця сторона є news). Тригеримо тільки якщо
         # є ПРЯМА FALSE ATTRIBUTION (суд сказав X — але суд цього не казав).
         qd_patterns = self.QUOTE_DOMINANCE_UK + self.QUOTE_DOMINANCE_EN
+        # "3+ цитати поспіль" — єдиний чисто структурний патерн у цій категорії
+        # (UK #2 та EN #4, тобто index 1 у кожному підсписку)
+        structural_quote_patterns = {self.QUOTE_DOMINANCE_UK[1], self.QUOTE_DOMINANCE_EN[3]}
         qd_hits = []
         for p in qd_patterns:
             m = re.search(p, text_lower, re.IGNORECASE)
             if m:
+                if p in structural_quote_patterns and not self._has_attribution_verb(m.group(0)):
+                    continue
                 qd_hits.append(m.group(0)[:60])
 
         # Для новинних репортажів — тільки false attribution (перші 2 патерни кожної групи)
         if is_news and qd_hits:
             false_attr_patterns = self.QUOTE_DOMINANCE_UK[:2] + self.QUOTE_DOMINANCE_EN[:3]
-            qd_hits = [
-                m.group(0)[:60]
-                for p in false_attr_patterns
-                if (m := re.search(p, text_lower, re.IGNORECASE))
-            ]
+            new_hits = []
+            for p in false_attr_patterns:
+                m = re.search(p, text_lower, re.IGNORECASE)
+                if m:
+                    if p in structural_quote_patterns and not self._has_attribution_verb(m.group(0)):
+                        continue
+                    new_hits.append(m.group(0)[:60])
+            qd_hits = new_hits
 
         if qd_hits:
             signals.append(f'Хибна атрибуція або домінування цитати: «{qd_hits[0][:55]}»')
