@@ -81,37 +81,42 @@ class LaunderedClaimDetector:
     ATTRIBUTION_MARKERS_EN = [
         'according to', 'as stated by', 'as claimed by', 'in the view of',
         'in the opinion of', 'as argued by', 'as reported by', 'citing',
-        'per', 'sources say', 'he said', 'she said', 'they said',
+        'sources say', 'he said', 'she said', 'they said',
+    ]
+    # 'per' потребує word-boundary matching (substring 'in' ловить його
+    # всередині 'experiment', 'reported', 'period' тощо) — окремий regex-набір
+    ATTRIBUTION_MARKERS_REGEX_EN = [
+        r'\bper\b',
     ]
 
     # Сильні фактичні конструкції — ознака відмивання
     FACT_FRAMING_UK = [
-        r'(право|закон|система|порядок)\s+(припинив|перестав|зник|більше не існує|фактично не існує)',
-        r'фактично (припинив|перестав|не існує|зник)',
-        r'де-факто (не існує|припинив|зник)',
-        r'(світ|країна|економіка)\s+(опинився|перейшла|втратила)',
-        r'насправді (вже|більше|фактично)',
-        r'правовий вакуум',
-        r'кінець (міжнародного|світового|правового)',
+        r'\b(право|закон|система|порядок)\s+(припинив|перестав|зник|більше не існує|фактично не існує)',
+        r'\bфактично (припинив|перестав|не існує|зник)',
+        r'\bде-факто (не існує|припинив|зник)',
+        r'\b(світ|країна|економіка)\s+(опинився|перейшла|втратила)',
+        r'\bнасправді (вже|більше|фактично)',
+        r'\bправовий вакуум',
+        r'\bкінець (міжнародного|світового|правового)',
     ]
     FACT_FRAMING_EN = [
         # Systemic collapse framing
-        r'(law|order|system)\s+(no longer exists|ceased to exist|is dead|has collapsed)',
-        r'de facto (no longer|ceased|gone)',
-        r'(world|country|economy)\s+(finds itself|has lost|collapsed)',
-        r'legal vacuum',
-        r'end of (international|world|legal)',
+        r'\b(law|order|system)\s+(no longer exists|ceased to exist|is dead|has collapsed)',
+        r'\bde facto (no longer|ceased|gone)',
+        r'\b(world|country|economy)\s+(finds itself|has lost|collapsed)',
+        r'\blegal vacuum',
+        r'\bend of (international|world|legal)',
         # Corporate safety laundering
-        r'(product|drug|vaccine|treatment)\s+is\s+(completely\s+)?(safe|effective|proven)',
-        r'(meets|exceeds)\s+all\s+(safety|regulatory|quality)\s+standards',
-        r'no (side effects|risks|dangers|concerns)',
-        r'(fully|thoroughly|extensively)\s+(tested|vetted|approved)',
-        r'(our|the)\s+(research|data|studies)\s+(show|confirm|prove)',
+        r'\b(product|drug|vaccine|treatment)\s+is\s+(completely\s+)?(safe|effective|proven)',
+        r'\b(meets|exceeds)\s+all\s+(safety|regulatory|quality)\s+standards',
+        r'\bno (side effects|risks|dangers|concerns)',
+        r'\b(fully|thoroughly|extensively)\s+(tested|vetted|approved)',
+        r'\b(our|the)\s+(research|data|studies)\s+(show|confirm|prove)',
         # Political self-serving absolutes
-        r'(we have|there is)\s+no (choice|option|alternative)\s+but to',
-        r'(forced|compelled|had no choice)\s+to\s+(respond|attack|retaliate)',
-        r'(provoked|started|initiated)\s+by\s+(them|ukraine|the west|nato)',
-        r'(justified|legitimate|necessary)\s+(response|action|strike)',
+        r'\b(we have|there is)\s+no (choice|option|alternative)\s+but to',
+        r'\b(forced|compelled|had no choice)\s+to\s+(respond|attack|retaliate)',
+        r'\b(provoked|started|initiated)\s+by\s+(them|ukraine|the west|nato)',
+        r'\b(justified|legitimate|necessary)\s+(response|action|strike)',
     ]
 
     # Заголовкові патерни без атрибуції — EN
@@ -140,6 +145,17 @@ class LaunderedClaimDetector:
         threshold = max(2, min(5, len(text) // 200))
         return 'uk' if uk_chars >= threshold else 'en'
 
+    def _count_attr_markers(self, text_lower: str, lang: str) -> int:
+        """Рахує маркери атрибуції. EN-маркери типу 'per' перевіряються
+        через \\b-regex, а не substring-check, щоб не ловитись усередині
+        'experiment', 'reported', 'period' тощо."""
+        markers = self._attr_uk if lang == 'uk' else self._attr_en
+        count = sum(1 for m in markers if m in text_lower)
+        if lang == 'en':
+            count += sum(1 for p in self.ATTRIBUTION_MARKERS_REGEX_EN
+                        if re.search(p, text_lower))
+        return count
+
     def analyze(self, text: str) -> LaunderedClaimResult:
         result = LaunderedClaimResult()
         if not text or len(text) < 50:
@@ -167,8 +183,7 @@ class LaunderedClaimDetector:
 
         if fact_hits:
             # Перевіряємо чи є атрибуція поруч
-            attr_markers = self._attr_uk if lang == 'uk' else self._attr_en
-            attr_count = sum(1 for m in attr_markers if m in text_lower)
+            attr_count = self._count_attr_markers(text_lower, lang)
 
             if attr_count == 0:
                 signals.append(f'Фактична конструкція без атрибуції: «{fact_hits[0]}»')
@@ -178,8 +193,7 @@ class LaunderedClaimDetector:
                 score += 0.10
 
         # ── СИГНАЛ 3: Низька щільність маркерів думки ────────────────────────
-        attr_markers = self._attr_uk if lang == 'uk' else self._attr_en
-        attr_density = sum(1 for m in attr_markers if m in text_lower)
+        attr_density = self._count_attr_markers(text_lower, lang)
         words = len(text.split())
 
         # Якщо джерело є стороною, але маркерів мало
