@@ -883,10 +883,16 @@ def analyze():
                     pass
 
                 # Remove metadata phrases that appear inline (BBC and similar sites)
-                # Remove BBC-style metadata block (Author/Role/date/readtime)
-                text = _re.sub(r'(Author,|Role,)\s.{0,200}?(?=\d{1,2}\s\w+\s\d{4})', '', text)
+                # Remove BBC-style metadata block (Author/Role/date/readtime) as ONE unit.
+                # IMPORTANT: the date must be consumed together with the preceding
+                # Author,/Role, marker — a separate global "strip any date" pass
+                # was silently deleting every in-body date (treaty dates, executive
+                # order dates, event years) from every scraped article, not just
+                # BBC bylines. Fixed 2026-08 after a LinkedIn-scraped article lost
+                # "12 січня 2024", "21 жовтня 2020", and "COVID-19 у 2020" down to
+                # bare "року"/"році".
+                text = _re.sub(r'(Author,|Role,)\s.{0,200}?\d{1,2}\s+\w+\s+\d{4}\s+', '', text)
                 text = _re.sub(r'BBC World Service\s*', '', text)
-                text = _re.sub(r'\d{1,2}\s+\w+\s+\d{4}\s+', '', text)
                 text = _re.sub(r'Час прочитання[^А-ЯA-Z]{0,30}', '', text, flags=_re.IGNORECASE)
                 text = _re.sub(r'Пропустити Whatsapp.{0,100}Кінець Whatsapp', '', text, flags=_re.IGNORECASE|_re.DOTALL)
                 text = _re.sub(r'Підписуйтеся на наш канал тут\.?', '', text, flags=_re.IGNORECASE)
