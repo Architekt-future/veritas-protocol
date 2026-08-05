@@ -1404,6 +1404,14 @@ def oracle():
                 parts.append('кореляція подана як причинність')
             if hits.get('unfalsifiable', 0):
                 parts.append('незаперечна теза (заперечення = доказ змови)')
+            if hits.get('conclusion_leap', 0):
+                parts.append('логічний стрибок від даних до радикального висновку ("таким чином", "логічно припустити")')
+            if hits.get('unverified_citation', 0):
+                parts.append('назване джерело без перевірюваного посилання (URL/DOI)')
+            if hits.get('epistemic_conflation', 0):
+                parts.append('змішування припущення/прогнозу з фактом без чіткого маркера різниці')
+            if hits.get('unfounded_certainty', 0):
+                parts.append('категорична/кількісна впевненість ("математична ймовірність", "технічно неминуче", "статистично доведено") без жодної цифри, формули чи посилання поруч')
             details = '; '.join(parts) if parts else lac_epist_verdict
             line = f'  🔬 LAC ЕПІСТЕМОЛОГІЯ спрацювала: {lac_epist_verdict}'
             line += f'\n     Знайдено: {details}'
