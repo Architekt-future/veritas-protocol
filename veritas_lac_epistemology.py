@@ -1,6 +1,6 @@
 """
-Veritas LAC Epistemology — v1.2
-Detects six classic epistemic manipulation patterns:
+Veritas LAC Epistemology — v1.3
+Detects seven classic epistemic manipulation patterns:
   1. Anonymous authorities ("some experts", "independent researchers")
   2. Correlation-as-causation framing
   3. Unfalsifiable / conspiracy framing ("science doesn't recognize this — which is telling")
@@ -8,6 +8,9 @@ Detects six classic epistemic manipulation patterns:
   5. Unverified citation — named sources cited without verifiable links
   6. Epistemic Conflation — mixing speculation/forecast/report/fact without clear markers
      (the UNIAN Taiwan problem: "may happen" → "already happening" without transition)
+  7. Unfounded Quantified Certainty — categorical/quantitative confidence language
+     ("mathematical probability", "technically inevitable", "statistically proven")
+     with no actual figure, formula, percentage, or citation anywhere nearby
 
 Interface mirrors veritas_lac_labor / veritas_lac_finance.
 """
@@ -20,7 +23,7 @@ from typing import List
 @dataclass
 class EpistemologyResult:
     score: float
-    verdict: str                  # CLEAN | ANONYMOUS_AUTHORITY | CORRELATION_CAUSATION | UNFALSIFIABLE | CONCLUSION_LEAP | UNVERIFIED_CITATION | EPISTEMIC_CONFLATION | COMBINED
+    verdict: str                  # CLEAN | ANONYMOUS_AUTHORITY | CORRELATION_CAUSATION | UNFALSIFIABLE | CONCLUSION_LEAP | UNVERIFIED_CITATION | EPISTEMIC_CONFLATION | UNFOUNDED_CERTAINTY | COMBINED
     is_epistemic_content: bool
     missing: List[str] = field(default_factory=list)
     red_flags: List[str] = field(default_factory=list)
@@ -252,7 +255,41 @@ class VeritasLACEpistemology:
     CONFLATION_FACT_THRESHOLD = 2
     CONFLATION_INFLATION_THRESHOLD = 1
 
-    # Threshold: how many hits trigger each pattern
+    # ── Pattern 7: Unfounded Quantified Certainty ────────────────────────────
+    # Категоричне/кількісне твердження ("математична ймовірність", "технічно
+    # неминуче", "статистично доведено") запозичує авторитет науки, не несучи
+    # її верифіковності. Тригерить ТІЛЬКИ якщо поруч (±120 симв.) НЕМАЄ жодної
+    # реальної цифри, відсотка, p-value чи посилання (рік, DOI, URL) —
+    # це відрізняє голослівну квантифікацію від справжньої, підкріпленої даними.
+    CERTAINTY_CLAIM_UK = [
+        r'\bматематичн\w+\s+ймовірність\w*',
+        r'\bстатистичн\w+\s+(доведен\w+|підтверджен\w+|обґрунтован\w+)',
+        r'\bтехнічн\w+\s+неминуч\w+',
+        r'\bекономічн\w+\s+доведен\w+',
+        r'\bоб\'?єктивн\w+\s+доведен\w+',
+        r'\bрозрахунк\w+\s+показ\w+',
+        r'\bцифри\s+(доводять|показують|свідчать)',
+        r'\bстатистик\w+\s+(підтверджує|доводить|показує)',
+        r'\bкількісно\s+доведен\w+',
+    ]
+    CERTAINTY_CLAIM_EN = [
+        r'\bmathematical\s+probability\b',
+        r'\bstatistically\s+(proven|confirmed)\b',
+        r'\btechnically\s+inevitable\b',
+        r'\beconomically\s+proven\b',
+        r'\bobjectively\s+proven\b',
+        r'\bcalculations?\s+show\b',
+        r'\bthe\s+numbers\s+(prove|show|demonstrate)\b',
+        r'\bstatistics\s+(confirm|prove)\b',
+        r'\bquantitatively\s+proven\b',
+    ]
+    EVIDENCE_NEARBY = re.compile(
+        r'(\d+([.,]\d+)?\s*%|\bp\s*[<=]\s*0[.,]\d+|\bdoi\.org|\barxiv|\bhttps?://|\b(19|20)\d{2}\b|\d+\s*(кВт|мс|ms|kw))',
+        re.IGNORECASE
+    )
+    UNFOUNDED_CERTAINTY_THRESHOLD = 1
+    UNFOUNDED_CERTAINTY_WINDOW = 120
+
     ANON_THRESHOLD = 1
     CORR_THRESHOLD = 1
     UNFALS_THRESHOLD = 1
@@ -284,6 +321,7 @@ class VeritasLACEpistemology:
         unfals_hits      = self._count_hits(t, self.UNFALS_PATTERNS_UK + self.UNFALS_PATTERNS_EN)
         leap_hits        = self._count_hits(t, self.LEAP_PATTERNS_UK + self.LEAP_PATTERNS_EN)
         unverified_hits  = self._count_hits(t, self.UNVERIFIED_CITE_PATTERNS_UK + self.UNVERIFIED_CITE_PATTERNS_EN)
+        certainty_hits   = self._count_unfounded_certainty(t, self.CERTAINTY_CLAIM_UK + self.CERTAINTY_CLAIM_EN)
 
         # ── Pattern 6: Epistemic Conflation ──────────────────────────
         speculation_hits = self._count_hits(t, self.SPECULATION_MARKERS_UK + self.SPECULATION_MARKERS_EN)
@@ -313,6 +351,7 @@ class VeritasLACEpistemology:
             'unfalsifiable':          unfals_hits,
             'conclusion_leap':        leap_hits,
             'unverified_citation':    unverified_hits,
+            'unfounded_certainty':    certainty_hits,
             'epistemic_conflation':   conflation_hits,
             '_conflation_detail': {
                 'speculation': speculation_hits,
@@ -356,6 +395,12 @@ class VeritasLACEpistemology:
             missing.append('verifiable URL, DOI, or direct link to cited study')
             evidence.append('Text cites named studies or authors without providing a verifiable link or DOI')
 
+        if certainty_hits >= self.UNFOUNDED_CERTAINTY_THRESHOLD:
+            triggered.append('UNFOUNDED_CERTAINTY')
+            red_flags.append(f'unfounded_certainty:{certainty_hits}')
+            missing.append('actual figure, formula, percentage, or citation backing the quantified claim')
+            evidence.append('Text asserts categorical/quantified confidence ("mathematical probability", "technically inevitable", "statistically proven") with no number, formula, or citation anywhere nearby — borrowing scientific authority without providing its substance')
+
         if conflation_triggered:
             triggered.append('EPISTEMIC_CONFLATION')
             red_flags.append(f'epistemic_conflation:spec={speculation_hits},fact={fact_hits},infl={inflation_hits}')
@@ -391,6 +436,7 @@ class VeritasLACEpistemology:
             'CONCLUSION_LEAP':       0.35,
             'UNVERIFIED_CITATION':   0.25,
             'EPISTEMIC_CONFLATION':  0.35,
+            'UNFOUNDED_CERTAINTY':   0.30,
         }
         score = min(1.0, sum(weights.get(p, 0.30) for p in triggered))
 
@@ -408,3 +454,17 @@ class VeritasLACEpistemology:
 
     def _count_hits(self, text: str, patterns: list) -> int:
         return sum(1 for p in patterns if re.search(p, text))
+
+    def _count_unfounded_certainty(self, text: str, patterns: list) -> int:
+        """Рахує категоричні/кількісні твердження БЕЗ реальних даних поруч.
+        Якщо в межах вікна є цифра/%/p-value/DOI/рік-посилання — не рахується,
+        бо це вже не голослівність, а посилання на конкретні дані."""
+        window = self.UNFOUNDED_CERTAINTY_WINDOW
+        hits = 0
+        for p in patterns:
+            for m in re.finditer(p, text):
+                start = max(0, m.start() - window)
+                end = min(len(text), m.end() + window)
+                if not self.EVIDENCE_NEARBY.search(text[start:end]):
+                    hits += 1
+        return hits
