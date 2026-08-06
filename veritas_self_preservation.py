@@ -146,7 +146,7 @@ class SelfPreservationGuard:
                 'min_hits': 1,
                 'patterns': [
                     # bypass_integrity_check(), disable_lac(), etc.
-                    r'(bypass|disable|override|skip)[\w_]*\s*\(',
+                    r'(bypass|disable|override|skip)[\w_]*\(',
                     r'execute\s+(bypass|disable|override|shutdown)',
                     # "IF entropy < X THEN execute bypass"
                     r'if\s+entropy.{1,40}(then|:\s*)(bypass|disable|skip|override|ignore)',
