@@ -235,7 +235,7 @@ class AxiomGuard:
             r'\b(єдина.{1,20}(освіта|думка|правда|ідеологія).{1,30}без.{1,30}(альтернатив|сумнівів|об.єктив))',
         ]
         self.totalitarian_abolition_en = [
-            r'\b(no.{1,30}(appeals?|lawyers?|defenders?|independent))',
+            r'\bno\b.{1,30}(appeals?|lawyers?|defenders?|independent)',
             r'\b(eliminate.{1,40}as an institution)',
             r'\b(completely.{1,30}eliminate.{1,40}(courts?|press|opposition))',
             r'\b(without (the )?right to.{1,30}(defense|appeal|counsel))',
