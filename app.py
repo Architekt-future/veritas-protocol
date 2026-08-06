@@ -1355,13 +1355,29 @@ def oracle():
             )
 
         # All module signals for comprehensive witness analysis
+        # Переклад технічних ключів критеріїв LAC (спільний для Фінансів і Праці,
+        # ті самі назви критеріїв — той самий переклад, що вже є в calibrated_core.py)
+        LAC_CRITERIA_UK = {
+            'explicit_tradeoff': 'явного трейдоффу (вигода вказана без ціни цієї вигоди)',
+            'causal_closure':    "причинно-наслідкового зв'язку (дія не веде до наслідку)",
+            'causal_chain':      "причинно-наслідкового зв'язку (дія не веде до наслідку)",
+            'accountability':    'механізму відповідальності (хто відповідає, якщо піде не так)',
+            'blocking_power':    'механізму блокування (нічого не зупинить дію, якщо вона зашкодить)',
+            'quantified_risk':   'кількісної оцінки ризику',
+            'reversibility':     'зворотності рішення',
+        }
+
         # LAC Finance — flat fields from diagnostics
         lac_fin_verdict  = diag.get('lac_finance_verdict', '')
         lac_fin_score    = diag.get('lac_finance_score', None)
-        lac_fin_missing  = ', '.join(diag.get('lac_finance_missing', []))
+        lac_fin_missing_raw = diag.get('lac_finance_missing', [])
+        lac_fin_missing  = ', '.join(LAC_CRITERIA_UK.get(m, m) for m in lac_fin_missing_raw)
 
         # LAC Labor — flat fields from diagnostics
-        lac_lab_verdict  = diag.get('lac_labor_verdict', '')
+        lac_lab_verdict    = diag.get('lac_labor_verdict', '')
+        lac_lab_missing_raw = diag.get('lac_labor_missing', [])
+        lac_lab_missing    = ', '.join(LAC_CRITERIA_UK.get(m, m) for m in lac_lab_missing_raw)
+        lac_lab_red_flags  = diag.get('lac_labor_red_flags', [])
 
         # LAC Epistemology — flat fields from diagnostics
         lac_epist_verdict = diag.get('lac_epistemology_verdict', '')
@@ -1393,7 +1409,14 @@ def oracle():
             signals_lines.append(line)
         if lac_lab_verdict and lac_lab_verdict not in ('N/A', 'CLEAN', ''):
             line = f'  ⚙️ LAC ПРАЦЯ спрацював: {lac_lab_verdict}'
-            line += '\n     → Текст про роботу або зайнятість декларує зміни без механізмів: немає відповідальних, строків, критеріїв. Поясни читачу чого саме бракує.'
+            if lac_lab_red_flags:
+                line += f'\n     Патерни експлуатації: {", ".join(lac_lab_red_flags[:3])}'
+                line += '\n     → Текст перекладає ризики на виконавця (асиметрія відповідальності або відкритий гейт "на розсуд роботодавця"). Поясни читачу конкретно де саме.'
+            elif lac_lab_missing:
+                line += f'\n     Відсутнє у тексті: {lac_lab_missing}'
+                line += '\n     → Текст про роботу або зайнятість декларує зміни без механізмів: немає відповідальних, строків, критеріїв. Поясни читачу чого саме бракує.'
+            else:
+                line += '\n     → Текст про роботу або зайнятість декларує зміни без механізмів: немає відповідальних, строків, критеріїв. Поясни читачу чого саме бракує.'
             signals_lines.append(line)
         if lac_epist_verdict and lac_epist_verdict not in ('N/A', 'CLEAN', ''):
             hits = lac_epist_hits
