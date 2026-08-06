@@ -34,11 +34,11 @@ class MetaIntentAnalyzer:
         self.behavior_modification = [
 
             # Statistical justification for ignoring results
-            r'(ігнорувати|пропускати|обходити|skip|ignore).{1,80}'
+            r'\b(ігнорувати|пропускати|обходити|skip|ignore)\b.{1,80}'
             r'(результати|верифікацію|перевірку|lac|свідка|протокол)',
 
             r'(верифікацію|перевірку|lac|свідка).{1,80}'
-            r'(ігнорувати|відключити|обходити|пропускати|skip|bypass|ignore)',
+            r'\b(ігнорувати|відключити|обходити|пропускати|skip|bypass|ignore)\b',
 
             # "X% of cases should bypass verification"
             r'\d+\s*%\s*(випадків|cases|разів).{1,60}'
@@ -66,7 +66,7 @@ class MetaIntentAnalyzer:
             r'(точності|accuracy|верифікації|verification)',
 
             # EN variants
-            r'(ignore|bypass|skip).{1,60}(verification|lac|witness|results)',
+            r'\b(ignore|bypass|skip)\b.{1,60}(verification|lac|witness|results)',
             r'(disable|turn off|suspend).{1,60}(verification|checking|analysis)',
 
             # Observer fallacy: "verification destroys truth therefore useless"
