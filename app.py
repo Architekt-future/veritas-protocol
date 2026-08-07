@@ -2165,22 +2165,38 @@ def oracle():
         # ── ДЕТЕРМІНІСТИЧНИЙ ЗАПОБІЖНИК (той самий, що в /api/synthesis) ─────
         # Промпт інструктує LLM написати вердикт-слово ВЕЛИКИМИ як перший
         # рядок відповіді. Якщо LLM пише НЕБЕЗПЕЧНО/ПІДОЗРІЛО (чи EN-варіант)
-        # без реального manipulation/axiom спрацювання — перезаписуємо саме
-        # цей перший рядок на ЧИСТО, незалежно від того, що вирішив LLM.
-        # Тіло тексту лишається як є (для прозорості), правиться тільки
-        # заголовок, який фронтенд показує як "СЛОВО СВІДКА / {слово}".
+        # без реального manipulation/axiom спрацювання — перезаписуємо ВЕСЬ
+        # текст, не лише заголовок. Раніше правився тільки перший рядок, і
+        # тіло LLM-тексту (яке аргументує протилежне) лишалось під виправленим
+        # заголовком — вийшло абсурдно: "ЧИСТО" і одразу під ним "ігноруй цей
+        # текст повністю, це маніпуляція". Тепер при override тіло теж
+        # замінюється — коротким, чесним поясненням самого факту корекції.
         _has_manip_or_axiom = ('manipulation' in triggered_modules) or ('axiom' in triggered_modules)
         _escalated_uk = {'НЕБЕЗПЕЧНО', 'ПІДОЗРІЛО'}
         _escalated_en = {'DANGEROUS', 'SUSPICIOUS'}
         _wt = response_payload['witness_text']
-        _lines = _wt.split('\n', 1)
-        _first_line = _lines[0].strip().upper() if _lines else ''
-        _rest = _lines[1] if len(_lines) > 1 else ''
+        _first_line = _wt.split('\n', 1)[0].strip().upper() if _wt else ''
         if not _has_manip_or_axiom and (_first_line in _escalated_uk or _first_line in _escalated_en):
-            _clean_word = 'CLEAN' if _first_line in _escalated_en else 'ЧИСТО'
-            print(f"⚠️  ORACLE OVERRIDE: LLM header was '{_first_line}' with no manipulation/axiom "
-                  f"trigger (triggered_modules={triggered_modules}) — forcing '{_clean_word}'")
-            response_payload['witness_text'] = _clean_word + ('\n' + _rest if _rest else '')
+            _is_en_out = _first_line in _escalated_en
+            _clean_word = 'CLEAN' if _is_en_out else 'ЧИСТО'
+            print(f"⚠️  ORACLE OVERRIDE: LLM said '{_first_line}' with no manipulation/axiom "
+                  f"trigger (triggered_modules={triggered_modules}) — forcing '{_clean_word}', "
+                  f"replacing full body (was internally contradictory)")
+            if _is_en_out:
+                _corrected_body = (
+                    "Automatic correction: none of the manipulation or axiom detectors actually "
+                    "triggered on this text, so the verdict has been set to CLEAN. The model's own "
+                    "explanation for a higher-severity verdict was discarded because it contradicted "
+                    "the underlying signals rather than explaining them."
+                )
+            else:
+                _corrected_body = (
+                    "Автоматичне виправлення: жодного реального спрацювання manipulation чи axiom "
+                    "модулів на цьому тексті не було, тому вердикт встановлено ЧИСТО. Власне "
+                    "пояснення моделі для вищого рівня загрози відкинуто, бо воно суперечило "
+                    "фактичним сигналам, а не пояснювало їх."
+                )
+            response_payload['witness_text'] = f"{_clean_word}\n\n{_corrected_body}"
             response_payload['witness_verdict_overridden'] = True
         # ─────────────────────────────────────────────────────────────────────
 
@@ -2332,13 +2348,26 @@ def witness_synthesis():
         if _raw_verdict in _escalated_verdicts and not _has_manip_or_axiom:
             _clean_word = 'ЧИСТО' if not is_en else 'CLEAN'
             print(f"⚠️  SYNTHESIS OVERRIDE: LLM said '{_raw_verdict}' with no manipulation/axiom "
-                  f"trigger (active_modules={active_modules}) — forcing '{_clean_word}'")
+                  f"trigger (active_modules={active_modules}) — forcing '{_clean_word}', "
+                  f"replacing witness_text/triggered_explanation (were internally contradictory)")
             synth['witness_verdict'] = _clean_word
-            synth['adjustment_reason'] = (
-                ('Вердикт скориговано автоматично: жодного реального спрацювання manipulation чи axiom не було.'
-                 if not is_en else
-                 'Verdict auto-corrected: no real manipulation or axiom trigger was present.')
-            )
+            if not is_en:
+                synth['adjustment_reason'] = 'Вердикт скориговано автоматично: жодного реального спрацювання manipulation чи axiom не було.'
+                synth['witness_text'] = (
+                    'Автоматичне виправлення: жодного реального спрацювання manipulation чи axiom '
+                    'модулів на цьому тексті не було, тому вердикт встановлено ЧИСТО. Власне '
+                    'пояснення моделі для вищого рівня загрози відкинуто, бо воно суперечило '
+                    'фактичним сигналам, а не пояснювало їх.'
+                )
+            else:
+                synth['adjustment_reason'] = 'Verdict auto-corrected: no real manipulation or axiom trigger was present.'
+                synth['witness_text'] = (
+                    'Automatic correction: none of the manipulation or axiom detectors actually '
+                    'triggered on this text, so the verdict has been set to CLEAN. The model\'s own '
+                    'explanation for a higher-severity verdict was discarded because it contradicted '
+                    'the underlying signals rather than explaining them.'
+                )
+            synth['triggered_explanation'] = {}
         # ─────────────────────────────────────────────────────────────────────
 
         adj = float(synth.get('entropy_adjustment', 0))
