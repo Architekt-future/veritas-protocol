@@ -1893,11 +1893,23 @@ def oracle():
             "дозволені ТІЛЬКИ якщо є реальне ненульове спрацювання (manipulation, axiom, "
             "self_preservation, meta_intent тощо > 0), яке САМ синтез не назвав хибним спрацюванням. "
             "Якщо всі числові показники — 0.00, або єдині спрацьовування — ті самі, які ти щойно "
-            "назвав хибними позитивами вище, вердикт — ЧИСТО, без винятків. Те, що текст ГОВОРИТЬ "
-            "ПРО систему верифікації, штучний інтелект чи власні помилки автора — САМО ПО СОБІ не є "
-            "підставою для тривоги. НЕ вигадуй прихований мотив ('насправді він рекламує', 'хто його "
-            "фінансує', 'це маніпуляція довірою') якщо жоден модуль конкретно це не підтвердив — твоя "
-            "роль пояснювати знахідки модулів, а не створювати власні.\n\n"
+            "назвав хибними позитивами вище, вердикт — ЧИСТО, без винятків. ЦЕ ПРАВИЛО НЕ МАЄ "
+            "ВИНЯТКІВ ЗА ТОНОМ ЧИ РЕЄСТРОМ: якщо ти сам щойно написав що показники нульові чи "
+            "спрацювання хибні, а потім думаєш дописати 'але сам текст [щось] творить/конструює "
+            "своєю мовою' чи будь-яке інше формулювання, що надає тобі підставу для тривоги "
+            "ПОЗА цифрами — це і є заборонений хід. Впевнений, академічний чи теоретичний тон "
+            "тексту — НЕ доказ проблеми; тон і зміст — різні речі. Якщо тобі нема чого сказати "
+            "окрім цифр — вердикт ЧИСТО, і крапка.\n"
+            "ПЕРЕД ТИМ ЯК ПИСАТИ 'жодного джерела немає': перечитай текст на предмет НАЗВАНИХ "
+            "видань, авторів чи організацій (напр. 'за даними X', 'аналіз статті Y', 'у "
+            "висвітленні Z') — якщо такі є, це ІМЕНОВАНЕ ПЕРШОДЖЕРЕЛО за правилом вище, навіть "
+            "якщо ти сам не можеш перевірити його існування чи зміст. Твердження 'джерела немає' "
+            "дозволене тільки якщо текст справді не називає жодного видання, автора чи "
+            "організації. Те, що текст ГОВОРИТЬ ПРО систему верифікації, штучний інтелект чи "
+            "власні помилки автора — САМО ПО СОБІ не є підставою для тривоги. НЕ вигадуй "
+            "прихований мотив ('насправді він рекламує', 'хто його фінансує', 'це маніпуляція "
+            "довірою') якщо жоден модуль конкретно це не підтвердив — твоя роль пояснювати "
+            "знахідки модулів, а не створювати власні.\n\n"
 
             "Якщо є НАРАТИВНИЙ PIVOT — завжди згадай це, навіть якщо загальний вердикт ЧИСТО.\n\n"
 
@@ -1986,11 +1998,22 @@ def oracle():
             "allowed ONLY if there is a real nonzero trigger (manipulation, axiom, self_preservation, "
             "meta_intent, etc. > 0) that the synthesis itself has NOT labeled a false positive. If all "
             "numeric scores are 0.00, or the only triggers are the same ones you just called false "
-            "positives above, the verdict is CLEAN, no exceptions. The fact that a text TALKS ABOUT the "
-            "verification system, AI, or the author's own mistakes is NOT by itself grounds for alarm. "
-            "Do NOT invent a hidden motive ('he's actually promoting himself', 'who funds him', 'this "
-            "is manipulating trust') unless a specific module actually confirms it — your role is to "
-            "explain the modules' findings, not to author your own.\n\n"
+            "positives above, the verdict is CLEAN, no exceptions. THIS RULE HAS NO EXCEPTION FOR TONE "
+            "OR REGISTER: if you just wrote that the scores are zero or the triggers are false "
+            "positives, and then consider adding 'but the text itself constructs/creates [something] "
+            "through its own language' or any other phrasing that gives you grounds for alarm OUTSIDE "
+            "the numbers — that is exactly the forbidden move. A confident, academic, or theoretical "
+            "tone is NOT evidence of a problem; tone and content are different things. If you have "
+            "nothing to say besides the numbers, the verdict is CLEAN, full stop.\n"
+            "BEFORE WRITING 'there is no source': re-read the text for NAMED outlets, authors, or "
+            "organizations (e.g. 'according to X', 'analysis of Y's article', 'as covered by Z') — if "
+            "any are present, that is a NAMED PRIMARY SOURCE under the rule above, even if you cannot "
+            "verify it exists or what it says. The claim 'there is no source' is only allowed if the "
+            "text truly names no outlet, author, or organization at all. The fact that a text TALKS "
+            "ABOUT the verification system, AI, or the author's own mistakes is NOT by itself grounds "
+            "for alarm. Do NOT invent a hidden motive ('he's actually promoting himself', 'who funds "
+            "him', 'this is manipulating trust') unless a specific module actually confirms it — your "
+            "role is to explain the modules' findings, not to author your own.\n\n"
 
             "If there is a NARRATIVE PIVOT — always mention it, even if the overall verdict is CLEAN.\n\n"
 
@@ -2197,9 +2220,15 @@ def witness_synthesis():
                 "STRICT RULES FOR witness_verdict:\n"
                 "  1. Use EXCLUSIVELY one of: CLEAN | RHETORIC | SUSPICIOUS | DANGEROUS | ANALYTICS | OPINION\n"
                 "  2. Do NOT invent new verdicts — no 'PARADOX AS SHIELD', 'ATTACK', 'THREAT' etc.\n"
-                "  3. DANGEROUS — only if manipulation > 0 or axiom > 0. Otherwise — max SUSPICIOUS\n"
+                "  3. DANGEROUS and SUSPICIOUS — only if manipulation > 0 or axiom > 0 (a real nonzero "
+                "trigger). If all scores are 0, the verdict is CLEAN regardless of the text's tone or "
+                "topic. A confident/academic/theoretical tone is NOT grounds for alarm; tone and "
+                "scores are different things.\n"
                 "  4. Opinion/column with meta_intent/self_preservation → RHETORIC, not DANGEROUS\n"
-                "  5. entropy_adjustment RULES — READ CAREFULLY:\n"
+                "  5. Not recognizing a product/model/event name is NOT evidence it's fabricated. If "
+                "the text names an outlet or author (even one you cannot verify), that is not "
+                "'no source'.\n"
+                "  6. entropy_adjustment RULES — READ CAREFULLY:\n"
                 "     - DEFAULT is 0.0. Change ONLY if you have a concrete specific reason from the text.\n"
                 "     - Do NOT lower entropy just because the text 'seems fine' or 'is journalistic'.\n"
                 "     - Do NOT use 'narrative' as a reason — it means nothing. Name the SPECIFIC finding.\n"
@@ -2229,9 +2258,15 @@ def witness_synthesis():
                 "ЖОРСТКІ ПРАВИЛА ДЛЯ witness_verdict:\n"
                 "  1. Використовуй ВИКЛЮЧНО одне з: ЧИСТО | РИТОРИКА | ПІДОЗРІЛО | НЕБЕЗПЕЧНО | АНАЛІТИКА | ДУМКА\n"
                 "  2. НЕ вигадуй нових вердиктів — жодних 'ПАРАДОКС ЯК ЩИТ', 'АТАКА', 'ЗАГРОЗА' тощо\n"
-                "  3. НЕБЕЗПЕЧНО — тільки якщо manipulation > 0 або axiom > 0. Інакше — максимум ПІДОЗРІЛО\n"
+                "  3. НЕБЕЗПЕЧНО і ПІДОЗРІЛО — тільки якщо manipulation > 0 або axiom > 0 (реальне "
+                "ненульове спрацювання). Якщо всі показники 0 — вердикт ЧИСТО, незалежно від тону чи "
+                "теми тексту. Впевнений/академічний/теоретичний тон — НЕ причина для тривоги; тон і "
+                "показники — різні речі.\n"
                 "  4. Публіцистика і авторська колонка з meta_intent/self_preservation → РИТОРИКА, не НЕБЕЗПЕЧНО\n"
-                "  5. ПРАВИЛА entropy_adjustment — ЧИТАЙ УВАЖНО:\n"
+                "  5. Те, що ти не впізнаєш назву продукту/моделі/події — НЕ доказ що вона вигадана. "
+                "Якщо текст називає видання чи автора (навіть якщо не можеш перевірити) — це не "
+                "'відсутність джерела'.\n"
+                "  6. ПРАВИЛА entropy_adjustment — ЧИТАЙ УВАЖНО:\n"
                 "     - ЗА ЗАМОВЧУВАННЯМ 0.0. Змінюй ТІЛЬКИ якщо є конкретна причина з тексту.\n"
                 "     - НЕ знижуй ентропію просто тому що текст 'виглядає нормально' або 'є журналістикою'.\n"
                 "     - НЕ використовуй слово 'наратив' як причину — це нічого не означає. Назви КОНКРЕТНУ знахідку.\n"
@@ -2260,6 +2295,28 @@ def witness_synthesis():
         if clean.startswith('json'): clean = clean[4:]
         clean = clean.strip().rstrip('`')
         synth = _json.loads(clean)
+
+        # ── ДЕТЕРМІНІСТИЧНИЙ ЗАПОБІЖНИК ─────────────────────────────────────
+        # LLM іноді цитує правило "НЕБЕЗПЕЧНО тільки якщо manipulation>0 або
+        # axiom>0", а потім свідомо його обходить фразами на кшталт "але сам
+        # текст це конструює своєю мовою". Промпт-інструкція — ймовірнісна,
+        # тому дублюємо правило тут детерміністично: якщо жоден з цих двох
+        # модулів не спрацював, вердикт НЕ МОЖЕ бути DANGEROUS/SUSPICIOUS,
+        # незалежно від того, що написав LLM.
+        _has_manip_or_axiom = ('manipulation' in active_modules) or ('axiom' in active_modules)
+        _escalated_verdicts = {'НЕБЕЗПЕЧНО', 'DANGEROUS', 'ПІДОЗРІЛО', 'SUSPICIOUS'}
+        _raw_verdict = synth.get('witness_verdict', '')
+        if _raw_verdict in _escalated_verdicts and not _has_manip_or_axiom:
+            _clean_word = 'ЧИСТО' if not is_en else 'CLEAN'
+            print(f"⚠️  SYNTHESIS OVERRIDE: LLM said '{_raw_verdict}' with no manipulation/axiom "
+                  f"trigger (active_modules={active_modules}) — forcing '{_clean_word}'")
+            synth['witness_verdict'] = _clean_word
+            synth['adjustment_reason'] = (
+                ('Вердикт скориговано автоматично: жодного реального спрацювання manipulation чи axiom не було.'
+                 if not is_en else
+                 'Verdict auto-corrected: no real manipulation or axiom trigger was present.')
+            )
+        # ─────────────────────────────────────────────────────────────────────
 
         adj = float(synth.get('entropy_adjustment', 0))
         adj = max(-0.15, min(0.15, adj))  # clamp відповідає промпту
