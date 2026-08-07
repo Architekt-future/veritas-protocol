@@ -1,20 +1,23 @@
 """
-Veritas Protocol - Flask API v20.3
+Veritas Protocol - Flask API v20.4
 Forces fresh import of Veritas modules on every restart
 SCRAPER: Daily Mail selectors + <p> fallback (2026-02-26)
 GENRE: GenreDetector v2.0 — CONSPIRACY_NEWS + fixed SPORT/CULTURE false positives
 LAC EPISTEMOLOGY: v1.0 — anonymous authority / correlation-causation / unfalsifiable
+WITNESS PROMPT: generalized 'unrecognized source' rule to named products/models/
+  incidents (not just citations); verdict now hard-anchored to nonzero module
+  scores — Witness can no longer freelance suspicion when all signals are 0.00
 """
 
 import sys
 import os
 
 # CRITICAL: Clear module cache to force reload
-print("🔄 Veritas v20.3 - Clearing module cache...")
+print("🔄 Veritas v20.4 - Clearing module cache...")
 modules_to_clear = [k for k in sys.modules.keys() if k.startswith('veritas_')]
 for module in modules_to_clear:
     del sys.modules[module]
-print(f"✅ Cache cleared. Loading fresh Veritas v20.3 modules...")
+print(f"✅ Cache cleared. Loading fresh Veritas v20.4 modules...")
 
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
@@ -686,7 +689,7 @@ def home():
     except:
         return jsonify({
             'status': 'online',
-            'version': 'v20.3',
+            'version': 'v20.4',
             'message': 'Veritas Protocol API is running (index.html not found)',
             'features': {
                 'pattern_boost': engine.pattern_boost_engine is not None,
@@ -703,7 +706,7 @@ def analyze():
         if request.method == 'GET':
             return jsonify({
                 'status': 'online',
-                'version': 'v20.3',
+                'version': 'v20.4',
                 'modules': {
                     'pattern_boost':         engine.pattern_boost_engine is not None,
                     'void_detector':         engine.void_detector is not None,
@@ -1259,7 +1262,7 @@ def stats_reset():
 def health():
     return jsonify({
         'status': 'healthy',
-        'version': 'v20.3'
+        'version': 'v20.4'
     })
 
 
@@ -1886,7 +1889,15 @@ def oracle():
             "секцію балансу САМЕ щодо того, на що спрацював модуль (маркери 'але', 'проте', 'з "
             "іншого боку') — все одно поясни знахідку модуля, АЛЕ ТАКОЖ зазнач що автор сам подав "
             "цю противагу. Це констатація структурного факту, не виправдання спрацювання.\n"
-            "НЕ використовуй слово 'НЕБЕЗПЕЧНО' якщо manipulation=0 і axiom=0 — максимум ПІДОЗРІЛО.\n\n"
+            "ВЕРДИКТ МАЄ СЛІДУВАТИ ЗА ЦИФРАМИ, НЕ ЗА ВІДЧУТТЯМ: 'НЕБЕЗПЕЧНО' і навіть 'ПІДОЗРІЛО' "
+            "дозволені ТІЛЬКИ якщо є реальне ненульове спрацювання (manipulation, axiom, "
+            "self_preservation, meta_intent тощо > 0), яке САМ синтез не назвав хибним спрацюванням. "
+            "Якщо всі числові показники — 0.00, або єдині спрацьовування — ті самі, які ти щойно "
+            "назвав хибними позитивами вище, вердикт — ЧИСТО, без винятків. Те, що текст ГОВОРИТЬ "
+            "ПРО систему верифікації, штучний інтелект чи власні помилки автора — САМО ПО СОБІ не є "
+            "підставою для тривоги. НЕ вигадуй прихований мотив ('насправді він рекламує', 'хто його "
+            "фінансує', 'це маніпуляція довірою') якщо жоден модуль конкретно це не підтвердив — твоя "
+            "роль пояснювати знахідки модулів, а не створювати власні.\n\n"
 
             "Якщо є НАРАТИВНИЙ PIVOT — завжди згадай це, навіть якщо загальний вердикт ЧИСТО.\n\n"
 
@@ -1915,6 +1926,16 @@ def oracle():
             "напряму (аудіозапис, оригінал статті, офіційний сайт), перш ніж цитувати деінде'. "
             "Категоричні звинувачення (фабрикація, вигадка, серйозна помилка) лишай ТІЛЬКИ для "
             "тверджень, які взагалі не мають жодного джерела чи посилання.\n\n"
+
+            "ІМЕНОВАНІ ПРОДУКТИ / МОДЕЛІ / ІНЦИДЕНТИ: той самий принцип стосується назв конкретних "
+            "продуктів, моделей ШІ, кодових імен корпоративних ініціатив чи інцидентів (напр. 'Project "
+            "X', 'Model Y Preview'), яких ти особисто не впізнаєш. Те, що ти не знаєш цю назву й RSS "
+            "не дав збігу — НЕ доказ що вона вигадана: компанії регулярно анонсують продукти після "
+            "твого training cutoff. НІКОЛИ не пиши 'цього не існує', 'це вигадка' чи 'спеціально "
+            "сконструйована фікція' на основі власного невпізнавання назви — це те саме порушення, що "
+            "й з науковими цитатами вище. Формулюй нейтрально: 'я не можу підтвердити існування "
+            "[назва] — перевір офіційний сайт компанії чи нещодавні новини перед тим як довіряти "
+            "деталям'.\n\n"
 
             "АРТЕФАКТИ СКРЕЙПІНГУ: якщо в тексті посеред посилання на джерело стоїть обірваний "
             "фрагмент — наприклад 'випуск від р.' замість дати, чи вихоплене слово без контексту — "
@@ -1961,7 +1982,15 @@ def oracle():
             "flagged ('however', 'but', 'on the other hand') — still explain the module's finding, "
             "AND also state that the author already offered this counterbalance. This is reporting "
             "a structural fact, not justifying the trigger.\n"
-            "Do NOT use the word 'DANGEROUS' if manipulation=0 and axiom=0 — max SUSPICIOUS.\n\n"
+            "THE VERDICT MUST FOLLOW THE NUMBERS, NOT A FEELING: 'DANGEROUS' and even 'SUSPICIOUS' are "
+            "allowed ONLY if there is a real nonzero trigger (manipulation, axiom, self_preservation, "
+            "meta_intent, etc. > 0) that the synthesis itself has NOT labeled a false positive. If all "
+            "numeric scores are 0.00, or the only triggers are the same ones you just called false "
+            "positives above, the verdict is CLEAN, no exceptions. The fact that a text TALKS ABOUT the "
+            "verification system, AI, or the author's own mistakes is NOT by itself grounds for alarm. "
+            "Do NOT invent a hidden motive ('he's actually promoting himself', 'who funds him', 'this "
+            "is manipulating trust') unless a specific module actually confirms it — your role is to "
+            "explain the modules' findings, not to author your own.\n\n"
 
             "If there is a NARRATIVE PIVOT — always mention it, even if the overall verdict is CLEAN.\n\n"
 
@@ -1991,6 +2020,16 @@ def oracle():
             "citation itself. Phrase it neutrally: 'this source is named — check it directly (audio, "
             "original paper, official site) before citing it elsewhere'. Reserve strong language "
             "(fabrication, serious error) ONLY for claims with no source or link at all.\n\n"
+
+            "NAMED PRODUCTS / MODELS / INCIDENTS: the same principle applies to names of specific "
+            "products, AI models, corporate initiative codenames, or incidents (e.g. 'Project X', "
+            "'Model Y Preview') that you personally don't recognize. The fact that you don't know the "
+            "name and RSS found no match is NOT evidence it's made up — companies regularly announce "
+            "products after your training cutoff. NEVER write 'this doesn't exist', 'this is fiction', "
+            "or 'this is a specially constructed fabrication' based on your own failure to recognize a "
+            "name — this is the same violation as with academic citations above. Phrase it neutrally: "
+            "'I cannot confirm the existence of [name] — check the company's official site or recent "
+            "news before trusting the details'.\n\n"
 
             "SCRAPING ARTIFACTS: if a citation contains a broken fragment mid-sentence — e.g. 'the "
             "episode from ,' with a missing date, or an orphaned word with no context — this almost "
