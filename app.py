@@ -2161,6 +2161,29 @@ def oracle():
             'triggered_count':     triggered_count,
             'entropy_multiplier':  round(entropy_multiplier, 3),
         }
+
+        # ── ДЕТЕРМІНІСТИЧНИЙ ЗАПОБІЖНИК (той самий, що в /api/synthesis) ─────
+        # Промпт інструктує LLM написати вердикт-слово ВЕЛИКИМИ як перший
+        # рядок відповіді. Якщо LLM пише НЕБЕЗПЕЧНО/ПІДОЗРІЛО (чи EN-варіант)
+        # без реального manipulation/axiom спрацювання — перезаписуємо саме
+        # цей перший рядок на ЧИСТО, незалежно від того, що вирішив LLM.
+        # Тіло тексту лишається як є (для прозорості), правиться тільки
+        # заголовок, який фронтенд показує як "СЛОВО СВІДКА / {слово}".
+        _has_manip_or_axiom = ('manipulation' in triggered_modules) or ('axiom' in triggered_modules)
+        _escalated_uk = {'НЕБЕЗПЕЧНО', 'ПІДОЗРІЛО'}
+        _escalated_en = {'DANGEROUS', 'SUSPICIOUS'}
+        _wt = response_payload['witness_text']
+        _lines = _wt.split('\n', 1)
+        _first_line = _lines[0].strip().upper() if _lines else ''
+        _rest = _lines[1] if len(_lines) > 1 else ''
+        if not _has_manip_or_axiom and (_first_line in _escalated_uk or _first_line in _escalated_en):
+            _clean_word = 'CLEAN' if _first_line in _escalated_en else 'ЧИСТО'
+            print(f"⚠️  ORACLE OVERRIDE: LLM header was '{_first_line}' with no manipulation/axiom "
+                  f"trigger (triggered_modules={triggered_modules}) — forcing '{_clean_word}'")
+            response_payload['witness_text'] = _clean_word + ('\n' + _rest if _rest else '')
+            response_payload['witness_verdict_overridden'] = True
+        # ─────────────────────────────────────────────────────────────────────
+
         if _debug_rss:
             # Показуємо лише коли DEBUG_RSS=1 — не для кінцевого користувача UI.
             response_payload['rss_debug'] = [
