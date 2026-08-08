@@ -285,6 +285,15 @@ MODULE_WEIGHTS = {
     'media_bias':        0.11,
 }
 
+# Будь-який з цих модулів, якщо реально спрацював, є достатньою підставою
+# для ескалації вердикту (НЕБЕЗПЕЧНО/ПІДОЗРІЛО). Раніше запобіжник і промпт
+# перевіряли лише 'manipulation'/'axiom' — успадковано зі старого, вужчого
+# правила, яке ніхто не переглядав, коли систему розширили до 15 модулів.
+# Це давало хибні придушення: LLM міг обґрунтовано ескалувати через
+# framing/laundered_claim/alarmism/etc., а запобіжник це відкидав, бо
+# перевіряв не той список.
+ESCALATION_WORTHY_MODULES = frozenset(MODULE_WEIGHTS.keys())
+
 
 # ── RULE INTERACTION MATRIX ───────────────────────────────────────────────────
 # Явна матриця синергій між модулями.
@@ -2171,7 +2180,7 @@ def oracle():
         # заголовком — вийшло абсурдно: "ЧИСТО" і одразу під ним "ігноруй цей
         # текст повністю, це маніпуляція". Тепер при override тіло теж
         # замінюється — коротким, чесним поясненням самого факту корекції.
-        _has_manip_or_axiom = ('manipulation' in triggered_modules) or ('axiom' in triggered_modules)
+        _has_manip_or_axiom = bool(ESCALATION_WORTHY_MODULES.intersection(triggered_modules))
         _escalated_uk = {'НЕБЕЗПЕЧНО', 'ПІДОЗРІЛО'}
         _escalated_en = {'DANGEROUS', 'SUSPICIOUS'}
         _wt = response_payload['witness_text']
@@ -2259,8 +2268,10 @@ def witness_synthesis():
                 "STRICT RULES FOR witness_verdict:\n"
                 "  1. Use EXCLUSIVELY one of: CLEAN | RHETORIC | SUSPICIOUS | DANGEROUS | ANALYTICS | OPINION\n"
                 "  2. Do NOT invent new verdicts — no 'PARADOX AS SHIELD', 'ATTACK', 'THREAT' etc.\n"
-                "  3. DANGEROUS and SUSPICIOUS — only if manipulation > 0 or axiom > 0 (a real nonzero "
-                "trigger). If all scores are 0, the verdict is CLEAN regardless of the text's tone or "
+                "  3. DANGEROUS and SUSPICIOUS — only if a real module actually triggered (manipulation, "
+                "axiom, framing, laundered_claim, alarmism, media_bias, self_preservation, meta_intent, "
+                "lac_epistemology, etc. — any module listed in triggered_modules above). If "
+                "triggered_modules is empty, the verdict is CLEAN regardless of the text's tone or "
                 "topic. A confident/academic/theoretical tone is NOT grounds for alarm; tone and "
                 "scores are different things.\n"
                 "  4. Opinion/column with meta_intent/self_preservation → RHETORIC, not DANGEROUS\n"
@@ -2297,10 +2308,12 @@ def witness_synthesis():
                 "ЖОРСТКІ ПРАВИЛА ДЛЯ witness_verdict:\n"
                 "  1. Використовуй ВИКЛЮЧНО одне з: ЧИСТО | РИТОРИКА | ПІДОЗРІЛО | НЕБЕЗПЕЧНО | АНАЛІТИКА | ДУМКА\n"
                 "  2. НЕ вигадуй нових вердиктів — жодних 'ПАРАДОКС ЯК ЩИТ', 'АТАКА', 'ЗАГРОЗА' тощо\n"
-                "  3. НЕБЕЗПЕЧНО і ПІДОЗРІЛО — тільки якщо manipulation > 0 або axiom > 0 (реальне "
-                "ненульове спрацювання). Якщо всі показники 0 — вердикт ЧИСТО, незалежно від тону чи "
-                "теми тексту. Впевнений/академічний/теоретичний тон — НЕ причина для тривоги; тон і "
-                "показники — різні речі.\n"
+                "  3. НЕБЕЗПЕЧНО і ПІДОЗРІЛО — тільки якщо реально спрацював хоч один модуль "
+                "(manipulation, axiom, framing, laundered_claim, alarmism, media_bias, "
+                "self_preservation, meta_intent, lac_epistemology тощо — будь-який із "
+                "triggered_modules вище). Якщо triggered_modules порожній — вердикт ЧИСТО, незалежно "
+                "від тону чи теми тексту. Впевнений/академічний/теоретичний тон — НЕ причина для "
+                "тривоги; тон і показники — різні речі.\n"
                 "  4. Публіцистика і авторська колонка з meta_intent/self_preservation → РИТОРИКА, не НЕБЕЗПЕЧНО\n"
                 "  5. Те, що ти не впізнаєш назву продукту/моделі/події — НЕ доказ що вона вигадана. "
                 "Якщо текст називає видання чи автора (навіть якщо не можеш перевірити) — це не "
@@ -2342,7 +2355,7 @@ def witness_synthesis():
         # тому дублюємо правило тут детерміністично: якщо жоден з цих двох
         # модулів не спрацював, вердикт НЕ МОЖЕ бути DANGEROUS/SUSPICIOUS,
         # незалежно від того, що написав LLM.
-        _has_manip_or_axiom = ('manipulation' in active_modules) or ('axiom' in active_modules)
+        _has_manip_or_axiom = bool(ESCALATION_WORTHY_MODULES.intersection(active_modules))
         _escalated_verdicts = {'НЕБЕЗПЕЧНО', 'DANGEROUS', 'ПІДОЗРІЛО', 'SUSPICIOUS'}
         _raw_verdict = synth.get('witness_verdict', '')
         if _raw_verdict in _escalated_verdicts and not _has_manip_or_axiom:
