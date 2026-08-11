@@ -636,6 +636,17 @@
             </div>
         </div>
 
+        <!-- SOURCE CONTEXT (advisory) -->
+        <div class="panel lac-panel" id="sourceContextPanel" style="display:none; border-color:#aa8844;">
+            <div class="panel-title" style="color:#ddaa55; font-size:0.82em;">ℹ️ <span id="i18n-source_context_title">КОНТЕКСТ ДЖЕРЕЛА</span></div>
+            <div class="lac-inner">
+                <div id="sourceContextNote" style="font-size:0.78em; color:#ccaa77; margin:4px 0; font-style:italic;"></div>
+                <div style="margin-top:8px; font-size:0.7em; color:#556; font-style:italic;" data-i18n="advisory_note">
+                    👁 Свідок фіксує — не судить. Це порада, не вирок.
+                </div>
+            </div>
+        </div>
+
         <!-- CERTAINTY FACTOR (v16.5) -->
         <div class="panel lac-panel" id="certaintyPanel" style="display:none; border-color:#446688;">
             <div class="panel-title" style="color:#88aacc; font-size:0.82em;">📏 <span data-i18n="certainty_title">ОБСЯГ ТЕКСТУ</span></div>
@@ -979,6 +990,8 @@ const STRINGS = {
         completeness_verdict_label: 'Вердикт',
         missing_dims: '⚠️ Відсутні виміри:',
         advisory_note: '👁 Свідок фіксує — не судить. Це порада, не вирок.',
+        // Source context panel
+        source_context_title: 'КОНТЕКСТ ДЖЕРЕЛА',
         verdict_label_fin: 'Вердикт:',
         verdict_label_lab: 'Вердикт:',
         missing_criteria_lab: 'Відсутні критерії:',
@@ -1093,6 +1106,8 @@ const STRINGS = {
         completeness_verdict_label: 'Verdict',
         missing_dims: '⚠️ Missing dimensions:',
         advisory_note: '👁 The Witness observes — does not judge. Advisory only.',
+        // Source context panel
+        source_context_title: 'SOURCE CONTEXT',
         verdict_label_fin: 'Verdict:',
         verdict_label_lab: 'Verdict:',
         missing_criteria_lab: 'Missing Criteria:',
@@ -1483,6 +1498,19 @@ function translateCompleteness(cc) {
             hint:      COMPLETENESS_HINT_EN[m.hint]      || m.hint,
         }));
     }
+    return out;
+}
+
+// Нотатка source_context будується на бекенді динамічно (з іменами джерел),
+// тому, на відміну від completeness, тут немає фіксованого словника —
+// EN-варіант перебудовується на льоту з тих самих sources.
+function translateSourceContext(sc) {
+    if (!sc || currentLang === 'uk' || !sc.has_conflict_source) return sc;
+    const out = Object.assign({}, sc);
+    const names = (sc.sources || []).slice(0, 3).join(', ');
+    out.note = `The text cites a party to an active conflict (${names}). Attribution is accurate ` +
+               `and no manipulation was detected — but keep this in mind while reading: verify this ` +
+               `party's claims through independent sources.`;
     return out;
 }
 
@@ -2284,6 +2312,14 @@ function renderResults(data) {
         completenessPanel.style.display = 'block';
     } else { completenessPanel.style.display = 'none'; }
 
+    // Source context (advisory layer) — independent of manipulation score
+    const sourceContextPanel = document.getElementById('sourceContextPanel');
+    const sc = translateSourceContext(data.source_context);
+    if (sc && sc.has_conflict_source) {
+        document.getElementById('sourceContextNote').textContent = sc.note || '';
+        sourceContextPanel.style.display = 'block';
+    } else { sourceContextPanel.style.display = 'none'; }
+
     // Meta-intent analyzer
     const metaIntentPanel = document.getElementById('metaIntentPanel');
     const mi = data.meta_intent;
@@ -2585,6 +2621,8 @@ function setLoading(on) {
         document.getElementById('lacFinancePanel').style.display = 'none';
         document.getElementById('lacLaborPanel').style.display = 'none';
         document.getElementById('completenessPanel').style.display = 'none';
+        const scPan = document.getElementById('sourceContextPanel');
+        if (scPan) scPan.style.display = 'none';
         document.getElementById('metaIntentPanel').style.display = 'none';
         document.getElementById('certaintyPanel').style.display = 'none';
         document.getElementById('performativePanel').style.display = 'none';
