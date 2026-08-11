@@ -31,6 +31,11 @@ class LaunderedClaimResult:
     signals: List[str] = field(default_factory=list)
     explanation: str = ''
     is_flagged: bool = False
+    # Незалежно від фінального score/verdict: чи є в тексті сторона активного
+    # конфлікту серед цитованих джерел. Це не ознака маніпуляції сама по собі
+    # (атрибуція може бути бездоганною) — а окремий, нейтральний контекстний
+    # факт, вартий показу читачеві незалежно від manipulation-скору.
+    conflict_sources: List[str] = field(default_factory=list)
 
 
 class LaunderedClaimDetector:
@@ -258,4 +263,5 @@ class LaunderedClaimDetector:
         result.verdict    = verdict
         result.signals    = signals
         result.explanation = explanation
+        result.conflict_sources = found_sources
         return result
