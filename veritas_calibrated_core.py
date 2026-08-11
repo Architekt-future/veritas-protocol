@@ -1011,6 +1011,7 @@ class VeritasCalibratedCore:
         laundered_result = {
             'score': 0.0, 'verdict': 'CLEAN',
             'signals': [], 'explanation': '', 'is_flagged': False,
+            'conflict_sources': [],
         }
         if getattr(self, 'laundered_claim_detector', None):
             _lc = self.laundered_claim_detector.analyze(text)
@@ -1020,6 +1021,33 @@ class VeritasCalibratedCore:
                 'signals':     _lc.signals,
                 'explanation': _lc.explanation,
                 'is_flagged':  _lc.is_flagged,
+                'conflict_sources': _lc.conflict_sources,
+            }
+
+        # PHASE: SOURCE CONTEXT BADGE (advisory only, never affects score/verdict)
+        # Незалежно від того, чи спрацював laundered_claim (атрибуція може бути
+        # бездоганною), сам факт "джерело — сторона активного конфлікту" —
+        # окремий, нейтральний контекстний сигнал. Раніше він губився, коли
+        # manipulation-скор падав нижче порогу видимості — читач втрачав
+        # інформацію "хто говорить", хоча текст сам по собі був чесним.
+        _conflict_srcs = laundered_result.get('conflict_sources', [])
+        if _conflict_srcs:
+            source_context_result = {
+                'has_conflict_source': True,
+                'sources': _conflict_srcs,
+                'note': (
+                    f"Текст цитує сторону активного конфлікту ({', '.join(_conflict_srcs[:3])}). "
+                    "Атрибуція коректна, ознак маніпуляції не виявлено — але зважай на це під час "
+                    "читання: перевіряй твердження цієї сторони через незалежні джерела."
+                ),
+                'is_advisory_only': True,
+            }
+        else:
+            source_context_result = {
+                'has_conflict_source': False,
+                'sources': [],
+                'note': '',
+                'is_advisory_only': True,
             }
 
         # ---- PHASE: NARRATIVE PIVOT DETECTOR ----
@@ -1828,6 +1856,8 @@ class VeritasCalibratedCore:
                 'missing_dimensions': completeness_result['missing_dimensions'],
                 'is_advisory_only': True,
             },
+            # SOURCE CONTEXT LAYER — never affects verdict or entropy
+            'source_context': source_context_result,
             # META-INTENT LAYER
             'meta_intent': {
                 'score':       round(meta_intent_result['meta_score'], 3),
