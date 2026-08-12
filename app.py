@@ -1,5 +1,5 @@
 """
-Veritas Protocol - Flask API v20.4
+Veritas Protocol - Flask API v20.5
 Forces fresh import of Veritas modules on every restart
 SCRAPER: Daily Mail selectors + <p> fallback (2026-02-26)
 GENRE: GenreDetector v2.0 — CONSPIRACY_NEWS + fixed SPORT/CULTURE false positives
@@ -7,17 +7,22 @@ LAC EPISTEMOLOGY: v1.0 — anonymous authority / correlation-causation / unfalsi
 WITNESS PROMPT: generalized 'unrecognized source' rule to named products/models/
   incidents (not just citations); verdict now hard-anchored to nonzero module
   scores — Witness can no longer freelance suspicion when all signals are 0.00
+SOURCE CONTEXT: new advisory-only badge decoupled from manipulation score —
+  "is the text manipulative" and "is the quoted source a conflict party" are
+  now two independent signals instead of one blended score. Escalation
+  override widened from 2 to all 15 real modules (was silently discarding
+  legitimate framing/laundered_claim/etc. escalations).
 """
 
 import sys
 import os
 
 # CRITICAL: Clear module cache to force reload
-print("🔄 Veritas v20.4 - Clearing module cache...")
+print("🔄 Veritas v20.5 - Clearing module cache...")
 modules_to_clear = [k for k in sys.modules.keys() if k.startswith('veritas_')]
 for module in modules_to_clear:
     del sys.modules[module]
-print(f"✅ Cache cleared. Loading fresh Veritas v20.4 modules...")
+print(f"✅ Cache cleared. Loading fresh Veritas v20.5 modules...")
 
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
@@ -698,7 +703,7 @@ def home():
     except:
         return jsonify({
             'status': 'online',
-            'version': 'v20.4',
+            'version': 'v20.5',
             'message': 'Veritas Protocol API is running (index.html not found)',
             'features': {
                 'pattern_boost': engine.pattern_boost_engine is not None,
@@ -715,7 +720,7 @@ def analyze():
         if request.method == 'GET':
             return jsonify({
                 'status': 'online',
-                'version': 'v20.4',
+                'version': 'v20.5',
                 'modules': {
                     'pattern_boost':         engine.pattern_boost_engine is not None,
                     'void_detector':         engine.void_detector is not None,
@@ -1271,7 +1276,7 @@ def stats_reset():
 def health():
     return jsonify({
         'status': 'healthy',
-        'version': 'v20.4'
+        'version': 'v20.5'
     })
 
 
