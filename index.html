@@ -1705,14 +1705,16 @@ async function callWitnessSynthesis(data) {
         const isUk = currentLang === 'uk';
         const lang = isUk ? 'UK' : 'EN';
 
-        // Збираємо активні модулі
-        const activeMods = [];
-        if (data.media_bias_flagged) activeMods.push('MEDIA_BIAS(' + (data.media_bias_verdict||'?') + ')');
-        if (data.alarmism_flagged) activeMods.push('ALARMISM(' + (data.alarmism_verdict||'?') + ')');
-        if (data.ard_is_flagged) activeMods.push('ARD(' + (data.ard_verdict||'?') + ')');
-        if ((data.framing_risk||0) > 0.3) activeMods.push('FRAMING(' + (data.framing_type||'?') + ')');
-        if ((diag.lac_finance_score||0) > 0.3) activeMods.push('LAC_FINANCE');
-        if ((diag.lac_labor_score||0) > 0.3) activeMods.push('LAC_LABOR');
+        // Активні модулі — беремо готовий, вже правильно побудований бекендом
+        // список (diag.triggered_modules), а не реконструюємо його заново.
+        // Стара реконструкція мала дві незалежні помилки: (1) формат рядків
+        // не збігався з бекендовим ESCALATION_WORTHY_MODULES (тут писалось
+        // 'FRAMING(OVERTON_SHIFT)'/'LAC_LABOR', бекенд звіряє за 'framing'/
+        // 'lac_labor' — жодного разу не могли збігтися через set-intersection);
+        // (2) поріг lac_labor_score > 0.3 перевернутий — у lac_labor/lac_finance
+        // 0 = найгірший вердикт (ІМІТАЦІЯ ВІДПОВІДАЛЬНОСТІ), тому найгірший
+        // випадок ніколи не проходив цю умову.
+        const activeMods = diag.triggered_modules || [];
 
         const entropyBase = Math.round((data.entropy||0) * 100);
         const entropyBoosted = data.entropy_boosted !== undefined ? data.entropy_boosted : entropyBase;
