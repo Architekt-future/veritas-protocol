@@ -1603,7 +1603,13 @@ def oracle():
 
         # ── Entropy boost: беремо вже розраховані значення з data (вже в /api/analyze) ──
         entropy_pct_boosted = data.get('entropy_boosted', entropy_pct)
-        triggered_modules   = data.get('triggered_modules', [])
+        # ФІКС: фронтенд шле весь diag вкладеним під ключем 'diagnostics'
+        # (body: {diagnostics: diag, article_text, language}) — а не на
+        # верхньому рівні запиту. Стара версія (`data.get('triggered_modules', [])`)
+        # шукала на верхньому рівні, де цього поля НІКОЛИ не було — тобто
+        # список завжди приходив порожнім, і override примусово стирав
+        # БУДЬ-ЯКУ ескалацію LLM незалежно від того, що реально спрацювало.
+        triggered_modules   = data.get('diagnostics', {}).get('triggered_modules', [])
         triggered_count     = data.get('triggered_count', 0)
         entropy_multiplier  = data.get('entropy_multiplier', 1.0)
         interaction_combos  = data.get('interaction_combos', [])
