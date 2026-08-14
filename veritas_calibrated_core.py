@@ -1034,9 +1034,9 @@ class VeritasCalibratedCore:
         if _conflict_srcs:
             source_context_result = {
                 'has_conflict_source': True,
-                'sources': _conflict_srcs,
+                'sources': _conflict_srcs,  # лишаємо в даних для дебагу/аналітики
                 'note': (
-                    f"Текст цитує сторону активного конфлікту ({', '.join(_conflict_srcs[:3])}). "
+                    "Текст цитує сторону активного конфлікту. "
                     "Атрибуція коректна, ознак маніпуляції не виявлено — але зважай на це під час "
                     "читання: перевіряй твердження цієї сторони через незалежні джерела."
                 ),
