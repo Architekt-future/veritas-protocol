@@ -1507,8 +1507,7 @@ function translateCompleteness(cc) {
 function translateSourceContext(sc) {
     if (!sc || currentLang === 'uk' || !sc.has_conflict_source) return sc;
     const out = Object.assign({}, sc);
-    const names = (sc.sources || []).slice(0, 3).join(', ');
-    out.note = `The text cites a party to an active conflict (${names}). Attribution is accurate ` +
+    out.note = `The text cites a party to an active conflict. Attribution is accurate ` +
                `and no manipulation was detected — but keep this in mind while reading: verify this ` +
                `party's claims through independent sources.`;
     return out;
