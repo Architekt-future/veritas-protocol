@@ -913,6 +913,38 @@ def analyze():
                         print(f'✂️  Обрізано за маркером сайдбару "{_marker}" на позиції {_idx}')
                         break
 
+                # v20.6: FIELD-LABEL STRUCTURE RECOVERY (укр + eng)
+                # Стислі новинні картки (Європейська/Українська правда, Reuters-style
+                # briefs тощо) будують текст полями "Джерело :", "Пряма мова :",
+                # "Деталі :", "Що було раніше :" / "Source:", "Quote:", "Details:",
+                # "Context:", "Background:", "Previously:". На практиці ці мітки
+                # ЧАСТО не розбиті на окремі <p>/<div> в DOM — BeautifulSoup
+                # витягує їх суцільним текстом в одному блоці, і навіть
+                # separator='\n' (вище) цього не рятує, бо межі блоків просто
+                # немає. Без \n перед міткою calculate_logical_cohesion()
+                # (structural_cohesion в calibrated_core.py) не бачить цю
+                # структуру взагалі — коротка, ідеально структурована новина
+                # отримує занижену когезію лише через лексичну густину
+                # сполучників "оскільки/тому/якщо", якої в хронологічному
+                # викладі новин природно мало. Тому примусово вставляємо \n
+                # перед міткою незалежно від того, чи є в DOM розрив блоку.
+                # Список синхронізовано з heading_patterns у
+                # calculate_logical_cohesion() (calibrated_core.py v20.6).
+                FIELD_LABEL_MARKERS = _re.compile(
+                    r'\s+(?=('
+                    r'Джерело|Пряма\s+мова|Деталі|Контекст|Довідка|Нагадаємо|'
+                    r'Що\s+було\s+раніше|Причина|Наслідки|Передісторія|'
+                    r'Для\s+довідки|Важливо|Зауваження|Зауважимо|'
+                    r'Source|Quote|Details?|Context|Background|Previously|'
+                    r'Reason|Consequences?|Backstory|Note|Important|Update'
+                    r')\s*:)'
+                )
+                _before_labels = len(text.split('\n'))
+                text = FIELD_LABEL_MARKERS.sub('\n', text).strip()
+                _after_labels = len(text.split('\n'))
+                if _after_labels > _before_labels:
+                    print(f'🏷️  Field-label structure recovered: {_before_labels} → {_after_labels} рядків')
+
                 # Prepend page title/h1 so ClaimGapDetector sees the headline.
                 # Headlines often contain the strong claim ("Пророцтво монаха")
                 # but disappear from the scraped body. Prepending puts them in
