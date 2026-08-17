@@ -959,7 +959,12 @@ def analyze():
                 )
                 text = _re.sub(r'\bArticle Information\b', '', text)
                 text = _re.sub(r'(?<![\w\d])хв(?![\w])', '', text)  # orphan "хв"
-                text = _re.sub(r'\s+', ' ', text).strip()
+                # ФІКС: \s+ → ' ' тут раніше з'їдав і \n, знищуючи структурні межі,
+                # які separator='\n' (рядок 885) навмисне зберігав для
+                # calculate_logical_cohesion() / structural_cohesion в calibrated_core.py.
+                # Колапсуємо тільки горизонтальні пробіли, \n лишаємо як межу абзацу.
+                text = _re.sub(r'[ \t]+', ' ', text)
+                text = _re.sub(r'\n\s*\n+', '\n', text).strip()
                 # Remove Commonwealth country list (appears after "всіх 14 інших країн")
                 text = _re.sub(
                     r'(Антигуа і Барбуда|Австралія|Багамські|Беліз|Канада|Гренада|Ямайка|'
@@ -968,7 +973,8 @@ def analyze():
                     r'Нова Зеландія|Папуа|Сент-Кітс|Сент-Люсія|Сент-Вінсент|Соломонові|Тувалу))+',
                     '', text
                 )
-                text = _re.sub(r'\s+', ' ', text).strip()
+                text = _re.sub(r'[ \t]+', ' ', text)
+                text = _re.sub(r'\n\s*\n+', '\n', text).strip()
 
                 # ── X / TWITTER scrape cleanup ─────────────────────────
                 # X повертає весь інтерфейс разом з твітом.
@@ -999,7 +1005,8 @@ def analyze():
                         r'Trending now.*$', '', text,
                         flags=_re.IGNORECASE | _re.DOTALL
                     )
-                    text = _re.sub(r'\s+', ' ', text).strip()
+                    text = _re.sub(r'[ \t]+', ' ', text)
+                    text = _re.sub(r'\n\s*\n+', '\n', text).strip()
                     print(f'🐦 X/Twitter cleanup: {len(text.split())} words remaining')
 
                 # Limit to 5000 words
@@ -1070,7 +1077,8 @@ def analyze():
                                         r'Trending now.*$', '', text,
                                         flags=_re.IGNORECASE | _re.DOTALL
                                     )
-                                    text = _re.sub(r'\s+', ' ', text).strip()
+                                    text = _re.sub(r'[ \t]+', ' ', text)
+                                    text = _re.sub(r'\n\s*\n+', '\n', text).strip()
                                     print(f'🐦 X/Twitter Jina cleanup: {len(text.split())} words remaining')
                                 # Trim to 5000 words
                                 words = text.split()
@@ -1134,10 +1142,30 @@ def analyze():
 
         # Обрізаємо до 2500 слів перед аналізом — запобігає таймауту воркера
         # Маніпулятивні патерни завжди в першій третині тексту
+        # ФІКС: text.split() без аргументів + ' '.join() тут (як і в скрапері
+        # вище) з'їдав \n і повертав текст одним рядком — тому
+        # calculate_logical_cohesion() (structural_cohesion) не бачив жодних
+        # межу абзаців/заголовків для БУДЬ-ЯКОГО тексту довшого за 2500 слів,
+        # незалежно від того, скрапнутий він чи вставлений вручну.
+        # Обрізаємо по словах, але зберігаємо межі рядків.
         _analyze_words = text.split()
         if len(_analyze_words) > 2500:
             print(f'✂️  Text trimmed for analysis: {len(_analyze_words)} → 2500 words')
-            text_for_analysis = ' '.join(_analyze_words[:2500])
+            _budget = 2500
+            _kept_lines = []
+            for _line in text.split('\n'):
+                if _budget <= 0:
+                    break
+                _lw = _line.split()
+                if not _lw:
+                    continue
+                if len(_lw) <= _budget:
+                    _kept_lines.append(_line)
+                    _budget -= len(_lw)
+                else:
+                    _kept_lines.append(' '.join(_lw[:_budget]))
+                    _budget = 0
+            text_for_analysis = '\n'.join(_kept_lines).strip()
         else:
             text_for_analysis = text
 
