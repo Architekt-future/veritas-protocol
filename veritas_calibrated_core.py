@@ -730,6 +730,16 @@ class VeritasCalibratedCore:
 
         cohesion_score = max(lexical_cohesion, structural_cohesion)
 
+        # v20.6 DEBUG: тимчасовий diagnostic-print для звірки прод/локально.
+        # Прибрати після підтвердження, що деплой підхопив anchors-фікс.
+        print(
+            f'🧬 COHESION DEBUG: anchor_count={anchor_count} '
+            f'words={len(words_clean)} lexical={round(lexical_cohesion,3)} '
+            f'structural_hits={structural_hits} lines={len(lines)} '
+            f'structural={round(structural_cohesion,3)} '
+            f'final={round(cohesion_score,3)}'
+        )
+
         return cohesion_score
     
     def apply_entropy_damper(self, base_entropy: float, cohesion: float, 
