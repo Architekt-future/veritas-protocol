@@ -637,7 +637,7 @@ class VeritasCalibratedCore:
             'furthermore', 'specifically', 'namely', 'firstly',
             'secondly', 'accordingly', 'since', 'given that',
             'whereas', 'although', 'though', 'but', 'meanwhile',
-            'on the other hand', 'in contrast',
+            'on the other hand', 'in contrast', 'instead',
             # REMOVED: 'that', 'is', 'this' — too common, not logical connectors
         ]
 
