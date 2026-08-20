@@ -100,10 +100,16 @@ def _get_sb():
     return _sb_client
 
 
-def log_analysis(result: dict) -> None:
+def log_analysis(result: dict, analyzed_text: str = '') -> None:
     """
     Записує один рядок в Supabase після кожного аналізу.
     Non-blocking — помилки логування не ламають основний flow.
+
+    v20.6: додано cohesion/word_count/text_preview — потрібно для збору
+    вибірки й аналізу розподілу когезії по жанрах/сайтах (раніше ці поля
+    взагалі не логувались, тож ретроспективний аналіз був неможливий).
+    Потребує міграції в Supabase (ALTER TABLE trigger_log ADD COLUMN...)
+    перед першим деплоєм цієї версії.
     """
     try:
         sb = _get_sb()
@@ -133,6 +139,12 @@ def log_analysis(result: dict) -> None:
             'framing_score':      round(diag.get('framing_score', 0) or 0, 3),
             'url':                result.get('scraped_url', '') or '',
             'status':             result.get('status', ''),
+            'cohesion':           round(diag.get('logical_cohesion', 0) or 0, 3),
+            'word_count':         diag.get('word_count', 0) or 0,
+            'text_preview':       (analyzed_text or '')[:300],
+            'cohesion_anchor_count':    diag.get('cohesion_anchor_count', 0) or 0,
+            'cohesion_structural_hits': diag.get('cohesion_structural_hits', 0) or 0,
+            'cohesion_lines':           diag.get('cohesion_lines', 0) or 0,
         }
 
         sb.table('trigger_log').insert(entry).execute()
@@ -1401,7 +1413,7 @@ def analyze():
         result['witness_synthesis'] = None  # заповнюється через /api/synthesis
 
         # ── Логування тригерів ───────────────────────────────────────────────
-        log_analysis(result)
+        log_analysis(result, analyzed_text=text_for_analysis)
 
         return jsonify(result)
     
