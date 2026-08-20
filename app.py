@@ -1181,6 +1181,32 @@ def analyze():
                     print(f'🧹 Nav-prefix stripped: {_content_start_idx} рядків, приклад: {_stripped_preview!r}')
                     text = '\n'.join(_nav_lines[_content_start_idx:]).strip()
 
+                # ── ФІКС v20.6: обрізання хвоста-сміття (paywall/footer/реклама) ──
+                # SIDEBAR_BOUNDARY_MARKERS (вище, рядок ~925) відпрацьовує ДО
+                # Jina fallback — а Jina повністю ПЕРЕЗАПИСУЄ text (jina_res.text),
+                # тому для будь-якої статті, що пройшла через Jina, обрізання
+                # хвоста не застосовувалось взагалі. Список був до того ж лише
+                # українською. Повторюємо той самий принцип тут — уже двомовно
+                # і після Jina/nav-prefix кроків — і виправляємо заразом старий
+                # баг: раніше перевірка йшла по ПОРЯДКУ СПИСКУ (перший знайдений
+                # маркер міг стояти ПІЗНІШЕ за текстом, ніж інший маркер нижче в
+                # списку) — тепер шукаємо мінімальну позицію серед УСІХ знайдених.
+                ARTICLE_END_MARKERS = [
+                    'ЧИТАЙТЕ ТАКОЖ', 'ЧИТАЙТЕ ТЕЖ', 'ТАКЖЕ ЧИТАЙТЕ',
+                    'ЧИТАЙТЕ ЩЕ', 'ПОПУЛЯРНІ НОВИНИ', 'НАЙПОПУЛЯРНІШЕ',
+                    'SPONSORED BY', 'Recommended video', 'Trending conversations',
+                    'Read comments', 'Read next', 'This story is available exclusively',
+                    'Become an Insider', 'Jump to Main content', 'Unlimited access.',
+                ]
+                _end_candidates = [
+                    _idx for _m in ARTICLE_END_MARKERS
+                    if (_idx := text.find(_m)) > 200
+                ]
+                if _end_candidates:
+                    _cut_idx = min(_end_candidates)
+                    print(f'✂️  Обрізано хвіст-сміття на позиції {_cut_idx}')
+                    text = text[:_cut_idx].strip()
+
                 # ── Фінальна перевірка після Jina: чи все ще навігаційне сміття? ──
                 _final_lower = text.lower()
                 _final_nav_hits = sum(1 for m in _nav_markers if m in _final_lower)
