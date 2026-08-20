@@ -730,6 +730,17 @@ class VeritasCalibratedCore:
 
         cohesion_score = max(lexical_cohesion, structural_cohesion)
 
+        # v20.6: зберігаємо розбивку як атрибут instance — не для повернення
+        # напряму (сигнатура лишається float, щоб не зламати виклики типу
+        # `logical_cohesion > 0.3`), а щоб її можна було прочитати ззовні
+        # одразу після виклику й записати в diagnostics/Supabase для
+        # майбутнього збору вибірки й аналізу розподілу.
+        self._last_cohesion_debug = {
+            'anchor_count': anchor_count,
+            'structural_hits': structural_hits,
+            'lines': len(lines),
+        }
+
         # v20.6 DEBUG: тимчасовий diagnostic-print для звірки прод/локально.
         # Прибрати після підтвердження, що деплой підхопив anchors-фікс.
         print(
@@ -1803,6 +1814,9 @@ class VeritasCalibratedCore:
             'semantic_void_score': round(void_result['void_score'], 3),
             'casuistry_score': round(insight_result.get('casuistry_score', 0), 3),
             'logical_cohesion': round(logical_cohesion, 3),
+            'cohesion_anchor_count': self._last_cohesion_debug.get('anchor_count', 0) if hasattr(self, '_last_cohesion_debug') else 0,
+            'cohesion_structural_hits': self._last_cohesion_debug.get('structural_hits', 0) if hasattr(self, '_last_cohesion_debug') else 0,
+            'cohesion_lines': self._last_cohesion_debug.get('lines', 0) if hasattr(self, '_last_cohesion_debug') else 0,
             'is_financial_content': lac_finance_result['is_financial'],
             'lac_finance_score': round(lac_finance_result['score'], 3),
             'lac_finance_missing': lac_finance_result['missing'],
@@ -1847,6 +1861,9 @@ class VeritasCalibratedCore:
                 'semantic_void_score': round(void_result['void_score'], 3),
                 'void_penalties': void_result.get('penalties', {}),
                 'logical_cohesion': round(logical_cohesion, 3),
+            'cohesion_anchor_count': self._last_cohesion_debug.get('anchor_count', 0) if hasattr(self, '_last_cohesion_debug') else 0,
+            'cohesion_structural_hits': self._last_cohesion_debug.get('structural_hits', 0) if hasattr(self, '_last_cohesion_debug') else 0,
+            'cohesion_lines': self._last_cohesion_debug.get('lines', 0) if hasattr(self, '_last_cohesion_debug') else 0,
                 'buzzword_count': void_result.get('buzzword_count', 0),
                 'absurdity_score': round(absurdity_result['absurdity_score'], 3),
                 'absurdity_evidence': absurdity_result.get('evidence', {}),
