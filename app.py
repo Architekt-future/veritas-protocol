@@ -1521,9 +1521,14 @@ def oracle():
         meta_verdict     = meta_intent.get('verdict', '') if isinstance(meta_intent, dict) else ''
 
         genre            = diag.get('genre', '')
-        cohesion         = diag.get('cohesion', None)
-        void_score       = diag.get('void', None)
-        absurdity        = diag.get('absurdity', None)
+        # ФІКС v20.6: усі три ключі нижче читались під неправильними іменами —
+        # core.py зберігає їх як 'logical_cohesion', 'semantic_void_score',
+        # 'absurdity_score' відповідно, а не 'cohesion'/'void'/'absurdity'.
+        # Через це промпт Свідка (LLM-синтез) отримував None замість реальних
+        # чисел по всіх трьох показниках, можливо, весь час.
+        cohesion         = diag.get('logical_cohesion', None)
+        void_score       = diag.get('semantic_void_score', None)
+        absurdity        = diag.get('absurdity_score', None)
 
         # Language: from request → from diagnostics → default Ukrainian
         ui_language = data.get('language', '') or diag.get('language', '') or 'uk'
