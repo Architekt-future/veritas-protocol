@@ -620,6 +620,15 @@ class VeritasCalibratedCore:
             'по-перше', 'по-друге', 'таким чином', 'а саме',
             'адже', 'тому', 'звідси', 'отож', 'проте', 'однак',
             'щоб',
+            # v20.6: найчастіші протиставні/контрастні конектори — раніше
+            # були лише книжні синоніми ("проте", "однак"), а "але" (найбільш
+            # вживаний варіант "but" в укр. мові) був відсутній взагалі.
+            # Це системно занижувало lexical_cohesion для звичайної
+            # аналітичної/новинної прози (не есе, не картка з мітками),
+            # яка тримається купи саме через контрастні зв'язки речень,
+            # а не причинні "тому/оскільки".
+            'але', 'попри', 'водночас', 'а от', 'з іншого боку',
+            'тим часом', 'на відміну',
             # REMOVED: 'що', 'є', 'це' — занадто загальні, не є логічними коннекторами
             
             # English
@@ -627,34 +636,47 @@ class VeritasCalibratedCore:
             'consequently', 'however', 'nevertheless', 'moreover',
             'furthermore', 'specifically', 'namely', 'firstly',
             'secondly', 'accordingly', 'since', 'given that',
-            'whereas', 'although', 'though',
+            'whereas', 'although', 'though', 'but', 'meanwhile',
+            'on the other hand', 'in contrast',
             # REMOVED: 'that', 'is', 'this' — too common, not logical connectors
         ]
-        
+
         text_lower = text.lower()
-        
+
         # Strip punctuation from words
         import string
         words = text_lower.split()
         words_clean = [w.strip(string.punctuation) for w in words]
-        
+
         if not words_clean:
             return 0.0
-        
+
+        # v20.6: розділяємо анкори на однослівні й багатослівні. Попередня
+        # версія рахувала anchor_count лише через `word in anchors` по
+        # ОКРЕМИХ токенах words_clean — тому багатослівні записи в списку
+        # ("тому що", "а саме", "given that", "по-перше" з пробілом і т.д.)
+        # НІКОЛИ не могли зматчитись (жоден single-token ніколи не дорівнює
+        # фразі з пробілом), і фактично були мертвим вантажем у списку.
+        # Однослівні анкори рахуємо як і раніше (швидко, по set membership);
+        # багатослівні — пошуком підрядка в тексті.
+        single_word_anchors = {a for a in anchors if ' ' not in a}
+        multi_word_anchors = [a for a in anchors if ' ' in a]
+
         # Count logical anchors
-        anchor_count = sum(1 for word in words_clean if word in anchors)
-        
+        anchor_count = sum(1 for word in words_clean if word in single_word_anchors)
+        anchor_count += sum(text_lower.count(phrase) for phrase in multi_word_anchors)
+
         # Also check for conditional structures
         conditional_patterns = [
             r'якщо.{1,50}то',
             r'if.{1,50}then',
             r'щоб.{1,50}став',
         ]
-        
+
         for pattern in conditional_patterns:
             if re.search(pattern, text_lower):
                 anchor_count += 2  # Strong signal
-        
+
         # Calculate density
         density = anchor_count / len(words_clean) if words_clean else 0
         lexical_cohesion = min(density * 10, 1.0)
@@ -674,12 +696,6 @@ class VeritasCalibratedCore:
             r'^\s*розділ\s+\d+',        # "Розділ 1."
             r'^\s*\d+\.\d+\.?\s+\S',    # "1.1. ..." підрозділи
             r'^\s*\d+\.\s+\S',          # нумеровані пункти "1. ..."
-            # v20.6: "мітка-поле:" формат новин-карток (Українська/Європейська
-            # правда та подібні): Джерело :, Пряма мова :, Деталі :,
-            # Контекст :, Довідка :, Нагадаємо :, Що було раніше :, Причина :,
-            # Наслідки :, Передісторія :. Це структурний маркер зв'язності
-            # так само, як нумерований пункт чи заголовок — просто інша
-            # типографська конвенція, характерна для стислих новинних заміток.
             # v20.6: "мітка-поле:" формат новин-карток (Українська/Європейська
             # правда та подібні): Джерело :, Пряма мова :, Деталі :,
             # Контекст :, Довідка :, Нагадаємо :, Що було раніше :, Причина :,
