@@ -30,6 +30,7 @@ from veritas_calibrated_core import VeritasCalibratedCore
 from veritas_alarmism_detector import AlarmismDetector
 from veritas_media_bias_detector import MediaBiasDetector
 from veritas_ard_checker import ARDChecker
+from veritas_cohesion_v2 import CohesionV2
 
 app = Flask(__name__)
 CORS(app)
@@ -61,6 +62,11 @@ engine = VeritasCalibratedCore()
 alarmism_detector = AlarmismDetector()
 media_bias_detector = MediaBiasDetector()
 ard_checker = ARDChecker()
+# v20.6: ЕКСПЕРИМЕНТАЛЬНИЙ тіньовий розрахунок когезії (v2). НЕ впливає на
+# жоден вердикт чи бейдж, який бачить користувач — тільки логується поруч
+# з v1 у Supabase для порівняння на реальних даних, перш ніж приймати
+# рішення про заміну v1.
+cohesion_v2_engine = CohesionV2()
 print("✅ Veritas engine initialized")
 
 # Warm up RSS context in background thread at startup
@@ -122,7 +128,7 @@ def _get_sb():
     return _sb_client
 
 
-def log_analysis(result: dict, analyzed_text: str = '') -> None:
+def log_analysis(result: dict, analyzed_text: str = '', cohesion_v2=None) -> None:
     """
     Записує один рядок в Supabase після кожного аналізу.
     Non-blocking — помилки логування не ламають основний flow.
@@ -132,6 +138,11 @@ def log_analysis(result: dict, analyzed_text: str = '') -> None:
     взагалі не логувались, тож ретроспективний аналіз був неможливий).
     Потребує міграції в Supabase (ALTER TABLE trigger_log ADD COLUMN...)
     перед першим деплоєм цієї версії.
+
+    v20.6.1: додано cohesion_v2 (експериментальна noisy-OR формула з
+    veritas_cohesion_v2.py) — суто для порівняння з v1 на реальних даних.
+    Параметр `cohesion_v2` — це CohesionV2Result або None (якщо тіньовий
+    розрахунок впав з помилкою чи не був переданий).
     """
     try:
         sb = _get_sb()
@@ -167,6 +178,14 @@ def log_analysis(result: dict, analyzed_text: str = '') -> None:
             'cohesion_anchor_count':    diag.get('cohesion_anchor_count', 0) or 0,
             'cohesion_structural_hits': diag.get('cohesion_structural_hits', 0) or 0,
             'cohesion_lines':           diag.get('cohesion_lines', 0) or 0,
+            # v20.6.1: тіньові поля cohesion_v2 — суто для порівняння з
+            # cohesion (v1) на реальних даних. cohesion_v2 може бути None
+            # (якщо CohesionV2.calculate() впала з помилкою) — Supabase
+            # приймає None як NULL без проблем.
+            'cohesion_v2':              round(cohesion_v2.score, 4) if cohesion_v2 else None,
+            'cohesion_v2_lexical':      round(cohesion_v2.lexical, 4) if cohesion_v2 else None,
+            'cohesion_v2_structural':   round(cohesion_v2.structural, 4) if cohesion_v2 else None,
+            'cohesion_v2_referential':  round(cohesion_v2.referential, 4) if cohesion_v2 else None,
         }
 
         sb.table('trigger_log').insert(entry).execute()
@@ -1431,8 +1450,20 @@ def analyze():
         )
         result['witness_synthesis'] = None  # заповнюється через /api/synthesis
 
+        # ── ЕКСПЕРИМЕНТ v20.6: тіньовий розрахунок cohesion_v2 ──────────────
+        # Рахується ПАРАЛЕЛЬНО з основним аналізом, але результат НІКУДИ
+        # не потрапляє, крім Supabase-логу нижче — не в result, не у
+        # вердикт, не в те, що бачить користувач. try/except гарантує: якщо
+        # цей експериментальний модуль впаде з помилкою, основний аналіз
+        # (result) все одно повернеться користувачу без жодних змін.
+        _cohesion_v2_result = None
+        try:
+            _cohesion_v2_result = cohesion_v2_engine.calculate(text_for_analysis)
+        except Exception as _v2_err:
+            print(f'⚠️  cohesion_v2 error (non-fatal, shadow-only): {_v2_err}')
+
         # ── Логування тригерів ───────────────────────────────────────────────
-        log_analysis(result, analyzed_text=text_for_analysis)
+        log_analysis(result, analyzed_text=text_for_analysis, cohesion_v2=_cohesion_v2_result)
 
         return jsonify(result)
     
