@@ -109,6 +109,21 @@ class GenreDetector:
         r'\bjournal\b', r'\bpeer.reviewed\b', r'\bpublished in\b',
     ]
 
+    # v20.6: підмножина СТРОГИХ академічних маркерів. "дослідження"/
+    # "дослідник"/"вибірка"/"експеримент" в українській мові однаково
+    # вживаються для маркетингових опитувань, індустріальних звітів тощо
+    # (напр. "дослідження Meltwater і LinkedIn" — це PR-звіт, не наука).
+    # Тому SCIENCE має спрацьовувати лише якщо серед збігів є хоча б один
+    # маркер САМЕ з цього суворішого списку — інакше узагальнені слова самі
+    # по собі неправильно перетягують маркетингові tech-новини в SCIENCE.
+    SCIENCE_STRONG_SIGNALS = [
+        r'\bпсихолог\w*\b', r'\bнейробіолог\w*\b', r'\bгіпотез\w*\b',
+        r'\bкогнітивн\w*\b', r'\bклінічн\w*\b',
+        r'\bpsycholog\w*\b', r'\bneurolog\w*\b', r'\bclinical\b',
+        r'\bjournal\b', r'\bpeer.reviewed\b', r'\bpublished in\b',
+        r'\bscientists\b',
+    ]
+
     # ── SATIRE ───────────────────────────────────────────────────────
     SATIRE_SIGNALS = [
         r'\bнібито\b.{1,40}\bзнову\b', r'\bгеніальний план\b',
@@ -338,7 +353,7 @@ class GenreDetector:
     # ── TECH_NEWS ────────────────────────────────────────────────────
     # Технологічні новини (не наукові статті, не ML papers)
     TECH_NEWS_SIGNALS = [
-        r'\b(Apple|Google|Microsoft|OpenAI|Meta|Amazon|Tesla|Samsung|Nvidia)\b',
+        r'\b(Apple|Google|Microsoft|OpenAI|Meta|Amazon|Tesla|Samsung|Nvidia|LinkedIn|Anthropic)\b',
         r'\b(iPhone|MacBook|Android|Windows|ChatGPT|Gemini|Claude)\b',
         r'\b(модель|версія|оновлення)\w*\s+(GPT|Claude|Gemini|AI|ШІ)\b',
         r'\b(benchmark|API|launch(ed)?|release[sd]?)\b',
@@ -346,6 +361,13 @@ class GenreDetector:
         r'\b(стартап|венчурн|раунд\s+фінансування)\w*\b',
         r'\b(startup|venture|funding\s+round|valuation)\b',
         r'\b(додаток|застосунок|платформ)\w*\s+(запустив|оновив|представив)\b',
+        # v20.6: специфічні для tech-продуктових новин фрази — навмисно НЕ
+        # узагальнені дієслова типу "запустила"/"тестує" (ті трапляються і в
+        # урядових/політичних текстах: "уряд запустив програму"), а вузькі
+        # словосполучення з "функція"/"можливість" у значенні продуктової
+        # фічі, які рідко зустрічаються поза tech/продуктовою журналістикою.
+        r'\b(функці\w+|можливост\w+)\s+(допомага\w+|дозволя\w+|дає\s+змогу|розширю\w+)\b',
+        r'\b(нову\s+функці\w+|нову\s+можливіст\w+|нове\s+оновленн\w+)\b',
     ]
 
     # ── HEALTH ───────────────────────────────────────────────────────
@@ -608,6 +630,7 @@ class GenreDetector:
 
         analytics        = sum(1 for p in self.ANALYTICS_SIGNALS        if re.search(p, t, re.I))
         science          = sum(1 for p in self.SCIENCE_SIGNALS           if re.search(p, t, re.I))
+        science_strong   = sum(1 for p in self.SCIENCE_STRONG_SIGNALS    if re.search(p, t, re.I))
         report           = sum(1 for p in self.REPORT_SIGNALS            if re.search(p, t, re.I))
         opinion          = sum(1 for p in self.OPINION_SIGNALS           if re.search(p, t, re.I))
         satire           = sum(1 for p in self.SATIRE_SIGNALS            if re.search(p, t, re.I))
@@ -664,7 +687,7 @@ class GenreDetector:
         elif opinion >= 2 and opinion > analytics:
             genre, conf = 'OPINION',         min(opinion / 4, 1.0)
 
-        elif science >= 3:
+        elif science >= 3 and science_strong >= 1:
             genre, conf = 'SCIENCE',         min(science / 8, 1.0)
 
         elif sport >= (1 if is_short else 3):
