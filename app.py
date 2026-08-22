@@ -48,6 +48,11 @@ ARTICLE_BOUNDARY_MARKERS = [
     # (напр. intent.press) йде блок тизерів інших новин, а іноді й ціла
     # наступна стаття, вклеєна скрапером як продовження.
     'Поділитися',
+    # v20.6.1: 'ОСТАННІ НОВИНИ' / 'ВИБІР РЕДАКТОРА' — той самий тип
+    # віджету (список інших заголовків), інша назва (eurointegration.com.ua
+    # та подібні). Той самий клас проблеми, що й з 'Поділитися' — щоразу
+    # новий сайт має власне найменування того самого блоку.
+    'ОСТАННІ НОВИНИ', 'ВИБІР РЕДАКТОРА',
     # Англомовні paywall/footer маркери (Business Insider та подібні)
     'SPONSORED BY', 'Recommended video', 'Trending conversations',
     'Read comments', 'Read next', 'This story is available exclusively',
