@@ -152,6 +152,23 @@ class CohesionV2:
         return [p.strip() for p in parts if p.strip()]
 
     @staticmethod
+    def _stem(word: str) -> str:
+        # v20.6.2: грубий стемер (не справжня лематизація) — відкидає
+        # найпоширеніші відмінкові закінчення, щоб "Аргентина"/"Аргентини"/
+        # "Аргентину" збігались як одне змістове слово. Явне обмеження:
+        # це евристика на суфіксах, не морфологічний аналіз — можливі й
+        # хибні збіги (різні слова з однаковим закінченням), і пропуски
+        # (нерегулярні форми). Достатньо для сигналу зв'язності, не для
+        # лінгвістичної точності.
+        suffixes = ['ями', 'ами', 'ові', 'еві', 'ання', 'ення', 'істю',
+                    'ах', 'ях', 'ів', 'ий', 'ого', 'ому', 'ими', 'ою',
+                    'ею', 'єю', 'у', 'ю', 'і', 'ї', 'и', 'а', 'я', 'е', 'о']
+        for suf in sorted(suffixes, key=len, reverse=True):
+            if len(word) - len(suf) >= 4 and word.endswith(suf):
+                return word[:-len(suf)]
+        return word
+
+    @staticmethod
     def _content_words(sentence: str) -> set:
         words = re.findall(r"[а-щьюяіїєa-z']+", sentence.lower())
         return {
@@ -192,20 +209,45 @@ class CohesionV2:
         score = 1 - math.exp(-self.structural_k * density)
         return score, hits, len(lines)
 
-    def _referential(self, sentences: List[str]) -> float:
+    def _stemmed_content_words(self, sentence: str) -> set:
+        return {self._stem(w) for w in self._content_words(sentence)}
+
+    def _referential(self, sentences: List[str], window: int = 3) -> float:
+        # v20.6.2: ПЕРЕРОБЛЕНО. Стара версія порівнювала лише СУСІДНІ
+        # речення без нормалізації словоформ — на реальній вибірці (27
+        # текстів, 2026-08-23) давала referential ≈ 0.01-0.04 практично
+        # для КОЖНОГО тексту, тобто компонент фактично не працював.
+        # Дві причини й два фікси:
+        #   1. Реальна тематична зв'язність часто перестрибує через
+        #      речення (займенник у реченні i+1, повторне ім'я в i+3) —
+        #      тому вікно розширено до `window` речень УПЕРЕД, а не
+        #      тільки найближчого сусіда.
+        #   2. Різні словоформи того самого слова ("Аргентина"/"Аргентини")
+        #      рахувались як РІЗНІ слова — тепер порівнюються стемовані
+        #      форми (див. _stem).
+        # Метрика: для кожного речення — яка частка його змістових слів
+        # повторюється (у стемованій формі) десь у наступних `window`
+        # реченнях. Середнє по всіх реченнях, крім останніх (їм нема куди
+        # "дивитись уперед").
         if len(sentences) < 2:
             return 0.0
-        overlaps = []
+
+        word_sets = [self._stemmed_content_words(s) for s in sentences]
+        connectedness = []
         for i in range(len(sentences) - 1):
-            w1 = self._content_words(sentences[i])
-            w2 = self._content_words(sentences[i + 1])
-            if not w1 or not w2:
-                overlaps.append(0.0)
+            w_i = word_sets[i]
+            if not w_i:
                 continue
-            union = w1 | w2
-            inter = w1 & w2
-            overlaps.append(len(inter) / len(union) if union else 0.0)
-        return sum(overlaps) / len(overlaps) if overlaps else 0.0
+            window_words = set()
+            for j in range(i + 1, min(i + 1 + window, len(sentences))):
+                window_words |= word_sets[j]
+            if not window_words:
+                connectedness.append(0.0)
+                continue
+            overlap = w_i & window_words
+            connectedness.append(len(overlap) / len(w_i))
+
+        return sum(connectedness) / len(connectedness) if connectedness else 0.0
 
     # ── Публічний метод ──────────────────────────────────────────────────
     def calculate(self, text: str) -> CohesionV2Result:
