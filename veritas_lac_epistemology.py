@@ -284,7 +284,8 @@ class VeritasLACEpistemology:
         r'\bquantitatively\s+proven\b',
     ]
     EVIDENCE_NEARBY = re.compile(
-        r'(\d+([.,]\d+)?\s*%|\bp\s*[<=]\s*0[.,]\d+|\bdoi\.org|\barxiv|\bhttps?://|\b(19|20)\d{2}\b|\d+\s*(кВт|мс|ms|kw))',
+        r'(\d+([.,]\d+)?\s*%|\d+([.,]\d+)?\s*відсот\w*|\d+([.,]\d+)?\s*percent\w*|'
+        r'\bp\s*[<=]\s*0[.,]\d+|\bdoi\.org|\barxiv|\bhttps?://|\b(19|20)\d{2}\b|\d+\s*(кВт|мс|ms|kw))',
         re.IGNORECASE
     )
     UNFOUNDED_CERTAINTY_THRESHOLD = 1
