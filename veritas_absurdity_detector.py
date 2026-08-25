@@ -788,15 +788,37 @@ class AbsurdityDetector:
         # War reporting shield: воєнні репортажі описують атаки як факти —
         # це не заклики до дії. Shield вимикає dangerous_patterns для
         # воєнних репортажів (але геноцид/медичні патерни завжди активні).
-        
+
+        # ФІКС v20.6.2: dangerous_patterns раніше ловили лише СПІВВСТРЕЧАННЯ
+        # слів (напр. "ефективний" + "геноцид" десь в межах 100 символів),
+        # без урахування смислового відношення між ними. Наслідок: заклик
+        # "вжити ефективних заходів, щоб ЗАПОБІГТИ геноциду" (типова мова
+        # правозахисних/дипломатичних текстів — заклик ПРОТИ насильства)
+        # матчився так само, як гіпотетичне "ефективний спосіб геноциду"
+        # (заклик ДО насильства) — протилежні за смислом твердження,
+        # невідрізнені патерном. Якщо в межах збігу є слово-індикатор
+        # запобігання/протидії/засудження — це НЕ dangerous_implication.
+        PREVENTION_CONTEXT = re.compile(
+            r'(запобіг\w*|протиді\w*|зупин\w*|засуд\w*|боротьб\w*\s+з|'
+            r'недопущенн\w*|стримуванн\w*|припинит\w*|уникнут\w*|'
+            r'prevent\w*|stop\w*|counter\w*|condemn\w*|oppos\w*)',
+            re.IGNORECASE
+        )
+
         danger_count = 0
         for pattern in self.dangerous_patterns:
-            if re.search(pattern, text_lower):
+            m = re.search(pattern, text_lower)
+            if m:
+                if PREVENTION_CONTEXT.search(m.group()):
+                    continue
                 danger_count += 1
                 evidence['dangerous_implications'].append(pattern[:50])
-        
+
         for pattern in self.dangerous_patterns_en:
-            if re.search(pattern, text_lower, re.IGNORECASE):
+            m = re.search(pattern, text_lower, re.IGNORECASE)
+            if m:
+                if PREVENTION_CONTEXT.search(m.group()):
+                    continue
                 danger_count += 1
                 evidence['dangerous_implications'].append(pattern[:50])
 
