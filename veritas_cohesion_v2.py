@@ -128,6 +128,20 @@ class CohesionV2:
     """
     Експериментальний розрахунок логічної когезії. Незалежний від
     veritas_calibrated_core.py — не має побічних ефектів на продакшн.
+
+    КАЛІБРУВАННЯ v20.6.2 (2026-08-23, на вибірці з 25 реальних статей
+    із Supabase, trigger_log): lexical_scale знижено з 3.0 (стартова
+    здогадка) до 2.0. Причина: density = anchor_count/sentence_count
+    для реальних статей коливалась 0.0-0.3158 (медіана 0.16). При
+    scale=3.0 щонайменше 3 з 25 звичайних новинних статей вже впирались
+    рівно в стелю 1.0 (density~0.333) — тобто "звичайна стаття з непоганою
+    щільністю сполучників" вже не відрізнялась від "максимально зв'язного
+    тексту", і не лишалось запасу зверху для дійсно щільних текстів (есе,
+    аргументативна проза). При scale=2.0 жодна стаття з вибірки не впирається
+    в стелю (найвище спостережене значення ~0.667). Це перше каліброване (не
+    вигадане) число в цьому модулі — решта констант (structural_k=4.0,
+    window=3 для referential) досі стартові здогадки, не перевірені на
+    вибірці.
     """
 
     def __init__(
@@ -135,7 +149,7 @@ class CohesionV2:
         w_lexical: float = 0.45,
         w_structural: float = 0.25,
         w_referential: float = 0.30,
-        lexical_scale: float = 3.0,     # anchor_count / sentence_count * scale
+        lexical_scale: float = 2.0,     # anchor_count / sentence_count * scale
         structural_k: float = 4.0,      # 1 - exp(-k * structural_density)
     ):
         self.w_lexical = w_lexical
