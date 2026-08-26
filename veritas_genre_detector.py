@@ -71,7 +71,7 @@ class GenreDetector:
         r'\b\d{1,2}:\d{2}\s*(AM|PM|EDT|EST|GMT|UTC)\b',
         # Воєнний репортаж
         r'\b(генштаб|збройні\s+сили|зсу|нгу|сили\s+оборони)\b',
-        r'\b(ураження|обстріл|атакував|бойових\s+зіткнень|дронів)\b',
+        r'\b(уражен\w*|обстріл\w*|атаку\w*|бойов\w+\s+зіткнен\w*|дрон\w*)\b',
         r'\b(killed|wounded|injured|strike|shelling|troops)\b',
         r'\b(military|forces|troops|soldiers)\s+(confirmed|announced|said)\b',
         # Новинний репортаж — українські агентства
@@ -265,6 +265,15 @@ class GenreDetector:
         r'\b(fiscal|фіскальн\w*)\b',
         r'\b(recession|рецесі\w*)\b',
         r'\b(monetary\s+policy|монетарн\w+\s+політик)\b',
+        # v20.6.2: побутова/споживча економічна статистика — окремий тип
+        # контенту від макроекономічних новин (ВВП/інфляція/ЦБ), який
+        # раніше не покривався жодним патерном взагалі (0 сигналів на
+        # статтях про витрати домогосподарств, напр. dw.com).
+        r'\b(домогосподарств\w*|household\w*)\b',
+        r'\b(споживч\w+\s+витрат\w*|consumer\s+spending)\b',
+        r'\b(сімейн\w+\s+бюджет\w*|family\s+budget|household\s+budget)\b',
+        r'\b(статистичн\w+\s+відомств\w*|federal\s+statistical\s+office|statistisches\s+bundesamt)\b',
+        r'\b(вартість\s+життя|cost\s+of\s+living)\b',
         # Паливна криза та енергія — економічний вимір
         r'\b(fuel\s+shortage|fuel\s+crisis|petrol\s+station|gas\s+prices?)\b',
         r'\b(oil\s+(price|supply|market|shortage|crisis))\b',
