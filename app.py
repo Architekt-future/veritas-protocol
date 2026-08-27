@@ -200,6 +200,13 @@ def log_analysis(result: dict, analyzed_text: str = '', cohesion_v2=None) -> Non
             'cohesion_v2_lexical':      round(cohesion_v2.lexical, 4) if cohesion_v2 else None,
             'cohesion_v2_structural':   round(cohesion_v2.structural, 4) if cohesion_v2 else None,
             'cohesion_v2_referential':  round(cohesion_v2.referential, 4) if cohesion_v2 else None,
+            # v20.6.2: потрібно для аналізу is_pure_bullshit (потрійна умова
+            # void_score>=0.32 AND cohesion<0.2 AND danger_count==0) —
+            # раніше логувалась лише когезія ізольовано, що давало
+            # неправильний персентильний аналіз порогів.
+            'void_score':      round(diag.get('semantic_void_score', 0) or 0, 3),
+            'danger_count':    diag.get('danger_count', 0) or 0,
+            'absurdity_score': round(diag.get('absurdity_score', 0) or 0, 3),
         }
 
         sb.table('trigger_log').insert(entry).execute()
