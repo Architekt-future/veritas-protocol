@@ -9,6 +9,7 @@ import math
 from collections import Counter
 from dataclasses import dataclass
 from typing import List, Dict, Tuple, Set
+from veritas_cohesion_v2 import CohesionV2
 
 # Import pattern boost engine
 try:
@@ -190,6 +191,13 @@ class VeritasCalibratedCore:
     """
 
     def __init__(self):
+        # v20.7: CohesionV2 — тепер ОСНОВНИЙ рушій когезії (не тіньовий).
+        # Замінює стару формулу max(lexical, structural) на noisy-OR з
+        # трьома сигналами (lexical/structural/referential), відкалібровану
+        # на ~950 реальних статтях за час v20.6.x. Див. veritas_cohesion_v2.py
+        # для повної історії калібрування й відомих обмежень.
+        self.cohesion_engine = CohesionV2()
+
         # Pattern boost engine (emergency layer for sophisticated pseudoscience)
         if PATTERN_BOOST_AVAILABLE:
             self.pattern_boost_engine = PatternBoostEngine()
@@ -608,150 +616,57 @@ class VeritasCalibratedCore:
     
     def calculate_logical_cohesion(self, text: str) -> float:
         """
-        Шукає 'якорі' аргументації, які структурують хаос.
-        v14.2: Now as CLASS METHOD (was standalone - never called!)
-        
-        Returns: 0.0-1.0 (higher = more logical structure)
+        v20.7: ПОВНІСТЮ ПЕРЕВЕДЕНО на CohesionV2 (noisy-OR з трьома
+        сигналами: lexical/structural/referential) — замінює стару
+        max(lexical, structural) формулу.
+
+        Причини заміни (детальна історія — veritas_cohesion_v2.py):
+          - Стара формула не мала сигналу референційної/тематичної
+            зв'язності — тексти, зв'язні виключно через спільний предмет
+            розмови без явних сполучників чи міток, системно занижувались.
+          - max() не давав синергії двох помірних сигналів.
+          - structural_density × 12 занадто різко насичувався до 1.0.
+          - Список anchors ганявся за словоформами вручну без кінця.
+
+        Калібрування (2026-08, ~950 реальних статей із Supabase):
+          - lexical_scale=2.0 (було 3.0) — жодна реальна стаття у вибірці
+            не впиралась у стелю 1.0.
+          - referential: вікно розширено до 3 речень уперед + грубий
+            стемер словоформ — середнє зросло з ~0.02 до ~0.14-0.16.
+          - Поріг cohesion_discount/has_strong_logic піднято з 0.3 до 0.40
+            (свідомий вибір: ~50%+ адекватного контенту має отримувати
+            знижку, а не вузькі ~6%, які давав v1 при 0.3).
+
+        Returns: 0.0-1.0 (вище = сильніша логічна структура)
         """
-        anchors = [
-            # Ukrainian
-            'оскільки', 'тому що', 'отже', 'якщо', 'тоді', 
-            'внаслідок', 'незважаючи', 'навпаки', 'зокрема',
-            'по-перше', 'по-друге', 'таким чином', 'а саме',
-            'адже', 'тому', 'звідси', 'отож', 'проте', 'однак',
-            'щоб',
-            # v20.6: найчастіші протиставні/контрастні конектори — раніше
-            # були лише книжні синоніми ("проте", "однак"), а "але" (найбільш
-            # вживаний варіант "but" в укр. мові) був відсутній взагалі.
-            # Це системно занижувало lexical_cohesion для звичайної
-            # аналітичної/новинної прози (не есе, не картка з мітками),
-            # яка тримається купи саме через контрастні зв'язки речень,
-            # а не причинні "тому/оскільки".
-            'але', 'попри', 'водночас', 'а от', 'з іншого боку',
-            'тим часом', 'на відміну',
-            # REMOVED: 'що', 'є', 'це' — занадто загальні, не є логічними коннекторами
-            
-            # English
-            'because', 'therefore', 'thus', 'hence', 'if', 'then',
-            'consequently', 'however', 'nevertheless', 'moreover',
-            'furthermore', 'specifically', 'namely', 'firstly',
-            'secondly', 'accordingly', 'since', 'given that',
-            'whereas', 'although', 'though', 'but', 'meanwhile',
-            'on the other hand', 'in contrast', 'instead',
-            # REMOVED: 'that', 'is', 'this' — too common, not logical connectors
-        ]
+        result = self.cohesion_engine.calculate(text)
 
-        text_lower = text.lower()
-
-        # Strip punctuation from words
-        import string
-        words = text_lower.split()
-        words_clean = [w.strip(string.punctuation) for w in words]
-
-        if not words_clean:
-            return 0.0
-
-        # v20.6: розділяємо анкори на однослівні й багатослівні. Попередня
-        # версія рахувала anchor_count лише через `word in anchors` по
-        # ОКРЕМИХ токенах words_clean — тому багатослівні записи в списку
-        # ("тому що", "а саме", "given that", "по-перше" з пробілом і т.д.)
-        # НІКОЛИ не могли зматчитись (жоден single-token ніколи не дорівнює
-        # фразі з пробілом), і фактично були мертвим вантажем у списку.
-        # Однослівні анкори рахуємо як і раніше (швидко, по set membership);
-        # багатослівні — пошуком підрядка в тексті.
-        single_word_anchors = {a for a in anchors if ' ' not in a}
-        multi_word_anchors = [a for a in anchors if ' ' in a]
-
-        # Count logical anchors
-        anchor_count = sum(1 for word in words_clean if word in single_word_anchors)
-        anchor_count += sum(text_lower.count(phrase) for phrase in multi_word_anchors)
-
-        # Also check for conditional structures
-        conditional_patterns = [
-            r'якщо.{1,50}то',
-            r'if.{1,50}then',
-            r'щоб.{1,50}став',
-        ]
-
-        for pattern in conditional_patterns:
-            if re.search(pattern, text_lower):
-                anchor_count += 2  # Strong signal
-
-        # Calculate density
-        density = anchor_count / len(words_clean) if words_clean else 0
-        lexical_cohesion = min(density * 10, 1.0)
-
-        # ── STRUCTURAL COHESION (NEW) ─────────────────────────────────────
-        # Попередня версія бачила лише густину слів-конекторів ("тому",
-        # "отже") і тому карала добре структуровані академічні/філософські
-        # тексти (нумеровані розділи, формальні визначення) як "нелогічні",
-        # хоча вони досягають зв'язності через СТРУКТУРУ, а не густу прозу
-        # з конекторами. Це і давало false positive СЕМАНТИЧНА ПОРОЖНЕЧА на
-        # текстах з чіткими розділами/визначеннями але малою густиною слів
-        # "тому/отже" на тисячу слів.
-        lines = text.split('\n')
-        structural_hits = 0
-        heading_patterns = [
-            r'^#{1,6}\s+\S',            # markdown-заголовки
-            r'^\s*розділ\s+\d+',        # "Розділ 1."
-            r'^\s*\d+\.\d+\.?\s+\S',    # "1.1. ..." підрозділи
-            r'^\s*\d+\.\s+\S',          # нумеровані пункти "1. ..."
-            # v20.6: "мітка-поле:" формат новин-карток (Українська/Європейська
-            # правда та подібні): Джерело :, Пряма мова :, Деталі :,
-            # Контекст :, Довідка :, Нагадаємо :, Що було раніше :, Причина :,
-            # Наслідки :, Передісторія :. Це структурний маркер зв'язності
-            # так само, як нумерований пункт чи заголовок — просто інша
-            # типографська конвенція, характерна для стислих новинних заміток.
-            r'^\s*(джерело|пряма\s+мова|деталі|контекст|довідка|нагадаємо|'
-            r'що\s+було\s+раніше|причина|наслідки|передісторія|для\s+довідки|'
-            r'важливо|зауваж(ення|имо))\s*:',
-            # v20.6: англомовний відповідник тієї ж field-label структури
-            # (Source:, Quote:, Details:, Context:, Background:, Previously:,
-            # Reason:, Consequences:, Backstory:, Note:, Important:, Update:) —
-            # той самий формат стислих новинних заміток у англомовних медіа.
-            r'^\s*(source|quote|details?|context|background|previously|'
-            r'reason|consequences?|backstory|note|important|update)\s*:',
-        ]
-        for line in lines:
-            stripped = line.strip()
-            if not stripped:
-                continue
-            if any(re.match(p, stripped, re.IGNORECASE) for p in heading_patterns):
-                structural_hits += 1
-
-        definition_hits = len(re.findall(
-            r'(визначається як|означає|за визначенням|розглядається як)',
-            text_lower
-        ))
-        structural_hits += definition_hits
-
-        structural_density = structural_hits / max(1, len(lines))
-        structural_cohesion = min(structural_density * 12, 1.0)
-
-        cohesion_score = max(lexical_cohesion, structural_cohesion)
-
-        # v20.6: зберігаємо розбивку як атрибут instance — не для повернення
-        # напряму (сигнатура лишається float, щоб не зламати виклики типу
-        # `logical_cohesion > 0.3`), а щоб її можна було прочитати ззовні
-        # одразу після виклику й записати в diagnostics/Supabase для
-        # майбутнього збору вибірки й аналізу розподілу.
+        # Зберігаємо розбивку для diagnostics/Supabase-логування — та сама
+        # структура полів, що й раніше (anchor_count/structural_hits/lines),
+        # тепер джерело — CohesionV2. 'lines' семантично мапиться на
+        # sentence_count v2 (найближчий еквівалент "одиниці тексту").
         self._last_cohesion_debug = {
-            'anchor_count': anchor_count,
-            'structural_hits': structural_hits,
-            'lines': len(lines),
+            'anchor_count': result.anchor_count,
+            'structural_hits': result.structural_hits,
+            'lines': result.sentence_count,
+            # Нові поля v2, яких не було в v1 — лишаємо доступними для
+            # тих, хто читає self._last_cohesion_debug напряму.
+            'lexical': result.lexical,
+            'structural': result.structural,
+            'referential': result.referential,
         }
 
-        # v20.6 DEBUG: тимчасовий diagnostic-print для звірки прод/локально.
-        # Прибрати після підтвердження, що деплой підхопив anchors-фікс.
         print(
-            f'🧬 COHESION DEBUG: anchor_count={anchor_count} '
-            f'words={len(words_clean)} lexical={round(lexical_cohesion,3)} '
-            f'structural_hits={structural_hits} lines={len(lines)} '
-            f'structural={round(structural_cohesion,3)} '
-            f'final={round(cohesion_score,3)}'
+            f'🧬 COHESION DEBUG (v2): anchor_count={result.anchor_count} '
+            f'sentences={result.sentence_count} lexical={round(result.lexical,3)} '
+            f'structural_hits={result.structural_hits} '
+            f'structural={round(result.structural,3)} '
+            f'referential={round(result.referential,3)} '
+            f'final={round(result.score,3)}'
         )
 
-        return cohesion_score
+        return result.score
+    
     
     def apply_entropy_damper(self, base_entropy: float, cohesion: float, 
                             void: float, absurdity: float) -> float:
@@ -1544,7 +1459,7 @@ class VeritasCalibratedCore:
         manipulation_blocks_discount = manipulation_result['manipulation_score'] >= 0.25
         short_text_blocks_discount = word_count < 100  # v17.1: min word threshold
         
-        if (logical_cohesion > 0.3 and void_result['void_score'] < 0.30
+        if (logical_cohesion > 0.40 and void_result['void_score'] < 0.30
                 and not absurdity_blocks_discount
                 and not manipulation_blocks_discount
                 and not short_text_blocks_discount):
@@ -1559,9 +1474,11 @@ class VeritasCalibratedCore:
         # ADJUSTED: Lower thresholds for mystical/theatrical texts
         min_buzzwords = 2 if word_count < 50 else 3  # Lower threshold
         
-        # v14.1.1: CRITICAL - Exclude high-cohesion texts from VOID
-        # Philosophy/science with strong logical structure is NOT void!
-        has_strong_logic = logical_cohesion > 0.3  # Lowered from 0.6
+        # v20.7: поріг узгоджено з cohesion_discount вище (0.40) — той
+        # самий концептуальний check "чи текст має сильну логічну
+        # структуру", тепер на CohesionV2, калібрований свідомо під
+        # ~50%+ адекватного контенту (не сліпе перенесення персентиля v1).
+        has_strong_logic = logical_cohesion > 0.40
         
         is_semantic_void = (
             final_score >= 0.35 and  # Lowered from 0.6 for theatrical texts
