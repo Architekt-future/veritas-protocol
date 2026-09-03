@@ -2638,6 +2638,18 @@ def witness_synthesis():
         data = request.get_json() or {}
         text = data.get('article_text', '') or ''
         language = data.get('language', 'UK')
+
+        # ── ДІАГНОСТИЧНИЙ ЛОГ СИРОГО PAYLOAD'А ────────────────────────────
+        # Попередній фікс (об'єднання active_modules + diagnostics.
+        # triggered_modules) не змінив симптом на Конституції — обидва шляхи
+        # виявились порожні. Далі гадати наосліп немає сенсу: логуємо реальні
+        # ключі верхнього рівня і те, що саме лежить під обома кандидатами,
+        # щоб наступний прогін показав факт, а не чергове припущення.
+        print(f"🔍 SYNTHESIS RAW PAYLOAD: top_level_keys={sorted(data.keys())} "
+              f"active_modules={data.get('active_modules')!r} "
+              f"diagnostics_keys={sorted((data.get('diagnostics') or {}).keys())} "
+              f"diagnostics.triggered_modules={(data.get('diagnostics') or {}).get('triggered_modules')!r}")
+
         # ── ЗАХИСТ ВІД KEY-PATH MISMATCH (той самий клас бага, що вже ловили в ──
         # серпні: "triggered_modules always read from wrong key-path"). /api/
         # oracle читає з diagnostics.triggered_modules (вкладено); цей ендпоінт
@@ -2646,6 +2658,12 @@ def witness_synthesis():
         # навпаки), синтез мовчки отримував [] — не через ігнорування
         # сигналу LLM, а тому що сигналу не було на вході взагалі. Приймаємо
         # обидва шляхи, об'єднуючи без дублікатів, замість довіряти одному.
+        # ПРИМІТКА: цей фікс сам по собі НЕ вирішив кейс Конституції (Sept 3,
+        # 22:45) — обидва шляхи виявились порожні, тож справжнє джерело
+        # проблеми, найімовірніше, на фронтенді, до якого немає доступу з
+        # цієї сесії. Лишається як безпечний, коректний за задумом фікс — і
+        # тепер ще й підстрахований логом вище, який покаже, чи є взагалі
+        # третій, ще не розпізнаний шлях.
         _active_top    = data.get('active_modules', []) or []
         _active_nested = data.get('diagnostics', {}).get('triggered_modules', []) or []
         active_modules = sorted(set(_active_top) | set(_active_nested))
