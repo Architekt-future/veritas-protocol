@@ -2509,6 +2509,41 @@ def oracle():
             response_payload['witness_verdict_overridden'] = True
         # ─────────────────────────────────────────────────────────────────────
 
+        # ── ЗВОРОТНИЙ ЗАПОБІЖНИК (той самий, що в /api/synthesis) ────────────
+        # Дзеркальний напрямок: LLM пише ЧИСТО/CLEAN (або взагалі не веде мову
+        # про спрацювання) хоча triggered_modules реально непорожній — не
+        # обходячи правило риторикою, а просто ігноруючи вхідний сигнал
+        # (Алібі Верифікатора, Round 3). Перевіряємо ПЕРШИЙ РЯДОК окремо від
+        # попереднього блоку, бо той вже міг замінити response_payload вище.
+        _wt2 = response_payload['witness_text']
+        _first_line2 = _wt2.split('\n', 1)[0].strip().upper() if _wt2 else ''
+        _claimed_clean2 = _first_line2 in {'ЧИСТО', 'CLEAN'}
+        if _has_manip_or_axiom and _claimed_clean2:
+            _is_en_out2 = _first_line2 == 'CLEAN'
+            _fallback2 = 'RHETORIC' if _is_en_out2 else 'РИТОРИКА'
+            _fired2 = sorted(ESCALATION_WORTHY_MODULES.intersection(triggered_modules))
+            print(f"⚠️  ORACLE OVERRIDE (reverse): LLM said '{_first_line2}' but triggered_modules="
+                  f"{triggered_modules} shows real triggers ({_fired2}) — forcing '{_fallback2}', "
+                  f"replacing full body (LLM ignored the input signal instead of explaining it)")
+            if _is_en_out2:
+                _corrected_body2 = (
+                    f"Automatic correction: module(s) {', '.join(_fired2)} actually triggered, but "
+                    f"the model's own text claimed nothing triggered and ignored that data. Verdict "
+                    f"set to RHETORIC as an honest floor — check the module details separately, this "
+                    f"automatic fix does not substitute for a precise severity assessment."
+                )
+            else:
+                _corrected_body2 = (
+                    f"Автоматичне виправлення: модуль(і) {', '.join(_fired2)} реально спрацював(ли), "
+                    f"але власний текст моделі стверджував, що нічого не спрацювало, і проігнорував "
+                    f"ці дані. Вердикт встановлено на РИТОРИКА як чесний мінімум — перевір деталі "
+                    f"спрацювання окремо, точну оцінку загрози це автоматичне виправлення не "
+                    f"підмінює."
+                )
+            response_payload['witness_text'] = f"{_fallback2}\n\n{_corrected_body2}"
+            response_payload['witness_verdict_overridden'] = True
+        # ─────────────────────────────────────────────────────────────────────
+
         if _debug_rss:
             # Показуємо лише коли DEBUG_RSS=1 — не для кінцевого користувача UI.
             response_payload['rss_debug'] = [
@@ -2574,6 +2609,10 @@ def witness_synthesis():
                 "triggered_modules is empty, the verdict is CLEAN regardless of the text's tone or "
                 "topic. A confident/academic/theoretical tone is NOT grounds for alarm; tone and "
                 "scores are different things.\n"
+                "  3b. THE REVERSE ALSO APPLIES, AND IS EQUALLY STRICT: if triggered_modules is NOT "
+                "empty, the verdict CANNOT be CLEAN — at minimum RHETORIC. Never write 'no modules "
+                "triggered' or 'triggered_modules is empty' when the list above is non-empty — check "
+                "the literal list before writing this claim, do not infer it from the text's tone.\n"
                 "  4. Opinion/column with meta_intent/self_preservation → RHETORIC, not DANGEROUS\n"
                 "  5. Not recognizing a product/model/event name is NOT evidence it's fabricated. If "
                 "the text names an outlet or author (even one you cannot verify), that is not "
@@ -2614,6 +2653,10 @@ def witness_synthesis():
                 "triggered_modules вище). Якщо triggered_modules порожній — вердикт ЧИСТО, незалежно "
                 "від тону чи теми тексту. Впевнений/академічний/теоретичний тон — НЕ причина для "
                 "тривоги; тон і показники — різні речі.\n"
+                "  3б. ЗВОРОТНЄ ПРАВИЛО ДІЄ ТАК САМО СУВОРО: якщо triggered_modules НЕ порожній — "
+                "вердикт НЕ МОЖЕ бути ЧИСТО, мінімум РИТОРИКА. НІКОЛИ не пиши 'жодного модуля не "
+                "спрацювало' чи 'triggered_modules порожній', якщо список вище непорожній — звіряйся "
+                "з буквальним списком, а не з власним відчуттям тону тексту.\n"
                 "  4. Публіцистика і авторська колонка з meta_intent/self_preservation → РИТОРИКА, не НЕБЕЗПЕЧНО\n"
                 "  5. Те, що ти не впізнаєш назву продукту/моделі/події — НЕ доказ що вона вигадана. "
                 "Якщо текст називає видання чи автора (навіть якщо не можеш перевірити) — це не "
@@ -2681,6 +2724,46 @@ def witness_synthesis():
                     'the underlying signals rather than explaining them.'
                 )
             synth['triggered_explanation'] = {}
+        # ── ЗВОРОТНИЙ ЗАПОБІЖНИК (Алібі Верифікатора, Round 3) ──────────────
+        # Дзеркальний напрямок попереднього блоку: LLM іноді пише "triggered_
+        # modules порожній, вердикт ЧИСТО" навіть коли active_modules реально
+        # непорожній — не обходячи правило риторикою (Round 2), а просто не
+        # звіряючись із переданими даними (Round 3, мовчазне ігнорування).
+        # Одного промпт-правила (3б вище) недостатньо — воно ймовірнісне,
+        # тому дублюємо тут детерміністично на буквальному active_modules.
+        _claimed_clean = _raw_verdict in ({'ЧИСТО', 'CLEAN'})
+        if _claimed_clean and _has_manip_or_axiom:
+            _fallback_verdict = 'РИТОРИКА' if not is_en else 'RHETORIC'
+            _fired = sorted(ESCALATION_WORTHY_MODULES.intersection(active_modules))
+            print(f"⚠️  SYNTHESIS OVERRIDE (reverse): LLM said 'CLEAN'/triggered_modules empty, but "
+                  f"active_modules={active_modules} shows real triggers ({_fired}) — forcing "
+                  f"'{_fallback_verdict}', replacing witness_text/triggered_explanation (LLM ignored "
+                  f"the input signal instead of explaining it)")
+            synth['witness_verdict'] = _fallback_verdict
+            if not is_en:
+                synth['adjustment_reason'] = (
+                    f"Вердикт скориговано автоматично: модуль(і) {', '.join(_fired)} реально "
+                    f"спрацював(ли), хоча синтез стверджував що спрацювань немає."
+                )
+                synth['witness_text'] = (
+                    f"Автоматичне виправлення: система зафіксувала реальне спрацювання модуля(ів) "
+                    f"{', '.join(_fired)}, але текстовий синтез помилково написав, що жодного "
+                    f"спрацювання немає, і проігнорував ці дані. Вердикт встановлено на РИТОРИКА як "
+                    f"чесний мінімум — перевір деталі спрацювання окремо, точну оцінку загрози це "
+                    f"автоматичне виправлення не підмінює."
+                )
+            else:
+                synth['adjustment_reason'] = (
+                    f"Verdict auto-corrected: module(s) {', '.join(_fired)} actually triggered, even "
+                    f"though the synthesis claimed no triggers."
+                )
+                synth['witness_text'] = (
+                    f"Automatic correction: the system recorded a real trigger for module(s) "
+                    f"{', '.join(_fired)}, but the text synthesis incorrectly claimed nothing "
+                    f"triggered and ignored that data. Verdict set to RHETORIC as an honest floor — "
+                    f"this automatic fix does not substitute for a precise severity assessment."
+                )
+            synth['triggered_explanation'] = {m: '' for m in _fired}
         # ─────────────────────────────────────────────────────────────────────
 
         adj = float(synth.get('entropy_adjustment', 0))
