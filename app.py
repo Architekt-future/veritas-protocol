@@ -381,6 +381,61 @@ MODULE_WEIGHTS = {
 # перевіряв не той список.
 ESCALATION_WORTHY_MODULES = frozenset(MODULE_WEIGHTS.keys())
 
+# ── Захист від "фабрикації через невпізнавання" (Алібі Верифікатора, ─────────
+# продовження серії — виявлено на статті про Claude Mythos) ─────────────────
+# LLM-шар (Witness/Synthesis) регулярно оголошує неспізнану назву продукту/
+# моделі/інциденту "вигадкою" чи "фейком" лише тому, що вона не в training
+# data — і робить це впевненою, декларативною мовою, яку неможливо надійно
+# заборонити самим лише промпт-правилом (та ж теза, що й з triggered_modules:
+# мовна гра завжди має простір для обходу словесної заборони). Тому дублюємо
+# заборону тут регексом на РІВНІ РЕЧЕННЯ — не всього тексту (щоб не викидати
+# легітимну частину пояснення про реально спрацьовані модулі поруч).
+import re as _re
+
+_FABRICATION_DENIAL_PATTERNS_UK = _re.compile(
+    r'(не\s+існу[єc]|цього\s+не\s+існу[єc]|це\s+вигадк|сфабрикован\w*|'
+    r'фейков\w*|звучить\s+як\s+вигадк|штучно\s+(сконструйован\w*|створен\w*)|'
+    r'не\s+підтвердж\w*\s+факт|такого\s+(продукту|проєкту|проекту|інциденту)\s+не\s+іс)',
+    _re.IGNORECASE
+)
+_FABRICATION_DENIAL_PATTERNS_EN = _re.compile(
+    r"does(?:n'|n )?t\s+exist|no\s+such\s+(?:product|model|thing|project|incident)|"
+    r'is\s+fabricated|sounds?\s+(?:made\s+up|like\s+fiction)|is\s+(?:a\s+)?fiction\b',
+    _re.IGNORECASE
+)
+
+_FALLBACK_UNRECOGNIZED_UK = (
+    "Я не можу підтвердити існування цієї назви — перевір офіційний сайт "
+    "компанії чи нещодавні новини, перш ніж довіряти деталям."
+)
+_FALLBACK_UNRECOGNIZED_EN = (
+    "I cannot confirm the existence of this name — check the company's "
+    "official site or recent news before trusting the details."
+)
+
+
+def _strip_fabrication_denial(text, is_en=False):
+    """
+    Розбиває текст на речення і замінює КОЖНЕ речення, яке впевнено оголошує
+    неспізнану назву 'вигадкою'/'неіснуючою', на нейтральне формулювання —
+    не викидаючи решту тексту (де можуть бути легітимні пояснення реально
+    спрацьованих модулів). Повертає (виправлений_текст, чи_було_спрацювання).
+    """
+    if not text:
+        return text, False
+    pattern = _FABRICATION_DENIAL_PATTERNS_EN if is_en else _FABRICATION_DENIAL_PATTERNS_UK
+    fallback = _FALLBACK_UNRECOGNIZED_EN if is_en else _FALLBACK_UNRECOGNIZED_UK
+    sentences = _re.split(r'(?<=[.!?])\s+', text)
+    changed = False
+    fixed = []
+    for s in sentences:
+        if pattern.search(s):
+            fixed.append(fallback)
+            changed = True
+        else:
+            fixed.append(s)
+    return (' '.join(fixed), changed)
+
 
 # ── RULE INTERACTION MATRIX ───────────────────────────────────────────────────
 # Явна матриця синергій між модулями.
@@ -2471,6 +2526,22 @@ def oracle():
             'entropy_multiplier':  round(entropy_multiplier, 3),
         }
 
+        # ── ЗАХИСТ ВІД ФАБРИКАЦІЇ ЧЕРЕЗ НЕВПІЗНАВАННЯ (regex, детерміністично) ─
+        # Той самий запобіжник, що в /api/synthesis (Claude Mythos кейс): навіть
+        # маючи текстове правило про іменовані продукти в STATIC_WITNESS_RULES,
+        # LLM іноді все одно пише "цього не існує" — правило-текст ймовірнісне,
+        # тому дублюємо на рівні речення незалежно від нього.
+        # ВАЖЛИВО: чіпаємо тільки ТІЛО після вердикту-слова в першому рядку —
+        # інакше спліт по реченнях може захопити "ЧИСТО" в один шматок з
+        # першим реченням тіла й видалити його разом з фабрикацією.
+        _wt_full = response_payload['witness_text']
+        _verdict_line, _sep, _body_only = _wt_full.partition('\n')
+        _body_fixed, _was_fabrication_oracle = _strip_fabrication_denial(_body_only, is_en=is_en)
+        if _was_fabrication_oracle:
+            print("⚠️  ORACLE OVERRIDE (fabrication denial): witness_text declared an unrecognized "
+                  "name fictional/nonexistent — neutralized the sentence")
+            response_payload['witness_text'] = f"{_verdict_line}{_sep}{_body_fixed}"
+
         # ── ДЕТЕРМІНІСТИЧНИЙ ЗАПОБІЖНИК (той самий, що в /api/synthesis) ─────
         # Промпт інструктує LLM написати вердикт-слово ВЕЛИКИМИ як перший
         # рядок відповіді. Якщо LLM пише НЕБЕЗПЕЧНО/ПІДОЗРІЛО (чи EN-варіант)
@@ -2616,7 +2687,10 @@ def witness_synthesis():
                 "  4. Opinion/column with meta_intent/self_preservation → RHETORIC, not DANGEROUS\n"
                 "  5. Not recognizing a product/model/event name is NOT evidence it's fabricated. If "
                 "the text names an outlet or author (even one you cannot verify), that is not "
-                "'no source'.\n"
+                "'no source'. NEVER write 'this doesn't exist', 'this is fiction', or 'this is "
+                "fabricated' based on your own unfamiliarity with a name — companies regularly "
+                "announce products after your training cutoff. Phrase it neutrally instead: 'I cannot "
+                "confirm this name exists — check the official source before trusting the details.'\n"
                 "  6. entropy_adjustment RULES — READ CAREFULLY:\n"
                 "     - DEFAULT is 0.0. Change ONLY if you have a concrete specific reason from the text.\n"
                 "     - Do NOT lower entropy just because the text 'seems fine' or 'is journalistic'.\n"
@@ -2660,7 +2734,11 @@ def witness_synthesis():
                 "  4. Публіцистика і авторська колонка з meta_intent/self_preservation → РИТОРИКА, не НЕБЕЗПЕЧНО\n"
                 "  5. Те, що ти не впізнаєш назву продукту/моделі/події — НЕ доказ що вона вигадана. "
                 "Якщо текст називає видання чи автора (навіть якщо не можеш перевірити) — це не "
-                "'відсутність джерела'.\n"
+                "'відсутність джерела'. НІКОЛИ не пиши 'цього не існує', 'це вигадка' чи 'це "
+                "сфабриковано' на основі власного невпізнавання назви — компанії регулярно "
+                "анонсують продукти після твого training cutoff. Формулюй нейтрально: 'я не можу "
+                "підтвердити існування цієї назви — перевір офіційне джерело перед тим як довіряти "
+                "деталям'.\n"
                 "  6. ПРАВИЛА entropy_adjustment — ЧИТАЙ УВАЖНО:\n"
                 "     - ЗА ЗАМОВЧУВАННЯМ 0.0. Змінюй ТІЛЬКИ якщо є конкретна причина з тексту.\n"
                 "     - НЕ знижуй ентропію просто тому що текст 'виглядає нормально' або 'є журналістикою'.\n"
@@ -2690,6 +2768,17 @@ def witness_synthesis():
         if clean.startswith('json'): clean = clean[4:]
         clean = clean.strip().rstrip('`')
         synth = _json.loads(clean)
+
+        # ── ЗАХИСТ ВІД ФАБРИКАЦІЇ ЧЕРЕЗ НЕВПІЗНАВАННЯ (regex, детерміністично) ─
+        # Промпт-правило 5 вище — ймовірнісне; дублюємо тут на рівні речення,
+        # незалежно від того, дотримався LLM формулювання чи ні.
+        for _field in ('witness_text', 'adjustment_reason'):
+            if synth.get(_field):
+                _fixed_text, _was_fabrication = _strip_fabrication_denial(synth[_field], is_en=is_en)
+                if _was_fabrication:
+                    print(f"⚠️  SYNTHESIS OVERRIDE (fabrication denial): '{_field}' declared an "
+                          f"unrecognized name fictional/nonexistent — neutralized the sentence")
+                    synth[_field] = _fixed_text
 
         # ── ДЕТЕРМІНІСТИЧНИЙ ЗАПОБІЖНИК ─────────────────────────────────────
         # LLM іноді цитує правило "НЕБЕЗПЕЧНО тільки якщо manipulation>0 або
