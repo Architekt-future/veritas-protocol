@@ -1,5 +1,5 @@
 """
-Veritas Protocol - Flask API v20.6
+Veritas Protocol - Flask API v20.7
 Forces fresh import of Veritas modules on every restart
 SCRAPER: Daily Mail selectors + <p> fallback (2026-02-26)
 GENRE: GenreDetector v2.0 — CONSPIRACY_NEWS + fixed SPORT/CULTURE false positives
@@ -12,17 +12,23 @@ SOURCE CONTEXT: new advisory-only badge decoupled from manipulation score —
   now two independent signals instead of one blended score. Escalation
   override widened from 2 to all 15 real modules (was silently discarding
   legitimate framing/laundered_claim/etc. escalations).
+COHESION: CohesionV2 promoted from shadow-logged experiment to the live
+  engine behind calculate_logical_cohesion() (same text -> float interface,
+  no external call sites touched). cohesion_discount and has_strong_logic
+  thresholds recalibrated 0.3 -> 0.40 on the new v2 scale; is_pure_bullshit
+  (< 0.2) deliberately left unrecalibrated (its void_score >= 0.32 co-
+  condition never fires on real content, so risk is low either way).
 """
 
 import sys
 import os
 
 # CRITICAL: Clear module cache to force reload
-print("🔄 Veritas v20.6 - Clearing module cache...")
+print("🔄 Veritas v20.7 - Clearing module cache...")
 modules_to_clear = [k for k in sys.modules.keys() if k.startswith('veritas_')]
 for module in modules_to_clear:
     del sys.modules[module]
-print(f"✅ Cache cleared. Loading fresh Veritas v20.6 modules...")
+print(f"✅ Cache cleared. Loading fresh Veritas v20.7 modules...")
 
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
@@ -76,10 +82,12 @@ engine = VeritasCalibratedCore()
 alarmism_detector = AlarmismDetector()
 media_bias_detector = MediaBiasDetector()
 ard_checker = ARDChecker()
-# v20.6: ЕКСПЕРИМЕНТАЛЬНИЙ тіньовий розрахунок когезії (v2). НЕ впливає на
-# жоден вердикт чи бейдж, який бачить користувач — тільки логується поруч
-# з v1 у Supabase для порівняння на реальних даних, перш ніж приймати
-# рішення про заміну v1.
+# v20.7: CohesionV2 тепер ЖИВИЙ рушій — calculate_logical_cohesion()
+# в VeritasCalibratedCore викликає його напряму (v1 більше не
+# використовується). Цей окремий екземпляр (cohesion_v2_engine) лишається
+# тільки для паралельного тіньового логування в Supabase — свідомо
+# дублює обчислення на кожному запиті (перевірка, що обидва шляхи дають
+# однакове число); можна прибрати пізніше, не терміново.
 cohesion_v2_engine = CohesionV2()
 print("✅ Veritas engine initialized")
 
@@ -777,7 +785,7 @@ def home():
     except:
         return jsonify({
             'status': 'online',
-            'version': 'v20.6',
+            'version': 'v20.7',
             'message': 'Veritas Protocol API is running (index.html not found)',
             'features': {
                 'pattern_boost': engine.pattern_boost_engine is not None,
@@ -794,7 +802,7 @@ def analyze():
         if request.method == 'GET':
             return jsonify({
                 'status': 'online',
-                'version': 'v20.6',
+                'version': 'v20.7',
                 'modules': {
                     'pattern_boost':         engine.pattern_boost_engine is not None,
                     'void_detector':         engine.void_detector is not None,
@@ -1487,11 +1495,12 @@ def analyze():
         )
         result['witness_synthesis'] = None  # заповнюється через /api/synthesis
 
-        # ── ЕКСПЕРИМЕНТ v20.6: тіньовий розрахунок cohesion_v2 ──────────────
-        # Рахується ПАРАЛЕЛЬНО з основним аналізом, але результат НІКУДИ
-        # не потрапляє, крім Supabase-логу нижче — не в result, не у
-        # вердикт, не в те, що бачить користувач. try/except гарантує: якщо
-        # цей експериментальний модуль впаде з помилкою, основний аналіз
+        # ── v20.7: паралельний розрахунок cohesion_v2 для Supabase-логу ─────
+        # CohesionV2 вже ЖИВИЙ усередині result (через calculate_logical_
+        # cohesion), тож це обчислення тепер дублює те, що вже сталось —
+        # лишено свідомо як перехресна перевірка "обидва шляхи дають
+        # однакове число" (не терміново прибирати). try/except гарантує:
+        # якщо цей окремий виклик впаде з помилкою, основний аналіз
         # (result) все одно повернеться користувачу без жодних змін.
         _cohesion_v2_result = None
         try:
@@ -1551,7 +1560,7 @@ def stats_reset():
 def health():
     return jsonify({
         'status': 'healthy',
-        'version': 'v20.6'
+        'version': 'v20.7'
     })
 
 
