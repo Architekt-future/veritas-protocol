@@ -2638,7 +2638,17 @@ def witness_synthesis():
         data = request.get_json() or {}
         text = data.get('article_text', '') or ''
         language = data.get('language', 'UK')
-        active_modules = data.get('active_modules', [])
+        # ── ЗАХИСТ ВІД KEY-PATH MISMATCH (той самий клас бага, що вже ловили в ──
+        # серпні: "triggered_modules always read from wrong key-path"). /api/
+        # oracle читає з diagnostics.triggered_modules (вкладено); цей ендпоінт
+        # історично читав тільки з верхньорівневого active_modules. Якщо
+        # фронтенд коли-небудь надішле дані лише під шляхом oracle (або
+        # навпаки), синтез мовчки отримував [] — не через ігнорування
+        # сигналу LLM, а тому що сигналу не було на вході взагалі. Приймаємо
+        # обидва шляхи, об'єднуючи без дублікатів, замість довіряти одному.
+        _active_top    = data.get('active_modules', []) or []
+        _active_nested = data.get('diagnostics', {}).get('triggered_modules', []) or []
+        active_modules = sorted(set(_active_top) | set(_active_nested))
         entropy_base = data.get('entropy_base', 0)
         entropy_boosted = data.get('entropy_boosted', entropy_base)
         verdict = data.get('verdict', '?')
