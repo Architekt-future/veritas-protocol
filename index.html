@@ -1683,6 +1683,24 @@ async function analyze() {
         // Якщо тригери спрацювали — викликаємо /api/synthesis асинхронно
         // після того як основний результат вже показаний користувачу.
         if (data.auto_witness_triggered) {
+            // ── UX-ЗАХИСТ ВІД ГОНКИ КЛІКУ (Sept 4, 2026) ──────────────────
+            // /api/oracle серіалізує window._lastVeritasResult у тілі запиту
+            // В МОМЕНТ КЛІКУ, а не за посиланням. Якщо клікнути "Оракул" до
+            // того, як синтез (10-15с через LLM-виклик) встигне дописати
+            // witness_synthesis в цей об'єкт — запит піде з witness_synthesis
+            // ще null НАЗАВЖДИ, і збагачення в app.py не матиме що підтягнути
+            // (не баг, чесна поведінка при реально відсутніх на вході даних —
+            // підтверджено логами). Тому блокуємо кнопку на час очікування.
+            const _oracleBtnWait = document.getElementById('oracleBtn');
+            if (_oracleBtnWait) {
+                _oracleBtnWait.disabled = true;
+                _oracleBtnWait.dataset.waitingSynthesis = '1';
+                const _label = _oracleBtnWait.querySelector('#i18n-oracle_btn') || _oracleBtnWait;
+                _oracleBtnWait.dataset.origLabel = _label.textContent;
+                _label.textContent = currentLang === 'uk'
+                    ? '⏳ Очікує синтез…'
+                    : '⏳ Waiting for synthesis…';
+            }
             callWitnessSynthesis(data);
         }
     } catch (err) {
@@ -1799,6 +1817,18 @@ async function callWitnessSynthesis(data) {
 
     } catch(e) {
         console.warn('Synthesis error (non-fatal):', e);
+    } finally {
+        // ── Повертаємо Oracle-кнопку в робочий стан у БУДЬ-ЯКОМУ випадку ──
+        // (успіх, HTTP-помилка, мережева помилка) — інакше користувач
+        // застрягає з задизейбленою кнопкою назавжди при збої синтезу.
+        const _oracleBtnDone = document.getElementById('oracleBtn');
+        if (_oracleBtnDone && _oracleBtnDone.dataset.waitingSynthesis === '1') {
+            _oracleBtnDone.disabled = false;
+            const _label = _oracleBtnDone.querySelector('#i18n-oracle_btn') || _oracleBtnDone;
+            _label.textContent = _oracleBtnDone.dataset.origLabel || t('oracle_btn');
+            delete _oracleBtnDone.dataset.waitingSynthesis;
+            delete _oracleBtnDone.dataset.origLabel;
+        }
     }
 }
 
