@@ -1,5 +1,5 @@
 """
-Veritas Protocol - Flask API v20.7
+Veritas Protocol - Flask API v20.8
 Forces fresh import of Veritas modules on every restart
 SCRAPER: Daily Mail selectors + <p> fallback (2026-02-26)
 GENRE: GenreDetector v2.0 — CONSPIRACY_NEWS + fixed SPORT/CULTURE false positives
@@ -18,17 +18,37 @@ COHESION: CohesionV2 promoted from shadow-logged experiment to the live
   thresholds recalibrated 0.3 -> 0.40 on the new v2 scale; is_pure_bullshit
   (< 0.2) deliberately left unrecalibrated (its void_score >= 0.32 co-
   condition never fires on real content, so risk is low either way).
+REVERSE GUARD ("Алібі Асиметрії"): the CLEAN-without-support guard now has a
+  symmetric counterpart — if triggered_modules is real and non-empty but the
+  Witness claims CLEAN, the verdict is force-corrected to RHETORIC and the
+  full body is rewritten (prompt rule 3b + deterministic code, both /api/
+  oracle and /api/synthesis). Root cause traced through three layers: (1) a
+  request key-path mismatch hypothesis (ruled out by a raw-payload log), (2)
+  the real cause — index.html's callWitnessSynthesis() read a `diagnostics`
+  wrapper that /api/analyze's response never had (triggered_modules sits at
+  the response's own top level); fixed in the frontend. Oracle's reverse-
+  guard fallback now also reuses an already-computed /api/synthesis
+  explanation when available (deterministic enrichment, no extra LLM call),
+  and a UX guard disables the Oracle button until auto-synthesis completes
+  so its payload isn't serialized before that data lands.
+FABRICATION-DENIAL GUARD: regex-level backstop (sentence-level replacement,
+  escalating to whole-body replacement at 2+ matches) for the Witness
+  confidently declaring an unrecognized named product/model/incident
+  fictional or nonexistent ("Claude Mythos" case) — broadened from narrow
+  exact phrases to root-level matching (вигад\\w*, неіснуюч\\w* etc.) with a
+  negation guard so genuine "this is NOT fabricated" statements are never
+  flagged.
 """
 
 import sys
 import os
 
 # CRITICAL: Clear module cache to force reload
-print("🔄 Veritas v20.7 - Clearing module cache...")
+print("🔄 Veritas v20.8 - Clearing module cache...")
 modules_to_clear = [k for k in sys.modules.keys() if k.startswith('veritas_')]
 for module in modules_to_clear:
     del sys.modules[module]
-print(f"✅ Cache cleared. Loading fresh Veritas v20.7 modules...")
+print(f"✅ Cache cleared. Loading fresh Veritas v20.8 modules...")
 
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
@@ -871,7 +891,7 @@ def home():
     except:
         return jsonify({
             'status': 'online',
-            'version': 'v20.7',
+            'version': 'v20.8',
             'message': 'Veritas Protocol API is running (index.html not found)',
             'features': {
                 'pattern_boost': engine.pattern_boost_engine is not None,
@@ -888,7 +908,7 @@ def analyze():
         if request.method == 'GET':
             return jsonify({
                 'status': 'online',
-                'version': 'v20.7',
+                'version': 'v20.8',
                 'modules': {
                     'pattern_boost':         engine.pattern_boost_engine is not None,
                     'void_detector':         engine.void_detector is not None,
@@ -1646,7 +1666,7 @@ def stats_reset():
 def health():
     return jsonify({
         'status': 'healthy',
-        'version': 'v20.7'
+        'version': 'v20.8'
     })
 
 
