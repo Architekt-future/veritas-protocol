@@ -393,16 +393,26 @@ ESCALATION_WORTHY_MODULES = frozenset(MODULE_WEIGHTS.keys())
 import re as _re
 
 _FABRICATION_DENIAL_PATTERNS_UK = _re.compile(
-    r'(не\s+існу[єc]|цього\s+не\s+існу[єc]|це\s+вигадк|сфабрикован\w*|'
-    r'фейков\w*|звучить\s+як\s+вигадк|штучно\s+(сконструйован\w*|створен\w*)|'
-    r'не\s+підтвердж\w*\s+факт|такого\s+(продукту|проєкту|проекту|інциденту)\s+не\s+іс)',
+    r'(не\s+існу[єc]|цього\s+не\s+існу[єc]|неіснуюч\w*|вигад\w*|сфабрикован\w*|'
+    r'фейков\w*|штучно\s+(сконструйован\w*|створен\w*)|'
+    r'не\s+підтвердж\w*\s+факт|такого\s+(продукту|проєкту|проекту|інциденту)\s+не\s+іс|'
+    r'художн\w*\s+(конструкці\w*|вимисел\w*|пароді\w*|промисл\w*)|'
+    r'пароді\w*\s+на|філософськ\w*\s+експеримент|літературн\w*\s+жанр|'
+    r'жодного\s+посилання\s+на\s+реальне\s+джерело|'
+    r'не\s+ма[єc]\s+(жодного\s+)?місця\s+в\s+новинн\w*)',
     _re.IGNORECASE
 )
+_NEGATION_BEFORE_FABRICATION_UK = _re.compile(r'не\s+(?:є\s+)?вигад\w*', _re.IGNORECASE)
+
 _FABRICATION_DENIAL_PATTERNS_EN = _re.compile(
-    r"does(?:n'|n )?t\s+exist|no\s+such\s+(?:product|model|thing|project|incident)|"
-    r'is\s+fabricated|sounds?\s+(?:made\s+up|like\s+fiction)|is\s+(?:a\s+)?fiction\b',
+    r"(does(?:n'|n )?t\s+exist|no\s+such\s+(?:product|model|thing|project|incident)|"
+    r'is\s+fabricat\w*|fabricat\w*\s+narrative|sounds?\s+(?:made\s+up|like\s+fiction)|'
+    r'is\s+(?:a\s+)?fiction\w*|fiction\w*\s+narrative|literary\s+genre|'
+    r'philosophical\s+experiment|parody\s+of|no\s+reference\s+to\s+any\s+real\s+source|'
+    r'nonexistent)',
     _re.IGNORECASE
 )
+_NEGATION_BEFORE_FABRICATION_EN = _re.compile(r"\bnot\s+(?:a\s+)?fabricat\w*|isn'?t\s+fabricat\w*", _re.IGNORECASE)
 
 _FALLBACK_UNRECOGNIZED_UK = (
     "Я не можу підтвердити існування цієї назви — перевір офіційний сайт "
@@ -412,29 +422,50 @@ _FALLBACK_UNRECOGNIZED_EN = (
     "I cannot confirm the existence of this name — check the company's "
     "official site or recent news before trusting the details."
 )
+_FALLBACK_WHOLE_BODY_UK = (
+    "Це пояснення відкинуто автоматично: воно було побудоване навколо кількох тверджень, "
+    "що впевнено оголошують названі в тексті продукти, події чи джерела вигаданими або "
+    "неіснуючими — на основі власного невпізнавання назв, а не перевірки. Невпізнавання "
+    "назви не є доказом фабрикації: компанії й видання регулярно анонсують продукти та "
+    "новини вже після дати навчання моделі. Перевір офіційні джерела компанії чи нещодавні "
+    "новини, перш ніж робити висновок про правдивість тексту."
+)
+_FALLBACK_WHOLE_BODY_EN = (
+    "This explanation was discarded automatically: it was built around multiple statements "
+    "confidently declaring names, events, or sources mentioned in the text as fictional or "
+    "nonexistent — based on unfamiliarity, not verification. Not recognizing a name is not "
+    "evidence it's fabricated: companies and outlets regularly announce products and news "
+    "after the model's training cutoff. Check the company's official sources or recent news "
+    "before concluding the text is untrue."
+)
 
 
 def _strip_fabrication_denial(text, is_en=False):
     """
-    Розбиває текст на речення і замінює КОЖНЕ речення, яке впевнено оголошує
-    неспізнану назву 'вигадкою'/'неіснуючою', на нейтральне формулювання —
-    не викидаючи решту тексту (де можуть бути легітимні пояснення реально
-    спрацьованих модулів). Повертає (виправлений_текст, чи_було_спрацювання).
+    Розбиває текст на речення. Одне речення з упевненою заявою "це вигадка/
+    не існує" — точкова заміна, решта тексту (напр. про реально спрацьовані
+    модулі) лишається. Але якщо ТАКИХ речень два і більше — це вже не разова
+    обмовка, а весь параграф побудований навколо хибної передумови (Round 3,
+    Claude Mythos кейс: 4+ окремих формулювання того самого висновку різними
+    словами) — тоді латання по шматках лишає розкидані копії fallback-фрази й
+    нічого не рятує; замінюємо ввесь текст одним чесним поясненням.
+    Повертає (виправлений_текст, чи_було_спрацювання).
     """
     if not text:
         return text, False
     pattern = _FABRICATION_DENIAL_PATTERNS_EN if is_en else _FABRICATION_DENIAL_PATTERNS_UK
-    fallback = _FALLBACK_UNRECOGNIZED_EN if is_en else _FALLBACK_UNRECOGNIZED_UK
+    negation = _NEGATION_BEFORE_FABRICATION_EN if is_en else _NEGATION_BEFORE_FABRICATION_UK
+    fallback_sentence = _FALLBACK_UNRECOGNIZED_EN if is_en else _FALLBACK_UNRECOGNIZED_UK
+    fallback_whole = _FALLBACK_WHOLE_BODY_EN if is_en else _FALLBACK_WHOLE_BODY_UK
     sentences = _re.split(r'(?<=[.!?])\s+', text)
-    changed = False
-    fixed = []
-    for s in sentences:
-        if pattern.search(s):
-            fixed.append(fallback)
-            changed = True
-        else:
-            fixed.append(s)
-    return (' '.join(fixed), changed)
+    matched = [bool(pattern.search(negation.sub(' ', s))) for s in sentences]
+    match_count = sum(matched)
+    if match_count == 0:
+        return text, False
+    if match_count >= 2:
+        return fallback_whole, True
+    fixed = [fallback_sentence if matched[i] else s for i, s in enumerate(sentences)]
+    return (' '.join(fixed), True)
 
 
 # ── RULE INTERACTION MATRIX ───────────────────────────────────────────────────
