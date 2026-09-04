@@ -2564,17 +2564,16 @@ def oracle():
                   f"replacing full body (was internally contradictory)")
             if _is_en_out:
                 _corrected_body = (
-                    "Automatic correction: none of the manipulation or axiom detectors actually "
-                    "triggered on this text, so the verdict has been set to CLEAN. The model's own "
-                    "explanation for a higher-severity verdict was discarded because it contradicted "
-                    "the underlying signals rather than explaining them."
+                    "Auto-corrected: none of the manipulation or axiom detectors actually triggered "
+                    "on this text. The model's own explanation for a higher-severity verdict was "
+                    "discarded because it contradicted the underlying signals rather than explaining "
+                    "them."
                 )
             else:
                 _corrected_body = (
-                    "Автоматичне виправлення: жодного реального спрацювання manipulation чи axiom "
-                    "модулів на цьому тексті не було, тому вердикт встановлено ЧИСТО. Власне "
-                    "пояснення моделі для вищого рівня загрози відкинуто, бо воно суперечило "
-                    "фактичним сигналам, а не пояснювало їх."
+                    "Скориговано автоматично: жодного реального спрацювання manipulation чи axiom "
+                    "модулів на цьому тексті не було. Власне пояснення моделі для вищого рівня "
+                    "загрози відкинуто, бо воно суперечило фактичним сигналам, а не пояснювало їх."
                 )
             response_payload['witness_text'] = f"{_clean_word}\n\n{_corrected_body}"
             response_payload['witness_verdict_overridden'] = True
@@ -2625,33 +2624,28 @@ def oracle():
             if _is_en_out2:
                 if _has_usable_synth_explanation:
                     _corrected_body2 = (
-                        f"Automatic correction: module(s) {', '.join(_fired2)} actually triggered, but "
-                        f"this model's own text claimed CLEAN and ignored that data. Verdict set to "
-                        f"RHETORIC. A separate synthesis pass already produced a substantive read: "
-                        f"{_synth_explanation}"
+                        f"Auto-corrected (this model initially wrote CLEAN, ignoring module(s) "
+                        f"{', '.join(_fired2)}) — per an independent synthesis pass: {_synth_explanation}"
                     )
                 else:
                     _corrected_body2 = (
-                        f"Automatic correction: module(s) {', '.join(_fired2)} actually triggered, but "
-                        f"the model's own text claimed nothing triggered and ignored that data. Verdict "
-                        f"set to RHETORIC as an honest floor — check the module details separately, this "
-                        f"automatic fix does not substitute for a precise severity assessment."
+                        f"Auto-corrected — this model initially wrote CLEAN even though module(s) "
+                        f"{', '.join(_fired2)} actually triggered and were ignored. Check the module "
+                        f"details separately — this fix does not substitute for a precise severity "
+                        f"assessment."
                     )
             else:
                 if _has_usable_synth_explanation:
                     _corrected_body2 = (
-                        f"Автоматичне виправлення: модуль(і) {', '.join(_fired2)} реально спрацював(ли), "
-                        f"але саме ця модель стверджувала ЧИСТО і проігнорувала ці дані. Вердикт "
-                        f"встановлено на РИТОРИКА. Окремий прогін синтезу вже дав змістовну оцінку: "
+                        f"Скориговано автоматично (ця модель спершу написала ЧИСТО, ігноруючи "
+                        f"модуль(і) {', '.join(_fired2)}) — за незалежним прогоном синтезу: "
                         f"{_synth_explanation}"
                     )
                 else:
                     _corrected_body2 = (
-                        f"Автоматичне виправлення: модуль(і) {', '.join(_fired2)} реально спрацював(ли), "
-                        f"але власний текст моделі стверджував, що нічого не спрацювало, і проігнорував "
-                        f"ці дані. Вердикт встановлено на РИТОРИКА як чесний мінімум — перевір деталі "
-                        f"спрацювання окремо, точну оцінку загрози це автоматичне виправлення не "
-                        f"підмінює."
+                        f"Скориговано автоматично — модель спершу написала ЧИСТО, хоча модуль(і) "
+                        f"{', '.join(_fired2)} реально спрацював(ли) і були проігноровані. Перевір "
+                        f"деталі спрацювання окремо — точну оцінку загрози це виправлення не підмінює."
                     )
             response_payload['witness_text'] = f"{_fallback2}\n\n{_corrected_body2}"
             response_payload['witness_verdict_overridden'] = True
@@ -2867,20 +2861,19 @@ def witness_synthesis():
                   f"replacing witness_text/triggered_explanation (were internally contradictory)")
             synth['witness_verdict'] = _clean_word
             if not is_en:
-                synth['adjustment_reason'] = 'Вердикт скориговано автоматично: жодного реального спрацювання manipulation чи axiom не було.'
+                synth['adjustment_reason'] = 'Скориговано автоматично: жодного реального спрацювання manipulation чи axiom не було.'
                 synth['witness_text'] = (
-                    'Автоматичне виправлення: жодного реального спрацювання manipulation чи axiom '
-                    'модулів на цьому тексті не було, тому вердикт встановлено ЧИСТО. Власне '
-                    'пояснення моделі для вищого рівня загрози відкинуто, бо воно суперечило '
-                    'фактичним сигналам, а не пояснювало їх.'
+                    'Скориговано автоматично: жодного реального спрацювання manipulation чи axiom '
+                    'модулів на цьому тексті не було. Власне пояснення моделі для вищого рівня '
+                    'загрози відкинуто, бо воно суперечило фактичним сигналам, а не пояснювало їх.'
                 )
             else:
-                synth['adjustment_reason'] = 'Verdict auto-corrected: no real manipulation or axiom trigger was present.'
+                synth['adjustment_reason'] = 'Auto-corrected: no real manipulation or axiom trigger was present.'
                 synth['witness_text'] = (
-                    'Automatic correction: none of the manipulation or axiom detectors actually '
-                    'triggered on this text, so the verdict has been set to CLEAN. The model\'s own '
-                    'explanation for a higher-severity verdict was discarded because it contradicted '
-                    'the underlying signals rather than explaining them.'
+                    'Auto-corrected: none of the manipulation or axiom detectors actually triggered '
+                    'on this text. The model\'s own explanation for a higher-severity verdict was '
+                    'discarded because it contradicted the underlying signals rather than explaining '
+                    'them.'
                 )
             synth['triggered_explanation'] = {}
         # ── ЗВОРОТНИЙ ЗАПОБІЖНИК (Алібі Верифікатора, Round 3) ──────────────
@@ -2901,26 +2894,25 @@ def witness_synthesis():
             synth['witness_verdict'] = _fallback_verdict
             if not is_en:
                 synth['adjustment_reason'] = (
-                    f"Вердикт скориговано автоматично: модуль(і) {', '.join(_fired)} реально "
-                    f"спрацював(ли), хоча синтез стверджував що спрацювань немає."
+                    f"Скориговано автоматично: модуль(і) {', '.join(_fired)} реально спрацював(ли), "
+                    f"хоча синтез спершу стверджував що спрацювань немає."
                 )
                 synth['witness_text'] = (
-                    f"Автоматичне виправлення: система зафіксувала реальне спрацювання модуля(ів) "
-                    f"{', '.join(_fired)}, але текстовий синтез помилково написав, що жодного "
-                    f"спрацювання немає, і проігнорував ці дані. Вердикт встановлено на РИТОРИКА як "
-                    f"чесний мінімум — перевір деталі спрацювання окремо, точну оцінку загрози це "
-                    f"автоматичне виправлення не підмінює."
+                    f"Скориговано автоматично — система зафіксувала реальне спрацювання модуля(ів) "
+                    f"{', '.join(_fired)}, хоча текстовий синтез спершу написав, що жодного "
+                    f"спрацювання немає, і проігнорував ці дані. Перевір деталі спрацювання окремо — "
+                    f"точну оцінку загрози це виправлення не підмінює."
                 )
             else:
                 synth['adjustment_reason'] = (
-                    f"Verdict auto-corrected: module(s) {', '.join(_fired)} actually triggered, even "
-                    f"though the synthesis claimed no triggers."
+                    f"Auto-corrected: module(s) {', '.join(_fired)} actually triggered, even though "
+                    f"the synthesis initially claimed no triggers."
                 )
                 synth['witness_text'] = (
-                    f"Automatic correction: the system recorded a real trigger for module(s) "
-                    f"{', '.join(_fired)}, but the text synthesis incorrectly claimed nothing "
-                    f"triggered and ignored that data. Verdict set to RHETORIC as an honest floor — "
-                    f"this automatic fix does not substitute for a precise severity assessment."
+                    f"Auto-corrected — the system recorded a real trigger for module(s) "
+                    f"{', '.join(_fired)}, even though the text synthesis initially claimed nothing "
+                    f"triggered and ignored that data. Check the module details separately — this fix "
+                    f"does not substitute for a precise severity assessment."
                 )
             synth['triggered_explanation'] = {m: '' for m in _fired}
         # ─────────────────────────────────────────────────────────────────────
