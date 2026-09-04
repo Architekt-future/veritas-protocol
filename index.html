@@ -1700,20 +1700,25 @@ async function analyze() {
 // ── WITNESS SYNTHESIS ASYNC CALL ─────────────────────────────────────────────
 async function callWitnessSynthesis(data) {
     try {
-        const diag = data.diagnostics || {};
         const isUk = currentLang === 'uk';
         const lang = isUk ? 'UK' : 'EN';
 
         // Активні модулі — беремо готовий, вже правильно побудований бекендом
-        // список (diag.triggered_modules), а не реконструюємо його заново.
-        // Стара реконструкція мала дві незалежні помилки: (1) формат рядків
-        // не збігався з бекендовим ESCALATION_WORTHY_MODULES (тут писалось
-        // 'FRAMING(OVERTON_SHIFT)'/'LAC_LABOR', бекенд звіряє за 'framing'/
-        // 'lac_labor' — жодного разу не могли збігтися через set-intersection);
-        // (2) поріг lac_labor_score > 0.3 перевернутий — у lac_labor/lac_finance
-        // 0 = найгірший вердикт (ІМІТАЦІЯ ВІДПОВІДАЛЬНОСТІ), тому найгірший
-        // випадок ніколи не проходив цю умову.
-        const activeMods = diag.triggered_modules || [];
+        // список. /api/analyze повертає triggered_modules на ВЕРХНЬОМУ рівні
+        // відповіді (result.update(tier) в app.py), а не під data.diagnostics —
+        // "diagnostics" це синтетична обгортка, яку сам фронтенд додає лише
+        // при виклику /api/oracle (diagnostics: window._lastVeritasResult),
+        // її не існує у відповіді analyze(). Попередня версія цього рядка
+        // (`data.diagnostics.triggered_modules`) через це завжди читала [] —
+        // діагностовано 2026-09-03 на кейсі Конституції Anthropic.
+        // Стара реконструкція мала й свої дві незалежні помилки: (1) формат
+        // рядків не збігався з бекендовим ESCALATION_WORTHY_MODULES (тут
+        // писалось 'FRAMING(OVERTON_SHIFT)'/'LAC_LABOR', бекенд звіряє за
+        // 'framing'/'lac_labor' — жодного разу не могли збігтися через
+        // set-intersection); (2) поріг lac_labor_score > 0.3 перевернутий —
+        // у lac_labor/lac_finance 0 = найгірший вердикт (ІМІТАЦІЯ
+        // ВІДПОВІДАЛЬНОСТІ), тому найгірший випадок ніколи не проходив цю умову.
+        const activeMods = data.triggered_modules || data.diagnostics?.triggered_modules || [];
 
         const entropyBase = Math.round((data.entropy||0) * 100);
         const entropyBoosted = data.entropy_boosted !== undefined ? data.entropy_boosted : entropyBase;
