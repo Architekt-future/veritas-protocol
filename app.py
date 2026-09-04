@@ -2596,21 +2596,63 @@ def oracle():
             print(f"⚠️  ORACLE OVERRIDE (reverse): LLM said '{_first_line2}' but triggered_modules="
                   f"{triggered_modules} shows real triggers ({_fired2}) — forcing '{_fallback2}', "
                   f"replacing full body (LLM ignored the input signal instead of explaining it)")
+
+            # ── Підтягуємо готове пояснення з /api/synthesis, якщо воно вже ──
+            # порахувалось раніше і само не страждає на той самий баг. Фронтенд
+            # передає весь window._lastVeritasResult під diagnostics — там уже
+            # може лежати witness_synthesis з реальним, змістовним поясненням
+            # (напр. "manipulation спрацював у контексті self-presentation...").
+            # Використовувати його краще, ніж вигадувати власний канцелярський
+            # текст: воно вже пройшло реальний аналіз реальних triggered_modules.
+            _synth = (data.get('diagnostics', {}) or {}).get('witness_synthesis') or {}
+            _synth_explanation = (_synth.get('witness_text') or _synth.get('adjustment_reason') or '').strip()
+            # Захист від того самого бага в самому запозиченому тексті —
+            # regex-перевірка, чи він сам не стверджує "нічого не спрацювало".
+            _synth_explanation, _ = _strip_fabrication_denial(_synth_explanation, is_en=_is_en_out2)
+            _synth_also_broken = bool(
+                _synth_explanation and _FABRICATION_DENIAL_PATTERNS_EN.search(_synth_explanation)
+                if _is_en_out2 else
+                _FABRICATION_DENIAL_PATTERNS_UK.search(_synth_explanation or '')
+            )
+            _has_usable_synth_explanation = bool(_synth_explanation) and not _synth_also_broken and (
+                'порожній' not in _synth_explanation.lower() and 'empty' not in _synth_explanation.lower()
+            )
+            print(f"🔍 ORACLE ENRICHMENT CHECK: diagnostics_has_witness_synthesis={bool(_synth)} "
+                  f"witness_text={(_synth.get('witness_text') or '')[:80]!r} "
+                  f"adjustment_reason={(_synth.get('adjustment_reason') or '')[:80]!r} "
+                  f"usable={_has_usable_synth_explanation}")
+
             if _is_en_out2:
-                _corrected_body2 = (
-                    f"Automatic correction: module(s) {', '.join(_fired2)} actually triggered, but "
-                    f"the model's own text claimed nothing triggered and ignored that data. Verdict "
-                    f"set to RHETORIC as an honest floor — check the module details separately, this "
-                    f"automatic fix does not substitute for a precise severity assessment."
-                )
+                if _has_usable_synth_explanation:
+                    _corrected_body2 = (
+                        f"Automatic correction: module(s) {', '.join(_fired2)} actually triggered, but "
+                        f"this model's own text claimed CLEAN and ignored that data. Verdict set to "
+                        f"RHETORIC. A separate synthesis pass already produced a substantive read: "
+                        f"{_synth_explanation}"
+                    )
+                else:
+                    _corrected_body2 = (
+                        f"Automatic correction: module(s) {', '.join(_fired2)} actually triggered, but "
+                        f"the model's own text claimed nothing triggered and ignored that data. Verdict "
+                        f"set to RHETORIC as an honest floor — check the module details separately, this "
+                        f"automatic fix does not substitute for a precise severity assessment."
+                    )
             else:
-                _corrected_body2 = (
-                    f"Автоматичне виправлення: модуль(і) {', '.join(_fired2)} реально спрацював(ли), "
-                    f"але власний текст моделі стверджував, що нічого не спрацювало, і проігнорував "
-                    f"ці дані. Вердикт встановлено на РИТОРИКА як чесний мінімум — перевір деталі "
-                    f"спрацювання окремо, точну оцінку загрози це автоматичне виправлення не "
-                    f"підмінює."
-                )
+                if _has_usable_synth_explanation:
+                    _corrected_body2 = (
+                        f"Автоматичне виправлення: модуль(і) {', '.join(_fired2)} реально спрацював(ли), "
+                        f"але саме ця модель стверджувала ЧИСТО і проігнорувала ці дані. Вердикт "
+                        f"встановлено на РИТОРИКА. Окремий прогін синтезу вже дав змістовну оцінку: "
+                        f"{_synth_explanation}"
+                    )
+                else:
+                    _corrected_body2 = (
+                        f"Автоматичне виправлення: модуль(і) {', '.join(_fired2)} реально спрацював(ли), "
+                        f"але власний текст моделі стверджував, що нічого не спрацювало, і проігнорував "
+                        f"ці дані. Вердикт встановлено на РИТОРИКА як чесний мінімум — перевір деталі "
+                        f"спрацювання окремо, точну оцінку загрози це автоматичне виправлення не "
+                        f"підмінює."
+                    )
             response_payload['witness_text'] = f"{_fallback2}\n\n{_corrected_body2}"
             response_payload['witness_verdict_overridden'] = True
         # ─────────────────────────────────────────────────────────────────────
