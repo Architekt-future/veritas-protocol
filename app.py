@@ -243,6 +243,37 @@ def log_analysis(result: dict, analyzed_text: str = '', cohesion_v2=None) -> Non
         print(f"⚠️  log_analysis error (non-fatal): {e}")
 
 
+def log_witness(endpoint: str, raw_text: str, final_text: str,
+                 override_reasons: list, triggered_modules: list,
+                 text_preview: str = '', manipulation_score=None,
+                 axiom_score=None) -> None:
+    """
+    Логує сирий і фінальний текст Свідка окремо від trigger_log —
+    щоб бачити, чи спрацював guard, і що саме LLM написав ДО правки.
+    Non-blocking, як і log_analysis. Потребує таблиці witness_log
+    в Supabase (створюється окремим SQL, див. release notes).
+    """
+    try:
+        sb = _get_sb()
+        if not sb:
+            return
+        entry = {
+            'ts':                 int(time.time()),
+            'endpoint':           endpoint,
+            'text_preview':       (text_preview or '')[:200],
+            'raw_witness_text':   raw_text or '',
+            'final_witness_text': final_text or '',
+            'override_fired':     bool(override_reasons),
+            'override_reason':    ','.join(override_reasons) if override_reasons else None,
+            'triggered_modules':  triggered_modules or [],
+            'manipulation_score': round(manipulation_score, 3) if manipulation_score is not None else None,
+            'axiom_score':        round(axiom_score, 3) if axiom_score is not None else None,
+        }
+        sb.table('witness_log').insert(entry).execute()
+    except Exception as e:
+        print(f"⚠️  log_witness error (non-fatal): {e}")
+
+
 def compute_stats() -> dict:
     """
     Читає з Supabase і будує агреговану статистику:
@@ -2585,6 +2616,9 @@ def oracle():
         # ВАЖЛИВО: чіпаємо тільки ТІЛО після вердикту-слова в першому рядку —
         # інакше спліт по реченнях може захопити "ЧИСТО" в один шматок з
         # першим реченням тіла й видалити його разом з фабрикацією.
+        _raw_oracle_text = response_payload['witness_text']
+        _oracle_override_reasons = []
+
         _wt_full = response_payload['witness_text']
         _verdict_line, _sep, _body_only = _wt_full.partition('\n')
         _body_fixed, _was_fabrication_oracle = _strip_fabrication_denial(_body_only, is_en=is_en)
@@ -2592,6 +2626,7 @@ def oracle():
             print("⚠️  ORACLE OVERRIDE (fabrication denial): witness_text declared an unrecognized "
                   "name fictional/nonexistent — neutralized the sentence")
             response_payload['witness_text'] = f"{_verdict_line}{_sep}{_body_fixed}"
+            _oracle_override_reasons.append('fabrication_denial')
 
         # ── ДЕТЕРМІНІСТИЧНИЙ ЗАПОБІЖНИК (той самий, що в /api/synthesis) ─────
         # Промпт інструктує LLM написати вердикт-слово ВЕЛИКИМИ як перший
@@ -2628,6 +2663,7 @@ def oracle():
                 )
             response_payload['witness_text'] = f"{_clean_word}\n\n{_corrected_body}"
             response_payload['witness_verdict_overridden'] = True
+            _oracle_override_reasons.append('escalation_without_trigger')
         # ─────────────────────────────────────────────────────────────────────
 
         # ── ЗВОРОТНИЙ ЗАПОБІЖНИК (той самий, що в /api/synthesis) ────────────
@@ -2700,7 +2736,19 @@ def oracle():
                     )
             response_payload['witness_text'] = f"{_fallback2}\n\n{_corrected_body2}"
             response_payload['witness_verdict_overridden'] = True
+            _oracle_override_reasons.append('reverse_ignored_trigger')
         # ─────────────────────────────────────────────────────────────────────
+
+        log_witness(
+            endpoint='oracle',
+            raw_text=_raw_oracle_text,
+            final_text=response_payload['witness_text'],
+            override_reasons=_oracle_override_reasons,
+            triggered_modules=triggered_modules,
+            text_preview=text_preview,
+            manipulation_score=manip_score_w,
+            axiom_score=axiom_score_w,
+        )
 
         if _debug_rss:
             # Показуємо лише коли DEBUG_RSS=1 — не для кінцевого користувача UI.
@@ -2884,6 +2932,9 @@ def witness_synthesis():
         clean = clean.strip().rstrip('`')
         synth = _json.loads(clean)
 
+        _raw_synth_text = synth.get('witness_text', '')
+        _synth_override_reasons = []
+
         # ── ЗАХИСТ ВІД ФАБРИКАЦІЇ ЧЕРЕЗ НЕВПІЗНАВАННЯ (regex, детерміністично) ─
         # Промпт-правило 5 вище — ймовірнісне; дублюємо тут на рівні речення,
         # незалежно від того, дотримався LLM формулювання чи ні.
@@ -2894,6 +2945,7 @@ def witness_synthesis():
                     print(f"⚠️  SYNTHESIS OVERRIDE (fabrication denial): '{_field}' declared an "
                           f"unrecognized name fictional/nonexistent — neutralized the sentence")
                     synth[_field] = _fixed_text
+                    _synth_override_reasons.append(f'fabrication_denial:{_field}')
 
         # ── ДЕТЕРМІНІСТИЧНИЙ ЗАПОБІЖНИК ─────────────────────────────────────
         # LLM іноді цитує правило "НЕБЕЗПЕЧНО тільки якщо manipulation>0 або
@@ -2927,6 +2979,7 @@ def witness_synthesis():
                     'them.'
                 )
             synth['triggered_explanation'] = {}
+            _synth_override_reasons.append('escalation_without_trigger')
         # ── ЗВОРОТНИЙ ЗАПОБІЖНИК (Алібі Верифікатора, Round 3) ──────────────
         # Дзеркальний напрямок попереднього блоку: LLM іноді пише "triggered_
         # modules порожній, вердикт ЧИСТО" навіть коли active_modules реально
@@ -2966,7 +3019,17 @@ def witness_synthesis():
                     f"does not substitute for a precise severity assessment."
                 )
             synth['triggered_explanation'] = {m: '' for m in _fired}
+            _synth_override_reasons.append('reverse_ignored_trigger')
         # ─────────────────────────────────────────────────────────────────────
+
+        log_witness(
+            endpoint='synthesis',
+            raw_text=_raw_synth_text,
+            final_text=synth.get('witness_text', ''),
+            override_reasons=_synth_override_reasons,
+            triggered_modules=active_modules,
+            text_preview=text,
+        )
 
         adj = float(synth.get('entropy_adjustment', 0))
         adj = max(-0.15, min(0.15, adj))  # clamp відповідає промпту
