@@ -246,12 +246,21 @@ def log_analysis(result: dict, analyzed_text: str = '', cohesion_v2=None) -> Non
 def log_witness(endpoint: str, raw_text: str, final_text: str,
                  override_reasons: list, triggered_modules: list,
                  text_preview: str = '', manipulation_score=None,
-                 axiom_score=None) -> None:
+                 axiom_score=None, llm_unrecognized_entities=None,
+                 regex_signal_agrees=None) -> None:
     """
     Логує сирий і фінальний текст Свідка окремо від trigger_log —
     щоб бачити, чи спрацював guard, і що саме LLM написав ДО правки.
     Non-blocking, як і log_analysis. Потребує таблиці witness_log
     в Supabase (створюється окремим SQL, див. release notes).
+
+    v2 (тіньова калібрація): паралельно логує новий структурований сигнал
+    (LLM сам перелічує невпізнані сутності — llm_unrecognized_entities)
+    поруч зі старим regex-based override, і чи вони збігаються
+    (regex_signal_agrees). Поки regex лишається чинним guard'ом для
+    поведінки — це той самий принцип, що й з cohesion v1/v2: нова
+    математика логується мовчки, поки не набереться вибірка для
+    порівняння, і тільки тоді замінює стару.
     """
     try:
         sb = _get_sb()
@@ -268,6 +277,8 @@ def log_witness(endpoint: str, raw_text: str, final_text: str,
             'triggered_modules':  triggered_modules or [],
             'manipulation_score': round(manipulation_score, 3) if manipulation_score is not None else None,
             'axiom_score':        round(axiom_score, 3) if axiom_score is not None else None,
+            'llm_unrecognized_entities': llm_unrecognized_entities or [],
+            'regex_signal_agrees':       regex_signal_agrees,
         }
         sb.table('witness_log').insert(entry).execute()
     except Exception as e:
@@ -2414,7 +2425,10 @@ def oracle():
             "Відповідай ВИКЛЮЧНО українською мовою — жодного русизму чи суржику. "
             "Замість 'вот', 'ложь', 'честно', 'сейчас', 'кстати', 'конечно' — "
             "'ось', 'брехня', 'чесно', 'зараз', 'до речі', 'звісно'. "
-            "Якщо вагаєшся між українським і російським словом — обирай виключно українське."
+            "Якщо вагаєшся між українським і російським словом — обирай виключно українське.\n"
+            "ОСТАННІЙ рядок — окремо, буквально у форматі 'ENTITIES: назва1, назва2' (без вердикту "
+            "чи оцінки, лише самі назви продуктів/моделей/інцидентів, яких ти не можеш підтвердити) "
+            "або 'ENTITIES: none', якщо все впізнано або таких згадок немає."
         )
 
         STATIC_WITNESS_RULES_EN = (
@@ -2516,7 +2530,10 @@ def oracle():
             "  3. For EACH triggered module — one sentence explaining specifically what it found\n"
             "  4. What the reader should do next — a concrete recommendation\n"
             "No technical module names. No mention of entropy or metrics.\n"
-            "Respond EXCLUSIVELY in English."
+            "Respond EXCLUSIVELY in English.\n"
+            "LAST line — separate, literally in the format 'ENTITIES: name1, name2' (no verdict or "
+            "judgment, just the bare names of products/models/incidents you cannot confirm) or "
+            "'ENTITIES: none' if everything is recognized or there are no such mentions."
         )
 
         if is_en:
@@ -2618,6 +2635,24 @@ def oracle():
         # першим реченням тіла й видалити його разом з фабрикацією.
         _raw_oracle_text = response_payload['witness_text']
         _oracle_override_reasons = []
+
+        # ── СИГНАЛ v2 (тіньовий, не впливає на поведінку) ─────────────────────
+        # Структурований маркер замість вгадування "заперечення" регексом на
+        # вільному тексті (Алібі Асиметрії, третій випадок — вузьке заперечення
+        # ловить "не вигадка", але не "без вигадування" чи "не означає що
+        # вигадано"). Модель сама явно перелічує невпізнані сутності одним
+        # рядком; ми лише витягуємо його і прибираємо з тексту користувача —
+        # чинний regex-guard нижче лишається без змін, працює як і раніше.
+        # Порівнюємо обидва сигнали в логах, поки новий не доведе надійність.
+        _llm_unrecognized_entities = []
+        _wt_lines = _raw_oracle_text.rstrip().split('\n')
+        if _wt_lines and _wt_lines[-1].strip().upper().startswith('ENTITIES:'):
+            _entities_raw = _wt_lines[-1].split(':', 1)[1].strip()
+            if _entities_raw and _entities_raw.lower() not in ('none', 'немає'):
+                _llm_unrecognized_entities = [e.strip() for e in _entities_raw.split(',') if e.strip()]
+            _raw_oracle_text = '\n'.join(_wt_lines[:-1]).rstrip()
+            response_payload['witness_text'] = _raw_oracle_text
+        # ─────────────────────────────────────────────────────────────────────
 
         _wt_full = response_payload['witness_text']
         _verdict_line, _sep, _body_only = _wt_full.partition('\n')
@@ -2739,6 +2774,7 @@ def oracle():
             _oracle_override_reasons.append('reverse_ignored_trigger')
         # ─────────────────────────────────────────────────────────────────────
 
+        _regex_fired_fabrication = 'fabrication_denial' in _oracle_override_reasons
         log_witness(
             endpoint='oracle',
             raw_text=_raw_oracle_text,
@@ -2748,6 +2784,8 @@ def oracle():
             text_preview=text_preview,
             manipulation_score=manip_score_w,
             axiom_score=axiom_score_w,
+            llm_unrecognized_entities=_llm_unrecognized_entities,
+            regex_signal_agrees=(bool(_llm_unrecognized_entities) == _regex_fired_fabrication),
         )
 
         if _debug_rss:
@@ -2866,7 +2904,10 @@ def witness_synthesis():
                 '"entropy_adjustment":<float -0.15 to +0.15, default 0.0>,'
                 '"adjustment_reason":"one sentence why",'
                 '"triggered_explanation":{"module_name":"plain language explanation"},'
-                '"witness_text":"3-5 sentence explanation for non-technical reader"}'
+                '"witness_text":"3-5 sentence explanation for non-technical reader",'
+                '"unrecognized_entities":["list of named products/models/incidents you cannot '
+                'confirm exist — empty list if none or all recognized. Do NOT put a verdict or '
+                'judgment here, just the bare names."]}'
             )
         else:
             synth_prompt = (
@@ -2914,7 +2955,10 @@ def witness_synthesis():
                 '"entropy_adjustment":<float від -0.15 до +0.15, за замовчуванням 0.0>,'
                 '"adjustment_reason":"одне речення чому",'
                 '"triggered_explanation":{"назва_модуля":"пояснення простими словами"},'
-                '"witness_text":"3-5 речень пояснення для нетехнічного читача"}'
+                '"witness_text":"3-5 речень пояснення для нетехнічного читача",'
+                '"unrecognized_entities":["список названих продуктів/моделей/інцидентів, чиє '
+                'існування ти не можеш підтвердити — порожній список, якщо все впізнано або таких '
+                'немає. НЕ пиши тут вердикт чи оцінку, лише самі назви."]}'
             )
 
         client = _anthropic.Anthropic(api_key=api_key)
@@ -3022,6 +3066,10 @@ def witness_synthesis():
             _synth_override_reasons.append('reverse_ignored_trigger')
         # ─────────────────────────────────────────────────────────────────────
 
+        _synth_llm_entities = synth.get('unrecognized_entities') or []
+        if not isinstance(_synth_llm_entities, list):
+            _synth_llm_entities = []
+        _synth_regex_fired_fabrication = any(r.startswith('fabrication_denial') for r in _synth_override_reasons)
         log_witness(
             endpoint='synthesis',
             raw_text=_raw_synth_text,
@@ -3029,6 +3077,8 @@ def witness_synthesis():
             override_reasons=_synth_override_reasons,
             triggered_modules=active_modules,
             text_preview=text,
+            llm_unrecognized_entities=_synth_llm_entities,
+            regex_signal_agrees=(bool(_synth_llm_entities) == _synth_regex_fired_fabrication),
         )
 
         adj = float(synth.get('entropy_adjustment', 0))
