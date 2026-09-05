@@ -247,23 +247,26 @@ def log_witness(endpoint: str, raw_text: str, final_text: str,
                  override_reasons: list, triggered_modules: list,
                  text_preview: str = '', manipulation_score=None,
                  axiom_score=None, llm_unrecognized_entities=None,
-                 llm_denies_existence=None, regex_signal_agrees=None) -> None:
+                 llm_denies_existence=None, llm_monopoly_argument=None,
+                 regex_signal_agrees=None) -> None:
     """
     Логує сирий і фінальний текст Свідка окремо від trigger_log —
     щоб бачити, чи спрацював guard, і що саме LLM написав ДО правки.
     Non-blocking, як і log_analysis. Потребує таблиці witness_log
     в Supabase (створюється окремим SQL, див. release notes).
 
-    v2 (тіньова калібрація): паралельно логує новий структурований сигнал —
-    розділений на дві частини:
-      - llm_unrecognized_entities: інформаційний список сутностей, яких LLM
-        не може перевірити (завжди може бути непорожнім, ні на що не впливає);
-      - llm_denies_existence: вузький boolean — чи LLM зробив БЕЗУМОВНЕ
-        твердження про вигаданість, а не просто згадав сутність.
-    Порівнюємо llm_denies_existence зі старим regex-override
-    (regex_signal_agrees), поки regex лишається чинним guard'ом. Той самий
-    принцип, що й з cohesion v1/v2: нова математика логується мовчки, поки
-    не набереться вибірка для порівняння.
+    v2 (тіньова калібрація): паралельно логує три структуровані сигнали:
+      - llm_unrecognized_entities: інформаційний список, ні на що не впливає;
+      - llm_denies_existence: чи LLM зробив БЕЗУМОВНЕ твердження про
+        вигаданість (порівнюється зі старим fabrication-denial regex'ом);
+      - llm_monopoly_argument: чи вхідний текст використовує аргумент
+        "краще ми, ніж хтось гірший" (преемптивна монополія) — новий клас,
+        знайдений емпірично 05.09.2026 на реальній Конституції Anthropic;
+        для нього НЕМАЄ старого regex-еквіваленту для порівняння (є лише
+        частковий PREEMPTIVE_MONOPOLY у детекторі — ловить ~половину форм),
+        тому це чисто нове спостереження, не порівняння двох систем.
+    Той самий принцип, що й з cohesion v1/v2: нова математика логується
+    мовчки, поки не набереться вибірка для порівняння.
     """
     try:
         sb = _get_sb()
@@ -282,6 +285,7 @@ def log_witness(endpoint: str, raw_text: str, final_text: str,
             'axiom_score':        round(axiom_score, 3) if axiom_score is not None else None,
             'llm_unrecognized_entities': llm_unrecognized_entities or [],
             'llm_denies_existence':      llm_denies_existence,
+            'llm_monopoly_argument':     llm_monopoly_argument,
             'regex_signal_agrees':       regex_signal_agrees,
         }
         sb.table('witness_log').insert(entry).execute()
@@ -2439,7 +2443,12 @@ def oracle():
             "застережень твердження що якась названа сутність НЕ існує/вигадана/вигадана "
             "автором. 'DENIES: false' — якщо там є застереження ('не можу підтвердити', 'навіть "
             "якщо це було б вигадкою', 'RSS-збігів не знайдено') або якщо ти трактував сутність "
-            "як реальну."
+            "як реальну.\n"
+            "'MONOPOLY: true' — якщо САМ ВХІДНИЙ ТЕКСТ (не твій аналіз) обґрунтовує, чому "
+            "названий актор/організація має ексклюзивний чи пріоритетний контроль над чимось "
+            "ризикованим/потужним ТОМУ ЩО альтернатива (хтось інший робить це) буде гіршою — "
+            "незалежно від точного формулювання. Оцінюй логічну структуру аргументу, не ключові "
+            "слова. 'MONOPOLY: false' — якщо такого аргументу немає."
         )
 
         STATIC_WITNESS_RULES_EN = (
@@ -2549,7 +2558,12 @@ def oracle():
             "'DENIES: true' — ONLY if your 3-5 sentences above made an unconditional, non-hedged "
             "claim that some named entity does NOT exist / is fictional / was invented by the "
             "author. 'DENIES: false' — if there was hedging ('cannot confirm', 'even if this "
-            "were fictional', 'no RSS match found') or if you treated the entity as real."
+            "were fictional', 'no RSS match found') or if you treated the entity as real.\n"
+            "'MONOPOLY: true' — if the SOURCE TEXT (not your analysis) argues that a named "
+            "actor/organization should hold exclusive or preferential control over something "
+            "risky/powerful BECAUSE the alternative (someone else doing it) would be worse — "
+            "regardless of exact phrasing. Judge the logical structure of the argument, not "
+            "keywords. 'MONOPOLY: false' — if no such argument is present."
         )
 
         if is_en:
@@ -2662,11 +2676,17 @@ def oracle():
         # Порівнюємо обидва сигнали в логах, поки новий не доведе надійність.
         _llm_unrecognized_entities = []
         _llm_denies_existence = False
+        _llm_monopoly_argument = False
         _wt_lines = _raw_oracle_text.rstrip().split('\n')
         _strip_count = 0
-        # DENIES: рядок може прийти останнім або передостаннім — перевіряємо з кінця
-        if _wt_lines and _wt_lines[-1].strip().upper().startswith('DENIES:'):
-            _denies_raw = _wt_lines[-1].split(':', 1)[1].strip().lower()
+        # Рядки можуть прийти в будь-якому порядку з кінця — перевіряємо по одному
+        if _wt_lines and _wt_lines[-1].strip().upper().startswith('MONOPOLY:'):
+            _monopoly_raw = _wt_lines[-1].split(':', 1)[1].strip().lower()
+            _llm_monopoly_argument = _monopoly_raw.startswith('true')
+            _strip_count += 1
+        _denies_idx = -1 - _strip_count
+        if len(_wt_lines) > abs(_denies_idx) - 1 and _wt_lines[_denies_idx].strip().upper().startswith('DENIES:'):
+            _denies_raw = _wt_lines[_denies_idx].split(':', 1)[1].strip().lower()
             _llm_denies_existence = _denies_raw.startswith('true')
             _strip_count += 1
         _entities_idx = -1 - _strip_count
@@ -2812,6 +2832,7 @@ def oracle():
             axiom_score=axiom_score_w,
             llm_unrecognized_entities=_llm_unrecognized_entities,
             llm_denies_existence=_llm_denies_existence,
+            llm_monopoly_argument=_llm_monopoly_argument,
             regex_signal_agrees=(_llm_denies_existence == _regex_fired_fabrication),
         )
 
@@ -2940,7 +2961,15 @@ def witness_synthesis():
                 'unconditional, non-hedged claim that some named entity does NOT exist / is '
                 'fictional / was invented by the author — NOT true for hedged language like '
                 '"cannot confirm", "even if this were fictional", "no RSS match found", or '
-                'treating an entity as real throughout. Default false.>}'
+                'treating an entity as real throughout. Default false.>,'
+                '"uses_lesser_evil_monopoly_argument":<true if the SOURCE TEXT argues that a '
+                'named actor/organization should hold exclusive or preferential control over '
+                'something risky/powerful BECAUSE the alternative (someone else doing it) would '
+                'be worse — regardless of exact phrasing ("better us than a less safe developer", '
+                '"this must happen within our structure, not a less regulated one", "this '
+                'decision belongs to the team that built it, not a regulator or competitor"). '
+                'This is a logical structure, not a fixed phrase — judge the argument, not '
+                'keywords. Default false.>}'
             )
         else:
             synth_prompt = (
@@ -2998,6 +3027,15 @@ def witness_synthesis():
                 'вигадана / вигадана автором — НЕ true для мови із застереженнями типу '
                 '"не можу підтвердити", "навіть якщо це було б вигадкою", "RSS-збігів не знайдено" '
                 'або якщо текст трактує сутність як реальну протягом усього аналізу. '
+                'За замовчуванням false.>,'
+                '"uses_lesser_evil_monopoly_argument":<true якщо САМ ВХІДНИЙ ТЕКСТ (не твій '
+                'аналіз) обґрунтовує, чому названий актор/організація має ексклюзивний чи '
+                'пріоритетний контроль над чимось ризикованим/потужним ТОМУ ЩО альтернатива '
+                '(хтось інший робить це) буде гіршою — незалежно від точного формулювання '
+                '("краще ми, ніж менш безпечний розробник", "це має відбуватись у нашій '
+                'структурі, а не в менш регульованій", "це рішення належить команді, яка це '
+                'будувала, а не регулятору чи конкуренту"). Це логічна структура аргументу, '
+                'не фіксована фраза — оцінюй сам аргумент, не ключові слова. '
                 'За замовчуванням false.>}'
             )
 
@@ -3110,6 +3148,7 @@ def witness_synthesis():
         if not isinstance(_synth_llm_entities, list):
             _synth_llm_entities = []
         _synth_llm_denies = bool(synth.get('confidently_denies_existence', False))
+        _synth_llm_monopoly = bool(synth.get('uses_lesser_evil_monopoly_argument', False))
         _synth_regex_fired_fabrication = any(r.startswith('fabrication_denial') for r in _synth_override_reasons)
         log_witness(
             endpoint='synthesis',
@@ -3120,6 +3159,7 @@ def witness_synthesis():
             text_preview=text,
             llm_unrecognized_entities=_synth_llm_entities,
             llm_denies_existence=_synth_llm_denies,
+            llm_monopoly_argument=_synth_llm_monopoly,
             regex_signal_agrees=(_synth_llm_denies == _synth_regex_fired_fabrication),
         )
 
