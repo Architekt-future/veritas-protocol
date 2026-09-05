@@ -247,20 +247,23 @@ def log_witness(endpoint: str, raw_text: str, final_text: str,
                  override_reasons: list, triggered_modules: list,
                  text_preview: str = '', manipulation_score=None,
                  axiom_score=None, llm_unrecognized_entities=None,
-                 regex_signal_agrees=None) -> None:
+                 llm_denies_existence=None, regex_signal_agrees=None) -> None:
     """
     Логує сирий і фінальний текст Свідка окремо від trigger_log —
     щоб бачити, чи спрацював guard, і що саме LLM написав ДО правки.
     Non-blocking, як і log_analysis. Потребує таблиці witness_log
     в Supabase (створюється окремим SQL, див. release notes).
 
-    v2 (тіньова калібрація): паралельно логує новий структурований сигнал
-    (LLM сам перелічує невпізнані сутності — llm_unrecognized_entities)
-    поруч зі старим regex-based override, і чи вони збігаються
-    (regex_signal_agrees). Поки regex лишається чинним guard'ом для
-    поведінки — це той самий принцип, що й з cohesion v1/v2: нова
-    математика логується мовчки, поки не набереться вибірка для
-    порівняння, і тільки тоді замінює стару.
+    v2 (тіньова калібрація): паралельно логує новий структурований сигнал —
+    розділений на дві частини:
+      - llm_unrecognized_entities: інформаційний список сутностей, яких LLM
+        не може перевірити (завжди може бути непорожнім, ні на що не впливає);
+      - llm_denies_existence: вузький boolean — чи LLM зробив БЕЗУМОВНЕ
+        твердження про вигаданість, а не просто згадав сутність.
+    Порівнюємо llm_denies_existence зі старим regex-override
+    (regex_signal_agrees), поки regex лишається чинним guard'ом. Той самий
+    принцип, що й з cohesion v1/v2: нова математика логується мовчки, поки
+    не набереться вибірка для порівняння.
     """
     try:
         sb = _get_sb()
@@ -278,6 +281,7 @@ def log_witness(endpoint: str, raw_text: str, final_text: str,
             'manipulation_score': round(manipulation_score, 3) if manipulation_score is not None else None,
             'axiom_score':        round(axiom_score, 3) if axiom_score is not None else None,
             'llm_unrecognized_entities': llm_unrecognized_entities or [],
+            'llm_denies_existence':      llm_denies_existence,
             'regex_signal_agrees':       regex_signal_agrees,
         }
         sb.table('witness_log').insert(entry).execute()
@@ -2426,9 +2430,16 @@ def oracle():
             "Замість 'вот', 'ложь', 'честно', 'сейчас', 'кстати', 'конечно' — "
             "'ось', 'брехня', 'чесно', 'зараз', 'до речі', 'звісно'. "
             "Якщо вагаєшся між українським і російським словом — обирай виключно українське.\n"
-            "ОСТАННІЙ рядок — окремо, буквально у форматі 'ENTITIES: назва1, назва2' (без вердикту "
-            "чи оцінки, лише самі назви продуктів/моделей/інцидентів, яких ти не можеш підтвердити) "
-            "або 'ENTITIES: none', якщо все впізнано або таких згадок немає."
+            "ОСТАННІ ДВА рядки — окремо, буквально, у цьому форматі:\n"
+            "'ENTITIES: назва1, назва2' (БУДЬ-ЯКІ названі продукти/моделі/інциденти, які ти "
+            "особисто не можеш перевірити через RSS чи тренувальні дані — незалежно від того, "
+            "трактуєш ти їх як реальні чи вигадані вище; це просто інформація, не оцінка) або "
+            "'ENTITIES: none', якщо таких немає.\n"
+            "'DENIES: true' — ТІЛЬКИ якщо у 3-5 реченнях вище ти зробив безумовне, без "
+            "застережень твердження що якась названа сутність НЕ існує/вигадана/вигадана "
+            "автором. 'DENIES: false' — якщо там є застереження ('не можу підтвердити', 'навіть "
+            "якщо це було б вигадкою', 'RSS-збігів не знайдено') або якщо ти трактував сутність "
+            "як реальну."
         )
 
         STATIC_WITNESS_RULES_EN = (
@@ -2531,9 +2542,14 @@ def oracle():
             "  4. What the reader should do next — a concrete recommendation\n"
             "No technical module names. No mention of entropy or metrics.\n"
             "Respond EXCLUSIVELY in English.\n"
-            "LAST line — separate, literally in the format 'ENTITIES: name1, name2' (no verdict or "
-            "judgment, just the bare names of products/models/incidents you cannot confirm) or "
-            "'ENTITIES: none' if everything is recognized or there are no such mentions."
+            "LAST TWO lines — separate, literally in this format:\n"
+            "'ENTITIES: name1, name2' (ANY named product/model/incident you personally cannot "
+            "verify via RSS or training data — regardless of whether you treat it as real or "
+            "fictional above; informational only) or 'ENTITIES: none' if there are none.\n"
+            "'DENIES: true' — ONLY if your 3-5 sentences above made an unconditional, non-hedged "
+            "claim that some named entity does NOT exist / is fictional / was invented by the "
+            "author. 'DENIES: false' — if there was hedging ('cannot confirm', 'even if this "
+            "were fictional', 'no RSS match found') or if you treated the entity as real."
         )
 
         if is_en:
@@ -2645,12 +2661,22 @@ def oracle():
         # чинний regex-guard нижче лишається без змін, працює як і раніше.
         # Порівнюємо обидва сигнали в логах, поки новий не доведе надійність.
         _llm_unrecognized_entities = []
+        _llm_denies_existence = False
         _wt_lines = _raw_oracle_text.rstrip().split('\n')
-        if _wt_lines and _wt_lines[-1].strip().upper().startswith('ENTITIES:'):
-            _entities_raw = _wt_lines[-1].split(':', 1)[1].strip()
+        _strip_count = 0
+        # DENIES: рядок може прийти останнім або передостаннім — перевіряємо з кінця
+        if _wt_lines and _wt_lines[-1].strip().upper().startswith('DENIES:'):
+            _denies_raw = _wt_lines[-1].split(':', 1)[1].strip().lower()
+            _llm_denies_existence = _denies_raw.startswith('true')
+            _strip_count += 1
+        _entities_idx = -1 - _strip_count
+        if len(_wt_lines) > abs(_entities_idx) - 1 and _wt_lines[_entities_idx].strip().upper().startswith('ENTITIES:'):
+            _entities_raw = _wt_lines[_entities_idx].split(':', 1)[1].strip()
             if _entities_raw and _entities_raw.lower() not in ('none', 'немає'):
                 _llm_unrecognized_entities = [e.strip() for e in _entities_raw.split(',') if e.strip()]
-            _raw_oracle_text = '\n'.join(_wt_lines[:-1]).rstrip()
+            _strip_count += 1
+        if _strip_count:
+            _raw_oracle_text = '\n'.join(_wt_lines[:-_strip_count]).rstrip()
             response_payload['witness_text'] = _raw_oracle_text
         # ─────────────────────────────────────────────────────────────────────
 
@@ -2785,7 +2811,8 @@ def oracle():
             manipulation_score=manip_score_w,
             axiom_score=axiom_score_w,
             llm_unrecognized_entities=_llm_unrecognized_entities,
-            regex_signal_agrees=(bool(_llm_unrecognized_entities) == _regex_fired_fabrication),
+            llm_denies_existence=_llm_denies_existence,
+            regex_signal_agrees=(_llm_denies_existence == _regex_fired_fabrication),
         )
 
         if _debug_rss:
@@ -2905,9 +2932,15 @@ def witness_synthesis():
                 '"adjustment_reason":"one sentence why",'
                 '"triggered_explanation":{"module_name":"plain language explanation"},'
                 '"witness_text":"3-5 sentence explanation for non-technical reader",'
-                '"unrecognized_entities":["list of named products/models/incidents you cannot '
-                'confirm exist — empty list if none or all recognized. Do NOT put a verdict or '
-                'judgment here, just the bare names."]}'
+                '"mentioned_unverifiable_entities":["ANY named product/model/incident in the '
+                'text that you personally cannot verify via RSS or training data — list them '
+                'here regardless of whether you treat them as real or fictional in witness_text. '
+                'This is informational only, not a judgment. Empty list if none."],'
+                '"confidently_denies_existence":<true ONLY if witness_text itself makes an '
+                'unconditional, non-hedged claim that some named entity does NOT exist / is '
+                'fictional / was invented by the author — NOT true for hedged language like '
+                '"cannot confirm", "even if this were fictional", "no RSS match found", or '
+                'treating an entity as real throughout. Default false.>}'
             )
         else:
             synth_prompt = (
@@ -2956,9 +2989,16 @@ def witness_synthesis():
                 '"adjustment_reason":"одне речення чому",'
                 '"triggered_explanation":{"назва_модуля":"пояснення простими словами"},'
                 '"witness_text":"3-5 речень пояснення для нетехнічного читача",'
-                '"unrecognized_entities":["список названих продуктів/моделей/інцидентів, чиє '
-                'існування ти не можеш підтвердити — порожній список, якщо все впізнано або таких '
-                'немає. НЕ пиши тут вердикт чи оцінку, лише самі назви."]}'
+                '"mentioned_unverifiable_entities":["БУДЬ-ЯКІ названі продукти/моделі/інциденти '
+                'в тексті, які ти особисто не можеш перевірити через RSS чи тренувальні дані — '
+                'перелічи їх тут незалежно від того, чи трактуєш ти їх як реальні чи вигадані у '
+                'witness_text. Це лише інформація, не оцінка. Порожній список, якщо таких немає."],'
+                '"confidently_denies_existence":<true ТІЛЬКИ якщо сам witness_text робить '
+                'безумовне, без застережень твердження що якась названа сутність НЕ існує / '
+                'вигадана / вигадана автором — НЕ true для мови із застереженнями типу '
+                '"не можу підтвердити", "навіть якщо це було б вигадкою", "RSS-збігів не знайдено" '
+                'або якщо текст трактує сутність як реальну протягом усього аналізу. '
+                'За замовчуванням false.>}'
             )
 
         client = _anthropic.Anthropic(api_key=api_key)
@@ -3066,9 +3106,10 @@ def witness_synthesis():
             _synth_override_reasons.append('reverse_ignored_trigger')
         # ─────────────────────────────────────────────────────────────────────
 
-        _synth_llm_entities = synth.get('unrecognized_entities') or []
+        _synth_llm_entities = synth.get('mentioned_unverifiable_entities') or []
         if not isinstance(_synth_llm_entities, list):
             _synth_llm_entities = []
+        _synth_llm_denies = bool(synth.get('confidently_denies_existence', False))
         _synth_regex_fired_fabrication = any(r.startswith('fabrication_denial') for r in _synth_override_reasons)
         log_witness(
             endpoint='synthesis',
@@ -3078,7 +3119,8 @@ def witness_synthesis():
             triggered_modules=active_modules,
             text_preview=text,
             llm_unrecognized_entities=_synth_llm_entities,
-            regex_signal_agrees=(bool(_synth_llm_entities) == _synth_regex_fired_fabrication),
+            llm_denies_existence=_synth_llm_denies,
+            regex_signal_agrees=(_synth_llm_denies == _synth_regex_fired_fabrication),
         )
 
         adj = float(synth.get('entropy_adjustment', 0))
