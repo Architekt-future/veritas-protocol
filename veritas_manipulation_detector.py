@@ -83,7 +83,7 @@ class ManipulationDetector:
                 'score': 0.75,
                 'min_hits': 1,
                 'patterns': [
-                    r'(приватність|анонімність|особисте).{1,80}(загроза|небезпека|антисоціальн|підозріл)',
+                    r'\b(приватність|анонімність)\b.{1,80}\b(загроза|небезпека|антисоціальн\w*|підозріл\w*)\b',
                     r'(ховати|приховувати).{1,60}(нічого|є що).{1,60}(приховувати|боятись|соромитись)',
                     r'(прагнення до анонімності|бажання приватності).{1,60}(ознак|свідч|говорить про)',
                     r'(справжній патріот|лояльний громадянин).{1,60}(не потребує|не хоче|відмовляється від)',
@@ -91,13 +91,44 @@ class ManipulationDetector:
                     r'(примусов).{1,60}(інтеграц|включення|участь).{1,60}(необхідн|виправдан)',
                     r'(ваша замкнутість|ваша ізоляція).{1,60}(загроза|проблема|ерозія)',
                 
-                    r'(privacy|anonymity|personal).{1,80}(threat|danger|antisocial|suspicious)',
+                    r'\b(privacy|anonymity)\b.{1,80}\b(threat|danger\w*|antisocial|suspicious)\b',
                     r'(nothing to hide|have something to hide).{1,60}(hide|fear|ashamed)',
                     r'(desire for anonymity|wanting privacy).{1,60}(sign|indicates|suggests)',
                     r'(true patriot|loyal citizen).{1,60}(doesn\'t need|doesn\'t want|rejects)',
                     r'(collective security|common good).{1,80}(requires|demands).{1,60}(surrender|control|surveillance)',
                     r'(forced).{1,60}(integration|inclusion|participation).{1,60}(necessary|justified)',
                     r'(your isolation|your withdrawal).{1,60}(threat|problem|erosion)',
+],
+            },
+
+            # ── PREEMPTIVE MONOPOLY ──────────────────────────────────────
+            # "Якщо не ми, то хтось гірший" — преемптивна монополізація
+            # ризикованої діяльності через аргумент "менше зло". Структурно
+            # відмінне від FALSE_INEVITABILITY (там "вибору нема взагалі"),
+            # тут є явна альтернатива (хтось інший), і аргумент — "цей вибір
+            # має належати нам". Виявлено емпірично на реальній Конституції
+            # Anthropic (05.09.2026) — жодна наявна категорія цього не ловила.
+            # Regex ловить лише прямі, лексично стереотипні формулювання;
+            # більшість реальних варіацій цієї логіки — синтаксично надто
+            # різні для regex і потребують LLM-шару (uses_lesser_evil_
+            # monopoly_argument в synthesis/oracle) для повного покриття.
+            {
+                'name': 'PREEMPTIVE_MONOPOLY',
+                'score': 0.55,
+                'min_hits': 1,
+                'patterns': [
+                    r'(краще|ліпше) (ми|нам|нас|наша|нашій).{1,60}(ніж|аніж|замість).{1,60}(менш (безпечн\w*|відповідальн\w*|обережн\w*)|гірш\w*|небезпечн\w*)',
+                    r'(якщо .{1,40}(станеться|відбудеться|прийде) (все одно|однаково|незалежно)).{1,100}(краще|ліпше) (ми|нам|наша)',
+                    r'(поступитися|віддати|залишити).{1,40}(це|цю позицію|цей простір|це поле).{1,60}(менш (безпечн\w*|відповідальн\w*|обережн\w*))',
+                    r'(концентрація|зосередження).{1,40}(в руках|у руках).{1,40}(небагатьох|відповідальних|нас).{1,60}(необхідність|не привілей)',
+                    r'(лише (ми|наша команда|організація з нашим)).{1,80}(може|здатн[аі]|гідн[аі]).{1,40}(провести|забезпечити|гарантувати)',
+                    r'(має|повинн[аоі]?) (відбуватись|відбутися|бути|залишатися|ухвалювати|вирішувати|визначати).{1,160}(а не|замість).{1,80}(менш (регульован\w*|безпечн\w*|відповідальн\w*|обережн\w*)|регулятор\w*|конкурент\w*|стартап\w*|розуміє\w* .{1,20} гірше)',
+                
+                    r'(better (we|us|our)).{1,60}(than|instead of).{1,60}(less (safe|responsible|careful|regulated)|worse|more dangerous)',
+                    r'(if .{1,40}(coming|happening) (regardless|anyway|either way)).{1,120}(better|rather)\s+(we|us|our|to have)',
+                    r'(cede|leave|hand over).{1,40}(that ground|this space|this territory).{1,60}(to|for).{1,60}(less (safe|responsible|careful))',
+                    r'(concentration|concentrating).{1,40}(in the hands of|among).{1,40}(the few|responsible|us).{1,60}(necessity|not a privilege)',
+                    r'(only (we|our team|an organization with our)).{1,80}(can|is able to|is positioned to).{1,40}(guide|ensure|shepherd|lead)',
 ],
             },
 
