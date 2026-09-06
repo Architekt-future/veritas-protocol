@@ -2340,6 +2340,17 @@ def oracle():
             recommended_verdict_uk = 'РИТОРИКА (мінімум — реальний модуль спрацював, дивись нижче)'
         if triggered_modules and recommended_verdict_en in ('CLEAN', 'no direct match — decide from text structure'):
             recommended_verdict_en = 'RHETORIC (minimum — a real module fired, see below)'
+        # Дзеркальний напрямок тієї самої діри: жанрові лейбли на кшталт
+        # 'КОНЦЕПТУАЛЬНЕ ЗМІШУВАННЯ'/'СЕМАНТИЧНИЙ ШУМ' так само безумовно
+        # рекомендують НЕБЕЗПЕЧНО/ПІДОЗРІЛО — і так само нічого не знають про
+        # реальний тригер. Без цієї симетричної перевірки густі, абстрактні,
+        # філософські тексти (наприклад, дискусії про AI safety) отримували б
+        # рекомендацію "НЕБЕЗПЕЧНО" навіть при triggered_modules=[] — той самий
+        # якірний ефект, тільки в бік хибної тривоги, а не хибного спокою.
+        if not triggered_modules and recommended_verdict_uk in ('ПІДОЗРІЛО', 'НЕБЕЗПЕЧНО'):
+            recommended_verdict_uk = 'РИТОРИКА (максимум — реальних модулів не спрацювало, дивись нижче)'
+        if not triggered_modules and recommended_verdict_en in ('SUSPICIOUS', 'DANGEROUS'):
+            recommended_verdict_en = 'RHETORIC (maximum — no real module fired, see below)'
         # ─────────────────────────────────────────────────────────────────────
 
         # ── СТАТИЧНІ ПРАВИЛА (кешуються між викликами через cache_control) ──
