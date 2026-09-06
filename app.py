@@ -1,5 +1,5 @@
 """
-Veritas Protocol - Flask API v20.8
+Veritas Protocol - Flask API v20.9
 Forces fresh import of Veritas modules on every restart
 SCRAPER: Daily Mail selectors + <p> fallback (2026-02-26)
 GENRE: GenreDetector v2.0 — CONSPIRACY_NEWS + fixed SPORT/CULTURE false positives
@@ -44,11 +44,11 @@ import sys
 import os
 
 # CRITICAL: Clear module cache to force reload
-print("🔄 Veritas v20.8 - Clearing module cache...")
+print("🔄 Veritas v20.9 - Clearing module cache...")
 modules_to_clear = [k for k in sys.modules.keys() if k.startswith('veritas_')]
 for module in modules_to_clear:
     del sys.modules[module]
-print(f"✅ Cache cleared. Loading fresh Veritas v20.8 modules...")
+print(f"✅ Cache cleared. Loading fresh Veritas v20.9 modules...")
 
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
@@ -941,7 +941,7 @@ def home():
     except:
         return jsonify({
             'status': 'online',
-            'version': 'v20.8',
+            'version': 'v20.9',
             'message': 'Veritas Protocol API is running (index.html not found)',
             'features': {
                 'pattern_boost': engine.pattern_boost_engine is not None,
@@ -958,7 +958,7 @@ def analyze():
         if request.method == 'GET':
             return jsonify({
                 'status': 'online',
-                'version': 'v20.8',
+                'version': 'v20.9',
                 'modules': {
                     'pattern_boost':         engine.pattern_boost_engine is not None,
                     'void_detector':         engine.void_detector is not None,
@@ -1716,7 +1716,7 @@ def stats_reset():
 def health():
     return jsonify({
         'status': 'healthy',
-        'version': 'v20.8'
+        'version': 'v20.9'
     })
 
 
