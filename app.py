@@ -2689,6 +2689,8 @@ def oracle():
         if _clean_oracle.startswith('```'): _clean_oracle = _clean_oracle.split('```')[1]
         if _clean_oracle.startswith('json'): _clean_oracle = _clean_oracle[4:]
         _clean_oracle = _clean_oracle.strip().rstrip('`')
+        _oracle_json_parse_failed = False
+        _oracle_broken_raw = None
         try:
             _oracle_json = json.loads(_clean_oracle)
         except json.JSONDecodeError:
@@ -2702,6 +2704,14 @@ def oracle():
                 _oracle_json = json.loads(_repaired)
             except json.JSONDecodeError:
                 # Не вдалось відновити — не 500, а м'який фолбек користувачу.
+                # ВАЖЛИВО: зберігаємо СПРАВЖНІЙ зламаний текст окремо — не
+                # підміняємо його канонічною заглушкою в логах. Інакше немає
+                # способу перевірити, чи поломка механічна (пряма лапка в
+                # тексті), чи текст обривається підозріло близько до
+                # незручного визнання (див. Mythos, 06.09.2026 — 2 поломки
+                # поспіль саме на цьому тексті, причина ще не встановлена).
+                _oracle_json_parse_failed = True
+                _oracle_broken_raw = _clean_oracle
                 _oracle_json = {
                     'witness_verdict': 'РИТОРИКА',
                     'witness_text': 'Свідок тимчасово не зміг сформувати структуровану відповідь. Спробуй ще раз — це технічна помилка формату, не результат аналізу.',
@@ -2735,8 +2745,8 @@ def oracle():
         # ВАЖЛИВО: чіпаємо тільки ТІЛО після вердикту-слова в першому рядку —
         # інакше спліт по реченнях може захопити "ЧИСТО" в один шматок з
         # першим реченням тіла й видалити його разом з фабрикацією.
-        _raw_oracle_text = response_payload['witness_text']
-        _oracle_override_reasons = []
+        _raw_oracle_text = _oracle_broken_raw if _oracle_json_parse_failed else response_payload['witness_text']
+        _oracle_override_reasons = ['json_parse_failed'] if _oracle_json_parse_failed else []
 
         _wt_full = response_payload['witness_text']
         _verdict_line, _sep, _body_only = _wt_full.partition('\n')
