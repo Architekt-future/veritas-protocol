@@ -2644,12 +2644,7 @@ def oracle():
         message = client.messages.create(
             model="claude-haiku-4-5-20251001",
             max_tokens=600,
-            system=[{
-                "type": "text",
-                "text": system_rules,
-                "cache_control": {"type": "ephemeral"},
-            }],
-            messages=[{"role": "user", "content": user_prompt}]
+            messages=[{"role": "user", "content": f"{system_rules}\n\n{user_prompt}"}]
         )
 
         raw_oracle = message.content[0].text if message.content else ''
