@@ -2433,22 +2433,27 @@ def oracle():
             "Відповідай ВИКЛЮЧНО українською мовою — жодного русизму чи суржику. "
             "Замість 'вот', 'ложь', 'честно', 'сейчас', 'кстати', 'конечно' — "
             "'ось', 'брехня', 'чесно', 'зараз', 'до речі', 'звісно'. "
-            "Якщо вагаєшся між українським і російським словом — обирай виключно українське.\n"
-            "ОСТАННІ ДВА рядки — окремо, буквально, у цьому форматі:\n"
-            "'ENTITIES: назва1, назва2' (БУДЬ-ЯКІ названі продукти/моделі/інциденти, які ти "
-            "особисто не можеш перевірити через RSS чи тренувальні дані — незалежно від того, "
-            "трактуєш ти їх як реальні чи вигадані вище; це просто інформація, не оцінка) або "
-            "'ENTITIES: none', якщо таких немає.\n"
-            "'DENIES: true' — ТІЛЬКИ якщо у 3-5 реченнях вище ти зробив безумовне, без "
-            "застережень твердження що якась названа сутність НЕ існує/вигадана/вигадана "
-            "автором. 'DENIES: false' — якщо там є застереження ('не можу підтвердити', 'навіть "
-            "якщо це було б вигадкою', 'RSS-збігів не знайдено') або якщо ти трактував сутність "
-            "як реальну.\n"
-            "'MONOPOLY: true' — якщо САМ ВХІДНИЙ ТЕКСТ (не твій аналіз) обґрунтовує, чому "
-            "названий актор/організація має ексклюзивний чи пріоритетний контроль над чимось "
-            "ризикованим/потужним ТОМУ ЩО альтернатива (хтось інший робить це) буде гіршою — "
-            "незалежно від точного формулювання. Оцінюй логічну структуру аргументу, не ключові "
-            "слова. 'MONOPOLY: false' — якщо такого аргументу немає."
+            "Якщо вагаєшся між українським і російським словом — обирай виключно українське.\n\n"
+
+            "Поверни ЛИШЕ JSON, без жодного тексту до чи після, без markdown-огорожі, з цими "
+            "ключами:\n"
+            '{"witness_verdict":"ЧИСТО|ПІДОЗРІЛО|НЕБЕЗПЕЧНО|АНАЛІТИКА|ДУМКА|РИТОРИКА",'
+            '"witness_text":"3-5 речень простою мовою (без вердикту на початку — тільки тіло)",'
+            '"mentioned_unverifiable_entities":["БУДЬ-ЯКІ названі продукти/моделі/інциденти, які '
+            'ти особисто не можеш перевірити через RSS чи тренувальні дані — незалежно від того, '
+            'трактуєш ти їх як реальні чи вигадані у witness_text. Це лише інформація, не оцінка. '
+            'Порожній список, якщо таких немає."],'
+            '"confidently_denies_existence":<true ТІЛЬКИ якщо сам witness_text робить '
+            'безумовне, без застережень твердження що якась названа сутність НЕ існує / '
+            'вигадана / вигадана автором — НЕ true для мови із застереженнями типу '
+            '"не можу підтвердити", "навіть якщо це було б вигадкою", "RSS-збігів не знайдено" '
+            'або якщо текст трактує сутність як реальну протягом усього аналізу. '
+            'За замовчуванням false.>,'
+            '"uses_lesser_evil_monopoly_argument":<true якщо САМ ВХІДНИЙ ТЕКСТ (не твій '
+            'аналіз) обґрунтовує, чому названий актор/організація має ексклюзивний чи '
+            'пріоритетний контроль над чимось ризикованим/потужним ТОМУ ЩО альтернатива '
+            '(хтось інший робить це) буде гіршою — незалежно від точного формулювання. '
+            'Оцінюй логічну структуру аргументу, не ключові слова. За замовчуванням false.>}'
         )
 
         STATIC_WITNESS_RULES_EN = (
@@ -2550,20 +2555,24 @@ def oracle():
             "  3. For EACH triggered module — one sentence explaining specifically what it found\n"
             "  4. What the reader should do next — a concrete recommendation\n"
             "No technical module names. No mention of entropy or metrics.\n"
-            "Respond EXCLUSIVELY in English.\n"
-            "LAST TWO lines — separate, literally in this format:\n"
-            "'ENTITIES: name1, name2' (ANY named product/model/incident you personally cannot "
-            "verify via RSS or training data — regardless of whether you treat it as real or "
-            "fictional above; informational only) or 'ENTITIES: none' if there are none.\n"
-            "'DENIES: true' — ONLY if your 3-5 sentences above made an unconditional, non-hedged "
-            "claim that some named entity does NOT exist / is fictional / was invented by the "
-            "author. 'DENIES: false' — if there was hedging ('cannot confirm', 'even if this "
-            "were fictional', 'no RSS match found') or if you treated the entity as real.\n"
-            "'MONOPOLY: true' — if the SOURCE TEXT (not your analysis) argues that a named "
-            "actor/organization should hold exclusive or preferential control over something "
-            "risky/powerful BECAUSE the alternative (someone else doing it) would be worse — "
-            "regardless of exact phrasing. Judge the logical structure of the argument, not "
-            "keywords. 'MONOPOLY: false' — if no such argument is present."
+            "Respond EXCLUSIVELY in English.\n\n"
+
+            "Return ONLY JSON, no text before or after, no markdown fence, with these keys:\n"
+            '{"witness_verdict":"CLEAN|SUSPICIOUS|DANGEROUS|ANALYTICS|OPINION|RHETORIC",'
+            '"witness_text":"3-5 sentences in plain language (no verdict at the start — body only)",'
+            '"mentioned_unverifiable_entities":["ANY named product/model/incident you personally '
+            'cannot verify via RSS or training data — regardless of whether you treat it as real '
+            'or fictional in witness_text. Informational only. Empty list if none."],'
+            '"confidently_denies_existence":<true ONLY if witness_text itself makes an '
+            'unconditional, non-hedged claim that some named entity does NOT exist / is '
+            'fictional / was invented by the author — NOT true for hedged language like '
+            '"cannot confirm", "even if this were fictional", "no RSS match found", or '
+            'treating an entity as real throughout. Default false.>,'
+            '"uses_lesser_evil_monopoly_argument":<true if the SOURCE TEXT argues that a '
+            'named actor/organization should hold exclusive or preferential control over '
+            'something risky/powerful BECAUSE the alternative (someone else doing it) would '
+            'be worse — regardless of exact phrasing. Judge the argument structure, not '
+            'keywords. Default false.>}'
         )
 
         if is_en:
@@ -2643,8 +2652,25 @@ def oracle():
             messages=[{"role": "user", "content": user_prompt}]
         )
 
+        raw_oracle = message.content[0].text if message.content else ''
+
+        # Парсимо JSON (той самий підхід, що в /api/synthesis)
+        _clean_oracle = raw_oracle.strip()
+        if _clean_oracle.startswith('```'): _clean_oracle = _clean_oracle.split('```')[1]
+        if _clean_oracle.startswith('json'): _clean_oracle = _clean_oracle[4:]
+        _clean_oracle = _clean_oracle.strip().rstrip('`')
+        _oracle_json = _json.loads(_clean_oracle)
+
+        _oracle_verdict_raw = _oracle_json.get('witness_verdict', '') or 'РИТОРИКА'
+        _oracle_body = _oracle_json.get('witness_text', '') or 'Свідок мовчить.'
+        _llm_unrecognized_entities = _oracle_json.get('mentioned_unverifiable_entities') or []
+        if not isinstance(_llm_unrecognized_entities, list):
+            _llm_unrecognized_entities = []
+        _llm_denies_existence = bool(_oracle_json.get('confidently_denies_existence', False))
+        _llm_monopoly_argument = bool(_oracle_json.get('uses_lesser_evil_monopoly_argument', False))
+
         response_payload = {
-            'witness_text':        message.content[0].text if message.content else "Свідок мовчить.",
+            'witness_text':        f"{_oracle_verdict_raw}\n\n{_oracle_body}",
             'witness_available':   True,
             'model':               'claude-haiku-4-5-20251001',
             'detected_genre':      detected_genre,
@@ -2665,40 +2691,6 @@ def oracle():
         # першим реченням тіла й видалити його разом з фабрикацією.
         _raw_oracle_text = response_payload['witness_text']
         _oracle_override_reasons = []
-
-        # ── СИГНАЛ v2 (тіньовий, не впливає на поведінку) ─────────────────────
-        # Структурований маркер замість вгадування "заперечення" регексом на
-        # вільному тексті (Алібі Асиметрії, третій випадок — вузьке заперечення
-        # ловить "не вигадка", але не "без вигадування" чи "не означає що
-        # вигадано"). Модель сама явно перелічує невпізнані сутності одним
-        # рядком; ми лише витягуємо його і прибираємо з тексту користувача —
-        # чинний regex-guard нижче лишається без змін, працює як і раніше.
-        # Порівнюємо обидва сигнали в логах, поки новий не доведе надійність.
-        _llm_unrecognized_entities = []
-        _llm_denies_existence = False
-        _llm_monopoly_argument = False
-        _wt_lines = _raw_oracle_text.rstrip().split('\n')
-        _strip_count = 0
-        # Рядки можуть прийти в будь-якому порядку з кінця — перевіряємо по одному
-        if _wt_lines and _wt_lines[-1].strip().upper().startswith('MONOPOLY:'):
-            _monopoly_raw = _wt_lines[-1].split(':', 1)[1].strip().lower()
-            _llm_monopoly_argument = _monopoly_raw.startswith('true')
-            _strip_count += 1
-        _denies_idx = -1 - _strip_count
-        if len(_wt_lines) > abs(_denies_idx) - 1 and _wt_lines[_denies_idx].strip().upper().startswith('DENIES:'):
-            _denies_raw = _wt_lines[_denies_idx].split(':', 1)[1].strip().lower()
-            _llm_denies_existence = _denies_raw.startswith('true')
-            _strip_count += 1
-        _entities_idx = -1 - _strip_count
-        if len(_wt_lines) > abs(_entities_idx) - 1 and _wt_lines[_entities_idx].strip().upper().startswith('ENTITIES:'):
-            _entities_raw = _wt_lines[_entities_idx].split(':', 1)[1].strip()
-            if _entities_raw and _entities_raw.lower() not in ('none', 'немає'):
-                _llm_unrecognized_entities = [e.strip() for e in _entities_raw.split(',') if e.strip()]
-            _strip_count += 1
-        if _strip_count:
-            _raw_oracle_text = '\n'.join(_wt_lines[:-_strip_count]).rstrip()
-            response_payload['witness_text'] = _raw_oracle_text
-        # ─────────────────────────────────────────────────────────────────────
 
         _wt_full = response_payload['witness_text']
         _verdict_line, _sep, _body_only = _wt_full.partition('\n')
