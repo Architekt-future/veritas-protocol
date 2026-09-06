@@ -2464,6 +2464,9 @@ def oracle():
             "'ось', 'брехня', 'чесно', 'зараз', 'до речі', 'звісно'. "
             "Якщо вагаєшся між українським і російським словом — обирай виключно українське.\n\n"
 
+            "У текстових значеннях JSON ніколи не використовуй символ \" для виділення слів чи "
+            "цитат — тільки апостроф ' або тире. Подвійні лапки всередині значення ламають формат.\n\n"
+
             "Поверни ЛИШЕ JSON, без жодного тексту до чи після, без markdown-огорожі, з цими "
             "ключами:\n"
             '{"witness_verdict":"ЧИСТО|ПІДОЗРІЛО|НЕБЕЗПЕЧНО|АНАЛІТИКА|ДУМКА|РИТОРИКА",'
@@ -2586,6 +2589,9 @@ def oracle():
             "No technical module names. No mention of entropy or metrics.\n"
             "Respond EXCLUSIVELY in English.\n\n"
 
+            "In JSON string values, never use \" to emphasize a word or quote — use an apostrophe "
+            "' or a dash instead. A literal double quote inside a value breaks the format.\n\n"
+
             "Return ONLY JSON, no text before or after, no markdown fence, with these keys:\n"
             '{"witness_verdict":"CLEAN|SUSPICIOUS|DANGEROUS|ANALYTICS|OPINION|RHETORIC",'
             '"witness_text":"3-5 sentences in plain language (no verdict at the start — body only)",'
@@ -2683,7 +2689,23 @@ def oracle():
         if _clean_oracle.startswith('```'): _clean_oracle = _clean_oracle.split('```')[1]
         if _clean_oracle.startswith('json'): _clean_oracle = _clean_oracle[4:]
         _clean_oracle = _clean_oracle.strip().rstrip('`')
-        _oracle_json = json.loads(_clean_oracle)
+        try:
+            _oracle_json = json.loads(_clean_oracle)
+        except json.JSONDecodeError:
+            # LLM іноді вставляє буквальний перенос рядка чи незекранований "
+            # усередині значення замість \n/\". Найчастіша й найбезпечніша
+            # правка: заекранувати "сирі" переноси рядків, які трапляються
+            # ВСЕРЕДИНІ рядкового значення (не між токенами JSON) — груба
+            # евристика, але покриває більшість реальних випадків.
+            _repaired = _re.sub(r'(?<!\\)\n(?=[^"]*")', '\\n', _clean_oracle)
+            try:
+                _oracle_json = json.loads(_repaired)
+            except json.JSONDecodeError:
+                # Не вдалось відновити — не 500, а м'який фолбек користувачу.
+                _oracle_json = {
+                    'witness_verdict': 'РИТОРИКА',
+                    'witness_text': 'Свідок тимчасово не зміг сформувати структуровану відповідь. Спробуй ще раз — це технічна помилка формату, не результат аналізу.',
+                }
 
         _oracle_verdict_raw = _oracle_json.get('witness_verdict', '') or 'РИТОРИКА'
         _oracle_body = _oracle_json.get('witness_text', '') or 'Свідок мовчить.'
@@ -2963,7 +2985,9 @@ def witness_synthesis():
                 "     - Raise (+) if text has manipulation/deception not caught by modules.\n"
                 "     - Lower (-) if modules fired on something that is clearly NOT manipulation (e.g. war reporting flagged as dangerous).\n"
                 "     - Range: -0.15 to +0.15. Systematic lowering = rule violation.\n\n"
-                "Return JSON with these exact keys:\n"
+                "Return JSON with these exact keys. In string values, never use \" to emphasize a "
+                "word or quote — use an apostrophe ' or a dash instead, since a literal double "
+                "quote inside a value breaks the format:\n"
                 '{"witness_verdict":"CLEAN|RHETORIC|SUSPICIOUS|DANGEROUS|ANALYTICS|OPINION",'
                 '"entropy_adjustment":<float -0.15 to +0.15, default 0.0>,'
                 '"adjustment_reason":"one sentence why",'
@@ -3028,7 +3052,9 @@ def witness_synthesis():
                 "     - Підвищуй (+) якщо текст має маніпуляцію/обман який модулі не спіймали.\n"
                 "     - Знижуй (-) якщо модулі спрацювали на щось що ЯВНО не є маніпуляцією (наприклад воєнний репортаж помилково позначений як небезпечний).\n"
                 "     - Діапазон: -0.15 до +0.15. Систематичне зниження = порушення правила.\n\n"
-                "Поверни JSON з цими ключами:\n"
+                "Поверни JSON з цими ключами. У текстових значеннях ніколи не використовуй \" "
+                "для виділення слів чи цитат — тільки апостроф ' або тире, бо буквальна подвійна "
+                "лапка всередині значення ламає формат:\n"
                 '{"witness_verdict":"ЧИСТО|РИТОРИКА|ПІДОЗРІЛО|НЕБЕЗПЕЧНО|АНАЛІТИКА|ДУМКА",'
                 '"entropy_adjustment":<float від -0.15 до +0.15, за замовчуванням 0.0>,'
                 '"adjustment_reason":"одне речення чому",'
@@ -3068,7 +3094,20 @@ def witness_synthesis():
         if clean.startswith('```'): clean = clean.split('```')[1]
         if clean.startswith('json'): clean = clean[4:]
         clean = clean.strip().rstrip('`')
-        synth = _json.loads(clean)
+        try:
+            synth = _json.loads(clean)
+        except _json.JSONDecodeError:
+            _repaired = _re.sub(r'(?<!\\)\n(?=[^"]*")', '\\n', clean)
+            try:
+                synth = _json.loads(_repaired)
+            except _json.JSONDecodeError:
+                synth = {
+                    'witness_verdict': 'РИТОРИКА',
+                    'witness_text': 'Свідок тимчасово не зміг сформувати структуровану відповідь. Спробуй ще раз — це технічна помилка формату, не результат аналізу.',
+                    'entropy_adjustment': 0.0,
+                    'adjustment_reason': '',
+                    'triggered_explanation': {},
+                }
 
         _raw_synth_text = synth.get('witness_text', '')
         _synth_override_reasons = []
