@@ -2659,7 +2659,7 @@ def oracle():
         if _clean_oracle.startswith('```'): _clean_oracle = _clean_oracle.split('```')[1]
         if _clean_oracle.startswith('json'): _clean_oracle = _clean_oracle[4:]
         _clean_oracle = _clean_oracle.strip().rstrip('`')
-        _oracle_json = _json.loads(_clean_oracle)
+        _oracle_json = json.loads(_clean_oracle)
 
         _oracle_verdict_raw = _oracle_json.get('witness_verdict', '') or 'РИТОРИКА'
         _oracle_body = _oracle_json.get('witness_text', '') or 'Свідок мовчить.'
