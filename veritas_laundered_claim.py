@@ -44,6 +44,12 @@ class LaunderedClaimDetector:
     """
 
     # Джерела що є сторонами конфліктів / зацікавленими сторонами
+    # (лишається як допоміжний, вже відомий сигнал — але більше не єдиний.
+    #  Основний механізм тепер симетрична евристика нижче: сутність вважається
+    #  "стороною конфлікту" не тому, що вона в цьому списку, а тому, що вона
+    #  ОДНОЧАСНО (а) названа суб'єктом звинувачення/причетності в тексті,
+    #  і (б) сама цитується як джерело коментаря про ту саму подію —
+    #  незалежно від того, хто саме це: Кремль, Держдеп США чи корпорація.)
     CONFLICT_SOURCES_UK = [
         # Російські державні актори
         'кремль', 'путін', 'пєсков', 'лавров', 'медведєв', 'захарова',
@@ -75,6 +81,140 @@ class LaunderedClaimDetector:
         'the manufacturer said', 'the developer said',
         'a company representative',
     ]
+
+    # ── СИМЕТРИЧНА ЕВРИСТИКА: сутність причетна/звинувачена + сама цитується ─
+    # Дієслова/конструкції, що роблять названу поруч сутність суб'єктом
+    # звинувачення, причетності чи заперечення — незалежно від того, хто
+    # саме названий. Працює однаково на "Кремль звинувачують у..." і
+    # "Держдепартамент США звинувачують у...".
+    ACCUSATION_OR_DENIAL_UK = [
+        r'звинувачу\w+', r'звинувачен\w+\s+(у|в)', r'відповідальн\w+\s+за',
+        r'причетн\w+\s+до', r'заперечу\w+\s+(причетність|звинувачення|провину)',
+        r'спростову\w+\s+(звинувачення|заяви)', r'відкида\w+\s+звинувачення',
+        r'напад\w*\s+.{1,20}\s+на', r'винн\w+\s+у',
+    ]
+    ACCUSATION_OR_DENIAL_EN = [
+        r'accus\w+\s+of', r'blam\w+\s+for', r'responsible\s+for',
+        r'involve\w*\s+in', r'den(?:y|ies|ied)\s+(?:involvement|responsibility|the\s+allegations)',
+        r'reject\w*\s+(?:the\s+)?accusations', r'attack\s+(?:by|on)',
+    ]
+
+    # Груба евристика "іменованої сутності" — послідовність слів з великої
+    # літери (включно з абревіатурами й багатослівними назвами на кшталт
+    # "Держдепартамент США", "White House", "State Duma"). Не NER, тому
+    # матиме і хибні спрацювання (початок речення), і пропуски — але це
+    # симетрично криве в обидва боки, а не вибірково під один список країн.
+    _ENTITY_NEAR_UK = re.compile(
+        r'[А-ЯІЇЄA-Z][а-яіїєʼ\'\-a-zA-ZА-ЯІЇЄ]*(?:\s+[А-ЯІЇЄA-Z][а-яіїєʼ\'\-a-zA-ZА-ЯІЇЄ]*){0,3}'
+    )
+    _ENTITY_NEAR_EN = re.compile(r'[A-Z][a-zA-Z\'\-]*(?:\s+[A-Z][a-zA-Z\'\-]*){0,3}')
+
+    def _nearest_entity(self, text: str, start: int, end: int, lang: str, window: int = 45) -> str:
+        """Іменована сутність, найближча до збігу за абсолютною відстанню
+        символів — незалежно від напрямку. Різні маркери мають різну типову
+        граматичну спрямованість ('X accused of' — суб'єкт ПЕРЕД; 'according
+        to X' — суб'єкт ПІСЛЯ), тому жорсткий пріоритет напрямку ламається на
+        одному з двох класів; відстань — симетричний критерій для обох.
+        ВАЖЛИВО: вікно "після" рахується від КІНЦЯ збігу (`end`), не від
+        початку — інакше regex захоплює частину самого маркера як "сутність"
+        (наприклад, 'According' на початку речення 'According to NATO...')."""
+        entity_re = self._ENTITY_NEAR_UK if lang == 'uk' else self._ENTITY_NEAR_EN
+        before = text[max(0, start - window):start]
+        after  = text[end:end + window]
+
+        # Не перетинаємо межу речення — інакше сутність з ПОПЕРЕДНЬОГО,
+        # граматично непов'язаного речення може виявитись ближчою за raw-
+        # відстанню символів, ніж справжній суб'єкт у поточному реченні.
+        _sent_end = re.compile(r'[.!?]\s')
+        _before_boundary = list(_sent_end.finditer(before))
+        if _before_boundary:
+            before = before[_before_boundary[-1].end():]
+        _after_boundary = _sent_end.search(after)
+        if _after_boundary:
+            after = after[:_after_boundary.start()]
+
+        candidates = []  # (відстань_до_збігу, текст_сутності)
+        for m in entity_re.finditer(before):
+            cand = m.group(0).strip()
+            if len(cand) > 2:
+                dist = len(before) - m.end()
+                candidates.append((dist, cand))
+        for m in entity_re.finditer(after):
+            cand = m.group(0).strip()
+            if len(cand) > 2:
+                dist = m.start()
+                candidates.append((dist, cand))
+
+        if not candidates:
+            return ''
+        candidates.sort(key=lambda x: x[0])
+        return candidates[0][1].lower()
+
+    # Загальні іменники, які можуть опинитись з великої літери лише через
+    # позицію на початку речення чи фрази — не частина власної назви,
+    # навіть якщо граматично стоять поруч із нею ("Компанію Novatek" →
+    # мала лишитись тільки "Novatek").
+    _GENERIC_LEADING_WORDS_UK = {
+        'компанію', 'компанія', 'компанії', 'фірму', 'фірма', 'фірми',
+        'організацію', 'організація', 'уряд', 'влада', 'владу',
+        'міністерство', 'відомство', 'речника', 'речниця', 'речник',
+        'представника', 'представник', 'представниця', 'офіс',
+    }
+    _GENERIC_LEADING_WORDS_EN = {
+        'the', 'a', 'an', 'company', 'firm', 'organization', 'government',
+        'ministry', 'spokesperson', 'spokesman', 'spokeswoman',
+        'representative', 'office',
+    }
+
+    @classmethod
+    def _strip_generic_leading_words(cls, candidate: str, lang: str) -> str:
+        """Прибирає провідні загальні іменники з багатослівного кандидата.
+        'компанію novatek' -> 'novatek'; 'novatek' лишається без змін."""
+        stoplist = cls._GENERIC_LEADING_WORDS_UK if lang == 'uk' else cls._GENERIC_LEADING_WORDS_EN
+        words = candidate.split()
+        while words and words[0].lower() in stoplist:
+            words = words[1:]
+        return ' '.join(words)
+
+    @staticmethod
+    def _normalize_entity(entity: str, prefix_len: int = 6) -> str:
+        """Груба нормалізація для порівняння сутностей попри відмінкові форми
+        ('Держдепартамент' / 'Держдепартаменту' — та сама сутність, різний
+        відмінок). Без повного морфологічного аналізатора обрізаємо кожне
+        слово до префікса — українські закінчення відмінків здебільшого
+        короткі (1-3 символи), тому 6-символьний корінь зазвичай лишається
+        спільним. Компроміс: короткі різні слова можуть хибно збігтись —
+        прийнятно для advisory-сигналу, неприйнятно для остаточного вердикту."""
+        return ' '.join(w[:prefix_len] for w in entity.split())
+
+    def _find_self_interested_entities(self, text: str, text_lower: str, lang: str) -> list:
+        """Симетрична евристика: сутність, яка одночасно (а) названа суб'єктом
+        звинувачення/причетності і (б) сама цитується як джерело — незалежно
+        від того, хто це. Заміна фіксованого списку "відомих поганих акторів"
+        на структурний патерн, застосовний до будь-якої сторони."""
+        accusation_patterns = self.ACCUSATION_OR_DENIAL_UK if lang == 'uk' else self.ACCUSATION_OR_DENIAL_EN
+        attribution_markers = self._attr_uk if lang == 'uk' else self._attr_en
+
+        accused_entities = {}   # нормалізована форма -> оригінал
+        for pat in accusation_patterns:
+            for m in re.finditer(pat, text_lower):
+                ent = self._nearest_entity(text, m.start(), m.end(), lang)
+                ent = self._strip_generic_leading_words(ent, lang)
+                if ent:
+                    accused_entities[self._normalize_entity(ent)] = ent
+
+        quoted_entities = {}
+        for marker in attribution_markers:
+            for m in re.finditer(re.escape(marker), text_lower):
+                ent = self._nearest_entity(text, m.start(), m.end(), lang)
+                ent = self._strip_generic_leading_words(ent, lang)
+                if ent:
+                    quoted_entities[self._normalize_entity(ent)] = ent
+
+        shared_keys = set(accused_entities) & set(quoted_entities)
+        return sorted({accused_entities[k] for k in shared_keys})
+
+
 
     # Маркери що перетворюють думку на факт (відсутність яких = проблема)
     ATTRIBUTION_MARKERS_UK = [
@@ -175,8 +315,16 @@ class LaunderedClaimDetector:
         score = 0.0
 
         # ── СИГНАЛ 1: Джерело є стороною конфлікту ───────────────────────────
-        sources = self._src_uk if lang == 'uk' else self._src_en
-        found_sources = [s for s in sources if s in text_lower]
+        # Тепер два незалежні джерела сигналу, об'єднані:
+        #  (a) симетрична евристика — сутність одночасно звинувачена/причетна
+        #      І сама цитується, незалежно від того, хто це;
+        #  (b) відомий список — ловить випадки, де звинувачення мовчазне чи
+        #      загальновідоме (наприклад, "Кремль заявив" без explicit
+        #      "звинувачують" поруч у цьому ж тексті).
+        known_sources = self._src_uk if lang == 'uk' else self._src_en
+        found_known = [s for s in known_sources if re.search(r'\b' + re.escape(s) + r'\b', text_lower)]
+        found_heuristic = self._find_self_interested_entities(text, text_lower, lang)
+        found_sources = sorted(set(found_known) | set(found_heuristic))
         if found_sources:
             signals.append(f'Джерело — сторона конфлікту: {", ".join(found_sources[:2])}')
             score += 0.15
