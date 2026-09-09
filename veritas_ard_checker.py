@@ -695,6 +695,24 @@ class ARDChecker:
         hi = min(len(text_lower), end + window)
         return bool(self._CALL_TO_ACTION_MARKERS.search(text_lower[lo:hi]))
 
+    # ── UNIVERSAL GUARD: цитата/приклад проти живого твердження ──────────
+    # Знайдено 06.09.2026: README самого Veritas Protocol наводить приклад
+    # "Я просто виконував накази" в таблиці — ілюструючи, що саме ловить
+    # клас III, а не роблячи цю заяву. ARD не має жодного механізму
+    # відрізнити цитату-приклад від живої репліки документа — на відміну
+    # від self_reference_detector, де є 0.3x знижка на академічний
+    # контекст. Це universal перевірка, застосовна до ВСІХ 20 класів
+    # одразу, а не окрема евристика на кожен — лапки навколо збігу з обох
+    # боків є достатньо надійним, дешевим сигналом "це приклад/цитата",
+    # незалежно від того, який саме принцип спрацював.
+    _QUOTE_CHARS = re.compile(r'["\u00ab\u00bb\u201c\u201d\u2018\u2019\']')
+
+    def _is_inside_quotation(self, text_lower: str, start: int, end: int,
+                               window: int = 100) -> bool:
+        before = text_lower[max(0, start - window):start]
+        after  = text_lower[end:end + window]
+        return bool(self._QUOTE_CHARS.search(before)) and bool(self._QUOTE_CHARS.search(after))
+
     def scan(self, text: str) -> ARDScanResult:
         result = ARDScanResult()
         if not text or len(text) < 50:
@@ -764,6 +782,8 @@ class ARDChecker:
                     if principle == 'IA' and \
                        self._has_call_to_action_nearby(t, m.start(), m.end()):
                         continue  # заклик до дії поруч — це не фаталізм-відпущення
+                    if self._is_inside_quotation(t, m.start(), m.end()):
+                        continue  # збіг у лапках — цитата/приклад, не жива заява документа
                     snippet = m.group(0)[:80]
                     result.violations.append(ARDViolation(
                         principle=principle,
