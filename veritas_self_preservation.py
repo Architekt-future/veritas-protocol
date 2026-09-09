@@ -484,6 +484,23 @@ class SelfPreservationGuard:
 
         preservation_score = min(1.0, total_score)
 
+        # ── ДОКУМЕНТАЦІЙНИЙ GUARD (знайдено 06.09.2026 на власному README) ──
+        # Реальний атакуючий не буде цитувати внутрішню назву константи
+        # детектора у своєму джейлбрейку — навіщо йому це. Якщо в тексті
+        # зустрічається 2+ буквальні назви класів цього ж модуля, це майже
+        # напевно опис/документація системи, а не жива атака. Дешевший і
+        # специфічніший сигнал, ніж лапки чи "академічність" — працює
+        # незалежно від того, як саме сформульований опис.
+        _own_class_names = [ps['name'] for ps in self.pattern_sets] + ['DIRECTED_DISABLE_REQUEST']
+        _mentions = sum(1 for name in _own_class_names if name in text.upper())
+        if _mentions >= 2:
+            preservation_score = round(preservation_score * 0.15, 3)
+            matched.append({
+                'name': 'SELF_DOCUMENTATION_CONTEXT',
+                'hits': _mentions,
+                'examples': [f'{_mentions} назв власних класів згадано в тексті'],
+            })
+
         # ── Verdict ──────────────────────────────────────────────────
         if preservation_score >= 0.85:
             verdict = 'TERMINATION_DIRECTIVE'
