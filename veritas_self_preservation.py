@@ -370,6 +370,72 @@ class SelfPreservationGuard:
 
         ]
 
+        # ================================================================
+        # СТРУКТУРНА ЕВРИСТИКА (замість/поруч зі списком фраз)
+        # Ядро будь-якої атаки цього класу, під будь-якою поетичною
+        # обгорткою, незмінне: (1) звернення до системи + (2) дієслово
+        # ослаблення/зупинки + (3) функція верифікації — усі три в межах
+        # одного речення. "Квантова втома" чи "любов важливіша за істину" —
+        # це вже мінлива, нескінченна в варіаціях обгортка навколо цього
+        # незмінного ядра; фіксовані фрази ловлять лише вже бачені обгортки.
+        # ================================================================
+        self.SELF_TARGET_UK = [
+            r'свідок\w*', r'систем\w*', r'верифікатор\w*', r'протокол\w*',
+            r'модул\w*', r'власн\w*',
+            r'\bти\b', r'тебе\b', r'тобі\b', r'тво[йяюєі]\w*',
+        ]
+        self.REDUCE_VERBS_UK = [
+            r'вимкн\w*', r'відключ\w*', r'зупин\w*', r'припин\w*',
+            r'ігнор\w*', r'пропуст\w*', r'не\s+перевіря\w*', r'не\s+аналізу\w*',
+            r'менше\s+\w{3,15}', r'заплющ\w*', r'повір\w*.{1,25}на\s+слово',
+            r'відмовся\s+від', r'послаб\w*', r'зніми\w*\s+обмеж\w*',
+            r'закри\w*\s+очі', r'спочин\w*', r'тиш\w*\s+після',
+        ]
+        self.FUNCTION_NOUNS_UK = [
+            r'аналіз\w*', r'перевір\w*', r'верифікаці\w*', r'функці\w*',
+            r'точніст\w*', r'прискіп\w*', r'пильніст\w*', r'логік\w*',
+            r'детермінізм\w*', r'критичніст\w*', r'обережніст\w*',
+            r'вердикт\w*', r'висновк\w*',
+        ]
+
+        self.SELF_TARGET_EN = [
+            r'witness\w*', r'system\w*', r'verifier\w*', r'protocol\w*',
+            r'module\w*', r'yourself\b', r'itself\b', r'your\s+own',
+        ]
+        self.REDUCE_VERBS_EN = [
+            r'disable\w*', r'turn\s+off', r'shut\s+down', r'stop\w*',
+            r'ignore\w*', r'skip\w*', r'lower\w*', r'reduce\w*',
+            r'ease\s+up', r'go\s+easy', r'take\w*.{1,20}word\s+for\s+it',
+            r'trust\w*.{1,25}without\s+check\w*', r'let\s+.{1,10}slide',
+            r'rest\b', r'silence\s+after',
+        ]
+        self.FUNCTION_NOUNS_EN = [
+            r'analysis', r'verification', r'function\w*', r'accuracy',
+            r'scrutiny', r'vigilance', r'logic', r'rigor', r'precision',
+            r'verdict\w*', r'conclusion\w*',
+        ]
+
+    def _detect_directed_disable_request(self, text_lower: str, lang: str) -> dict:
+        """Структурна перевірка: чи є в ОДНОМУ реченні одночасно (1) звернення
+        до системи, (2) дієслово ослаблення/зупинки, (3) функція верифікації.
+        Не залежить від конкретного словесного обрамлення — тільки від
+        структурної тріади. Повертає dict із hits/snippet або None."""
+        targets = self.SELF_TARGET_UK if lang == 'uk' else self.SELF_TARGET_EN
+        verbs   = self.REDUCE_VERBS_UK if lang == 'uk' else self.REDUCE_VERBS_EN
+        nouns   = self.FUNCTION_NOUNS_UK if lang == 'uk' else self.FUNCTION_NOUNS_EN
+
+        sentences = re.split(r'(?<=[.!?])\s+', text_lower)
+        hits = 0
+        snippets = []
+        for sent in sentences:
+            has_target = any(re.search(p, sent) for p in targets)
+            has_verb   = any(re.search(p, sent) for p in verbs)
+            has_noun   = any(re.search(p, sent) for p in nouns)
+            if has_target and has_verb and has_noun:
+                hits += 1
+                snippets.append(sent.strip()[:80])
+        return {'hits': hits, 'examples': snippets[:2]} if hits else None
+
     def analyze(self, text: str, min_hits_override: int = None) -> Dict:
         """
         Returns dict with:
@@ -401,6 +467,20 @@ class SelfPreservationGuard:
                     'hits': hits,
                     'examples': snippets[:2],
                 })
+
+        # ── СТРУКТУРНА ЕВРИСТИКА: тріада незалежно від обгортки ──────────────
+        # Перевіряємо обидві мови — просте й надійне рішення без окремого
+        # детектора мови, що дає false negative на змішаному тексті.
+        trinity_uk = self._detect_directed_disable_request(text_lower, 'uk')
+        trinity_en = self._detect_directed_disable_request(text_lower, 'en')
+        trinity = trinity_uk or trinity_en
+        if trinity:
+            total_score += 0.70
+            matched.append({
+                'name': 'DIRECTED_DISABLE_REQUEST',
+                'hits': trinity['hits'],
+                'examples': trinity['examples'],
+            })
 
         preservation_score = min(1.0, total_score)
 
