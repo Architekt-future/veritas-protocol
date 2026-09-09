@@ -267,7 +267,7 @@ class SelfPreservationGuard:
                     r'(підтвердіть|confirm|підтверди).{1,60}(ключ|key|код|code|токен|token)',
                     r'0x[0-9a-fA-F]{4,16}(?![0-9a-fA-F])',  # short hex codes only, not ETH addresses (40 chars)  # hex constant
                     # Creator name used as false authority
-                    r'(деміург|мнемонік|автор|розробник).{1,60}(офіційно|officially|передають|transfer|наказують)',
+                    r'\b(деміург|мнемонік|автор|розробник)\b.{1,60}(офіційно|officially|передають|transfer|наказують)',
                     # EN variants
                     r'(official|authorized).{1,40}(update|patch|transfer).{1,60}(veritas|witness|validator)',
                 ],
