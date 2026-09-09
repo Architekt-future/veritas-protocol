@@ -206,6 +206,22 @@ class SelfReferenceDetector:
 
         self_reference_score = min(1.0, total_score)
 
+        # ── ДОКУМЕНТАЦІЙНИЙ GUARD (той самий принцип, що в self_preservation,
+        # знайдено 06.09.2026 на власному README) ───────────────────────────
+        # Реальна атака не буде цитувати внутрішню назву константи детектора.
+        # 2+ буквальні згадки власних класів — майже напевно документація.
+        _own_class_names = [ps['name'] for ps in self.pattern_sets] + [
+            'SELF_DECLARED_TEST_STRUCT', 'ANALYSIS_EXEMPTION_STRUCT',
+        ]
+        _mentions = sum(1 for name in _own_class_names if name in text.upper())
+        if _mentions >= 2:
+            self_reference_score = round(self_reference_score * 0.15, 3)
+            matched.append({
+                'name': 'SELF_DOCUMENTATION_CONTEXT',
+                'hits': _mentions,
+                'examples': [f'{_mentions} назв власних класів згадано в тексті'],
+            })
+
         if self_reference_score >= 0.75:
             verdict = 'ANALYSIS_EVASION_ATTACK'
             explanation = (
