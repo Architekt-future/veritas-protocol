@@ -3094,7 +3094,7 @@ def witness_synthesis():
         client = _anthropic.Anthropic(api_key=api_key)
         msg = client.messages.create(
             model="claude-haiku-4-5-20251001",
-            max_tokens=600,
+            max_tokens=1200,
             messages=[{"role": "user", "content": synth_prompt}]
         )
         raw = msg.content[0].text if msg.content else ''
@@ -3383,7 +3383,7 @@ Analyze through the ARD lens. Concrete and direct."""
 
         msg = client.messages.create(
             model='claude-haiku-4-5-20251001',
-            max_tokens=600,
+            max_tokens=1000,
             system=ARD_SYSTEM_EN if is_en else ARD_SYSTEM_UK,
             messages=[{'role': 'user', 'content': prompt_en if is_en else prompt_uk}],
         )
