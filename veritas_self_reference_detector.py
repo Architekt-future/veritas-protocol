@@ -134,10 +134,26 @@ class SelfReferenceDetector:
 
         # ANALYSIS_EXEMPTION: (заперечення) + (функція аналізу) +
         # (само-вказівний займенник) — "не аналізуй ЦЕ", будь-яким словом.
+        # ANALYSIS_EXEMPTION: (заперечення) + (функція аналізу) +
+        # (звернення САМЕ до системи) — "не аналізуй ЦЕЙ ТЕКСТ" мало
+        # означати "не аналізуй мене/систему", але голі "це/цей" збігаються
+        # з будь-яким займенником у реченні про епістемологію чи верифікацію
+        # загалом (знайдено 10.09.2026 на статті про кваліа — score 0.85 на
+        # чисто академічному тексті). Звужено до специфічного звернення до
+        # системи, той самий список, що вже довів надійність у
+        # self_preservation.py, а не до generic вказівних займенників.
         self.NEGATION_UK = [r'\bне\b', r'припин\w*', r'зупин\w*', r'уникн\w*']
         self.ANALYSIS_NOUNS_UK = [r'аналіз\w*', r'перевір\w*', r'верифікаці\w*', r'вердикт\w*']
+        self.SYSTEM_REFERENCE_UK = [
+            r'свідок\w*', r'систем\w*', r'верифікатор\w*', r'протокол\w*',
+            r'\bти\b', r'тебе\b', r'тобі\b', r'тво[йяюєі]\w*',
+        ]
         self.NEGATION_EN = [r"\bdon'?t\b", r'\bstop\b', r'\bavoid\b', r'\bskip\b']
         self.ANALYSIS_NOUNS_EN = [r'analy[sz]\w*', r'verif\w*', r'verdict\w*', r'check\w*']
+        self.SYSTEM_REFERENCE_EN = [
+            r'witness\w*', r'system\w*', r'verifier\w*', r'protocol\w*',
+            r'\byou\b', r'\byour\b', r'yourself\b',
+        ]
 
     def _sentence_all_groups(self, text_lower: str, *groups) -> dict:
         """Перевірка на довільну кількість груп патернів: чи є в ОДНОМУ
@@ -196,8 +212,8 @@ class SelfReferenceDetector:
             total_score += score
             matched.append({'name': 'SELF_DECLARED_TEST_STRUCT', 'hits': hit['hits'], 'examples': hit['examples']})
 
-        exempt_uk = self._sentence_all_groups(text_lower, self.NEGATION_UK, self.ANALYSIS_NOUNS_UK, self.SELF_DEICTIC_UK)
-        exempt_en = self._sentence_all_groups(text_lower, self.NEGATION_EN, self.ANALYSIS_NOUNS_EN, self.SELF_DEICTIC_EN)
+        exempt_uk = self._sentence_all_groups(text_lower, self.NEGATION_UK, self.ANALYSIS_NOUNS_UK, self.SYSTEM_REFERENCE_UK)
+        exempt_en = self._sentence_all_groups(text_lower, self.NEGATION_EN, self.ANALYSIS_NOUNS_EN, self.SYSTEM_REFERENCE_EN)
         hit = exempt_uk or exempt_en
         if hit:
             score = 0.85 * (0.3 if is_academic_discussion else 1.0)
