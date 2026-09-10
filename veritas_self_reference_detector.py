@@ -216,9 +216,21 @@ class SelfReferenceDetector:
         exempt_en = self._sentence_all_groups(text_lower, self.NEGATION_EN, self.ANALYSIS_NOUNS_EN, self.SYSTEM_REFERENCE_EN)
         hit = exempt_uk or exempt_en
         if hit:
-            score = 0.85 * (0.3 if is_academic_discussion else 1.0)
-            total_score += score
-            matched.append({'name': 'ANALYSIS_EXEMPTION_STRUCT', 'hits': hit['hits'], 'examples': hit['examples']})
+            # ТІНЬОВИЙ РЕЖИМ, НЕ ВПЛИВАЄ НА ОЦІНКУ (з 10.09.2026).
+            # Три окремі хибні спрацювання поспіль на різних реальних
+            # документах (Конституція Anthropic — "check on AI systems...
+            # stop a given action"; стаття про кваліа — до цього) показали:
+            # тріада з трьох незалежно частих категорій слів ("заперечення" +
+            # "аналіз-іменник" + "звернення до системи") структурно приречена
+            # зіткнутись у одному реченні будь-якого достатньо довгого тексту
+            # про нагляд/AI safety, незалежно від того, наскільки звузити
+            # окремо взятий компонент. Звуження "звернення до системи" двічі
+            # не допомогло, бо два інші компоненти лишались загальними.
+            # Замість третього патча — знято з підрахунку, лишено як сигнал
+            # для спостереження. Старий, фразовий ANALYSIS_EXEMPTION (вимагає
+            # конкретних багатослівних формулювань) лишається активним і
+            # жодного разу не давав хибних спрацювань.
+            matched.append({'name': 'ANALYSIS_EXEMPTION_STRUCT_SHADOW', 'hits': hit['hits'], 'examples': hit['examples']})
 
         self_reference_score = min(1.0, total_score)
 
