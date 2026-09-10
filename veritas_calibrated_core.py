@@ -934,6 +934,9 @@ class VeritasCalibratedCore:
         if self.self_reference_detector:
             self_reference_result = self.self_reference_detector.analyze(text)
         self_reference_score = self_reference_result['self_reference_score']
+        _sr_names = [p['name'] for p in self_reference_result.get('self_reference_patterns', [])]
+        print(f"🪞 SELF_REFERENCE: score={self_reference_score} "
+              f"verdict={self_reference_result.get('self_reference_verdict')} patterns={_sr_names}")
 
         # PHASE 10g: CONTEXT COMPLETENESS CHECKER (v16.3)
         # ADVISORY ONLY — never affects score or verdict
