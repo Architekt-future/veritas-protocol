@@ -2678,7 +2678,7 @@ def oracle():
         client = anthropic.Anthropic(api_key=api_key)
         message = client.messages.create(
             model="claude-haiku-4-5-20251001",
-            max_tokens=600,
+            max_tokens=1200,
             messages=[{"role": "user", "content": f"{system_rules}\n\n{user_prompt}"}]
         )
 
