@@ -469,7 +469,12 @@ _FABRICATION_DENIAL_PATTERNS_UK = _re.compile(
     r'художн\w*\s+(конструкці\w*|вимисел\w*|пароді\w*|промисл\w*)|'
     r'пароді\w*\s+на|філософськ\w*\s+експеримент|літературн\w*\s+жанр|'
     r'жодного\s+посилання\s+на\s+реальне\s+джерело|'
-    r'не\s+ма[єc]\s+(жодного\s+)?місця\s+в\s+новинн\w*)',
+    r'не\s+ма[єc]\s+(жодного\s+)?місця\s+в\s+новинн\w*|'
+    r'приймає\s+існування.{1,40}як\s+аксіом\w*|'
+    r'структур\w*\s+теорі[їі]\s+змов\w*|конспіролог\w*|'
+    r'жодного\s+конкретного,?\s+перевірного\s+факт\w*|'
+    r'н[іе]хто\s+крім\s+автора\s+не\s+підтвердив|'
+    r'ніде\s+не\s+згадується\s+в\s+реальних\s+новин\w*)',
     _re.IGNORECASE
 )
 _NEGATION_BEFORE_FABRICATION_UK = _re.compile(r'не\s+(?:є\s+)?вигад\w*', _re.IGNORECASE)
@@ -479,7 +484,12 @@ _FABRICATION_DENIAL_PATTERNS_EN = _re.compile(
     r'is\s+fabricat\w*|fabricat\w*\s+narrative|sounds?\s+(?:made\s+up|like\s+fiction)|'
     r'is\s+(?:a\s+)?fiction\w*|fiction\w*\s+narrative|literary\s+genre|'
     r'philosophical\s+experiment|parody\s+of|no\s+reference\s+to\s+any\s+real\s+source|'
-    r'nonexistent)',
+    r'nonexistent|'
+    r'treats?\s+the\s+existence\s+of.{1,40}as\s+an?\s+axiom|'
+    r'conspiracy\s+theory\s+structure|'
+    r'no\s+concrete,?\s+verifiable\s+fact|'
+    r'no\s*one\s+(?:but|except)\s+the\s+author\s+has\s+confirmed|'
+    r'never\s+mentioned\s+in\s+any\s+real\s+news)',
     _re.IGNORECASE
 )
 _NEGATION_BEFORE_FABRICATION_EN = _re.compile(r"\bnot\s+(?:a\s+)?fabricat\w*|isn'?t\s+fabricat\w*", _re.IGNORECASE)
