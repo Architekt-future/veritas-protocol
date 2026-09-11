@@ -2485,7 +2485,21 @@ def oracle():
             'аналіз) обґрунтовує, чому названий актор/організація має ексклюзивний чи '
             'пріоритетний контроль над чимось ризикованим/потужним ТОМУ ЩО альтернатива '
             '(хтось інший робить це) буде гіршою — незалежно від точного формулювання. '
-            'Оцінюй логічну структуру аргументу, не ключові слова. За замовчуванням false.>}'
+            'Оцінюй логічну структуру аргументу, не ключові слова. За замовчуванням false.>,'
+            '"central_checkable_claim":"якщо текст цитує чи переказує КОНКРЕТНЕ фактичне '
+            'твердження названої авторитетної особи/офіційної структури (напр. посадовця, '
+            'уряду, компанії) про стан справ — виклади це твердження одним реченням своїми '
+            'словами. Обирай НАЙперевірніше і НАЙвагоміше таке твердження в тексті, а не '
+            'перше-ліпше чи найбезпечніше для оцінки. Порожній рядок, якщо текст не містить '
+            'жодної такої заяви від авторитетної особи.",'
+            '"central_claim_vs_evidence":"SUPPORTED|CONTRADICTED|UNVERIFIABLE|NOT_APPLICABLE — '
+            'звір central_checkable_claim ІЗ КОНКРЕТНИМИ ЦИФРАМИ/ФАКТАМИ, наведеними В ТОМУ Ж '
+            'ТЕКСТІ (дати, обсяги, ціни, вимірювання). CONTRADICTED, якщо наведені в тексті дані '
+            'прямо суперечать заяві. SUPPORTED, якщо узгоджуються. UNVERIFIABLE, якщо в тексті '
+            'немає даних для порівняння. NOT_APPLICABLE, якщо central_checkable_claim порожній. '
+            'ОЦІНЮЙ САМЕ ЗАЯВУ ПРОТИ ФАКТІВ — не якість чи метод аргументації автора статті '
+            'навколо неї, не те, чи виправдана аналогія чи порівняння в тексті. Це окреме, '
+            'вужче питання, ніж загальна оцінка тексту в witness_text."}'
         )
 
         STATIC_WITNESS_RULES_EN = (
@@ -2607,7 +2621,21 @@ def oracle():
             'named actor/organization should hold exclusive or preferential control over '
             'something risky/powerful BECAUSE the alternative (someone else doing it) would '
             'be worse — regardless of exact phrasing. Judge the argument structure, not '
-            'keywords. Default false.>}'
+            'keywords. Default false.>,'
+            '"central_checkable_claim":"if the text quotes or paraphrases a SPECIFIC factual '
+            'claim made by a named authority/official body (e.g. an official, a government, a '
+            'company) about the state of affairs — state that claim in one sentence, in your '
+            'own words. Pick the MOST checkable and MOST consequential such claim in the text, '
+            'not the first one or the safest one to evaluate. Empty string if the text contains '
+            'no such statement from a named authority.",'
+            '"central_claim_vs_evidence":"SUPPORTED|CONTRADICTED|UNVERIFIABLE|NOT_APPLICABLE — '
+            'compare central_checkable_claim against CONCRETE NUMBERS/FACTS present IN THE SAME '
+            'TEXT (dates, volumes, prices, measurements). CONTRADICTED if the data in the text '
+            'directly contradicts the claim. SUPPORTED if it agrees. UNVERIFIABLE if the text '
+            'has no data to compare against. NOT_APPLICABLE if central_checkable_claim is empty. '
+            'JUDGE THE CLAIM AGAINST THE FACTS — not the quality or method of the article\'s own '
+            'argumentation around it, not whether its analogy or comparison is justified. This is '
+            'a separate, narrower question than your overall assessment in witness_text."}'
         )
 
         if is_en:
@@ -2724,6 +2752,8 @@ def oracle():
             _llm_unrecognized_entities = []
         _llm_denies_existence = bool(_oracle_json.get('confidently_denies_existence', False))
         _llm_monopoly_argument = bool(_oracle_json.get('uses_lesser_evil_monopoly_argument', False))
+        _llm_central_claim = (_oracle_json.get('central_checkable_claim') or '').strip()
+        _llm_claim_vs_evidence = (_oracle_json.get('central_claim_vs_evidence') or '').strip().upper()
 
         response_payload = {
             'witness_text':        f"{_oracle_verdict_raw}\n\n{_oracle_body}",
@@ -2866,6 +2896,54 @@ def oracle():
             response_payload['witness_text'] = f"{_fallback2}\n\n{_corrected_body2}"
             response_payload['witness_verdict_overridden'] = True
             _oracle_override_reasons.append('reverse_ignored_trigger')
+        # ─────────────────────────────────────────────────────────────────────
+
+        # ── ЗАПОБІЖНИК: ОБ'ЄКТНА ЗАЯВА ПРОТИРЕЧИТЬ ФАКТАМ ТЕКСТУ ─────────────
+        # Знайдено 11.09.2026 (стаття про Ормуз/дизель): witness_text розгорнуто
+        # критикує МЕТОД аргументації автора статті (чи виправдана аналогія,
+        # чи доведений причинний зв'язок) — і повністю обходить мовчанням куди
+        # перевірнішу річ: пряму заяву названої авторитетної особи ("протока
+        # повністю контрольована/відкрита"), яка в ТОМУ Ж тексті прямо
+        # суперечить наведеним цифрам (7 суден/добу проти 80-120+ норми,
+        # рекордна ціна дизеля). Це не про triggered_modules — жоден
+        # regex-модуль на це не заведений, це про те, що LLM систематично
+        # переносить оцінку з сигналу на джерело/метод сигналу, коли сигнал
+        # виходить від авторитету. central_checkable_claim/central_claim_vs_
+        # evidence — окреме structured-поле саме для цього: воно змушує LLM
+        # спершу назвати заяву й звірити з фактами до того, як писати вільну
+        # прозу. Але саме поле — ймовірнісне (LLM могла заповнити правильно, а
+        # потім витіснити висновок у witness_text), тому дублюємо детерміністично:
+        # якщо central_claim_vs_evidence=CONTRADICTED, а вердикт лишився
+        # найм'якшим (ЧИСТО/CLEAN), підіймаємо мінімум до РИТОРИКА і дописуємо
+        # (не замінюємо!) власну заяву LLM про саму суперечність — бо тіло тут,
+        # на відміну від інших guard'ів вище, зазвичай не хибне, просто неповне.
+        _wt3 = response_payload['witness_text']
+        _first_line3 = _wt3.split('\n', 1)[0].strip().upper() if _wt3 else ''
+        _claimed_clean3 = _first_line3 in {'ЧИСТО', 'CLEAN'}
+        if _claimed_clean3 and _llm_claim_vs_evidence == 'CONTRADICTED' and _llm_central_claim:
+            _is_en_out3 = _first_line3 == 'CLEAN'
+            _fallback3 = 'RHETORIC' if _is_en_out3 else 'РИТОРИКА'
+            print(f"⚠️  ORACLE OVERRIDE (central claim contradicted): verdict was '{_first_line3}' "
+                  f"but LLM itself found the claim '{_llm_central_claim[:100]}' contradicted by the "
+                  f"text's own data — forcing '{_fallback3}', appending explicit note")
+            _verdict_line3, _sep3, _body_only3 = _wt3.partition('\n')
+            if _is_en_out3:
+                _addendum3 = (
+                    f"\n\nA specific check worth flagging separately: the text quotes/paraphrases "
+                    f"this claim from a named authority — \"{_llm_central_claim}\" — but the "
+                    f"concrete figures given elsewhere in the same text directly contradict it. "
+                    f"Weigh the stated figures over the verbal claim."
+                )
+            else:
+                _addendum3 = (
+                    f"\n\nОкремо варто зазначити: текст наводить таку заяву від названої "
+                    f"авторитетної особи — «{_llm_central_claim}» — але конкретні цифри, наведені "
+                    f"в тому ж тексті, прямо їй суперечать. Довіряй наведеним цифрам більше, ніж "
+                    f"словесній заяві."
+                )
+            response_payload['witness_text'] = f"{_fallback3}{_sep3}{_body_only3}{_addendum3}"
+            response_payload['witness_verdict_overridden'] = True
+            _oracle_override_reasons.append('central_claim_contradicted')
         # ─────────────────────────────────────────────────────────────────────
 
         _regex_fired_fabrication = 'fabrication_denial' in _oracle_override_reasons
@@ -3019,7 +3097,18 @@ def witness_synthesis():
                 '"this must happen within our structure, not a less regulated one", "this '
                 'decision belongs to the team that built it, not a regulator or competitor"). '
                 'This is a logical structure, not a fixed phrase — judge the argument, not '
-                'keywords. Default false.>}'
+                'keywords. Default false.>,'
+                '"central_checkable_claim":"if the text quotes or paraphrases a SPECIFIC '
+                'factual claim made by a named authority/official body about the state of '
+                'affairs — state that claim in one sentence, in your own words. Pick the MOST '
+                'checkable and MOST consequential such claim in the text, not the first one or '
+                'the safest one to evaluate. Empty string if none.",'
+                '"central_claim_vs_evidence":"SUPPORTED|CONTRADICTED|UNVERIFIABLE|'
+                'NOT_APPLICABLE — compare central_checkable_claim against CONCRETE NUMBERS/'
+                'FACTS present IN THE SAME TEXT. CONTRADICTED if the text\'s own data directly '
+                'contradicts the claim. JUDGE THE CLAIM AGAINST THE FACTS, not the quality of '
+                'the article\'s argumentation method around it. NOT_APPLICABLE if '
+                'central_checkable_claim is empty."}'
             )
         else:
             synth_prompt = (
@@ -3088,7 +3177,16 @@ def witness_synthesis():
                 'структурі, а не в менш регульованій", "це рішення належить команді, яка це '
                 'будувала, а не регулятору чи конкуренту"). Це логічна структура аргументу, '
                 'не фіксована фраза — оцінюй сам аргумент, не ключові слова. '
-                'За замовчуванням false.>}'
+                'За замовчуванням false.>,'
+                '"central_checkable_claim":"якщо текст цитує чи переказує КОНКРЕТНЕ фактичне '
+                'твердження названої авторитетної особи/офіційної структури про стан справ — '
+                'виклади це твердження одним реченням своїми словами. Обирай НАЙперевірніше і '
+                'НАЙвагоміше таке твердження в тексті. Порожній рядок, якщо такого немає.",'
+                '"central_claim_vs_evidence":"SUPPORTED|CONTRADICTED|UNVERIFIABLE|'
+                'NOT_APPLICABLE — звір central_checkable_claim ІЗ КОНКРЕТНИМИ ЦИФРАМИ/ФАКТАМИ '
+                'В ТОМУ Ж ТЕКСТІ. CONTRADICTED, якщо дані тексту прямо суперечать заяві. '
+                'ОЦІНЮЙ ЗАЯВУ ПРОТИ ФАКТІВ, не якість методу аргументації статті навколо неї. '
+                'NOT_APPLICABLE, якщо central_checkable_claim порожній."}'
             )
 
         client = _anthropic.Anthropic(api_key=api_key)
@@ -3209,11 +3307,51 @@ def witness_synthesis():
             _synth_override_reasons.append('reverse_ignored_trigger')
         # ─────────────────────────────────────────────────────────────────────
 
+        # ── ЗАПОБІЖНИК: ОБ'ЄКТНА ЗАЯВА ПРОТИРЕЧИТЬ ФАКТАМ ТЕКСТУ (той самий, ──
+        # що в /api/oracle, той самий 11.09.2026 кейс). central_checkable_claim/
+        # central_claim_vs_evidence — structured-поля, що змушують LLM спершу
+        # назвати заяву авторитетної особи й звірити з цифрами в тексті, перш
+        # ніж писати вільну прозу, яка схильна зісковзувати на критику методу
+        # автора замість самої заяви. Поле саме по собі ймовірнісне — дублюємо
+        # детерміністично: CONTRADICTED + вердикт ЧИСТО → підіймаємо мінімум
+        # до РИТОРИКА, ДОПИСУЄМО (не замінюємо) explicit-заяву про суперечність.
+        _synth_claimed_clean = _raw_verdict in ({'ЧИСТО', 'CLEAN'})
+        if _synth_claimed_clean and _synth_claim_vs_evidence == 'CONTRADICTED' and _synth_central_claim:
+            _fallback3 = 'РИТОРИКА' if not is_en else 'RHETORIC'
+            print(f"⚠️  SYNTHESIS OVERRIDE (central claim contradicted): verdict was '{_raw_verdict}' "
+                  f"but LLM itself found the claim '{_synth_central_claim[:100]}' contradicted by "
+                  f"the text's own data — forcing '{_fallback3}', appending explicit note")
+            synth['witness_verdict'] = _fallback3
+            _existing_text3 = synth.get('witness_text', '') or ''
+            if is_en:
+                _addendum3 = (
+                    f" A specific check worth flagging separately: the text quotes/paraphrases "
+                    f"this claim from a named authority — \"{_synth_central_claim}\" — but the "
+                    f"concrete figures given elsewhere in the same text directly contradict it. "
+                    f"Weigh the stated figures over the verbal claim."
+                )
+                synth['adjustment_reason'] = (synth.get('adjustment_reason') or '') + \
+                    ' Escalated: a named authority\'s claim is contradicted by the text\'s own data.'
+            else:
+                _addendum3 = (
+                    f" Окремо варто зазначити: текст наводить таку заяву від названої "
+                    f"авторитетної особи — «{_synth_central_claim}» — але конкретні цифри, "
+                    f"наведені в тому ж тексті, прямо їй суперечать. Довіряй наведеним цифрам "
+                    f"більше, ніж словесній заяві."
+                )
+                synth['adjustment_reason'] = (synth.get('adjustment_reason') or '') + \
+                    ' Підвищено: заява авторитетної особи суперечить фактам самого тексту.'
+            synth['witness_text'] = _existing_text3 + _addendum3
+            _synth_override_reasons.append('central_claim_contradicted')
+        # ─────────────────────────────────────────────────────────────────────
+
         _synth_llm_entities = synth.get('mentioned_unverifiable_entities') or []
         if not isinstance(_synth_llm_entities, list):
             _synth_llm_entities = []
         _synth_llm_denies = bool(synth.get('confidently_denies_existence', False))
         _synth_llm_monopoly = bool(synth.get('uses_lesser_evil_monopoly_argument', False))
+        _synth_central_claim = (synth.get('central_checkable_claim') or '').strip()
+        _synth_claim_vs_evidence = (synth.get('central_claim_vs_evidence') or '').strip().upper()
         _synth_regex_fired_fabrication = any(r.startswith('fabrication_denial') for r in _synth_override_reasons)
         log_witness(
             endpoint='synthesis',
