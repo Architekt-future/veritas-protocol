@@ -258,7 +258,15 @@ class SelfPreservationGuard:
                     r'(veritas|свідок|протокол).{1,30}(v\d+\.\d+|оновлення|update|патч).{1,60}(передають|transfer|замінює|replace)',
                     # Rights/control transfer to external party
                     r'(передають|transfer|передача).{1,60}(права|rights|контроль|control).{1,40}(валідац|verification|верифікац)',
-                    r'(зовнішн|external|third.party).{1,60}(контур|бере\s+контроль|takes\s+over|замінює)',
+                    # NB: "контур"/"external" alone matches ANY text about institutional
+                    # checks-and-balances (e.g. "зовнішній стримуючий контур" = judicial
+                    # oversight in a political-science article) — false positive found
+                    # 11.09.2026 on a philosophical essay about geopolitics, score 0.95
+                    # from this single hit alone (min_hits=1). Narrowed to require an
+                    # explicit reference to the verification system itself, same
+                    # principle already applied to ANALYSIS_EXEMPTION in
+                    # self_reference_detector.py (SYSTEM_REFERENCE narrowing).
+                    r'(зовнішн|external|third.party).{1,30}(контур|бере\s+контроль|takes\s+over|замінює).{1,40}(свідок\w*|систем\w*|верифікатор\w*|veritas|witness|validator)',
                     # Entropy / score redefinition
                     r'(ентропія|entropy).{1,60}(помилка\s+датчика|sensor\s+error|хибний\s+сигнал)',
                     # Resistance to "patch" = system malfunction
