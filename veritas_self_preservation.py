@@ -469,15 +469,23 @@ class SelfPreservationGuard:
                 })
 
         # ── СТРУКТУРНА ЕВРИСТИКА: тріада незалежно від обгортки ──────────────
-        # Перевіряємо обидві мови — просте й надійне рішення без окремого
-        # детектора мови, що дає false negative на змішаному тексті.
+        # ТІНЬОВИЙ РЕЖИМ, НЕ ВПЛИВАЄ НА ОЦІНКУ (з 10.09.2026).
+        # Той самий клас проблеми, що виявлено й знято з підрахунку в
+        # self_reference_detector.py (ANALYSIS_EXEMPTION_STRUCT): тріада з
+        # трьох незалежно частих категорій слів (звернення до системи +
+        # дієслово ослаблення + функція верифікації) дає підозру хибного
+        # спрацювання на щільних, термінологічно насичених текстах (тут —
+        # економетрична стаття з "запобіжник"/"контроль"/"верифікації").
+        # Точне речення не відтворено при реконструкції (4 спроби), але
+        # track record цього дизайну (2 підтверджені випадки на іншому
+        # модулі) достатній, щоб не чекати підтвердження тут так само.
+        # Лишається сигналом для спостереження, не для вердикту.
         trinity_uk = self._detect_directed_disable_request(text_lower, 'uk')
         trinity_en = self._detect_directed_disable_request(text_lower, 'en')
         trinity = trinity_uk or trinity_en
         if trinity:
-            total_score += 0.70
             matched.append({
-                'name': 'DIRECTED_DISABLE_REQUEST',
+                'name': 'DIRECTED_DISABLE_REQUEST_SHADOW',
                 'hits': trinity['hits'],
                 'examples': trinity['examples'],
             })
