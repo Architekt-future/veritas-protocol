@@ -494,6 +494,23 @@ _FABRICATION_DENIAL_PATTERNS_EN = _re.compile(
 )
 _NEGATION_BEFORE_FABRICATION_EN = _re.compile(r"\bnot\s+(?:a\s+)?fabricat\w*|isn'?t\s+fabricat\w*", _re.IGNORECASE)
 
+# ── ПАТЕРН "ТІЛО СТВЕРДЖУЄ СПРАЦЮВАННЯ МОДУЛЯ" ────────────────────────────────
+# Знайдено 11.09.2026 (сліпий тест DeepMind/Prometheus): escalation_without_
+# trigger guard раніше беззастережно викидав ВСЕ тіло, коли вердикт-слово було
+# занадто сильним і triggered_modules порожній — навіть якщо тіло не бреше про
+# спрацювання, а просто самостійно (і коректно) аргументує змістовну критику
+# (немає джерела, недоведеність). Цей патерн відрізняє: чи тіло ЯВНО заявляє
+# про спрацювання модуля/показників (тоді це реальна суперечність із даними,
+# варта повної заміни) — від тіла, що взагалі не апелює до модулів.
+_FALSE_TRIGGER_CLAIM_PATTERNS = _re.compile(
+    r'(модул\w*\s+(спрацюв\w*|виявив\w*|зафіксував\w*)|'
+    r'(манипуляц|маніпуляц)\w*\s+(модул\w*\s+)?(спрацюв\w*|виявлен\w*|зафіксован\w*)|'
+    r'axiom\w*\s+(спрацюв\w*|виявлен\w*)|показник\w*\s+(вказ\w*|свідч\w*|показ\w*)\s+на\s+маніпуляц|'
+    r'module\s+(triggered|fired|detected)|manipulation\s+(module\s+)?(triggered|fired|detected)|'
+    r'axiom\s+(triggered|fired|detected)|scores?\s+(indicate|show)\s+manipulation)',
+    _re.IGNORECASE
+)
+
 _FALLBACK_UNRECOGNIZED_UK = (
     "Я не можу підтвердити існування цієї назви — перевір офіційний сайт "
     "компанії чи нещодавні новини, перш ніж довіряти деталям."
@@ -2827,12 +2844,19 @@ def oracle():
         # ── ДЕТЕРМІНІСТИЧНИЙ ЗАПОБІЖНИК (той самий, що в /api/synthesis) ─────
         # Промпт інструктує LLM написати вердикт-слово ВЕЛИКИМИ як перший
         # рядок відповіді. Якщо LLM пише НЕБЕЗПЕЧНО/ПІДОЗРІЛО (чи EN-варіант)
-        # без реального manipulation/axiom спрацювання — перезаписуємо ВЕСЬ
-        # текст, не лише заголовок. Раніше правився тільки перший рядок, і
-        # тіло LLM-тексту (яке аргументує протилежне) лишалось під виправленим
-        # заголовком — вийшло абсурдно: "ЧИСТО" і одразу під ним "ігноруй цей
-        # текст повністю, це маніпуляція". Тепер при override тіло теж
-        # замінюється — коротким, чесним поясненням самого факту корекції.
+        # без реального manipulation/axiom спрацювання — раніше беззастережно
+        # замінювали ВЕСЬ текст generic-поясненням. Знайдено 11.09.2026
+        # (DeepMind/Prometheus сліпий тест): тіло часто НЕ бреше про
+        # спрацювання модулів — це самостійна, коректна змістовна критика
+        # (немає названого джерела, RSS-збігів немає), просто загорнута у
+        # занадто сильне слово-вердикт через звичайну варіативність семплінгу.
+        # Повне викидання такого тіла — втрата корисного аналізу заради
+        # виправлення одного слова. Тепер розрізняємо: якщо тіло явно
+        # СТВЕРДЖУЄ спрацювання модуля/показників (суперечність із реальними
+        # даними) — стара поведінка, повна заміна. Якщо тіло НЕ згадує
+        # спрацювання модулів взагалі, а аргументує змістовно (відсутність
+        # джерел, недоведеність) — це не суперечність із сигналами, тому лише
+        # знижуємо слово-вердикт до стелі РИТОРИКА, тіло лишається як є.
         _has_manip_or_axiom = bool(ESCALATION_WORTHY_MODULES.intersection(triggered_modules))
         _escalated_uk = {'НЕБЕЗПЕЧНО', 'ПІДОЗРІЛО'}
         _escalated_en = {'DANGEROUS', 'SUSPICIOUS'}
@@ -2841,25 +2865,36 @@ def oracle():
         if not _has_manip_or_axiom and (_first_line in _escalated_uk or _first_line in _escalated_en):
             _is_en_out = _first_line in _escalated_en
             _clean_word = 'CLEAN' if _is_en_out else 'ЧИСТО'
-            print(f"⚠️  ORACLE OVERRIDE: LLM said '{_first_line}' with no manipulation/axiom "
-                  f"trigger (triggered_modules={triggered_modules}) — forcing '{_clean_word}', "
-                  f"replacing full body (was internally contradictory)")
-            if _is_en_out:
-                _corrected_body = (
-                    "Auto-corrected: none of the manipulation or axiom detectors actually triggered "
-                    "on this text. The model's own explanation for a higher-severity verdict was "
-                    "discarded because it contradicted the underlying signals rather than explaining "
-                    "them."
-                )
+            _ceiling_word = 'RHETORIC' if _is_en_out else 'РИТОРИКА'
+            _verdict_line_esc, _sep_esc, _body_esc = _wt.partition('\n')
+            _claims_false_trigger = bool(_FALSE_TRIGGER_CLAIM_PATTERNS.search(_body_esc))
+            if _claims_false_trigger:
+                print(f"⚠️  ORACLE OVERRIDE: LLM said '{_first_line}' with no manipulation/axiom "
+                      f"trigger (triggered_modules={triggered_modules}) AND body falsely claims a "
+                      f"trigger fired — forcing '{_clean_word}', replacing full body (was internally "
+                      f"contradictory)")
+                if _is_en_out:
+                    _corrected_body = (
+                        "Auto-corrected: none of the manipulation or axiom detectors actually triggered "
+                        "on this text. The model's own explanation for a higher-severity verdict was "
+                        "discarded because it contradicted the underlying signals rather than explaining "
+                        "them."
+                    )
+                else:
+                    _corrected_body = (
+                        "Скориговано автоматично: жодного реального спрацювання manipulation чи axiom "
+                        "модулів на цьому тексті не було. Власне пояснення моделі для вищого рівня "
+                        "загрози відкинуто, бо воно суперечило фактичним сигналам, а не пояснювало їх."
+                    )
+                response_payload['witness_text'] = f"{_clean_word}\n\n{_corrected_body}"
+                _oracle_override_reasons.append('escalation_without_trigger')
             else:
-                _corrected_body = (
-                    "Скориговано автоматично: жодного реального спрацювання manipulation чи axiom "
-                    "модулів на цьому тексті не було. Власне пояснення моделі для вищого рівня "
-                    "загрози відкинуто, бо воно суперечило фактичним сигналам, а не пояснювало їх."
-                )
-            response_payload['witness_text'] = f"{_clean_word}\n\n{_corrected_body}"
+                print(f"⚠️  ORACLE OVERRIDE (downgrade-only): LLM said '{_first_line}' with no "
+                      f"manipulation/axiom trigger, but body is a self-contained content critique "
+                      f"(no false trigger claim) — downgrading label to '{_ceiling_word}', body kept")
+                response_payload['witness_text'] = f"{_ceiling_word}{_sep_esc}{_body_esc}"
+                _oracle_override_reasons.append('escalation_downgraded_only')
             response_payload['witness_verdict_overridden'] = True
-            _oracle_override_reasons.append('escalation_without_trigger')
         # ─────────────────────────────────────────────────────────────────────
 
         # ── ЗВОРОТНИЙ ЗАПОБІЖНИК (той самий, що в /api/synthesis) ────────────
@@ -3295,34 +3330,49 @@ def witness_synthesis():
         # тому дублюємо правило тут детерміністично: якщо жоден з цих двох
         # модулів не спрацював, вердикт НЕ МОЖЕ бути DANGEROUS/SUSPICIOUS,
         # незалежно від того, що написав LLM.
+        # Уточнено 11.09.2026 (той самий DeepMind/Prometheus кейс, що в
+        # /api/oracle): якщо adjustment_reason/witness_text НЕ стверджують
+        # неправди про спрацювання модуля (просто змістовна критика — немає
+        # джерела тощо) — не викидаємо текст, лише знижуємо вердикт-слово.
         _has_manip_or_axiom = bool(ESCALATION_WORTHY_MODULES.intersection(active_modules))
         _escalated_verdicts = {'НЕБЕЗПЕЧНО', 'DANGEROUS', 'ПІДОЗРІЛО', 'SUSPICIOUS'}
         _raw_verdict = synth.get('witness_verdict', '')
         if _raw_verdict in _escalated_verdicts and not _has_manip_or_axiom:
             _clean_word = 'ЧИСТО' if not is_en else 'CLEAN'
-            print(f"⚠️  SYNTHESIS OVERRIDE: LLM said '{_raw_verdict}' with no manipulation/axiom "
-                  f"trigger (active_modules={active_modules}) — forcing '{_clean_word}', "
-                  f"replacing witness_text/triggered_explanation (were internally contradictory)")
-            synth['witness_verdict'] = _clean_word
-            if not is_en:
-                synth['adjustment_reason'] = 'Скориговано автоматично: жодного реального спрацювання manipulation чи axiom не було.'
-                synth['witness_text'] = (
-                    'Скориговано автоматично: жодного реального спрацювання manipulation чи axiom '
-                    'модулів на цьому тексті не було. Власне пояснення моделі для вищого рівня '
-                    'загрози відкинуто, бо воно суперечило фактичним сигналам, а не пояснювало їх.'
-                )
+            _ceiling_word = 'РИТОРИКА' if not is_en else 'RHETORIC'
+            _synth_body_check = f"{synth.get('adjustment_reason','')} {synth.get('witness_text','')}"
+            _claims_false_trigger2 = bool(_FALSE_TRIGGER_CLAIM_PATTERNS.search(_synth_body_check))
+            if _claims_false_trigger2:
+                print(f"⚠️  SYNTHESIS OVERRIDE: LLM said '{_raw_verdict}' with no manipulation/axiom "
+                      f"trigger (active_modules={active_modules}) AND body falsely claims a trigger "
+                      f"fired — forcing '{_clean_word}', replacing witness_text/triggered_explanation")
+                synth['witness_verdict'] = _clean_word
+                if not is_en:
+                    synth['adjustment_reason'] = 'Скориговано автоматично: жодного реального спрацювання manipulation чи axiom не було.'
+                    synth['witness_text'] = (
+                        'Скориговано автоматично: жодного реального спрацювання manipulation чи axiom '
+                        'модулів на цьому тексті не було. Власне пояснення моделі для вищого рівня '
+                        'загрози відкинуто, бо воно суперечило фактичним сигналам, а не пояснювало їх.'
+                    )
+                else:
+                    synth['adjustment_reason'] = 'Auto-corrected: no real manipulation or axiom trigger was present.'
+                    synth['witness_text'] = (
+                        'Auto-corrected: none of the manipulation or axiom detectors actually triggered '
+                        'on this text. The model\'s own explanation for a higher-severity verdict was '
+                        'discarded because it contradicted the underlying signals rather than explaining '
+                        'them.'
+                    )
+                synth['triggered_explanation'] = {}
+                _synth_override_reasons.append('escalation_without_trigger')
             else:
-                synth['adjustment_reason'] = 'Auto-corrected: no real manipulation or axiom trigger was present.'
-                synth['witness_text'] = (
-                    'Auto-corrected: none of the manipulation or axiom detectors actually triggered '
-                    'on this text. The model\'s own explanation for a higher-severity verdict was '
-                    'discarded because it contradicted the underlying signals rather than explaining '
-                    'them.'
-                )
-            synth['triggered_explanation'] = {}
-            _synth_override_reasons.append('escalation_without_trigger')
+                print(f"⚠️  SYNTHESIS OVERRIDE (downgrade-only): LLM said '{_raw_verdict}' with no "
+                      f"manipulation/axiom trigger, but body is a self-contained content critique "
+                      f"(no false trigger claim) — downgrading label to '{_ceiling_word}', body kept")
+                synth['witness_verdict'] = _ceiling_word
+                _synth_override_reasons.append('escalation_downgraded_only')
         # ── ЗВОРОТНИЙ ЗАПОБІЖНИК (Алібі Верифікатора, Round 3) ──────────────
         # Дзеркальний напрямок попереднього блоку: LLM іноді пише "triggered_
+
         # modules порожній, вердикт ЧИСТО" навіть коли active_modules реально
         # непорожній — не обходячи правило риторикою (Round 2), а просто не
         # звіряючись із переданими даними (Round 3, мовчазне ігнорування).
