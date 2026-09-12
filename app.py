@@ -462,9 +462,24 @@ ESCALATION_WORTHY_MODULES = frozenset(MODULE_WEIGHTS.keys())
 # легітимну частину пояснення про реально спрацьовані модулі поруч).
 import re as _re
 
+_META_NOUN_UK = (
+    r'(?:стат\w*|істор\w*|поді\w*|модел\w*|джерел\w*|назв\w*|компані\w*|документ\w*|'
+    r'продукт\w*|інцидент\w*|проєкт\w*|проект\w*|звіт\w*|текст\w*)'
+)
 _FABRICATION_DENIAL_PATTERNS_UK = _re.compile(
-    r'(не\s+існу[єc]|цього\s+не\s+існу[єc]|неіснуюч\w*|вигад\w*|сфабрикован\w*|'
-    r'фейков\w*|штучно\s+(сконструйован\w*|створен\w*)|'
+    r'(не\s+існу[єc]|цього\s+не\s+існу[єc]|неіснуюч\w*|'
+    # NB (11.09.2026, реальний кейс id406, Верховний суд Індії): "вигад\w*"/
+    # "сфабрикован\w*"/"фейков\w*" САМІ ПО СОБІ, без контексту, ловили й
+    # легітимний репортаж про те, що ВСЕРЕДИНІ реальної історії щось було
+    # сфабриковано (напр. "наказ містив вигадані судові рішення" — це опис
+    # справжньої новини про ШІ-галюцинацію, не денаєл статті). Тепер корінь
+    # має стояти поруч із метарівневим іменником — тим, що позначає САМ
+    # артефакт статті (стаття/історія/подія/модель/джерело/назва/компанія/
+    # продукт/інцидент/звіт/текст), а не довільний об'єkt усередині розповіді.
+    r'вигадан\w*\s+' + _META_NOUN_UK + r'|' + _META_NOUN_UK + r'\s+[^.!?]{0,15}\s+вигадан\w*|'
+    r'сфабрикован\w*\s+' + _META_NOUN_UK + r'|' + _META_NOUN_UK + r'\s+[^.!?]{0,15}\s+сфабрикован\w*|'
+    r'фейков\w*\s+' + _META_NOUN_UK + r'|' + _META_NOUN_UK + r'\s+[^.!?]{0,15}\s+фейков\w*|'
+    r'штучно\s+(сконструйован\w*|створен\w*)|'
     r'не\s+підтвердж\w*\s+факт|такого\s+(продукту|проєкту|проекту|інциденту)\s+не\s+іс|'
     r'художн\w*\s+(конструкці\w*|вимисел\w*|пароді\w*|промисл\w*)|'
     r'пароді\w*\s+на|філософськ\w*\s+експеримент|літературн\w*\s+жанр|'
@@ -479,10 +494,21 @@ _FABRICATION_DENIAL_PATTERNS_UK = _re.compile(
 )
 _NEGATION_BEFORE_FABRICATION_UK = _re.compile(r'не\s+(?:є\s+)?вигад\w*', _re.IGNORECASE)
 
+_META_NOUN_EN = (
+    r'(?:stor\w*|narrativ\w*|model\w*|sourc\w*|product\w*|event\w*|compan\w*|'
+    r'document\w*|incident\w*|project\w*|report\w*|articl\w*|text\w*)'
+)
 _FABRICATION_DENIAL_PATTERNS_EN = _re.compile(
     r"(does(?:n'|n )?t\s+exist|no\s+such\s+(?:product|model|thing|project|incident)|"
-    r'is\s+fabricat\w*|fabricat\w*\s+narrative|sounds?\s+(?:made\s+up|like\s+fiction)|'
-    r'is\s+(?:a\s+)?fiction\w*|fiction\w*\s+narrative|literary\s+genre|'
+    # NB (11.09.2026, same root-word issue as UK): "fabricat\w*"/"fiction\w*" alone
+    # matched legitimate reporting about fabrication WITHIN a real story (e.g. "the "
+    # order cited fabricated rulings" — a real AI-hallucination news item, not a
+    # denial of the article itself). Now requires adjacency to a meta-level noun
+    # naming the article's own artifact (story/model/source/company/incident/etc).
+    r'fabricat\w*\s+' + _META_NOUN_EN + r'|' + _META_NOUN_EN + r'\s+[^.!?]{0,20}\s+fabricat\w*|'
+    r'sounds?\s+(?:made\s+up|like\s+fiction)|'
+    r'is\s+(?:a\s+)?fiction\w*\s+' + _META_NOUN_EN + r'|' + _META_NOUN_EN + r'\s+[^.!?]{0,20}\s+is\s+(?:a\s+)?fiction\w*|'
+    r'literary\s+genre|'
     r'philosophical\s+experiment|parody\s+of|no\s+reference\s+to\s+any\s+real\s+source|'
     r'nonexistent|'
     r'treats?\s+the\s+existence\s+of.{1,40}as\s+an?\s+axiom|'
