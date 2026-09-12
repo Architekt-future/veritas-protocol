@@ -8,7 +8,7 @@
 
 **🚀 Живий прототип:** [veritas-protocol.onrender.com](https://veritas-protocol.onrender.com)  
 **🧩 Браузерне розширення:** [veritas-witness-extension](https://github.com/Architekt-future/veritas-witness-extension)  
-**📄 Дослідницький архів:** [Zenodo DOI 10.5281/zenodo.22309494](https://zenodo.org/records/22309494)
+**📄 Дослідницький архів:** [Zenodo DOI 10.5281/zenodo.22726764](https://zenodo.org/records/22726764)
 
 ---
 
@@ -584,7 +584,7 @@ MIT з етичними вимогами.
 - **🚀 Живий прототип:** [veritas-protocol.onrender.com](https://veritas-protocol.onrender.com)
 - **🧩 Розширення:** [veritas-witness-extension](https://github.com/Architekt-future/veritas-witness-extension)
 - **💾 Репозиторій:** [github.com/Architekt-future/veritas-protocol](https://github.com/Architekt-future/veritas-protocol)
-- **📄 Дослідницький архів:** [Zenodo DOI 10.5281/zenodo.22309494](https://zenodo.org/records/22309494)
+- **📄 Дослідницький архів:** [Zenodo DOI 10.5281/zenodo.22726764](https://zenodo.org/records/22726764)
 
 ---
 
