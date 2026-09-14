@@ -124,6 +124,26 @@ def _warm_context():
     except Exception as e:
         print(f"⚠️  Context warmup error: {e}")
 threading.Thread(target=_warm_context, daemon=True).start()
+
+# Прогрів embedding-моделі для PREEMPTIVE_MONOPOLY_SEMANTIC (14.09.2026,
+# ЕКСПЕРИМЕНТАЛЬНО) — той самий принцип, що й _warm_context вище: вантажимо
+# важку залежність у фоновому потоці ПІД ЧАС старту gunicorn-воркера, а не
+# чекаємо, поки її навантажить перший реальний запит користувача (де вже
+# діє жорсткий timeout=22с на весь engine.analyze()). Не гарантує нуль
+# ризику при холодному старті Render (якщо перший запит прилетить раніше,
+# ніж завершиться прогрів) — але зменшує його. Non-fatal: якщо модель не
+# піднялась взагалі, PHASE 10b-semantic в veritas_calibrated_core.py сам
+# зловить виняток і мовчки деградує до чистого regex.
+def _warm_semantic_model():
+    try:
+        import time as _t
+        t0 = _t.time()
+        from preemptive_monopoly_embeddings import score_preemptive_monopoly_semantic
+        score_preemptive_monopoly_semantic("прогрів моделі")
+        print(f"✅ Semantic PREEMPTIVE_MONOPOLY model warmed up in {round(_t.time()-t0,1)}s")
+    except Exception as e:
+        print(f"⚠️  Semantic model warmup error (non-fatal): {e}")
+threading.Thread(target=_warm_semantic_model, daemon=True).start()
 print(f"   Pattern boost:         {engine.pattern_boost_engine is not None}")
 print(f"   Void detector:         {engine.void_detector is not None}")
 print(f"   Absurdity detector:    {engine.absurdity_detector is not None}")
