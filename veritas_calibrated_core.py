@@ -882,31 +882,34 @@ class VeritasCalibratedCore:
         if self.manipulation_detector:
             manipulation_result = self.manipulation_detector.analyze(text)
 
-        # PHASE 10b-semantic (14.09.2026, ЕКСПЕРИМЕНТАЛЬНО, v2/ONNX):
-        # embedding-based доповнення до PREEMPTIVE_MONOPOLY. v1
-        # (sentence-transformers + torch) поклав free-tier Render в
-        # нескінченний OOM-цикл — цей файл тепер онтологічно легший
-        # (onnxruntime + tokenizers, ~150MB ваг, без torch). Public API
-        # score_preemptive_monopoly_semantic() не змінився.
+        # PHASE 10b-slots (14.09.2026): slot-based лексичний scorer для
+        # PREEMPTIVE_MONOPOLY, на заміну embedding-експериментів (v1
+        # sentence-transformers/torch і v2 onnxruntime — обидва не влізли
+        # в 512Mi Render free tier навіть на pre-warm стадії, без жодного
+        # живого запиту). Це чистий `re` зі стандартної бібліотеки — нуль
+        # нових залежностей, нуль мережевих викликів, нуль ризику для
+        # пам'яті процесу.
         #
-        # Свідомо в try/except, non-fatal: якщо модель не піднялась/впала
-        # чи немає мережі до huggingface.co з боку Render — деградує до
-        # чистого regex-результату без винятку назовні.
-        # НЕ ПІДТВЕРДЖЕНО НА ПРОДІ — перший реальний прогін на Render
-        # покаже, чи ONNX-версія стабільніша за пам'яттю, ніж v1.
+        # На відміну від embedding-підходу, це все ще лексичний пошук
+        # (розбитий на 5 незалежних структурних "слотів" замість одного
+        # AND-ланцюжка regex) — стійкіше до синонімів усередині кожного
+        # слоту, але НЕ ловить повністю довільний перефраз без спільних
+        # коренів (підтверджено на тестовому прикладі під час розробки).
+        # Свідомий компроміс: детермінований і безкоштовний, але не
+        # "справжня" семантика.
         try:
-            from preemptive_monopoly_embeddings import score_preemptive_monopoly_semantic
-            _sem = score_preemptive_monopoly_semantic(text)
-            if _sem.get('score', 0) > 0:
+            from preemptive_monopoly_slots import score_preemptive_monopoly
+            _slot = score_preemptive_monopoly(text)
+            if _slot.get('score', 0) > 0:
                 manipulation_result['manipulation_score'] = round(min(
                     1.0,
-                    manipulation_result['manipulation_score'] + 0.55 * _sem['score']
+                    manipulation_result['manipulation_score'] + 0.55 * _slot['score']
                 ), 3)
                 manipulation_result['manipulation_patterns'].append({
-                    'name': 'PREEMPTIVE_MONOPOLY_SEMANTIC',
-                    'hits': 1,
-                    'attribution_weight': _sem['best_similarity'],
-                    'examples': [_sem['best_chunk'][:80]] if _sem.get('best_chunk') else [],
+                    'name': 'PREEMPTIVE_MONOPOLY_SLOTS',
+                    'hits': _slot['n_slots'],
+                    'slots_present': _slot['slots_present'],
+                    'examples': list(_slot['examples'].values())[:3],
                 })
                 _ms = manipulation_result['manipulation_score']
                 if _ms >= 0.75:
@@ -918,7 +921,7 @@ class VeritasCalibratedCore:
                 elif _ms > 0:
                     manipulation_result['manipulation_verdict'] = 'MILD_INFLUENCE'
         except Exception as e:
-            print(f"⚠️  semantic PREEMPTIVE_MONOPOLY error (non-fatal, regex-only fallback): {e}")
+            print(f"⚠️  PREEMPTIVE_MONOPOLY_SLOTS error (non-fatal, base regex-only fallback): {e}")
 
         # PHASE 10c: AXIOM GUARD (semantic drift / axiom replacement)
         axiom_result = {
