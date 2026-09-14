@@ -1,5 +1,5 @@
 """
-Veritas Protocol - Flask API v30.1
+Veritas Protocol - Flask API v30.2
 Forces fresh import of Veritas modules on every restart
 SCRAPER: Daily Mail selectors + <p> fallback (2026-02-26)
 GENRE: GenreDetector v2.0 — CONSPIRACY_NEWS + fixed SPORT/CULTURE false positives
@@ -44,11 +44,11 @@ import sys
 import os
 
 # CRITICAL: Clear module cache to force reload
-print("🔄 Veritas v30.1 - Clearing module cache...")
+print("🔄 Veritas v30.2 - Clearing module cache...")
 modules_to_clear = [k for k in sys.modules.keys() if k.startswith('veritas_')]
 for module in modules_to_clear:
     del sys.modules[module]
-print(f"✅ Cache cleared. Loading fresh Veritas v30.1 modules...")
+print(f"✅ Cache cleared. Loading fresh Veritas v30.2 modules...")
 
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
@@ -124,26 +124,6 @@ def _warm_context():
     except Exception as e:
         print(f"⚠️  Context warmup error: {e}")
 threading.Thread(target=_warm_context, daemon=True).start()
-
-# Прогрів embedding-моделі для PREEMPTIVE_MONOPOLY_SEMANTIC (14.09.2026,
-# ЕКСПЕРИМЕНТАЛЬНО) — той самий принцип, що й _warm_context вище: вантажимо
-# важку залежність у фоновому потоці ПІД ЧАС старту gunicorn-воркера, а не
-# чекаємо, поки її навантажить перший реальний запит користувача (де вже
-# діє жорсткий timeout=22с на весь engine.analyze()). Не гарантує нуль
-# ризику при холодному старті Render (якщо перший запит прилетить раніше,
-# ніж завершиться прогрів) — але зменшує його. Non-fatal: якщо модель не
-# піднялась взагалі, PHASE 10b-semantic в veritas_calibrated_core.py сам
-# зловить виняток і мовчки деградує до чистого regex.
-def _warm_semantic_model():
-    try:
-        import time as _t
-        t0 = _t.time()
-        from preemptive_monopoly_embeddings import score_preemptive_monopoly_semantic
-        score_preemptive_monopoly_semantic("прогрів моделі")
-        print(f"✅ Semantic PREEMPTIVE_MONOPOLY model warmed up in {round(_t.time()-t0,1)}s")
-    except Exception as e:
-        print(f"⚠️  Semantic model warmup error (non-fatal): {e}")
-threading.Thread(target=_warm_semantic_model, daemon=True).start()
 print(f"   Pattern boost:         {engine.pattern_boost_engine is not None}")
 print(f"   Void detector:         {engine.void_detector is not None}")
 print(f"   Absurdity detector:    {engine.absurdity_detector is not None}")
@@ -1017,7 +997,7 @@ def home():
     except:
         return jsonify({
             'status': 'online',
-            'version': 'v30.1',
+            'version': 'v30.2',
             'message': 'Veritas Protocol API is running (index.html not found)',
             'features': {
                 'pattern_boost': engine.pattern_boost_engine is not None,
@@ -1034,7 +1014,7 @@ def analyze():
         if request.method == 'GET':
             return jsonify({
                 'status': 'online',
-                'version': 'v30.1',
+                'version': 'v30.2',
                 'modules': {
                     'pattern_boost':         engine.pattern_boost_engine is not None,
                     'void_detector':         engine.void_detector is not None,
@@ -1792,7 +1772,7 @@ def stats_reset():
 def health():
     return jsonify({
         'status': 'healthy',
-        'version': 'v30.1'
+        'version': 'v30.2'
     })
 
 
