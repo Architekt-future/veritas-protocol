@@ -882,23 +882,18 @@ class VeritasCalibratedCore:
         if self.manipulation_detector:
             manipulation_result = self.manipulation_detector.analyze(text)
 
-        # PHASE 10b-semantic (14.09.2026, ЕКСПЕРИМЕНТАЛЬНО): embedding-based
-        # доповнення до PREEMPTIVE_MONOPOLY. Regex у ManipulationDetector
-        # ловить лише лексично стереотипні формулювання (виявлено на
-        # смоук-тесті синтетичних Mythos-текстів: 0/4 до фіксу, симетрично
-        # 4/4 після); але й після фіксу regex залишається лексичним пошуком
-        # — перефразування без спільних коренів (перевірено окремо) все одно
-        # проходить повз. Тут — косинусна схожість з еталонними реченнями
-        # того ж риторичного ходу, а не пошук слів.
+        # PHASE 10b-semantic (14.09.2026, ЕКСПЕРИМЕНТАЛЬНО, v2/ONNX):
+        # embedding-based доповнення до PREEMPTIVE_MONOPOLY. v1
+        # (sentence-transformers + torch) поклав free-tier Render в
+        # нескінченний OOM-цикл — цей файл тепер онтологічно легший
+        # (onnxruntime + tokenizers, ~150MB ваг, без torch). Public API
+        # score_preemptive_monopoly_semantic() не змінився.
         #
-        # Свідомо ІЗОЛЬОВАНО в try/except і НЕ ЗАМІНЮЄ regex-результат —
-        # лише додає бал і окремий запис у matched_patterns поверх нього.
-        # Якщо модель (sentence-transformers, ~470MB) не піднялась, впала,
-        # чи немає мережі до huggingface.co з боку Render — детектор
-        # деградує до чистого regex-результату без жодного винятку назовні.
-        # НЕ ПІДТВЕРДЖЕНО НА ПРОДІ: cold-start час завантаження моделі не
-        # перевірений на Render free tier, тому цей блок — перший реальний
-        # тест того ризику.
+        # Свідомо в try/except, non-fatal: якщо модель не піднялась/впала
+        # чи немає мережі до huggingface.co з боку Render — деградує до
+        # чистого regex-результату без винятку назовні.
+        # НЕ ПІДТВЕРДЖЕНО НА ПРОДІ — перший реальний прогін на Render
+        # покаже, чи ONNX-версія стабільніша за пам'яттю, ніж v1.
         try:
             from preemptive_monopoly_embeddings import score_preemptive_monopoly_semantic
             _sem = score_preemptive_monopoly_semantic(text)
@@ -913,8 +908,6 @@ class VeritasCalibratedCore:
                     'attribution_weight': _sem['best_similarity'],
                     'examples': [_sem['best_chunk'][:80]] if _sem.get('best_chunk') else [],
                 })
-                # verdict міг змінитись після додавання семантичного балу —
-                # перераховуємо за тими ж порогами, що й у ManipulationDetector.analyze()
                 _ms = manipulation_result['manipulation_score']
                 if _ms >= 0.75:
                     manipulation_result['manipulation_verdict'] = 'PSYCHOLOGICAL_WEAPON'
