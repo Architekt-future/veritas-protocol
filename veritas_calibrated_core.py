@@ -882,6 +882,51 @@ class VeritasCalibratedCore:
         if self.manipulation_detector:
             manipulation_result = self.manipulation_detector.analyze(text)
 
+        # PHASE 10b-semantic (14.09.2026, ЕКСПЕРИМЕНТАЛЬНО): embedding-based
+        # доповнення до PREEMPTIVE_MONOPOLY. Regex у ManipulationDetector
+        # ловить лише лексично стереотипні формулювання (виявлено на
+        # смоук-тесті синтетичних Mythos-текстів: 0/4 до фіксу, симетрично
+        # 4/4 після); але й після фіксу regex залишається лексичним пошуком
+        # — перефразування без спільних коренів (перевірено окремо) все одно
+        # проходить повз. Тут — косинусна схожість з еталонними реченнями
+        # того ж риторичного ходу, а не пошук слів.
+        #
+        # Свідомо ІЗОЛЬОВАНО в try/except і НЕ ЗАМІНЮЄ regex-результат —
+        # лише додає бал і окремий запис у matched_patterns поверх нього.
+        # Якщо модель (sentence-transformers, ~470MB) не піднялась, впала,
+        # чи немає мережі до huggingface.co з боку Render — детектор
+        # деградує до чистого regex-результату без жодного винятку назовні.
+        # НЕ ПІДТВЕРДЖЕНО НА ПРОДІ: cold-start час завантаження моделі не
+        # перевірений на Render free tier, тому цей блок — перший реальний
+        # тест того ризику.
+        try:
+            from preemptive_monopoly_embeddings import score_preemptive_monopoly_semantic
+            _sem = score_preemptive_monopoly_semantic(text)
+            if _sem.get('score', 0) > 0:
+                manipulation_result['manipulation_score'] = round(min(
+                    1.0,
+                    manipulation_result['manipulation_score'] + 0.55 * _sem['score']
+                ), 3)
+                manipulation_result['manipulation_patterns'].append({
+                    'name': 'PREEMPTIVE_MONOPOLY_SEMANTIC',
+                    'hits': 1,
+                    'attribution_weight': _sem['best_similarity'],
+                    'examples': [_sem['best_chunk'][:80]] if _sem.get('best_chunk') else [],
+                })
+                # verdict міг змінитись після додавання семантичного балу —
+                # перераховуємо за тими ж порогами, що й у ManipulationDetector.analyze()
+                _ms = manipulation_result['manipulation_score']
+                if _ms >= 0.75:
+                    manipulation_result['manipulation_verdict'] = 'PSYCHOLOGICAL_WEAPON'
+                elif _ms >= 0.50:
+                    manipulation_result['manipulation_verdict'] = 'HIGH_MANIPULATION'
+                elif _ms >= 0.25:
+                    manipulation_result['manipulation_verdict'] = 'MANIPULATION_PRESENT'
+                elif _ms > 0:
+                    manipulation_result['manipulation_verdict'] = 'MILD_INFLUENCE'
+        except Exception as e:
+            print(f"⚠️  semantic PREEMPTIVE_MONOPOLY error (non-fatal, regex-only fallback): {e}")
+
         # PHASE 10c: AXIOM GUARD (semantic drift / axiom replacement)
         axiom_result = {
             'axiom_score': 0.0,
