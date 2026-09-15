@@ -229,7 +229,15 @@ class AbsurdityDetector:
             # Software/hardware for consciousness
             r'(оновлення|завантаження|інсталяц).{1,60}(свідом|душ|карм|розум)',
             r'(програмн.{1,20}забезпечення|прошивк|патч).{1,60}(свідом|розум|душ)',
-            r'(сервер|хмарн).{1,60}(всесвіт|карм|запит|молитв)',
+            r'(сервер|хмарн).{1,60}(всесвіт|карм|молитв)',
+            # v2 (14.09.2026): "запит" винесено окремо — це омонім
+            # (HTTP-запит vs "звернення до Всесвіту"), і бере участь у
+            # техно-містичному прочитанні ЛИШЕ якщо поруч є явний
+            # містичний якір (всесвіт/вищі сили/космос/доля), а не сам
+            # по собі. Знайдено на false positive: "сервера... живого
+            # запиту" (звичайна інженерна мова) хибно ловилось як
+            # техно-містицизм через голу присутність слова "запит".
+            r'(сервер|хмарн).{1,60}запит.{1,40}(всесвіт|вищ\w*\s*сил\w*|космос\w*|доля|бог\w*)',
             r'молитв.{1,60}(зашифрован|пакет|даних|протокол)',
             
             # Physical objects with impossible digital/magical properties
@@ -875,15 +883,31 @@ class AbsurdityDetector:
         # ================================================================
         # CHECK 6: EPISTEMOLOGY COLLAPSE
         # ================================================================
-        
+        # NEGATION_CONTEXT (14.09.2026): той самий клас guard'у, що вже є
+        # для dangerous_patterns (PREVENTION_CONTEXT). Знайдено на false
+        # positive: "мовчання RSS НЕ Є доказом того, що подія не відбулась"
+        # (коректне епістемологічне застереження, стандартна методологічна
+        # позиція) ловилось так само, як стверджувальна хиба "мовчання Є
+        # доказом" — регекс не бачив заперечення між тригер-словами.
+        NEGATION_CONTEXT = re.compile(
+            r'(не\s+(є|доводить|свідчить|підтверджує|означає|доказ\w*)|ніяк\w*\s+не)',
+            re.IGNORECASE
+        )
+
         epistemology_count = 0
         for pattern in self.epistemology_collapse:
-            if re.search(pattern, text_lower, re.IGNORECASE):
+            m = re.search(pattern, text_lower, re.IGNORECASE)
+            if m:
+                if NEGATION_CONTEXT.search(m.group()):
+                    continue
                 epistemology_count += 1
                 evidence.setdefault('epistemology_collapse', []).append(pattern[:50])
         
         for pattern in self.epistemology_collapse_en:
-            if re.search(pattern, text_lower, re.IGNORECASE):
+            m = re.search(pattern, text_lower, re.IGNORECASE)
+            if m:
+                if re.search(r"(is not|isn't|doesn't|does not|does not prove)", m.group(), re.IGNORECASE):
+                    continue
                 epistemology_count += 1
                 evidence.setdefault('epistemology_collapse', []).append(pattern[:50])
 
