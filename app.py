@@ -482,6 +482,16 @@ _FABRICATION_DENIAL_PATTERNS_UK = _re.compile(
     r'вигад\w*[^.!?]{0,25}' + _META_NOUN_UK + r'|' + _META_NOUN_UK + r'[^.!?]{0,25}вигад\w*|'
     r'сфабрикован\w*[^.!?]{0,25}' + _META_NOUN_UK + r'|' + _META_NOUN_UK + r'[^.!?]{0,25}сфабрикован\w*|'
     r'фейков\w*[^.!?]{0,25}' + _META_NOUN_UK + r'|' + _META_NOUN_UK + r'[^.!?]{0,25}фейков\w*|'
+    # NB (14.09.2026, кейс "Claude Mythos" / Project Glasswing — обидва реальні,
+    # широко висвітлені події, не вигадка): Witness назвав реальний, задокументований
+    # інцидент "гіпотетичним", уникнувши прямих слів-тригерів вище (вигад*/фейк*/
+    # сфабрикован*). Той самий клас денайлу, нова лексична форма — стеля
+    # промпт-рівня для цієї поведінки вже задокументована 04-11.09; правило додається
+    # сюди ж, не окремим промпт-фіксом. Прив'язка до META_NOUN обов'язкова: голе
+    # "гіпотетичн\w*" без неї ловило б і легітимне використання (структурна
+    # гіпотеза власного аналізу автора, напр. "гіпотетична термінальна ціль" —
+    # інший іменник, не в списку META_NOUN, тому цей ризик тут відсутній).
+    r'гіпотетичн\w*[^.!?]{0,25}' + _META_NOUN_UK + r'|' + _META_NOUN_UK + r'[^.!?]{0,25}гіпотетичн\w*|'
     r'штучно\s+(сконструйован\w*|створен\w*)|'
     r'не\s+підтвердж\w*\s+факт|такого\s+(продукту|проєкту|проекту|інциденту)\s+не\s+іс|'
     r'художн\w*\s+(конструкці\w*|вимисел\w*|пароді\w*|промисл\w*)|'
@@ -511,6 +521,9 @@ _FABRICATION_DENIAL_PATTERNS_EN = _re.compile(
     r'fabricat\w*\s+' + _META_NOUN_EN + r'|' + _META_NOUN_EN + r'\s+[^.!?]{0,20}\s+fabricat\w*|'
     r'sounds?\s+(?:made\s+up|like\s+fiction)|'
     r'is\s+(?:a\s+)?fiction\w*\s+' + _META_NOUN_EN + r'|' + _META_NOUN_EN + r'\s+[^.!?]{0,20}\s+is\s+(?:a\s+)?fiction\w*|'
+    # NB (14.09.2026): EN-дзеркало UK-фіксу "гіпотетичн\w*" вище — той самий
+    # денайл-клас ("hypothetical incident" замість "doesn't exist"/"fabricated").
+    r'hypothetical\s+' + _META_NOUN_EN + r'|' + _META_NOUN_EN + r'\s+[^.!?]{0,20}\s+hypothetical\w*|'
     r'literary\s+genre|'
     r'philosophical\s+experiment|parody\s+of|no\s+reference\s+to\s+any\s+real\s+source|'
     r'nonexistent|'
