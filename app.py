@@ -248,7 +248,7 @@ def log_witness(endpoint: str, raw_text: str, final_text: str,
                  text_preview: str = '', manipulation_score=None,
                  axiom_score=None, llm_unrecognized_entities=None,
                  llm_denies_existence=None, llm_monopoly_argument=None,
-                 regex_signal_agrees=None) -> None:
+                 regex_signal_agrees=None, ard_score=None) -> None:
     """
     Логує сирий і фінальний текст Свідка окремо від trigger_log —
     щоб бачити, чи спрацював guard, і що саме LLM написав ДО правки.
@@ -267,6 +267,14 @@ def log_witness(endpoint: str, raw_text: str, final_text: str,
         тому це чисто нове спостереження, не порівняння двох систем.
     Той самий принцип, що й з cohesion v1/v2: нова математика логується
     мовчки, поки не набереться вибірка для порівняння.
+
+    v3 (14.09.2026): додано endpoint='ard' — раніше /api/ard взагалі не
+    логував ard_witness (LLM-інтерпретацію ARD), на відміну від oracle/
+    synthesis. ard_score — новий необов'язковий параметр (None для
+    oracle/synthesis, де він не застосовний); manipulation_score/
+    axiom_score НЕ перевикористовуються під ard_score — це б спотворило
+    майбутні запити по цих колонках, тому для ard-рядків вони лишаються
+    None, а ard_score іде в окрему колонку (потребує міграції, див. нижче).
     """
     try:
         sb = _get_sb()
@@ -287,6 +295,7 @@ def log_witness(endpoint: str, raw_text: str, final_text: str,
             'llm_denies_existence':      llm_denies_existence,
             'llm_monopoly_argument':     llm_monopoly_argument,
             'regex_signal_agrees':       regex_signal_agrees,
+            'ard_score':                 round(ard_score, 3) if ard_score is not None else None,
         }
         sb.table('witness_log').insert(entry).execute()
     except Exception as e:
@@ -3608,6 +3617,15 @@ def ard_check():
                 'Текст відповідає принципам АРД. Явних порушень не виявлено.' if language == 'uk'
                 else 'Text complies with ARD principles. No obvious violations detected.'
             )
+            log_witness(
+                endpoint='ard',
+                raw_text=base_response['ard_witness'],
+                final_text=base_response['ard_witness'],
+                override_reasons=[],
+                triggered_modules=scan.principles_violated,
+                text_preview=text[:200],
+                ard_score=scan.score,
+            )
             return jsonify(base_response)
 
         api_key = os.environ.get('ANTHROPIC_API_KEY', '')
@@ -3707,6 +3725,15 @@ Analyze through the ARD lens. Concrete and direct."""
 
         witness_text = msg.content[0].text if msg.content else ''
         base_response['ard_witness'] = witness_text
+        log_witness(
+            endpoint='ard',
+            raw_text=witness_text,
+            final_text=witness_text,
+            override_reasons=[],
+            triggered_modules=scan.principles_violated,
+            text_preview=text[:200],
+            ard_score=scan.score,
+        )
         return jsonify(base_response)
 
     except Exception as e:
