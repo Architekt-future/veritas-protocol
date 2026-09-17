@@ -721,6 +721,25 @@ class ARDChecker:
         t = text.lower()
         total_score = 0.0
 
+        # SELF_DOCUMENTATION_CONTEXT (14.09.2026): та сама евристика, що вже
+        # в preemptive_monopoly_slots.py, manipulation_detector.py, framing/
+        # axiom/meta_intent. Знайдено на власному README: "де-юре є,
+        # де-факто немає" — рядок markdown-ТАБЛИЦІ (документація класу SE
+        # цього ж чекера), без жодних лапок навколо, тому наявний
+        # _is_inside_quotation (вимагає лапки з ОБОХ боків) не спрацьовує.
+        # Рахуємо ОДИН РАЗ на весь текст (не на кожен збіг) і повністю
+        # придушуємо знахідки в циклі нижче — часткова знижка score тут не
+        # підходить, бо вердикт цього чекера залежить ще й від голої
+        # КІЛЬКОСТІ принципів (len(principles_violated) >= N), яку м'який
+        # множник на score не зменшує.
+        _META_MARKERS = re.compile(
+            r'риторичн\w*|прийом\w*|патерн\w*|маркер\w*|конструкці\w*|'
+            r'цитат\w*|приклад\w*|детектор\w*|лазівк\w*|принцип\w*|клас\w*|'
+            r'ілюстраці\w*|наприклад|\bregex\b',
+            re.IGNORECASE
+        )
+        _self_doc_context = len(set(_META_MARKERS.findall(t))) >= 3
+
         checks = [
             # ── Активні порушення (v1.1) ─────────────────────────────
             ('I',   'Базовий інваріант — руйнація механізмів виправлення',
@@ -784,6 +803,8 @@ class ARDChecker:
                         continue  # заклик до дії поруч — це не фаталізм-відпущення
                     if self._is_inside_quotation(t, m.start(), m.end()):
                         continue  # збіг у лапках — цитата/приклад, не жива заява документа
+                    if _self_doc_context:
+                        continue  # текст ПРО прийоми ARD (документація/чейнджлог), не їх застосування
                     snippet = m.group(0)[:80]
                     result.violations.append(ARDViolation(
                         principle=principle,
