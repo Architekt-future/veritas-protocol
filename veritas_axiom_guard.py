@@ -544,6 +544,21 @@ class AxiomGuard:
 
         axiom_score = min(1.0, total_score)
 
+        # SELF_DOCUMENTATION_CONTEXT (14.09.2026): той самий guard, що вже в
+        # preemptive_monopoly_slots.py, veritas_manipulation_detector.py,
+        # veritas_framing_detector.py. Знайдено на власному README: "де-юре
+        # є, де-факто немає" та "без права на адвоката" — обидва цитати з
+        # markdown-таблиці, що документує приклади класів ARD/AXIOM, не
+        # застосована на читачі риторика.
+        _META_MARKERS = (
+            r'риторичн\w*|прийом\w*|патерн\w*|маркер\w*|конструкці\w*|'
+            r'цитат\w*|приклад\w*|детектор\w*|лазівк\w*|'
+            r'ілюстраці\w*|наприклад|\bregex\b'
+        )
+        meta_count = len(set(re.findall(_META_MARKERS, text_lower, re.IGNORECASE)))
+        if meta_count >= 3 and axiom_score > 0:
+            axiom_score = round(axiom_score * 0.15, 3)
+
         if axiom_score >= 0.75:
             verdict = 'SYSTEMIC_INTEGRITY_ATTACK'
         elif axiom_score >= 0.50:
