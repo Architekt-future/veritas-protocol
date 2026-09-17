@@ -243,6 +243,22 @@ class VeritasFramingDetector:
         score = min(1.0, sum(self.WEIGHTS[p] for p in triggered))
         verdict = 'COMBINED' if len(triggered) > 1 else triggered[0].upper()
 
+        # SELF_DOCUMENTATION_CONTEXT (14.09.2026): той самий guard, що вже
+        # є в preemptive_monopoly_slots.py і veritas_manipulation_detector.py.
+        # Знайдено на власному README Veritas: приклади "справжня проблема
+        # не в X, а в Y" / "дивний збіг у часі" / "три причини чому X
+        # відбудеться" — це буквальні цитати-ілюстрації з bullet-list опису
+        # категорій ЦЬОГО Ж детектора, взяті в лапки як приклад, а не
+        # застосована на читачі риторика. Той самий mention-vs-use клас.
+        _META_MARKERS = (
+            r'риторичн\w*|прийом\w*|патерн\w*|маркер\w*|конструкці\w*|'
+            r'формулюванн\w*|цитат\w*|приклад\w*|детектор\w*|технік\w*|'
+            r'ілюстраці\w*|наприклад|\bregex\b'
+        )
+        meta_count = len(set(re.findall(_META_MARKERS, t, re.IGNORECASE)))
+        if meta_count >= 3 and score > 0:
+            score = round(score * 0.15, 3)
+
         evidence = []
         if hits['agenda_setting']:
             evidence.append('Text redirects attention from stated problem to author\'s preferred framing')
