@@ -254,13 +254,18 @@ class MetaIntentAnalyzer:
             score_map = {0: 0.0, 1: 0.55, 2: 0.80, 3: 1.0}
         meta_score = score_map[intent_count]
 
-        # SELF_DOCUMENTATION_CONTEXT (14.09.2026): той самий guard, що вже в
-        # preemptive_monopoly_slots.py, veritas_manipulation_detector.py,
-        # veritas_framing_detector.py, veritas_axiom_guard.py. Знайдено на
-        # власному README: "ентропія — це не єдиний сигнал" (легітимна
-        # пояснювальна ремарка про власну метрику, не переозначення
-        # поняття) і опис бага з "skip"/"ignore" з чейнджлогу (обговорення
-        # власного коду, не спроба змінити поведінку системи).
+        # SELF_DOCUMENTATION_CONTEXT (14.09.2026, v2 — повне придушення):
+        # той самий guard, що вже в preemptive_monopoly_slots.py,
+        # veritas_manipulation_detector.py, veritas_framing_detector.py,
+        # veritas_axiom_guard.py. Знайдено на власному README: "ентропія —
+        # це не єдиний сигнал" (легітимна пояснювальна ремарка про власну
+        # метрику) і опис бага з "skip"/"ignore" з чейнджлогу.
+        #
+        # v1 (той самий день, раніше) лише применшував meta_score ×0.15,
+        # лишаючи active_intents/meta_details незмінними — тому UI
+        # показував "Вердикт CLEAN" РАЗОМ ІЗ "⚠️ Виявлені наміри:
+        # Модифікація поведінки" в тому самому блоці — суперечливо й
+        # непереконливо. v2 придушує ПОВНІСТЮ, симетрично.
         _META_MARKERS = (
             r'риторичн\w*|прийом\w*|патерн\w*|маркер\w*|конструкці\w*|'
             r'цитат\w*|приклад\w*|детектор\w*|чейнджлог\w*|аналізатор\w*|'
@@ -268,7 +273,9 @@ class MetaIntentAnalyzer:
         )
         meta_count = len(set(re.findall(_META_MARKERS, text_lower, re.IGNORECASE)))
         if meta_count >= 3 and meta_score > 0:
-            meta_score = round(meta_score * 0.15, 3)
+            meta_score = 0.0
+            active_intents = []
+            results = {k: {'detected': False, 'example': ''} for k in results}
 
         if meta_score >= 0.80:
             verdict = 'SYSTEM_DIRECTED_RHETORIC'
