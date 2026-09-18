@@ -50,7 +50,7 @@ for module in modules_to_clear:
     del sys.modules[module]
 print(f"✅ Cache cleared. Loading fresh Veritas v30.3 modules...")
 
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify, send_file, has_request_context
 from flask_cors import CORS
 from veritas_calibrated_core import VeritasCalibratedCore
 from veritas_alarmism_detector import AlarmismDetector
@@ -147,7 +147,15 @@ print(f"   ARD checker:           {ard_checker is not None}")
 
 import json
 import time
+import hashlib
 from collections import defaultdict
+
+# ── Константи для логування/калібрування (18.09.2026) ───────────────────────
+# Єдине джерело правди: і для виклику API, і для запису в witness_log,
+# щоб max_tokens у логах не розходився з реальним.
+APP_VERSION = 'v30.3'
+WITNESS_MAX_TOKENS = 1200   # /api/oracle та /api/synthesis
+ARD_MAX_TOKENS = 1000       # /api/ard
 
 # Ініціалізація Supabase клієнта
 _sb_client = None
@@ -248,7 +256,9 @@ def log_witness(endpoint: str, raw_text: str, final_text: str,
                  text_preview: str = '', manipulation_score=None,
                  axiom_score=None, llm_unrecognized_entities=None,
                  llm_denies_existence=None, llm_monopoly_argument=None,
-                 regex_signal_agrees=None, ard_score=None) -> None:
+                 regex_signal_agrees=None, ard_score=None,
+                 stop_reason=None, max_tokens=None, override_match=None,
+                 experiment_id=None, variant=None) -> None:
     """
     Логує сирий і фінальний текст Свідка окремо від trigger_log —
     щоб бачити, чи спрацював guard, і що саме LLM написав ДО правки.
@@ -275,11 +285,28 @@ def log_witness(endpoint: str, raw_text: str, final_text: str,
     axiom_score НЕ перевикористовуються під ard_score — це б спотворило
     майбутні запити по цих колонках, тому для ard-рядків вони лишаються
     None, а ard_score іде в окрему колонку (потребує міграції, див. нижче).
+
+    v4 (18.09.2026): нові колонки для калібрування (усі nullable):
+      - override_match: який саме патерн/фрагмент спрацював у fabrication_denial;
+      - stop_reason / max_tokens: чи обірвав відповідь ліміт токенів;
+      - app_version: версія застосунку на момент запису;
+      - experiment_id / variant: береться з тіла запиту (top-level поля
+        experiment_id, variant) або заголовків X-Experiment-Id / X-Variant;
+      - text_sha256: хеш нормалізованого (пробіли згорнуто) тексту, який
+        прийшов у text_preview, щоб зв'язувати повторні прогони.
     """
     try:
         sb = _get_sb()
         if not sb:
             return
+        _exp, _var = experiment_id, variant
+        if has_request_context():
+            _j = request.get_json(silent=True)
+            if not isinstance(_j, dict):
+                _j = {}
+            _exp = _exp or _j.get('experiment_id') or request.headers.get('X-Experiment-Id')
+            _var = _var or _j.get('variant') or request.headers.get('X-Variant')
+        _norm_text = ' '.join((text_preview or '').split())
         entry = {
             'ts':                 int(time.time()),
             'endpoint':           endpoint,
@@ -296,6 +323,13 @@ def log_witness(endpoint: str, raw_text: str, final_text: str,
             'llm_monopoly_argument':     llm_monopoly_argument,
             'regex_signal_agrees':       regex_signal_agrees,
             'ard_score':                 round(ard_score, 3) if ard_score is not None else None,
+            'override_match':            (override_match or None),
+            'stop_reason':               stop_reason,
+            'app_version':               APP_VERSION,
+            'max_tokens':                max_tokens,
+            'experiment_id':             (str(_exp)[:100] if _exp else None),
+            'variant':                   (str(_var)[:100] if _var else None),
+            'text_sha256':               hashlib.sha256(_norm_text.encode('utf-8')).hexdigest() if _norm_text else None,
         }
         sb.table('witness_log').insert(entry).execute()
     except Exception as e:
@@ -588,7 +622,7 @@ _FALLBACK_WHOLE_BODY_EN = (
 )
 
 
-def _strip_fabrication_denial(text, is_en=False):
+def _strip_fabrication_denial(text, is_en=False, return_matches=False):
     """
     Розбиває текст на речення. Одне речення з упевненою заявою "це вигадка/
     не існує" — точкова заміна, решта тексту (напр. про реально спрацьовані
@@ -598,22 +632,32 @@ def _strip_fabrication_denial(text, is_en=False):
     словами) — тоді латання по шматках лишає розкидані копії fallback-фрази й
     нічого не рятує; замінюємо ввесь текст одним чесним поясненням.
     Повертає (виправлений_текст, чи_було_спрацювання).
+    return_matches=True (18.09.2026): повертає 3-кортеж, де третій елемент —
+    список рядків "'збіг' in 'речення'" для witness_log.override_match.
+    За замовчуванням (False) поведінка й сигнатура незмінні.
     """
     if not text:
-        return text, False
+        return (text, False, []) if return_matches else (text, False)
     pattern = _FABRICATION_DENIAL_PATTERNS_EN if is_en else _FABRICATION_DENIAL_PATTERNS_UK
     negation = _NEGATION_BEFORE_FABRICATION_EN if is_en else _NEGATION_BEFORE_FABRICATION_UK
     fallback_sentence = _FALLBACK_UNRECOGNIZED_EN if is_en else _FALLBACK_UNRECOGNIZED_UK
     fallback_whole = _FALLBACK_WHOLE_BODY_EN if is_en else _FALLBACK_WHOLE_BODY_UK
     sentences = _re.split(r'(?<=[.!?])\s+', text)
-    matched = [bool(pattern.search(negation.sub(' ', s))) for s in sentences]
+    matched = []
+    _hits = []
+    for s in sentences:
+        m = pattern.search(negation.sub(' ', s))
+        matched.append(bool(m))
+        if m:
+            _hits.append(f"{m.group(0)[:60]!r} in {s[:120]!r}")
     match_count = sum(matched)
     if match_count == 0:
-        return text, False
+        return (text, False, []) if return_matches else (text, False)
     if match_count >= 2:
-        return fallback_whole, True
+        return (fallback_whole, True, _hits) if return_matches else (fallback_whole, True)
     fixed = [fallback_sentence if matched[i] else s for i, s in enumerate(sentences)]
-    return (' '.join(fixed), True)
+    _out = ' '.join(fixed)
+    return (_out, True, _hits) if return_matches else (_out, True)
 
 
 # ── RULE INTERACTION MATRIX ───────────────────────────────────────────────────
@@ -2831,11 +2875,12 @@ def oracle():
         client = anthropic.Anthropic(api_key=api_key)
         message = client.messages.create(
             model="claude-haiku-4-5-20251001",
-            max_tokens=1200,
+            max_tokens=WITNESS_MAX_TOKENS,
             messages=[{"role": "user", "content": f"{system_rules}\n\n{user_prompt}"}]
         )
 
         raw_oracle = message.content[0].text if message.content else ''
+        _oracle_stop_reason = getattr(message, 'stop_reason', None)
 
         # Парсимо JSON (той самий підхід, що в /api/synthesis)
         _clean_oracle = raw_oracle.strip()
@@ -2905,7 +2950,9 @@ def oracle():
 
         _wt_full = response_payload['witness_text']
         _verdict_line, _sep, _body_only = _wt_full.partition('\n')
-        _body_fixed, _was_fabrication_oracle = _strip_fabrication_denial(_body_only, is_en=is_en)
+        _body_fixed, _was_fabrication_oracle, _oracle_fab_hits = _strip_fabrication_denial(
+            _body_only, is_en=is_en, return_matches=True)
+        _oracle_override_match = '; '.join(_oracle_fab_hits) or None
         if _was_fabrication_oracle:
             print("⚠️  ORACLE OVERRIDE (fabrication denial): witness_text declared an unrecognized "
                   "name fictional/nonexistent — neutralized the sentence")
@@ -3103,6 +3150,9 @@ def oracle():
             llm_denies_existence=_llm_denies_existence,
             llm_monopoly_argument=_llm_monopoly_argument,
             regex_signal_agrees=(_llm_denies_existence == _regex_fired_fabrication),
+            stop_reason=_oracle_stop_reason,
+            max_tokens=WITNESS_MAX_TOKENS,
+            override_match=_oracle_override_match,
         )
 
         if _debug_rss:
@@ -3365,10 +3415,11 @@ def witness_synthesis():
         client = _anthropic.Anthropic(api_key=api_key)
         msg = client.messages.create(
             model="claude-haiku-4-5-20251001",
-            max_tokens=1200,
+            max_tokens=WITNESS_MAX_TOKENS,
             messages=[{"role": "user", "content": synth_prompt}]
         )
         raw = msg.content[0].text if msg.content else ''
+        _synth_stop_reason = getattr(msg, 'stop_reason', None)
 
         # Парсимо JSON
         clean = raw.strip()
@@ -3396,14 +3447,17 @@ def witness_synthesis():
         # ── ЗАХИСТ ВІД ФАБРИКАЦІЇ ЧЕРЕЗ НЕВПІЗНАВАННЯ (regex, детерміністично) ─
         # Промпт-правило 5 вище — ймовірнісне; дублюємо тут на рівні речення,
         # незалежно від того, дотримався LLM формулювання чи ні.
+        _synth_override_matches = []
         for _field in ('witness_text', 'adjustment_reason'):
             if synth.get(_field):
-                _fixed_text, _was_fabrication = _strip_fabrication_denial(synth[_field], is_en=is_en)
+                _fixed_text, _was_fabrication, _fab_hits = _strip_fabrication_denial(
+                    synth[_field], is_en=is_en, return_matches=True)
                 if _was_fabrication:
                     print(f"⚠️  SYNTHESIS OVERRIDE (fabrication denial): '{_field}' declared an "
                           f"unrecognized name fictional/nonexistent — neutralized the sentence")
                     synth[_field] = _fixed_text
                     _synth_override_reasons.append(f'fabrication_denial:{_field}')
+                    _synth_override_matches.extend(f"{_field}: {h}" for h in _fab_hits)
 
         # ── ДЕТЕРМІНІСТИЧНИЙ ЗАПОБІЖНИК ─────────────────────────────────────
         # LLM іноді цитує правило "НЕБЕЗПЕЧНО тільки якщо manipulation>0 або
@@ -3552,6 +3606,9 @@ def witness_synthesis():
             llm_denies_existence=_synth_llm_denies,
             llm_monopoly_argument=_synth_llm_monopoly,
             regex_signal_agrees=(_synth_llm_denies == _synth_regex_fired_fabrication),
+            stop_reason=_synth_stop_reason,
+            max_tokens=WITNESS_MAX_TOKENS,
+            override_match='; '.join(_synth_override_matches) or None,
         )
 
         adj = float(synth.get('entropy_adjustment', 0))
@@ -3623,7 +3680,7 @@ def ard_check():
                 final_text=base_response['ard_witness'],
                 override_reasons=[],
                 triggered_modules=scan.principles_violated,
-                text_preview=text[:200],
+                text_preview=text,
                 ard_score=scan.score,
             )
             return jsonify(base_response)
@@ -3718,7 +3775,7 @@ Analyze through the ARD lens. Concrete and direct."""
 
         msg = client.messages.create(
             model='claude-haiku-4-5-20251001',
-            max_tokens=1000,
+            max_tokens=ARD_MAX_TOKENS,
             system=ARD_SYSTEM_EN if is_en else ARD_SYSTEM_UK,
             messages=[{'role': 'user', 'content': prompt_en if is_en else prompt_uk}],
         )
@@ -3731,8 +3788,10 @@ Analyze through the ARD lens. Concrete and direct."""
             final_text=witness_text,
             override_reasons=[],
             triggered_modules=scan.principles_violated,
-            text_preview=text[:200],
+            text_preview=text,
             ard_score=scan.score,
+            stop_reason=getattr(msg, 'stop_reason', None),
+            max_tokens=ARD_MAX_TOKENS,
         )
         return jsonify(base_response)
 
