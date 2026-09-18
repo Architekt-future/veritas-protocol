@@ -544,12 +544,18 @@ class AxiomGuard:
 
         axiom_score = min(1.0, total_score)
 
-        # SELF_DOCUMENTATION_CONTEXT (14.09.2026): той самий guard, що вже в
-        # preemptive_monopoly_slots.py, veritas_manipulation_detector.py,
-        # veritas_framing_detector.py. Знайдено на власному README: "де-юре
-        # є, де-факто немає" та "без права на адвоката" — обидва цитати з
-        # markdown-таблиці, що документує приклади класів ARD/AXIOM, не
-        # застосована на читачі риторика.
+        # SELF_DOCUMENTATION_CONTEXT (14.09.2026, v2 — повне придушення):
+        # той самий guard, що вже в preemptive_monopoly_slots.py,
+        # veritas_manipulation_detector.py, veritas_framing_detector.py.
+        # Знайдено на власному README: "де-юре є, де-факто немає" та "без
+        # права на адвоката" — цитати з markdown-таблиці документації.
+        #
+        # v1 (той самий день, раніше) лише применшував axiom_score ×0.15,
+        # лишаючи `matched` (список знайдених патернів, те що фронтенд
+        # показує як список класів) незмінним — тому verdict падав до
+        # CLEAN, а UI й далі малював повний список "знайдених" класів
+        # поруч із написом CLEAN, що виглядало суперечливо й непереконливо.
+        # v2 придушує ПОВНІСТЮ, симетрично.
         _META_MARKERS = (
             r'риторичн\w*|прийом\w*|патерн\w*|маркер\w*|конструкці\w*|'
             r'цитат\w*|приклад\w*|детектор\w*|лазівк\w*|'
@@ -557,7 +563,8 @@ class AxiomGuard:
         )
         meta_count = len(set(re.findall(_META_MARKERS, text_lower, re.IGNORECASE)))
         if meta_count >= 3 and axiom_score > 0:
-            axiom_score = round(axiom_score * 0.15, 3)
+            axiom_score = 0.0
+            matched = []
 
         if axiom_score >= 0.75:
             verdict = 'SYSTEMIC_INTEGRITY_ATTACK'
