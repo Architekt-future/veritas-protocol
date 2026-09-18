@@ -240,24 +240,37 @@ class VeritasFramingDetector:
                 is_framing=False, pattern_hits=hits
             )
 
-        score = min(1.0, sum(self.WEIGHTS[p] for p in triggered))
-        verdict = 'COMBINED' if len(triggered) > 1 else triggered[0].upper()
-
-        # SELF_DOCUMENTATION_CONTEXT (14.09.2026): той самий guard, що вже
-        # є в preemptive_monopoly_slots.py і veritas_manipulation_detector.py.
-        # Знайдено на власному README Veritas: приклади "справжня проблема
-        # не в X, а в Y" / "дивний збіг у часі" / "три причини чому X
-        # відбудеться" — це буквальні цитати-ілюстрації з bullet-list опису
-        # категорій ЦЬОГО Ж детектора, взяті в лапки як приклад, а не
-        # застосована на читачі риторика. Той самий mention-vs-use клас.
+        # SELF_DOCUMENTATION_CONTEXT (14.09.2026, v2 — повне придушення):
+        # той самий guard, що вже є в preemptive_monopoly_slots.py і
+        # veritas_manipulation_detector.py. Знайдено на власному README
+        # Veritas: приклади "справжня проблема не в X, а в Y" / "дивний
+        # збіг у часі" / "три причини чому X відбудеться" — буквальні
+        # цитати-ілюстрації з bullet-list опису категорій ЦЬОГО Ж
+        # детектора, не застосована на читачі риторика.
+        #
+        # v1 (той самий день, раніше) лише применшував score ×0.15,
+        # лишаючи triggered/patterns_found/evidence/verdict/is_framing
+        # незмінними — тому UI й далі показував повний "🚩 Знайдені
+        # техніки" список і verdict=COMBINED навіть при мізерному score.
+        # Це виявилось на живих прогонах: score впав з 0.83 до 0.124,
+        # а візуальний алярм (список технік, verdict, is_framing=True)
+        # лишився ідентичним. v2 придушує ПОВНІСТЮ, симетрично до інших
+        # полів — так само, як ard_checker.py вже робить через `continue`
+        # в циклі, а не частковий числовий множник.
         _META_MARKERS = (
             r'риторичн\w*|прийом\w*|патерн\w*|маркер\w*|конструкці\w*|'
             r'формулюванн\w*|цитат\w*|приклад\w*|детектор\w*|технік\w*|'
             r'ілюстраці\w*|наприклад|\bregex\b'
         )
         meta_count = len(set(re.findall(_META_MARKERS, t, re.IGNORECASE)))
-        if meta_count >= 3 and score > 0:
-            score = round(score * 0.15, 3)
+        if meta_count >= 3:
+            return FramingResult(
+                score=0.0, verdict='CLEAN',
+                is_framing=False, pattern_hits=hits
+            )
+
+        score = min(1.0, sum(self.WEIGHTS[p] for p in triggered))
+        verdict = 'COMBINED' if len(triggered) > 1 else triggered[0].upper()
 
         evidence = []
         if hits['agenda_setting']:
