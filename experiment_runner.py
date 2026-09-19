@@ -93,6 +93,26 @@ TEXTS = [
 PAUSE_S = float(os.environ.get('EXPERIMENT_PAUSE', '2.0'))       # пауза між викликами oracle
 RETRY_WAIT_S = float(os.environ.get('EXPERIMENT_RETRY_WAIT', '6.0'))
 
+# ── Python 3.13: concurrent.futures підвантажує ThreadPoolExecutor ЛІНИВО при першому
+# зверненні, а /api/analyze його використовує. Якщо перше звернення трапляється у фоновому
+# потоці бігуна, імпорт падає ("partially initialized module ... circular import").
+# Тому підвантажуємо його тут, у головному потоці, при старті сервісу.
+try:
+    import concurrent.futures.thread  # noqa: F401
+    from concurrent.futures import ThreadPoolExecutor as _TPE_PRELOAD  # noqa: F401
+except Exception as _preload_err:  # не валимо старт сервісу
+    print(f'[exp] попереднє завантаження concurrent.futures не вдалося: {_preload_err!r}')
+
+
+def _preload_ok():
+    try:
+        import concurrent.futures as _cf
+        _cf.ThreadPoolExecutor  # звернення запускає лінивий імпорт, якщо він ще не відбувся
+        return True, ''
+    except Exception as e:
+        return False, repr(e)
+
+
 bp = Blueprint('experiment_runner', __name__)
 _lock = threading.Lock()
 _state = {
@@ -143,11 +163,14 @@ def _run(app_obj, exp, runs, texts, existing):
                     _state['analysis_ok'] += 1
                 else:
                     _state['skipped_analysis'].append(t['id'])
-                    _state['last_error'] = f"analyze {t['id']}: HTTP {r.status_code}"
+                    _state['last_error'] = f"analyze {t['id']}: HTTP {r.status_code} {r.get_data(as_text=True)[:300]}"
             except Exception as e:
                 _state['skipped_analysis'].append(t['id'])
                 _state['last_error'] = f"analyze {t['id']}: {e!r}"
             time.sleep(0.5)
+
+        if not diags:
+            _state['last_error'] = (_state['last_error'] or '') + ' | аналіз не пройшов жодного тексту, oracle не запускався'
 
         # 2) oracle — N кіл, у кожному колі всі тексти в новому випадковому порядку
         rng = random.Random(exp)
@@ -175,7 +198,7 @@ def _run(app_obj, exp, runs, texts, existing):
                         if r.status_code == 200:
                             ok = True
                             break
-                        _state['last_error'] = f"oracle {t['id']}: HTTP {r.status_code}"
+                        _state['last_error'] = f"oracle {t['id']}: HTTP {r.status_code} {r.get_data(as_text=True)[:300]}"
                     except Exception as e:
                         _state['last_error'] = f"oracle {t['id']}: {e!r}"
                     time.sleep(RETRY_WAIT_S)
@@ -208,6 +231,10 @@ def exp_start():
     texts = [t for t in TEXTS if not only or t['id'].startswith(only)]
     if not texts:
         return _plain('only= не збігається з жодним текстом', 400)
+    ok, why = _preload_ok()
+    if not ok:
+        return _plain('concurrent.futures недоступний у цьому процесі: ' + why + '\n'
+                      'Перезапусти сервіс у Render (Manual Deploy -> Restart) і спробуй знову.', 500)
     with _lock:
         if _state['running']:
             return _plain('Вже працює. Дивись /api/exp/status або зупини /api/exp/stop', 409)
