@@ -3800,5 +3800,10 @@ Analyze through the ARD lens. Concrete and direct."""
         return jsonify({'error': str(e), 'ard_verdict': 'ERROR'}), 500
 
 
+# ── Закритий бігун експериментів (вимкнений без змінної EXPERIMENT_TOKEN) ──
+from experiment_runner import register_experiment_runner
+register_experiment_runner(app, _get_sb)
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=10000, debug=False)
