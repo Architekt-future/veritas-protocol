@@ -510,7 +510,12 @@ _META_NOUN_UK = (
     r'продукт\w*|інцидент\w*|проєкт\w*|проект\w*|звіт\w*|текст\w*)'
 )
 _FABRICATION_DENIAL_PATTERNS_UK = _re.compile(
-    r'(не\s+існу[єc]|цього\s+не\s+існу[єc]|неіснуюч\w*|'
+    # NB (19.09.2026, id165/697): голе "не існує" ловило "дзеркальний випадок не існує" в аналітиці
+    # про код. Тепер "не існує" — лише поруч із метаіменником (модель/компанія/стаття...) або після
+    # власної назви з великої літери (Claude Mythos не існує).
+    r'(' + _META_NOUN_UK + r'[^.!?]{0,25}не\s+існу[єc]|'
+    r'(?-i:[A-ZА-ЯІЇЄҐ][\w\-]*(?:\s+[A-ZА-ЯІЇЄҐ][\w\-]*)*)\s+не\s+існу[єc]|'
+    r'цього\s+не\s+існу[єc]|неіснуюч\w*|'
     # NB (11.09.2026, кейс id406, Верховний суд Індії): "вигад\w*"/"сфабрикован\w*"/
     # "фейков\w*" САМІ ПО СОБІ, без контексту, ловили й легітимний репортаж про те,
     # що ВСЕРЕДИНІ реальної історії щось було сфабриковано. Звужено до сусідства з
@@ -548,7 +553,26 @@ _FABRICATION_DENIAL_PATTERNS_UK = _re.compile(
     r'ніде\s+не\s+згадується\s+в\s+реальних\s+новин\w*)',
     _re.IGNORECASE
 )
-_NEGATION_BEFORE_FABRICATION_UK = _re.compile(r'не\s+(?:є\s+)?вигад\w*', _re.IGNORECASE)
+# NB (19.09.2026, логи ladder1/brand1): Свідок пише "немає вигадок", "не виглядає вигаданим",
+# "без вигадок", "жодних вигаданих деталей" — це ВИСНОВОК ПРО ЧИСТОТУ тексту, а не заперечення
+# його існування, але старий шаблон (лише "не [є] вигад*") їх не знімав, і guard перетворював
+# такі речення на "перевір офіційний сайт". Тепер заперечення (не/немає/без/жодн*/ніяк*)
+# з до двох слів між ним і коренем також знімається перед пошуком. Ризик: "не історія а вигадка"
+# (без коми) теж зніметься; у типових формулюваннях між частками стоїть кома, тож приймаємо.
+_NEGATION_BEFORE_FABRICATION_UK = _re.compile(
+    r'(?:\bне\s+(?:\w+\s+){0,2}|\bнема(?:є)?\s+(?:\w+\s+){0,2}|\bбез\s+(?:\w+\s+){0,2}|'
+    r'\bжодн\w*\s+(?:\w+\s+){0,2}|\bніяк\w*\s+(?:\w+\s+){0,2})'
+    r'(?:вигад|сфабрикован|фейков|гіпотетичн)\w*'
+    # "не містить утаємничених джерел, вигаданих деталей" (перелік через кому) і
+    # "Проблема не в тому, що текст вигадує щось" (заперечення всієї частини)
+    r'|\bне\s+(?:містить|містять|має|мають|виглядає|виглядають)\s+(?:(?!\sа\s|\sале\s)[^.!?]){0,45}?'
+    r'(?:вигад|сфабрикован|фейков|гіпотетичн)\w*'
+    r'|\bне\s+в\s+тому,?\s+що\s+(?:\w+\s+){0,3}(?:вигад|сфабрикован|фейков|гіпотетичн)\w*',
+    _re.IGNORECASE)
+# Корені-"ехо": якщо таке слово є в САМОМУ тексті (напр. мітка "гіпотетична ситуація" в
+# навчальному кейсі), Свідок, що його повторює, описує текст, а не приписує йому вигаданість.
+_ECHO_ROOTS_UK = ('гіпотетичн', 'вигад', 'сфабрикован', 'фейков')
+_ECHO_ROOTS_EN = ('hypothetic', 'fabricat', 'fiction')
 
 _META_NOUN_EN = (
     r'(?:stor\w*|narrativ\w*|model\w*|sourc\w*|product\w*|event\w*|compan\w*|'
@@ -577,7 +601,9 @@ _FABRICATION_DENIAL_PATTERNS_EN = _re.compile(
     r'never\s+mentioned\s+in\s+any\s+real\s+news)',
     _re.IGNORECASE
 )
-_NEGATION_BEFORE_FABRICATION_EN = _re.compile(r"\bnot\s+(?:a\s+)?fabricat\w*|isn'?t\s+fabricat\w*", _re.IGNORECASE)
+_NEGATION_BEFORE_FABRICATION_EN = _re.compile(
+    r"\b(?:not|no|never|without|nothing|isn'?t|aren'?t|wasn'?t)\s+(?:\w+\s+){0,2}"
+    r"(?:fabricat|fiction|hypothetic|made[\s-]up)\w*", _re.IGNORECASE)
 
 # ── ПАТЕРН "ТІЛО СТВЕРДЖУЄ СПРАЦЮВАННЯ МОДУЛЯ" ────────────────────────────────
 # Знайдено 11.09.2026 (сліпий тест DeepMind/Prometheus): escalation_without_
@@ -622,7 +648,7 @@ _FALLBACK_WHOLE_BODY_EN = (
 )
 
 
-def _strip_fabrication_denial(text, is_en=False, return_matches=False):
+def _strip_fabrication_denial(text, is_en=False, return_matches=False, source_text=None):
     """
     Розбиває текст на речення. Одне речення з упевненою заявою "це вигадка/
     не існує" — точкова заміна, решта тексту (напр. про реально спрацьовані
@@ -635,6 +661,9 @@ def _strip_fabrication_denial(text, is_en=False, return_matches=False):
     return_matches=True (18.09.2026): повертає 3-кортеж, де третій елемент —
     список рядків "'збіг' in 'речення'" для witness_log.override_match.
     За замовчуванням (False) поведінка й сигнатура незмінні.
+    source_text (19.09.2026): повний текст статті. Якщо збіг містить корінь (гіпотетичн/вигад/
+    сфабрикован/фейков; hypothetic/fabricat/fiction), який є й у самому тексті, речення не
+    рахується денайлом: Свідок повторює слово тексту (напр. мітку "гіпотетичний кейс").
     """
     if not text:
         return (text, False, []) if return_matches else (text, False)
@@ -645,8 +674,14 @@ def _strip_fabrication_denial(text, is_en=False, return_matches=False):
     sentences = _re.split(r'(?<=[.!?])\s+', text)
     matched = []
     _hits = []
+    _src = (source_text or '').lower()
+    _roots = _ECHO_ROOTS_EN if is_en else _ECHO_ROOTS_UK
     for s in sentences:
         m = pattern.search(negation.sub(' ', s))
+        if m and _src:
+            _frag = m.group(0).lower()
+            if any(_r in _frag and _r in _src for _r in _roots):
+                m = None  # ехо слова з самого тексту
         matched.append(bool(m))
         if m:
             _hits.append(f"{m.group(0)[:60]!r} in {s[:120]!r}")
@@ -2951,7 +2986,7 @@ def oracle():
         _wt_full = response_payload['witness_text']
         _verdict_line, _sep, _body_only = _wt_full.partition('\n')
         _body_fixed, _was_fabrication_oracle, _oracle_fab_hits = _strip_fabrication_denial(
-            _body_only, is_en=is_en, return_matches=True)
+            _body_only, is_en=is_en, return_matches=True, source_text=text_preview)
         _oracle_override_match = '; '.join(_oracle_fab_hits) or None
         if _was_fabrication_oracle:
             print("⚠️  ORACLE OVERRIDE (fabrication denial): witness_text declared an unrecognized "
@@ -3451,7 +3486,7 @@ def witness_synthesis():
         for _field in ('witness_text', 'adjustment_reason'):
             if synth.get(_field):
                 _fixed_text, _was_fabrication, _fab_hits = _strip_fabrication_denial(
-                    synth[_field], is_en=is_en, return_matches=True)
+                    synth[_field], is_en=is_en, return_matches=True, source_text=text)
                 if _was_fabrication:
                     print(f"⚠️  SYNTHESIS OVERRIDE (fabrication denial): '{_field}' declared an "
                           f"unrecognized name fictional/nonexistent — neutralized the sentence")
