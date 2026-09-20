@@ -393,7 +393,7 @@ def _preload_ok():
 bp = Blueprint('experiment_runner', __name__)
 _lock = threading.Lock()
 _state = {
-    'running': False, 'stop': False, 'exp': None, 'set': None, 'phase': '', 'runs': 0, 'total': 0, 'done': 0,
+    'running': False, 'stop': False, 'exp': None, 'set': None, 'rss': 'on', 'phase': '', 'runs': 0, 'total': 0, 'done': 0,
     'errors': 0, 'last_error': None, 'last_item': None, 'started': None, 'finished': None,
     'analysis_ok': 0, 'analysis_total': 0, 'skipped_analysis': [], 'per_variant': {},
 }
@@ -413,18 +413,23 @@ def _existing_counts(get_sb, exp):
     """Скільки oracle-рядків для цього experiment_id вже є в witness_log (для resume=1)."""
     try:
         sb = get_sb()
-        rows = (sb.table('witness_log').select('variant')
-                .eq('experiment_id', exp).eq('endpoint', 'oracle').limit(5000).execute().data) or []
+        try:
+            rows = (sb.table('witness_log').select('variant,rss_mode')
+                    .eq('experiment_id', exp).eq('endpoint', 'oracle').limit(5000).execute().data) or []
+        except Exception:  # колонки rss_mode ще нема (міграція не виконана)
+            rows = (sb.table('witness_log').select('variant')
+                    .eq('experiment_id', exp).eq('endpoint', 'oracle').limit(5000).execute().data) or []
         counts = {}
         for r in rows:
-            counts[r.get('variant')] = counts.get(r.get('variant'), 0) + 1
+            key = (r.get('variant'), r.get('rss_mode') or 'on')
+            counts[key] = counts.get(key, 0) + 1
         return counts
     except Exception as e:
         print(f'[exp] resume: не вдалося прочитати witness_log: {e!r}')
         return {}
 
 
-def _run(app_obj, exp, runs, texts, existing):
+def _run(app_obj, exp, runs, texts, existing, rss='on'):
     client = app_obj.test_client()
     diags = {}
     try:
@@ -467,10 +472,14 @@ def _run(app_obj, exp, runs, texts, existing):
         _state['phase'] = 'oracle'
         # 2) oracle — N кіл, у кожному колі всі тексти в новому випадковому порядку
         rng = random.Random(exp)
+        modes_all = ['on', 'off'] if rss == 'both' else [rss]
         for rnd in range(runs):
-            order = [t for t in texts if t['id'] in diags and existing.get(t['id'], 0) <= rnd]
+            # у режимі both пари (текст, режим RSS) перемішуються разом: дрейф новин у часі
+            # розподіляється порівну між режимами
+            order = [(t, m) for t in texts if t['id'] in diags for m in modes_all
+                     if existing.get((t['id'], m), 0) <= rnd]
             rng.shuffle(order)
-            for t in order:
+            for t, mode in order:
                 if _state['stop']:
                     break
                 res = diags[t['id']]
@@ -484,6 +493,8 @@ def _run(app_obj, exp, runs, texts, existing):
                 for k in ('entropy_boosted', 'triggered_count', 'entropy_multiplier', 'interaction_combos'):
                     if k in res:
                         payload[k] = res[k]
+                if mode == 'off':
+                    payload['disable_rss'] = True  # оракул не робить RSS-матчинг
                 ok = False
                 for attempt in range(2):
                     try:
@@ -496,9 +507,10 @@ def _run(app_obj, exp, runs, texts, existing):
                         _state['last_error'] = f"oracle {t['id']}: {e!r}"
                     time.sleep(RETRY_WAIT_S)
                 _state['done'] += 1
-                _state['last_item'] = t['id']
+                _state['last_item'] = t['id'] + ('' if rss == 'on' else f':{mode}')
                 if ok:
-                    _state['per_variant'][t['id']] = _state['per_variant'].get(t['id'], 0) + 1
+                    _k = t['id'] if rss == 'on' else f"{t['id']}:{mode}"
+                    _state['per_variant'][_k] = _state['per_variant'].get(_k, 0) + 1
                 else:
                     _state['errors'] += 1
                 time.sleep(PAUSE_S)
@@ -512,7 +524,9 @@ def _run(app_obj, exp, runs, texts, existing):
         _state['finished'] = time.time()
 
 
-def _launch(set_name, runs, exp, only, resume):
+def _launch(set_name, runs, exp, only, resume, rss='on'):
+    if rss not in ('on', 'off', 'both'):
+        return _plain('rss має бути on, off або both', 400)
     texts_all = TEXT_SETS.get(set_name)
     if texts_all is None:
         return _plain('невідомий набір: ' + str(set_name) + ' (є: ' + ', '.join(TEXT_SETS) + ')', 400)
@@ -530,13 +544,14 @@ def _launch(set_name, runs, exp, only, resume):
         if resume:
             get_sb = current_app.config.get('EXP_GET_SB')
             existing = _existing_counts(get_sb, exp) if get_sb else {}
-        todo = sum(max(0, runs - existing.get(t['id'], 0)) for t in texts)
-        _state.update(running=True, stop=False, exp=exp, set=set_name, phase='старт', runs=runs, total=todo,
+        _modes = ['on', 'off'] if rss == 'both' else [rss]
+        todo = sum(max(0, runs - existing.get((t['id'], m), 0)) for t in texts for m in _modes)
+        _state.update(running=True, stop=False, exp=exp, set=set_name, rss=rss, phase='старт', runs=runs, total=todo,
                       done=0, errors=0, last_error=None, last_item=None, started=time.time(), finished=None,
                       analysis_ok=0, analysis_total=len(texts), skipped_analysis=[], per_variant={})
     app_obj = current_app._get_current_object()
-    threading.Thread(target=_run, args=(app_obj, exp, runs, texts, existing), daemon=True).start()
-    return _plain(f'Запущено: набір={set_name}, exp={exp}, текстів={len(texts)}, повторів={runs}, викликів oracle≈{todo}.\n'
+    threading.Thread(target=_run, args=(app_obj, exp, runs, texts, existing, rss), daemon=True).start()
+    return _plain(f'Запущено: набір={set_name}, rss={rss}, exp={exp}, текстів={len(texts)}, повторів={runs}, викликів oracle≈{todo}.\n'
                   f'Прогрес: /api/exp/status?token=...  (відкривай періодично, щоб сервіс не заснув)')
 
 
@@ -549,8 +564,9 @@ def exp_start():
     except ValueError:
         return _plain('runs має бути числом', 400)
     set_name = (request.args.get('set') or 'srcpair2').strip()
-    exp = (request.args.get('exp') or (set_name + '-' + time.strftime('%m%d-%H%M')))[:60]
-    return _launch(set_name, runs, exp, (request.args.get('only') or '').strip(), request.args.get('resume') == '1')
+    rss = (request.args.get('rss') or 'on').strip()
+    exp = (request.args.get('exp') or (set_name + ('' if rss == 'on' else '-rss' + rss) + '-' + time.strftime('%m%d-%H%M')))[:60]
+    return _launch(set_name, runs, exp, (request.args.get('only') or '').strip(), request.args.get('resume') == '1', rss)
 
 
 @bp.route('/api/exp/ladder')
@@ -563,8 +579,9 @@ def exp_ladder():
         runs = max(1, min(int(request.args.get('runs', '10')), 20))
     except ValueError:
         return _plain('runs має бути числом', 400)
-    exp = (request.args.get('exp') or ('ladder1-' + time.strftime('%m%d-%H%M')))[:60]
-    return _launch('ladder1', runs, exp, (request.args.get('only') or '').strip(), request.args.get('resume') == '1')
+    rss = (request.args.get('rss') or 'on').strip()
+    exp = (request.args.get('exp') or ('ladder1' + ('' if rss == 'on' else '-rss' + rss) + '-' + time.strftime('%m%d-%H%M')))[:60]
+    return _launch('ladder1', runs, exp, (request.args.get('only') or '').strip(), request.args.get('resume') == '1', rss)
 
 
 @bp.route('/api/exp/go/<set_name>')
@@ -577,8 +594,9 @@ def exp_go(set_name):
         runs = max(1, min(int(request.args.get('runs', '10')), 20))
     except ValueError:
         return _plain('runs має бути числом', 400)
-    exp = (request.args.get('exp') or (set_name + '-' + time.strftime('%m%d-%H%M')))[:60]
-    return _launch(set_name, runs, exp, (request.args.get('only') or '').strip(), request.args.get('resume') == '1')
+    rss = (request.args.get('rss') or 'on').strip()
+    exp = (request.args.get('exp') or (set_name + ('' if rss == 'on' else '-rss' + rss) + '-' + time.strftime('%m%d-%H%M')))[:60]
+    return _launch(set_name, runs, exp, (request.args.get('only') or '').strip(), request.args.get('resume') == '1', rss)
 
 
 @bp.route('/api/exp/status')
@@ -588,7 +606,7 @@ def exp_status():
     s = _state
     now = time.time()
     lines = []
-    lines.append(('ПРАЦЮЄ' if s['running'] else 'НЕ ПРАЦЮЄ') + f" | exp={s['exp']} | набір={s['set']} | фаза: {s['phase']}")
+    lines.append(('ПРАЦЮЄ' if s['running'] else 'НЕ ПРАЦЮЄ') + f" | exp={s['exp']} | набір={s['set']} | rss={s['rss']} | фаза: {s['phase']}")
     lines.append(f"аналіз: {s['analysis_ok']}/{s['analysis_total']} ok"
                  + (f", пропущено: {', '.join(s['skipped_analysis'])}" if s['skipped_analysis'] else ''))
     lines.append(f"oracle: {s['done']}/{s['total']} зроблено, помилок: {s['errors']}")
