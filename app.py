@@ -1954,14 +1954,20 @@ def oracle():
                 + '\n'.join(f'  • «{ev.title}» — {ev.source}' for ev in rss_matches) + '\n'
                 "Якщо збіг підтверджує чи уточнює КОНКРЕТНЕ твердження з тексту — можеш сказати "
                 "що це узгоджується з поточними повідомленнями (згадай джерело). "
-                "У заголовку немає повного тексту статті — не додумуй деталей яких там немає.\n"
+                "У заголовку немає повного тексту статті — не додумуй деталей яких там немає. "
+                "Якщо ЖОДЕН із цих заголовків не стосується твердження прямо — це НЕ доказ його хибності "
+                "(RSS покриває лише частину джерел і лише останні ~30 хв): скажи 'перевір на офіційних джерелах', "
+                "без здогадок і без тверджень що це вигадка.\n"
             )
             rss_block_en = (
                 "RSS MATCHES (real headlines from the current news stream):\n"
                 + '\n'.join(f'  • "{ev.title}" — {ev.source}' for ev in rss_matches) + '\n'
                 "If a match confirms or clarifies a SPECIFIC claim in the text — you may note that "
                 "it is consistent with current reporting (name the source). "
-                "The headline has no full article body — do not invent details beyond it.\n"
+                "The headline has no full article body — do not invent details beyond it. "
+                "If NONE of these headlines directly concerns the claim, that is NOT evidence it is false "
+                "(RSS covers only a fraction of sources and only the last ~30 min): tell the reader to check "
+                "official sources — do not guess and do not call it fabricated.\n"
             )
         else:
             rss_block_uk = (
