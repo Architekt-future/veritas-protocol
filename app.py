@@ -258,7 +258,8 @@ def log_witness(endpoint: str, raw_text: str, final_text: str,
                  llm_denies_existence=None, llm_monopoly_argument=None,
                  regex_signal_agrees=None, ard_score=None,
                  stop_reason=None, max_tokens=None, override_match=None,
-                 experiment_id=None, variant=None) -> None:
+                 experiment_id=None, variant=None,
+                 rss_match_count=None, rss_titles=None, rss_mode=None) -> None:
     """
     Логує сирий і фінальний текст Свідка окремо від trigger_log —
     щоб бачити, чи спрацював guard, і що саме LLM написав ДО правки.
@@ -330,6 +331,10 @@ def log_witness(endpoint: str, raw_text: str, final_text: str,
             'experiment_id':             (str(_exp)[:100] if _exp else None),
             'variant':                   (str(_var)[:100] if _var else None),
             'text_sha256':               hashlib.sha256(_norm_text.encode('utf-8')).hexdigest() if _norm_text else None,
+            # v5 (20.09.2026): що Свідок бачив із RSS (для експериментів «RSS вкл/викл»)
+            'rss_match_count':           rss_match_count,
+            'rss_titles':                rss_titles,
+            'rss_mode':                  rss_mode,
         }
         sb.table('witness_log').insert(entry).execute()
     except Exception as e:
@@ -1919,11 +1924,15 @@ def oracle():
         rss_matches = []
         try:
             _ce = getattr(engine, 'context_engine', None)
-            if _ce and text_preview:
+            # 20.09.2026: для експериментів можна вимкнути RSS-матчинг полем disable_rss у запиті
+            if _ce and text_preview and not data.get('disable_rss'):
                 rss_matches = _ce.get_related_events_for_text(text_preview, top_n=5)
         except Exception:
             rss_matches = []
 
+        _rss_mode = 'off' if data.get('disable_rss') else 'on'
+        _rss_n = len(rss_matches)
+        _rss_titles = [str(getattr(_ev, 'title', ''))[:200] for _ev in rss_matches]
         # ── DEBUG-логування: що РЕАЛЬНО пішло в матчинг, буква-в-букву ──────
         # Вимкнено за замовчуванням. Увімкнути для тесту: DEBUG_RSS=1 у env
         # Render (Dashboard → Environment). Вимкнути назад перед публічним
@@ -3188,6 +3197,9 @@ def oracle():
             stop_reason=_oracle_stop_reason,
             max_tokens=WITNESS_MAX_TOKENS,
             override_match=_oracle_override_match,
+            rss_match_count=_rss_n,
+            rss_titles=_rss_titles,
+            rss_mode=_rss_mode,
         )
 
         if _debug_rss:
