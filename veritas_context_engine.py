@@ -300,66 +300,74 @@ class ContextState:
         score = min(1.0, overlap / max(1, len(self.hot_topics) * 0.3))
         return overlap > 0, round(score, 3)
 
-    def find_related_events(self, claim_text: str, top_n: int = 3) -> List['NewsEvent']:
+    # NB (20.09.2026, логи brand3): старий матчинг (1) порівнював латинські «якорі» як ПІДРЯДКИ
+    # ("sol" з "GPT-5.6 Sol" збігалося з "solo", "soldier", "solidarity"), (2) склеював УСІ цифри
+    # заголовка в один рядок і шукав числа як підрядок, (3) брав заголовок при одному-єдиному збігу.
+    # Наслідок: для тексту про OpenAI Свідок отримував 5 майже нерелевантних заголовків
+    # (Ед Ширан, солдат…), а для Anthropic нічого, і саме наявність "збігів" вимикала в промпті
+    # застереження "відсутність збігу — не доказ". Тепер: збіг лише цілим токеном, числа порівнюються
+    # як окремі числа, потрібно щонайменше min_hits різних збігів (за замовчуванням 2).
+    _GENERIC_LATIN = {
+        'the', 'and', 'for', 'with', 'that', 'this', 'from', 'are', 'was', 'has', 'not', 'new',
+        'its', 'his', 'her', 'you', 'our', 'who', 'how', 'why', 'can', 'may', 'ai',
+    }
+
+    @staticmethod
+    def _numbers_in(text: str):
+        """Окремі числа з тексту як (цифри_без_пробілів_і_ком, чи_відсоток). Десяткові зберігають крапку."""
+        out = []
+        for m in re.finditer(r'(\d{1,3}(?:[,\s]\d{3})+|\d+(?:\.\d+)?)(\s?%)?', text):
+            num = re.sub(r'[,\s]', '', m.group(1))
+            if len(re.sub(r'\D', '', num)) >= 2:   # одинокі цифри — забагато шуму
+                out.append((num, bool(m.group(2))))
+        return out
+
+    def find_related_events(self, claim_text: str, top_n: int = 3, min_hits: int = 2) -> List['NewsEvent']:
         """
-        RSS fact-check matching — на відміну від is_topic_in_field() (яка рахує
-        загальний overlap з "гарячими темами" поля), цей метод шукає конкретні
-        заголовки релевантні ОДНОМУ фрагменту/твердженню тексту, щоб Свідок міг
-        сказати "це узгоджується з [джерело]" замість вгадування зі своїх
-        застарілих знань.
+        RSS fact-check matching: шукає заголовки, релевантні ОДНОМУ твердженню тексту, щоб Свідок міг
+        сказати \"це узгоджується з [джерело]\" замість вгадування зі своїх застарілих знань.
 
-        Матчинг двошаровий:
-          1. Мовно-нейтральні "якорі" — числа/відсотки та латинські токени
-             (власні назви, абревіатури типу AfD, Ceuta, NATO). Працюють
-             незалежно від мови тексту твердження.
-          2. Keyword overlap (кирилиця + латиниця) — дає результат тільки якщо
-             в RSS_FEEDS є джерела тією ж мовою що й claim_text.
+        Три шари збігів (кожен різний збіг = 1 бал):
+          1. числа/відсотки (як окремі числа, не підрядки);
+          2. латинські токени (власні назви, абревіатури) — ЛИШЕ як цілі слова, без загальних слів;
+          3. keyword overlap (кирилиця + латиниця, 4+ символи).
+        Заголовок береться, якщо балів >= min_hits (за замовчуванням 2): один спільний токен
+        (напр., лише назва компанії) не робить заголовок релевантним твердженню.
 
-        ЧЕСНО ПРО ОБМЕЖЕННЯ: якщо твердження українською, а серед RSS-джерел
-        немає українських (або вони недоступні / фід впав) — знайдуться лише
-        збіги по числах і залишених латиницею назвах. Це частковий фактчекінг
-        ("чи це взагалі є в новинному потоці прямо зараз"), не повна верифікація.
+        ЧЕСНО ПРО ОБМЕЖЕННЯ: якщо твердження українською, а серед RSS-джерел немає українських
+        (або фід впав) — знайдуться лише збіги по числах і залишених латиницею назвах.
+        Це частковий фактчекінг («чи це взагалі є в новинному потоці зараз»), не повна верифікація.
         """
         if not claim_text or not claim_text.strip():
             return []
 
-        # Шар 1а: числові якорі — НОРМАЛІЗОВАНІ до чистих цифр, бо укр. текст
-        # пише "50 000" (пробіл), англ. джерела — "50,000" (кома). Порівняння
-        # по сирому рядку пропускало б усі такі збіги.
-        numeric_anchors = set()   # без %: '50000', '180'
-        percent_anchors = set()   # з %:   '29%'
-        for raw in re.findall(r'\d[\d\s.,]*%?', claim_text):
-            raw = raw.strip()
-            is_pct = raw.endswith('%')
-            digits = re.sub(r'\D', '', raw)
-            if is_pct and digits:
-                percent_anchors.add(digits)
-            elif len(digits) >= 2:   # ігноруємо одинокі цифри — забагато шуму
-                numeric_anchors.add(digits)
+        claim_nums = self._numbers_in(claim_text)
+        numeric_anchors = {n for n, pct in claim_nums if not pct}
+        percent_anchors = {n for n, pct in claim_nums if pct}
 
-        # Шар 1б: латинські токени — власні назви, абревіатури (AfD, Ceuta, NATO)
-        latin_anchors = {
-            a for a in re.findall(r'\b[A-Za-z][A-Za-z\-]{1,}\b', claim_text)
-            if len(a) >= 2
-        }
+        latin_anchors = set()
+        for a in re.findall(r'\b[A-Za-z][A-Za-z\-]{1,}\b', claim_text):
+            a = a.strip('-').lower()
+            if len(a) >= 3 and a not in self._GENERIC_LATIN:
+                latin_anchors.add(a)
 
-        # Шар 2: keyword overlap (кирилиця/латиниця, 4+ символи)
-        claim_words = set(re.findall(
-            r'\b[a-zA-Zа-яіїєА-ЯІЇЄ]{4,}\b', claim_text.lower()
-        ))
+        claim_words = set(re.findall(r'\b[a-zA-Zа-яіїєА-ЯІЇЄ]{4,}\b', claim_text.lower()))
 
         scored = []
         for e in self.events:
-            title_digits_compact = re.sub(r'\D', '', e.title)
-            title_nospace = re.sub(r'\s+', '', e.title_lower)
+            title_nums = self._numbers_in(e.title)
+            title_plain = {n for n, pct in title_nums if not pct}
+            title_pct = {n for n, pct in title_nums if pct}
+            title_tokens = {t.strip('-') for t in re.findall(r"[a-z][a-z\-]*", e.title_lower)}
 
-            numeric_hits = sum(1 for n in numeric_anchors if n in title_digits_compact)
-            percent_hits = sum(1 for p in percent_anchors if f'{p}%' in title_nospace)
-            latin_hits   = sum(1 for a in latin_anchors if a.lower() in e.title_lower)
-            keyword_hits = len(claim_words & set(e.keywords))
+            numeric_hits = len(numeric_anchors & title_plain)
+            percent_hits = len(percent_anchors & title_pct)
+            latin_hits = len(latin_anchors & title_tokens)
+            # той самий токен не рахуємо двічі: як латинський якір І як keyword
+            keyword_hits = len((claim_words - latin_anchors) & set(e.keywords))
 
             total = numeric_hits + percent_hits + latin_hits + keyword_hits
-            if total > 0:
+            if total >= min_hits:
                 scored.append((total, e))
 
         scored.sort(key=lambda x: -x[0])
@@ -480,7 +488,7 @@ class ContextEngine:
 
             return self._context_state
 
-    def get_related_events_for_text(self, text: str, top_n: int = 5) -> List[NewsEvent]:
+    def get_related_events_for_text(self, text: str, top_n: int = 5, min_hits: int = 2) -> List[NewsEvent]:
         """
         Зручна обгортка для app.py: бере поточний (кешований/свіжий) ContextState
         і повертає RSS-заголовки релевантні для конкретного тексту/твердження.
@@ -491,7 +499,7 @@ class ContextEngine:
         if ctx is None or ctx.total_events == 0:
             return []
         try:
-            return ctx.find_related_events(text, top_n=top_n)
+            return ctx.find_related_events(text, top_n=top_n, min_hits=min_hits)
         except Exception:
             return []
 
