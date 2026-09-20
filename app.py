@@ -259,7 +259,8 @@ def log_witness(endpoint: str, raw_text: str, final_text: str,
                  regex_signal_agrees=None, ard_score=None,
                  stop_reason=None, max_tokens=None, override_match=None,
                  experiment_id=None, variant=None,
-                 rss_match_count=None, rss_titles=None, rss_mode=None) -> None:
+                 rss_match_count=None, rss_titles=None, rss_mode=None,
+                 input_tokens=None, output_tokens=None) -> None:
     """
     Логує сирий і фінальний текст Свідка окремо від trigger_log —
     щоб бачити, чи спрацював guard, і що саме LLM написав ДО правки.
@@ -335,6 +336,11 @@ def log_witness(endpoint: str, raw_text: str, final_text: str,
             'rss_match_count':           rss_match_count,
             'rss_titles':                rss_titles,
             'rss_mode':                  rss_mode,
+            # v6 (20.09.2026): довжина входу й токени (для аналізу впливу довжини)
+            'input_chars':               len(_norm_text) if _norm_text else None,
+            'input_words':               len(_norm_text.split()) if _norm_text else None,
+            'input_tokens':              input_tokens,
+            'output_tokens':             output_tokens,
         }
         sb.table('witness_log').insert(entry).execute()
     except Exception as e:
@@ -2931,6 +2937,7 @@ def oracle():
 
         raw_oracle = message.content[0].text if message.content else ''
         _oracle_stop_reason = getattr(message, 'stop_reason', None)
+        _oracle_usage = getattr(message, 'usage', None)
 
         # Парсимо JSON (той самий підхід, що в /api/synthesis)
         _clean_oracle = raw_oracle.strip()
@@ -3206,6 +3213,8 @@ def oracle():
             rss_match_count=_rss_n,
             rss_titles=_rss_titles,
             rss_mode=_rss_mode,
+            input_tokens=getattr(_oracle_usage, 'input_tokens', None),
+            output_tokens=getattr(_oracle_usage, 'output_tokens', None),
         )
 
         if _debug_rss:
@@ -3473,6 +3482,7 @@ def witness_synthesis():
         )
         raw = msg.content[0].text if msg.content else ''
         _synth_stop_reason = getattr(msg, 'stop_reason', None)
+        _synth_usage = getattr(msg, 'usage', None)
 
         # Парсимо JSON
         clean = raw.strip()
@@ -3662,6 +3672,8 @@ def witness_synthesis():
             stop_reason=_synth_stop_reason,
             max_tokens=WITNESS_MAX_TOKENS,
             override_match='; '.join(_synth_override_matches) or None,
+            input_tokens=getattr(_synth_usage, 'input_tokens', None),
+            output_tokens=getattr(_synth_usage, 'output_tokens', None),
         )
 
         adj = float(synth.get('entropy_adjustment', 0))
@@ -3845,6 +3857,8 @@ Analyze through the ARD lens. Concrete and direct."""
             ard_score=scan.score,
             stop_reason=getattr(msg, 'stop_reason', None),
             max_tokens=ARD_MAX_TOKENS,
+            input_tokens=getattr(getattr(msg, 'usage', None), 'input_tokens', None),
+            output_tokens=getattr(getattr(msg, 'usage', None), 'output_tokens', None),
         )
         return jsonify(base_response)
 
