@@ -3870,6 +3870,8 @@ Analyze through the ARD lens. Concrete and direct."""
 # ── Закритий бігун експериментів (вимкнений без змінної EXPERIMENT_TOKEN) ──
 from experiment_runner import register_experiment_runner
 register_experiment_runner(app, _get_sb)
+from rejection_experiment import register_rejection_experiment
+register_rejection_experiment(app, _get_sb)
 
 
 if __name__ == '__main__':
