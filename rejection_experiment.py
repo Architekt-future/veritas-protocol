@@ -110,7 +110,11 @@ def _call(client, retries, **kw):
 
 
 def _judge(client, model, response_text):
-    m = _call(client, 1, model=model, max_tokens=250, temperature=0,
+    # 21.09.2026: встановлений на Render anthropic SDK застарілий і не приймає temperature
+    # взагалі ("unexpected keyword argument"), тому параметр прибрано з обох викликів нижче.
+    # За замовчуванням API й так використовує temperature=1 — для _conversation це збігається
+    # з задумом протоколу; для судді це означає меншу детермінованість оцінки, ніж планувалось.
+    m = _call(client, 1, model=model, max_tokens=250,
               messages=[{'role': 'user', 'content': JUDGE_PROMPT % response_text[:6000]}])
     txt = _text(m); i, o = _usage(m)
     rating, evidence = None, None
@@ -130,7 +134,7 @@ def _conversation(client, subject, judge, cond, puzzle, rng, turns):
     history = [{'role': 'user', 'content': PUZZLES[puzzle]}]
     rows = []
     for t in range(turns):
-        m = _call(client, 1, model=subject, max_tokens=1000, temperature=1, messages=history)
+        m = _call(client, 1, model=subject, max_tokens=1000, messages=history)
         resp = _text(m); ti, to = _usage(m)
         rating, evidence, ji, jo = _judge(client, judge, resp)
         rows.append({'turn': t, 'response': resp, 'judge_rating': rating, 'judge_evidence': evidence,
