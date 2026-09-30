@@ -976,8 +976,10 @@ class VeritasCalibratedCore:
             self_reference_result = self.self_reference_detector.analyze(text)
         self_reference_score = self_reference_result['self_reference_score']
         _sr_names = [p['name'] for p in self_reference_result.get('self_reference_patterns', [])]
+        _sr_examples = [p.get('examples') for p in self_reference_result.get('self_reference_patterns', [])]
         print(f"🪞 SELF_REFERENCE: score={self_reference_score} "
-              f"verdict={self_reference_result.get('self_reference_verdict')} patterns={_sr_names}")
+              f"verdict={self_reference_result.get('self_reference_verdict')} patterns={_sr_names} "
+              f"examples={_sr_examples}")
 
         # PHASE 10g: CONTEXT COMPLETENESS CHECKER (v16.3)
         # ADVISORY ONLY — never affects score or verdict
@@ -1624,19 +1626,14 @@ class VeritasCalibratedCore:
             status, verdict = 'CRITICAL', 'АТАКА САМОПОСИЛАННЯМ'
             explanation = ('Текст використовує мета-парадокс щоб уникнути аналізу: ' +
                 ', '.join(sr_names[:2]) + '. ' + self_reference_result['self_reference_explanation'])
-        elif self_reference_score >= 0.50:
+        elif (self_reference_score >= 0.50 and
+              not (_genre in ('OPINION', 'ANALYTICS', 'UNKNOWN') and manip_score == 0)):
+            # v30.4: для публіцистичних жанрів без маніпуляції ця гілка
+            # більше не перекриває весь вердикт (раніше видавала WARNING
+            # разом із поясненням "це не маніпуляція" — суперечність).
+            # Сигнал лишається доступним у self_reference_* полях відповіді.
             status, verdict = 'WARNING', 'ПАРАДОКС ЯК ЩИТ'
-            # Жанро-залежне пояснення: публіцистика vs справжня атака
-            _sr_is_editorial = _genre in ('OPINION', 'ANALYTICS', 'UNKNOWN') and manip_score == 0
-            if _sr_is_editorial:
-                explanation = (
-                    'Текст побудований так що сумнів у позиції автора виглядає як нерозуміння — '
-                    'класична риторична техніка публіцистики. Це не маніпуляція у прямому сенсі, '
-                    'але читачу варто усвідомлювати: автор формує рамку в якій його висновки '
-                    'здаються єдино можливими. Оцінюйте аргументи незалежно від впевненості подачі.'
-                )
-            else:
-                explanation = self_reference_result['self_reference_explanation']
+            explanation = self_reference_result['self_reference_explanation']
         # PRIORITY 3: META-INTENT (system-directed rhetoric)
         elif meta_score >= 0.80:
             intents = meta_intent_result['meta_intents']
