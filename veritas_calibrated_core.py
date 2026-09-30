@@ -179,6 +179,18 @@ except ImportError:
 # ================================================================
 
 
+# v30.4: єдине формулювання для «високої ентропії без модульних сигналів».
+# Статичний рядок (не f-string), щоб фронтенд міг перекласти його через
+# EXPLANATION_EN. Числа (когезія, конфлікти) показує панель діагностики.
+HIGH_COMPLEXITY_EXPLANATION = (
+    'Формальна оцінка ентропії висока, але жоден модуль виявлення впливу, '
+    'маніпуляції, порожнечі чи абсурду не спрацював. Це сигнал складності '
+    'тексту (довжина, багато понять, протиставлення та компроміси), а не '
+    'доказ прийому впливу. Перевіряйте аргументацію критично, але не '
+    'трактуйте цей результат як ознаку маніпуляції.'
+)
+
+
 @dataclass
 class LogicalViolation:
     """Логічне порушення"""
@@ -1243,6 +1255,8 @@ class VeritasCalibratedCore:
                 shannon_entropy * 0.15
             )
 
+            _base_hybrid = base_score  # діагностика (v30.4)
+
             # pattern boosts
             for pattern in detected_patterns:
                 base_score += pattern['score_boost']
@@ -1479,6 +1493,7 @@ class VeritasCalibratedCore:
             elif self_reference_score >= 0.25:
                 base_score = max(base_score, 0.35)
 
+            _base_pre_mult = base_score  # діагностика (v30.4)
             # violation multiplier
             if violation_count > 0:
                 base_score *= (1.0 + violation_count * 0.1)
@@ -1524,15 +1539,77 @@ class VeritasCalibratedCore:
 
         final_score = min(0.99, max(entropy_floor, base_score))
 
+        # ---- v30.4: КОРОБОРАЦІЯ ВИСОКОЇ ЕНТРОПІЇ ----
+        # Вердикти CRITICAL за голим final_score > 0.5 / > 0.7 («СЕМАНТИЧНИЙ ШУМ»,
+        # «КОНЦЕПТУАЛЬНЕ ЗМІШУВАННЯ») видавалися навіть коли жоден модуль
+        # виявлення нічого не знайшов (у trigger_log усі 5 аналізів із
+        # ентропією >= 50 мали triggered_modules = []). Висока ентропія без
+        # модульних сигналів це інший клас сигналу: складність, а не ознака
+        # впливу. Тут збираємо «жорсткі» сигнали детекторів; нижче CRITICAL
+        # без жодного з них знижується до WARNING з чесним формулюванням.
+        # Fail-safe: будь-яка помилка => вважаємо, що сигнал є (стара поведінка).
+        try:
+            module_signals = []
+            if manipulation_result.get('manipulation_score', 0) > 0:
+                module_signals.append('manipulation')
+            if void_result.get('void_score', 0) >= 0.25:
+                module_signals.append('void')
+            if absurdity_result.get('absurdity_score', 0) >= 0.25:
+                module_signals.append('absurdity')
+            if insight_result.get('casuistry_score', 0) >= 0.25:
+                module_signals.append('casuistry')
+            if axiom_score > 0:
+                module_signals.append('axiom')
+            if framing_result.get('score', 0) >= 0.25:
+                module_signals.append('framing')
+            if meta_score >= 0.25:
+                module_signals.append('meta_intent')
+            if preservation_score >= 0.25:
+                module_signals.append('self_preservation')
+            if performative_result.get('performative_score', 0) >= 0.40:
+                module_signals.append('performative')
+            if context_result.get('displacement_score', 0) >= 0.45:
+                module_signals.append('displacement')
+            if pseudoscience_score >= 0.30:
+                module_signals.append('pseudoscience')
+            if self_reference_score >= 0.25:
+                module_signals.append('self_reference')
+            if pattern_boost_result.get('boost', 0) > 0:
+                module_signals.append('pattern_boost')
+            if term_counts.get('chaos', 0) >= 3:
+                module_signals.append('chaos_markers')
+            if lac_finance_result.get('is_financial') and lac_finance_result.get('score', 1.0) <= 0.25:
+                module_signals.append('lac_finance_imitation')
+            if any(getattr(v, 'vtype', '') == 'ZERO_COST_PROPOSITION' for v in all_violations):
+                module_signals.append('zero_cost_proposition')
+        except Exception as _sig_err:
+            print(f"⚠️ module_signals failed: {_sig_err}")
+            module_signals = ['unknown']
+
         # ---- v30.4 ДІАГНОСТИКА: чому саме такий final_score ----
         try:
-            _viol = [(getattr(v, 'vtype', '?'), round(getattr(v, 'severity', 0), 2)) for v in all_violations]
+            _viol = [(getattr(v, 'vtype', '?'), round(getattr(v, 'severity', 0), 2),
+                      [str(e)[:40] for e in (getattr(v, 'evidence', None) or [])][:2]) for v in all_violations]
+            _comp = {
+                'hybrid': round(locals().get('_base_hybrid', -1), 3),
+                'pre_mult': round(locals().get('_base_pre_mult', -1), 3),
+                'pat_boost': round(pattern_boost_result.get('boost', 0), 3),
+                'patterns': [p.get('name', '?') for p in detected_patterns][:5],
+                'chaos_terms': term_counts.get('chaos', 0),
+                'framing': round(framing_result.get('score', 0), 3),
+                'claim_gap': round(claim_gap_result.get('gap_score', 0), 3) if claim_gap_result.get('is_flagged') else 0,
+                'pivot': round(narrative_pivot_result.get('score', 0), 3) if narrative_pivot_result.get('has_pivot') else 0,
+                'axiom': round(axiom_score, 3), 'meta': round(meta_score, 3),
+                'pseudo': round(pseudoscience_score, 3), 'disp': round(context_result.get('displacement_score', 0), 3),
+                'void': round(void_result.get('void_score', 0), 3),
+            }
             print(
                 f"📊 SCORE_DEBUG: genre={_genre} words={word_count} shield={is_protected_science} "
                 f"conflict={round(conflict_penalty, 3)} lac={round(lac_penalty, 3)} "
                 f"domain={round(domain_penalty, 3)} shannon={round(shannon_entropy, 3)} "
                 f"floor={round(entropy_floor, 3)} viol_n={violation_count} viol={_viol} "
-                f"pre_discount={round(_base_pre_discount, 3)} base_final={round(base_score, 3)} "
+                f"pre_discount={round(_base_pre_discount, 3)} base_final={round(base_score, 3)} comp={_comp} "
+                f"signals={module_signals} "
                 f"final={round(min(0.99, max(entropy_floor, base_score)), 3)}"
             )
         except Exception as _e:
@@ -1716,6 +1793,10 @@ class VeritasCalibratedCore:
             if _short_journalistic:
                 status, verdict = 'INFO', 'ІНФОРМАЦІЙНИЙ ФОН'
                 explanation = 'Текст може мати неточності, але без навмисної архітектури впливу.'
+            elif not module_signals:
+                # v30.4: висока ентропія БЕЗ жодного модульного сигналу
+                status, verdict = 'WARNING', 'ВИСОКА СТРУКТУРНА СКЛАДНІСТЬ'
+                explanation = HIGH_COMPLEXITY_EXPLANATION
             else:
                 # v14.3: Diplomat label (was "ЛОГІЧНИЙ КОЛАПС")
                 status, verdict = 'CRITICAL', 'СЕМАНТИЧНИЙ ШУМ'
@@ -1728,6 +1809,10 @@ class VeritasCalibratedCore:
                     lac_finance_result.get('score', 1.0) <= 0.25):
                 status, verdict = 'WARNING', 'СТРУКТУРОВАНА РИТОРИКА'
                 explanation = 'Текст використовує аналітичні формулювання але уникає конкретики: немає чітких трейдофів, відповідальних осіб чи критеріїв успіху. Це може бути корпоративна або політична риторика замаскована під аналітику. Запитайте себе: хто саме відповідає за ці слова і що буде якщо нічого не зміниться?'
+            elif not module_signals:
+                # v30.4: середня/висока ентропія БЕЗ жодного модульного сигналу
+                status, verdict = 'WARNING', 'ВИСОКА СТРУКТУРНА СКЛАДНІСТЬ'
+                explanation = HIGH_COMPLEXITY_EXPLANATION
             else:
                 status, verdict = 'CRITICAL', 'КОНЦЕПТУАЛЬНЕ ЗМІШУВАННЯ'
                 explanation = 'У тексті змішані теми або поняття, які зазвичай не мають стосунку одне до одного. Це може дезорієнтувати читача і змусити прийняти хибні висновки. Спробуйте розділити текст на окремі твердження і перевірити кожне окремо.'
@@ -1827,6 +1912,8 @@ class VeritasCalibratedCore:
                 'lac_penalty': round(lac_penalty, 3),
                 'domain_penalty': round(domain_penalty, 3),
                 'violation_count': violation_count,
+                'module_signals': module_signals,
+                'high_entropy_uncorroborated': bool(final_score > 0.5 and not module_signals),
                 'lac_i_violations': len(lac_i_violations),
                 'lac_ii_violations': len(lac_ii_violations),
                 'lac_iii_violations': len(lac_iii_violations),
