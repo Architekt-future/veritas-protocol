@@ -1027,6 +1027,7 @@ const STRINGS = {
         'АБСТРАКТНА СКЛАДНІСТЬ': 'АБСТРАКТНА СКЛАДНІСТЬ',
         'КОНЦЕПТУАЛЬНЕ ЗМІШУВАННЯ': 'КОНЦЕПТУАЛЬНЕ ЗМІШУВАННЯ',
         'СЕМАНТИЧНИЙ ШУМ': 'СЕМАНТИЧНИЙ ШУМ',
+        'ВИСОКА СТРУКТУРНА СКЛАДНІСТЬ': 'ВИСОКА СТРУКТУРНА СКЛАДНІСТЬ',
         'СЕМАНТИЧНА ПОРОЖНЕЧА': 'СЕМАНТИЧНА ПОРОЖНЕЧА',
         'РИТОРИЧНИЙ ВПЛИВ': 'РИТОРИЧНИЙ ВПЛИВ',
         'МАНІПУЛЯТИВНИЙ ДИСКУРС': 'МАНІПУЛЯТИВНИЙ ДИСКУРС',
@@ -1143,6 +1144,7 @@ const STRINGS = {
         'АБСТРАКТНА СКЛАДНІСТЬ': 'ABSTRACT COMPLEXITY',
         'КОНЦЕПТУАЛЬНЕ ЗМІШУВАННЯ': 'CONCEPTUAL MIXING',
         'СЕМАНТИЧНИЙ ШУМ': 'SEMANTIC NOISE',
+        'ВИСОКА СТРУКТУРНА СКЛАДНІСТЬ': 'HIGH STRUCTURAL COMPLEXITY',
         'СЕМАНТИЧНА ПОРОЖНЕЧА': 'SEMANTIC VOID',
         'РИТОРИЧНИЙ ВПЛИВ': 'RHETORICAL INFLUENCE',
         'МАНІПУЛЯТИВНИЙ ДИСКУРС': 'MANIPULATIVE DISCOURSE',
@@ -1158,6 +1160,7 @@ const EXPL_EN = {
     'АБСТРАКТНА СКЛАДНІСТЬ': 'High abstraction level detected; requires contextual verification',
     'КОНЦЕПТУАЛЬНЕ ЗМІШУВАННЯ': 'Mixing of incompatible knowledge categories detected',
     'СЕМАНТИЧНИЙ ШУМ': 'Text oversaturated with terms lacking logical connection',
+    'ВИСОКА СТРУКТУРНА СКЛАДНІСТЬ': 'Formal entropy is high, but no detection module fired; this signals text complexity, not manipulation',
     'СЕМАНТИЧНА ПОРОЖНЕЧА': 'Text contains many words without concrete content',
     'ІМПЛІКОВАНА ПРИЧИННІСТЬ': 'Real facts placed side by side to imply a connection that has not been proven. Check each claim independently.',
 };
@@ -1267,6 +1270,7 @@ const EXPLANATION_EN = {
         'The text consists mostly of words without concrete meaning. This may be a deliberate tactic — creating an impression of informativeness without real facts. Do not treat this text as a reliable source.',
     'Текст містить багато термінів і тверджень, які між собою не пов\'язані. Такий прийом використовується щоб приховати відсутність логіки за видимістю складності. Читайте уважно: якщо неможливо простими словами переказати суть — це тривожний сигнал.':
         'The text contains many terms and claims that are not logically connected. This technique is used to hide the absence of logic behind a facade of complexity. Read carefully: if you cannot retell the essence in simple words, that is a warning sign.',
+    'Формальна оцінка ентропії висока, але жоден модуль виявлення впливу, маніпуляції, порожнечі чи абсурду не спрацював. Це сигнал складності тексту (довжина, багато понять, протиставлення та компроміси), а не доказ прийому впливу. Перевіряйте аргументацію критично, але не трактуйте цей результат як ознаку маніпуляції.': 'Formal entropy is high, but no detection module for influence, manipulation, emptiness or absurdity fired. This signals text complexity (length, many concepts, contrasts and trade-offs), not proof of an influence technique. Evaluate the argument critically, but do not read this result as a sign of manipulation.',
     'Текст використовує аналітичні формулювання але уникає конкретики: немає чітких трейдофів, відповідальних осіб чи критеріїв успіху. Це може бути корпоративна або політична риторика замаскована під аналітику. Запитайте себе: хто саме відповідає за ці слова і що буде якщо нічого не зміниться?':
         'The text uses analytical language but avoids specifics: no clear tradeoffs, no named responsible parties, no success criteria. This may be corporate or political rhetoric disguised as analysis. Ask yourself: who exactly stands behind these words, and what happens if nothing changes?',
     'Текст використовує аналітичні формулювання, але уникає конкретики: немає чітких трейдофів, відповідальних осіб чи критеріїв успіху. Це може бути корпоративна або політична риторика замаскована під аналітику. Запитайте себе: хто саме відповідає за ці слова і що буде якщо нічого не зміниться?':
@@ -1301,6 +1305,7 @@ const GENRE_LABEL_EN = {
     'АБСТРАКТНА СКЛАДНІСТЬ':     'ABSTRACT COMPLEXITY',
     'КОНЦЕПТУАЛЬНЕ ЗМІШУВАННЯ':  'CONCEPTUAL MIXING',
     'СЕМАНТИЧНИЙ ШУМ':           'SEMANTIC NOISE',
+    'ВИСОКА СТРУКТУРНА СКЛАДНІСТЬ': 'HIGH STRUCTURAL COMPLEXITY',
     'ПІДОЗРІЛО':                 'SUSPICIOUS',
     'НЕБЕЗПЕЧНО':                'DANGEROUS',
     'ЧИСТО':                     'CLEAN',
