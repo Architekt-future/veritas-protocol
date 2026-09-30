@@ -1501,6 +1501,7 @@ class VeritasCalibratedCore:
         # BLOCKED if: absurdity high, manipulation present, OR text too short
         # Short texts (<100 words) cannot earn cohesion discount:
         # patterns don't have enough space to accumulate meaningfully
+        _base_pre_discount = base_score  # діагностика (v30.4)
         absurdity_blocks_discount = absurdity_result['absurdity_score'] >= 0.4
         manipulation_blocks_discount = manipulation_result['manipulation_score'] >= 0.25
         short_text_blocks_discount = word_count < 100  # v17.1: min word threshold
@@ -1514,6 +1515,20 @@ class VeritasCalibratedCore:
             base_score = max(base_score, 0.15)
 
         final_score = min(0.99, max(entropy_floor, base_score))
+
+        # ---- v30.4 ДІАГНОСТИКА: чому саме такий final_score ----
+        try:
+            _viol = [(getattr(v, 'vtype', '?'), round(getattr(v, 'severity', 0), 2)) for v in all_violations]
+            print(
+                f"📊 SCORE_DEBUG: genre={_genre} words={word_count} shield={is_protected_science} "
+                f"conflict={round(conflict_penalty, 3)} lac={round(lac_penalty, 3)} "
+                f"domain={round(domain_penalty, 3)} shannon={round(shannon_entropy, 3)} "
+                f"floor={round(entropy_floor, 3)} viol_n={violation_count} viol={_viol} "
+                f"pre_discount={round(_base_pre_discount, 3)} base_final={round(base_score, 3)} "
+                f"final={round(min(0.99, max(entropy_floor, base_score)), 3)}"
+            )
+        except Exception as _e:
+            print(f"📊 SCORE_DEBUG failed: {_e}")
 
         # ---- SPECIAL CASE: SEMANTIC VOID DETECTION ----
         # If high entropy + high void + low violations = just empty fluff, not manipulation
