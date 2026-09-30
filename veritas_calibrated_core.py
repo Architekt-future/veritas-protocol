@@ -11,6 +11,14 @@ from dataclasses import dataclass
 from typing import List, Dict, Tuple, Set
 from veritas_cohesion_v2 import CohesionV2
 
+# v30.4: контекстні фільтри LAC-порушень (ANONYMOUS_AUTHORITY, DOMAIN_COLLAPSE)
+try:
+    import veritas_violation_guards as _vg
+    VIOLATION_GUARDS_AVAILABLE = True
+except ImportError:
+    _vg = None
+    VIOLATION_GUARDS_AVAILABLE = False
+
 # Import pattern boost engine
 try:
     import sys
@@ -2232,17 +2240,21 @@ class VeritasCalibratedCore:
                     context='Твердження без причинного якоря'
                 ))
 
-        # anonymous authority
-        for pattern in self.ANONYMOUS_AUTHORITY_PATTERNS:
-            if re.search(pattern, text_lower):
-                violations.append(LogicalViolation(
-                    module='LAC_MODULE_II',
-                    vtype='ANONYMOUS_AUTHORITY',
-                    severity=0.6,
-                    evidence=[pattern[:30]],
-                    context='Анонімне джерело авторитету'
-                ))
-                break
+        # anonymous authority (v30.4: контекстна перевірка; голі дієслова
+        # «вважають/вважається/кажуть/говорять» більше не є порушенням)
+        if VIOLATION_GUARDS_AVAILABLE:
+            _anon_hit = _vg.find_anonymous_authority(text_lower, self.ANONYMOUS_AUTHORITY_PATTERNS)
+        else:
+            _anon_hit = next((p for p in self.ANONYMOUS_AUTHORITY_PATTERNS
+                              if re.search(p, text_lower)), None)
+        if _anon_hit:
+            violations.append(LogicalViolation(
+                module='LAC_MODULE_II',
+                vtype='ANONYMOUS_AUTHORITY',
+                severity=0.6,
+                evidence=[_anon_hit[:30]],
+                context='Анонімне джерело авторитету'
+            ))
         
         # GASLIGHTING patterns (NEW)
         gaslighting_patterns = [
@@ -2305,7 +2317,10 @@ class VeritasCalibratedCore:
 
         # detect domains using word boundaries
         for domain, config in self.DOMAIN_BOUNDARIES.items():
-            if any(re.search(rf'\b{re.escape(term)}\b', text_lower) for term in config['terms']):
+            # v30.4: «ентропія» сама по собі не доводить домен physics
+            _domain_text = (_vg.neutralize_domain_metaphors(domain, text_lower)
+                            if VIOLATION_GUARDS_AVAILABLE else text_lower)
+            if any(re.search(rf'\b{re.escape(term)}\b', _domain_text) for term in config['terms']):
                 detected_domains.add(domain)
 
         # check forbidden mixings
