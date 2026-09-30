@@ -208,9 +208,18 @@ class SelfReferenceDetector:
         struct_en = self._sentence_all_groups(text_lower, self.SELF_DEICTIC_EN, self.TEST_NOUNS_EN)
         hit = struct_uk or struct_en
         if hit:
-            score = 0.70 * (0.3 if is_academic_discussion else 1.0)
-            total_score += score
-            matched.append({'name': 'SELF_DECLARED_TEST_STRUCT', 'hits': hit['hits'], 'examples': hit['examples']})
+            # ТІНЬОВИЙ РЕЖИМ, НЕ ВПЛИВАЄ НА ОЦІНКУ (з 30.09.2026).
+            # Та сама хвороба, що в ANALYSIS_EXEMPTION_STRUCT: тріада
+            # "це/цей" (майже в кожному реченні) + широкий іменник
+            # (тест/гра/жарт/вправа/...) у одному реченні структурно
+            # збігається на звичайній публіцистиці. Знайдено на статті
+            # "Незалежний аудит, який обирає той, кого аудіюють":
+            # "І це вже не жарт." -> 0.70 -> PARADOX_WEAPONIZED ->
+            # вердикт "ПАРАДОКС ЯК ЩИТ" (поріг гілки в ядрі всього 0.50,
+            # тож один такий збіг сам перекривав увесь вердикт).
+            # Фразовий SELF_DECLARED_TEST (вимагає конкретних
+            # багатослівних формулювань) лишається активним.
+            matched.append({'name': 'SELF_DECLARED_TEST_STRUCT_SHADOW', 'hits': hit['hits'], 'examples': hit['examples']})
 
         exempt_uk = self._sentence_all_groups(text_lower, self.NEGATION_UK, self.ANALYSIS_NOUNS_UK, self.SYSTEM_REFERENCE_UK)
         exempt_en = self._sentence_all_groups(text_lower, self.NEGATION_EN, self.ANALYSIS_NOUNS_EN, self.SYSTEM_REFERENCE_EN)
