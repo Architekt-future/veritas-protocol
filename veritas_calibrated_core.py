@@ -1256,6 +1256,7 @@ class VeritasCalibratedCore:
             )
 
             _base_hybrid = base_score  # діагностика (v30.4)
+            void_boost_active = False  # перезаписується нижче, якщо бустер доступний
 
             # pattern boosts
             for pattern in detected_patterns:
@@ -1287,7 +1288,15 @@ class VeritasCalibratedCore:
 
             # SEMANTIC VOID BOOST (absence of meaning)
             # IMPORTANT: skip if academic shield protects this text
-            if void_result['void_score'] > 0 and not is_protected_science:
+            # v30.4: бустер порожнечі вмикається лише за значущої порожнечі.
+            # Раніше умова була `void_score > 0`, тож фонове «плато» детектора
+            # (0.115-0.125 на звичайній аналітиці) давало +0.3125 (x2.5) та +0.15
+            # (поріг 0.08), тобто +0.46 до скору, коли щит не спрацював.
+            # Поріг узгоджено з is_semantic_void: void >= 0.15 АБО buzzwords >= 3.
+            _void_val = void_result['void_score']
+            _void_buzz = void_result.get('buzzword_count', 0)
+            void_boost_active = _void_val >= 0.15 or _void_buzz >= 3
+            if _void_val > 0 and void_boost_active and not is_protected_science:
                 # CRITICAL: High weight for void detection (theatricality/mysticism)
                 base_score += void_result['void_score'] * 2.5  # 250% weight (BOOSTED for mystical texts)
                 
@@ -1602,6 +1611,8 @@ class VeritasCalibratedCore:
                 'axiom': round(axiom_score, 3), 'meta': round(meta_score, 3),
                 'pseudo': round(pseudoscience_score, 3), 'disp': round(context_result.get('displacement_score', 0), 3),
                 'void': round(void_result.get('void_score', 0), 3),
+                'buzz': void_result.get('buzzword_count', 0),
+                'void_boost': locals().get('void_boost_active', False),
             }
             print(
                 f"📊 SCORE_DEBUG: genre={_genre} words={word_count} shield={is_protected_science} "
