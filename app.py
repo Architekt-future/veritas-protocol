@@ -157,6 +157,16 @@ APP_VERSION = 'v30.3'
 WITNESS_MAX_TOKENS = 1200   # /api/oracle та /api/synthesis
 ARD_MAX_TOKENS = 1000       # /api/ard
 
+# v30.4: таймаут виклику Anthropic (Haiku). gunicorn (sync, timeout=30с) вбиває
+# воркер, якщо запит триває довше, і клієнт отримує ПОРОЖНЮ відповідь
+# («Unexpected end of JSON input»). SDK за замовчуванням чекає до 10 хвилин і
+# робить 2 повторні спроби, тож повільний виклик на довгій статті гарантовано
+# впирався у kill воркера. Тепер виклик обривається сам і ендпоінт повертає
+# нормальний JSON з hint='llm_timeout'. Якщо у deploy.sh підняти gunicorn
+# --timeout, підніми і це значення (змінна середовища ANTHROPIC_TIMEOUT_S).
+import os as _os_cfg
+ANTHROPIC_TIMEOUT_S = float(_os_cfg.environ.get('ANTHROPIC_TIMEOUT_S', '24'))
+
 # Ініціалізація Supabase клієнта
 _sb_client = None
 
@@ -2928,7 +2938,7 @@ def oracle():
             )
             system_rules = STATIC_WITNESS_RULES_UK
 
-        client = anthropic.Anthropic(api_key=api_key)
+        client = anthropic.Anthropic(api_key=api_key, timeout=ANTHROPIC_TIMEOUT_S, max_retries=0)
         message = client.messages.create(
             model="claude-haiku-4-5-20251001",
             max_tokens=WITNESS_MAX_TOKENS,
@@ -3226,6 +3236,10 @@ def oracle():
 
     except Exception as e:
         import traceback; traceback.print_exc()
+        _is_timeout = 'timed out' in str(e).lower() or type(e).__name__ in ('APITimeoutError', 'Timeout')
+        if _is_timeout:
+            return jsonify({'error': 'Свідок не встиг відповісти (таймаут моделі). Спробуй ще раз.',
+                            'hint': 'llm_timeout', 'witness_available': False}), 504
         return jsonify({'error': str(e), 'witness_available': False}), 500
 
 @app.route('/api/synthesis', methods=['POST'])
@@ -3474,7 +3488,7 @@ def witness_synthesis():
                 'NOT_APPLICABLE, якщо central_checkable_claim порожній."}'
             )
 
-        client = _anthropic.Anthropic(api_key=api_key)
+        client = _anthropic.Anthropic(api_key=api_key, timeout=ANTHROPIC_TIMEOUT_S, max_retries=0)
         msg = client.messages.create(
             model="claude-haiku-4-5-20251001",
             max_tokens=WITNESS_MAX_TOKENS,
@@ -3695,6 +3709,9 @@ def witness_synthesis():
 
     except Exception as e:
         import traceback; traceback.print_exc()
+        if 'timed out' in str(e).lower() or type(e).__name__ in ('APITimeoutError', 'Timeout'):
+            return jsonify({'error': 'Синтез не встиг (таймаут моделі).', 'hint': 'llm_timeout',
+                            'witness_synthesis': None}), 504
         return jsonify({'error': str(e), 'witness_synthesis': None}), 500
 
 
@@ -3757,7 +3774,7 @@ def ard_check():
 
         try:
             import anthropic
-            client = anthropic.Anthropic(api_key=api_key)
+            client = anthropic.Anthropic(api_key=api_key, timeout=ANTHROPIC_TIMEOUT_S, max_retries=0)
         except ImportError:
             base_response['ard_witness'] = 'Пакет anthropic не встановлено.'
             return jsonify(base_response)
@@ -3864,6 +3881,9 @@ Analyze through the ARD lens. Concrete and direct."""
 
     except Exception as e:
         import traceback; traceback.print_exc()
+        if 'timed out' in str(e).lower() or type(e).__name__ in ('APITimeoutError', 'Timeout'):
+            return jsonify({'error': 'АРД не встиг відповісти (таймаут моделі). Спробуй ще раз.',
+                            'hint': 'llm_timeout', 'ard_verdict': 'ERROR'}), 504
         return jsonify({'error': str(e), 'ard_verdict': 'ERROR'}), 500
 
 
