@@ -1559,6 +1559,26 @@ window.addEventListener('load', () => {
     checkAPIStatus();
 });
 
+// v30.4: безпечний розбір відповіді сервера. Якщо gunicorn убив воркер за таймаут,
+// клієнт отримує ПОРОЖНЄ тіло, і resp.json() кидає «Unexpected end of JSON input».
+// Тут це перетворюється на зрозумілу помилку з hint='server_timeout'.
+async function safeJson(resp) {
+    const raw = await resp.text();
+    if (!raw || !raw.trim()) {
+        return { error: (currentLang === 'uk'
+            ? 'Сервер перервав запит (ймовірно, таймаут на довгому тексті). Спробуй ще раз.'
+            : 'The server aborted the request (likely a timeout on a long text). Please try again.'),
+            hint: 'server_timeout' };
+    }
+    try { return JSON.parse(raw); }
+    catch (e) {
+        return { error: (currentLang === 'uk'
+            ? 'Сервер повернув некоректну відповідь (HTTP ' + resp.status + ').'
+            : 'The server returned an invalid response (HTTP ' + resp.status + ').'),
+            hint: 'bad_json' };
+    }
+}
+
 async function checkAPIStatus() {
     const el = document.getElementById('apiStatus');
     el.textContent = '⚙️ Checking...';
@@ -1763,7 +1783,7 @@ async function callWitnessSynthesis(data) {
         });
 
         if (!resp.ok) return;
-        const result = await resp.json();
+        const result = await safeJson(resp);
         const synth = result.witness_synthesis;
         if (!synth) return;
 
@@ -2779,7 +2799,7 @@ async function consultOracle() {
         clearInterval(_oracleLoadingInterval);
         loading.style.display = 'none';
 
-        const result = await resp.json();
+        const result = await safeJson(resp);
 
         if (!resp.ok || result.error) {
             errEl.textContent = (currentLang === 'uk' ? 'Свідок недоступний: ' : 'Witness unavailable: ') + (result.error || resp.status);
@@ -2855,7 +2875,7 @@ async function consultARD() {
         clearInterval(_interval);
         loading.style.display = 'none';
 
-        const result = await resp.json();
+        const result = await safeJson(resp);
         if (!resp.ok || result.error) {
             if (errEl) { errEl.textContent = result.error || resp.status; errEl.style.display = 'block'; }
             btn.disabled = false;
