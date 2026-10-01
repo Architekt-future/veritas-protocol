@@ -80,12 +80,34 @@ SELF_DOC_DISCOUNT = 0.15     # той самий коефіцієнт, що вж
                               # (self_preservation.py SELF_DOCUMENTATION_CONTEXT)
 
 
+def _inside_direct_quote(prefix: str) -> bool:
+    """True, якщо кінець `prefix` лежить усередині незакритої прямої цитати
+    в межах поточного абзацу. Апострофи (', \u2019, \u02bc) ігноруються.
+
+    v1.1 (01.10.2026): раніше `_is_quoted` дивився лише на 2 символи
+    безпосередньо перед/після збігу, тобто бачив цитату лише тоді, коли
+    збіг СПІВПАДАВ з усією цитатою. Збіг УСЕРЕДИНІ довшої цитати
+    («ми створюємо ..., але лише ми маємо право ...») не розпізнавався, і
+    цитата Anthropic в науковій статті рахувалась як твердження автора:
+    self_exclusivity + unique_capability = 2 слоти = PREEMPTIVE_MONOPOLY_SLOTS."""
+    seg = prefix[prefix.rfind('\n') + 1:]
+    if seg.rfind('\u00ab') > seg.rfind('\u00bb'):     # « ... »
+        return True
+    if seg.rfind('\u201c') > seg.rfind('\u201d'):     # \u201c ... \u201d
+        return True
+    if seg.count('"') % 2 == 1:                         # "..."
+        return True
+    return False
+
+
 def _is_quoted(text_low: str, start: int, end: int) -> bool:
-    """Чи стоїть збіг безпосередньо в лапках (пряма цитата-приклад,
-    не власне твердження автора)."""
+    """Чи стоїть збіг у лапках (пряма цитата-приклад, не власне твердження
+    автора): або впритул до лапок, або всередині незакритої цитати."""
     before = text_low[max(0, start - 2):start]
     after = text_low[end:end + 2]
-    return any(c in QUOTE_CHARS for c in before) or any(c in QUOTE_CHARS for c in after)
+    if any(c in QUOTE_CHARS for c in before) or any(c in QUOTE_CHARS for c in after):
+        return True
+    return _inside_direct_quote(text_low[:start])
 
 
 def _meta_density(text_low: str) -> int:
@@ -100,12 +122,15 @@ def score_preemptive_monopoly(text: str) -> dict:
     quoted_out = []
     for slot_name, patterns in SLOTS.items():
         for p in patterns:
-            m = re.search(p, text_low, re.IGNORECASE | re.DOTALL)
-            if m:
+            # v1.1: перебираємо ВСІ збіги, а не лише перший: якщо перший у
+            # цитаті, пізніший авторський збіг того ж патерна не губиться.
+            for m in re.finditer(p, text_low, re.IGNORECASE | re.DOTALL):
                 if _is_quoted(text_low, m.start(), m.end()):
                     quoted_out.append(slot_name)  # зафіксовано, але не рахується
                     continue
                 present[slot_name] = m.group(0)[:80]
+                break
+            if slot_name in present:
                 break
 
     n_slots = len(present)
