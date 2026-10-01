@@ -1018,6 +1018,19 @@ class ManipulationDetector:
     _OPEN_QUOTES  = re.compile(r'["\u201c\u00ab\u2018«]')
     _CLOSE_QUOTES = re.compile(r'["\u201d\u00bb\u2019»]')
 
+    @staticmethod
+    def _inside_direct_quote(before: str) -> bool:
+        """True, якщо кінець `before` лежить усередині незакритої прямої цитати
+        в межах поточного абзацу. Апострофи (', ’, ʼ) ігноруються."""
+        seg = before[before.rfind('\n') + 1:]
+        if seg.rfind('\u00ab') > seg.rfind('\u00bb'):       # « ... »
+            return True
+        if seg.rfind('\u201c') > seg.rfind('\u201d'):       # “ ... ”
+            return True
+        if seg.count('"') % 2 == 1:                           # "..."
+            return True
+        return False
+
     def _get_attribution_weight(self, text: str, match_start: int) -> float:
         """
         Визначає множник для патерну знайденого на позиції match_start.
@@ -1029,10 +1042,16 @@ class ManipulationDetector:
         """
         before = text[:match_start]
 
-        # ── Перевірка QUOTED: непарна кількість відкритих лапок ──────
-        open_count  = len(self._OPEN_QUOTES.findall(before))
-        close_count = len(self._CLOSE_QUOTES.findall(before))
-        if open_count > close_count:
+        # ── Перевірка QUOTED: чи стоїть збіг усередині прямої цитати ──
+        # v1.1 (01.10.2026): парність лапок рахується ЛОКАЛЬНО (в межах
+        # поточного абзацу), а не по всьому тексту до збігу. Раніше
+        # `open_count > close_count` по всій статті ламалася від будь-якого
+        # апострофа U+2019 («Claude’s», «суб’єктності»), який входить у
+        # _CLOSE_QUOTES: close_count завищувався, і ВСІ наступні цитати
+        # отримували вагу автора (x1.0). Знайдено на статті, де
+        # цитата Anthropic «...лише ми маємо право...» стояла в «» і мала
+        # б отримати x0.25, але отримала x1.0 (PREEMPTIVE_MONOPOLY).
+        if self._inside_direct_quote(before):
             return 0.25  # всередині прямої цитати
 
         # ── Перевірка ATTRIBUTED: attribution verb у вікні 120 символів ──
