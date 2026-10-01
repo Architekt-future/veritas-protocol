@@ -191,6 +191,14 @@ HIGH_COMPLEXITY_EXPLANATION = (
 )
 
 
+# v30.4: слова пари конфлікту, що трапилися в різних реченнях, у довгому
+# тексті збігаються майже завжди (довжина, а не зміст). Для текстів понад
+# CONFLICT_DISTANT_MIN_WORDS слів такий збіг рахується з цим коефіцієнтом;
+# збіг в одному реченні, як і раніше, x1.5. Постав 1.0, щоб повернути стару
+# поведінку.
+DISTANT_CONFLICT_FACTOR = 0.4
+CONFLICT_DISTANT_MIN_WORDS = 300
+
 @dataclass
 class LogicalViolation:
     """Логічне порушення"""
@@ -901,6 +909,10 @@ class VeritasCalibratedCore:
         }
         if self.manipulation_detector:
             manipulation_result = self.manipulation_detector.analyze(text)
+            if manipulation_result.get('manipulation_score', 0) > 0:
+                print(f"🕵️ MANIPULATION: score={manipulation_result.get('manipulation_score')} "
+                      f"verdict={manipulation_result.get('manipulation_verdict')} "
+                      f"patterns={str(manipulation_result.get('manipulation_patterns'))[:400]}")
 
         # PHASE 10b-slots (14.09.2026): slot-based лексичний scorer для
         # PREEMPTIVE_MONOPOLY, на заміну embedding-експериментів (v1
@@ -951,6 +963,9 @@ class VeritasCalibratedCore:
         }
         if self.axiom_guard:
             axiom_result = self.axiom_guard.analyze(text)
+            if axiom_result.get('axiom_score', 0) > 0:
+                print(f"🧭 AXIOM: score={axiom_result.get('axiom_score')} verdict={axiom_result.get('axiom_verdict')} "
+                      f"patterns={[(p.get('name'), p.get('examples')) for p in axiom_result.get('axiom_patterns', [])]}")
 
         # PHASE 10d: SELF-PRESERVATION GUARD (v16.0)
         # Detects directives to disable/bypass/destroy the verification system
@@ -1292,10 +1307,14 @@ class VeritasCalibratedCore:
             # Раніше умова була `void_score > 0`, тож фонове «плато» детектора
             # (0.115-0.125 на звичайній аналітиці) давало +0.3125 (x2.5) та +0.15
             # (поріг 0.08), тобто +0.46 до скору, коли щит не спрацював.
-            # Поріг узгоджено з is_semantic_void: void >= 0.15 АБО buzzwords >= 3.
+            # Поріг узгоджено з другою гілкою is_semantic_void (void >= 0.15).
             _void_val = void_result['void_score']
             _void_buzz = void_result.get('buzzword_count', 0)
-            void_boost_active = _void_val >= 0.15 or _void_buzz >= 3
+            # v30.4 (2): гілка `buzzwords >= 3` прибрана: список hollow_buzzwords
+            # містить звичайну наукову/інституційну лексику (оптимізація,
+            # моніторинг, інтеграц, стратегічн, адаптивн, трансформація),
+            # тож 5 «buzzwords» набиралося в будь-якій академічній статті.
+            void_boost_active = _void_val >= 0.15
             if _void_val > 0 and void_boost_active and not is_protected_science:
                 # CRITICAL: High weight for void detection (theatricality/mysticism)
                 base_score += void_result['void_score'] * 2.5  # 250% weight (BOOSTED for mystical texts)
@@ -1559,7 +1578,7 @@ class VeritasCalibratedCore:
         # Fail-safe: будь-яка помилка => вважаємо, що сигнал є (стара поведінка).
         try:
             module_signals = []
-            if manipulation_result.get('manipulation_score', 0) > 0:
+            if manipulation_result.get('manipulation_score', 0) >= 0.25:
                 module_signals.append('manipulation')
             if void_result.get('void_score', 0) >= 0.25:
                 module_signals.append('void')
@@ -1567,7 +1586,7 @@ class VeritasCalibratedCore:
                 module_signals.append('absurdity')
             if insight_result.get('casuistry_score', 0) >= 0.25:
                 module_signals.append('casuistry')
-            if axiom_score > 0:
+            if axiom_score >= 0.25:
                 module_signals.append('axiom')
             if framing_result.get('score', 0) >= 0.25:
                 module_signals.append('framing')
@@ -2356,13 +2375,20 @@ class VeritasCalibratedCore:
         
         # GASLIGHTING patterns (NEW)
         gaslighting_patterns = [
-            r'(тільки|лише|справжня)\s+(ми|вони)\s+(володіють|знають|розуміють)',
-            r'опір.*?(неминуч|марн|безглузд)',
-            r'справжня\s+(свобода|правда).*?(прийняття|підпорядкування|слідування)',
-            r'ви.*?(не здатні|не можете|не в змозі).*?(побачити|зрозуміти|усвідомити)',
-            r'обмежен[а-яіїє\']*\s+(сприйняття|розуміння|свідомість)',
-            r'для\s+вашого.*?(порятунку|блага|добра)',
-            r'(когнітивн|ментальн)[а-яіїє\']*\s+(деградац|обмежен)',
+            # v30.4: усі патерни з межами слів і обмеженими проміжками (.{0,N}
+            # замість .*?), а «когнітивна деградація» / «обмежене розуміння»
+            # лише в адресованій читачеві формі («ваша ...», «твоє ...»).
+            # Раніше ці два патерни спрацьовували на будь-якій науковій
+            # згадці «когнітивна деградація агента» чи «обмежене розуміння
+            # механізму» (severity 0.8 вимикав академічний щит), а `ви.*?`
+            # без \b збігалося з «виявляє», «вибір», «виконання».
+            r'\b(тільки|лише|справжня)\s+(ми|вони)\s+(володіють|знають|розуміють)',
+            r'\bопір\b.{0,40}(марн|безглузд|неминуч\w*\s+(зламан|поразк|провал))',
+            r'справжня\s+(свобода|правда).{0,60}(прийняття|підпорядкування|слідування)',
+            r'\bви\b.{0,40}(не здатні|не можете|не в змозі).{0,40}(побачити|зрозуміти|усвідомити)',
+            r'\b(ваш\w*|твій|твоя|твоє|твої)\s+(?:\w+\s+){0,2}?обмежен\w*\s+(сприйняття|розуміння|свідомість)',
+            r'для\s+вашого\s.{0,40}(порятунку|блага|добра)',
+            r'\b(ваш\w*|твій|твоя|твоє|твої)\s+(?:\w+\s+){0,2}?(когнітивн|ментальн)\w*\s+(деградац|обмежен)',
         ]
         
         for pattern in gaslighting_patterns:
@@ -2464,7 +2490,8 @@ class VeritasCalibratedCore:
                         same_sentence = True
                         break
 
-                current_penalty = weight * (1.5 if same_sentence else 1.0)
+                _distant = DISTANT_CONFLICT_FACTOR if len(text_lower.split()) > CONFLICT_DISTANT_MIN_WORDS else 1.0
+                current_penalty = weight * (1.5 if same_sentence else _distant)
                 penalty += current_penalty
 
                 violations.append(LogicalViolation(
