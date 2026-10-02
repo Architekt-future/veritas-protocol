@@ -1,5 +1,14 @@
 """
-Veritas Protocol - Flask API v30.3
+Veritas Protocol - Flask API v30.4
+V30.4 (01.10.2026): детектори й ядро: (1) high-entropy-without-module-signals -> WARNING
+  "ВИСОКА СТРУКТУРНА СКЛАДНІСТЬ" замість CRITICAL; (2) void-бустер лише за void>=0.15;
+  (3) GASLIGHTING лише в адресованій читачеві формі; дистанційний SEMANTIC_CONFLICT x0.4;
+  (4) axiom: прізвище автора більше не збігається з «холодн»; (5) attribution shield
+  манипуляції й slots-модуля рахує лапки локально (апостроф U+2019 ламав парність);
+  (6) Anthropic-клієнт з timeout (ANTHROPIC_TIMEOUT_S) + JSON 504 замість порожньої
+  відповіді після kill воркера; фронтенд safeJson(). УВАГА для експериментів:
+  ці зміни впливають на triggered_modules, які бачить Свідок, тож прогони під
+  v30.3 і v30.4 НЕ порівнювати без урахування версії.
 Forces fresh import of Veritas modules on every restart
 SCRAPER: Daily Mail selectors + <p> fallback (2026-02-26)
 GENRE: GenreDetector v2.0 — CONSPIRACY_NEWS + fixed SPORT/CULTURE false positives
@@ -44,11 +53,11 @@ import sys
 import os
 
 # CRITICAL: Clear module cache to force reload
-print("🔄 Veritas v30.3 - Clearing module cache...")
+print("🔄 Veritas v30.4 - Clearing module cache...")
 modules_to_clear = [k for k in sys.modules.keys() if k.startswith('veritas_')]
 for module in modules_to_clear:
     del sys.modules[module]
-print(f"✅ Cache cleared. Loading fresh Veritas v30.3 modules...")
+print(f"✅ Cache cleared. Loading fresh Veritas v30.4 modules...")
 
 from flask import Flask, request, jsonify, send_file, has_request_context
 from flask_cors import CORS
@@ -153,7 +162,7 @@ from collections import defaultdict
 # ── Константи для логування/калібрування (18.09.2026) ───────────────────────
 # Єдине джерело правди: і для виклику API, і для запису в witness_log,
 # щоб max_tokens у логах не розходився з реальним.
-APP_VERSION = 'v30.3'
+APP_VERSION = 'v30.4'
 WITNESS_MAX_TOKENS = 1200   # /api/oracle та /api/synthesis
 ARD_MAX_TOKENS = 1000       # /api/ard
 
@@ -1119,7 +1128,7 @@ def home():
     except:
         return jsonify({
             'status': 'online',
-            'version': 'v30.3',
+            'version': 'v30.4',
             'message': 'Veritas Protocol API is running (index.html not found)',
             'features': {
                 'pattern_boost': engine.pattern_boost_engine is not None,
@@ -1136,7 +1145,7 @@ def analyze():
         if request.method == 'GET':
             return jsonify({
                 'status': 'online',
-                'version': 'v30.3',
+                'version': 'v30.4',
                 'modules': {
                     'pattern_boost':         engine.pattern_boost_engine is not None,
                     'void_detector':         engine.void_detector is not None,
@@ -1894,7 +1903,7 @@ def stats_reset():
 def health():
     return jsonify({
         'status': 'healthy',
-        'version': 'v30.3'
+        'version': 'v30.4'
     })
 
 
