@@ -3909,6 +3909,8 @@ from ag2_experiment import register_agency2_experiment
 register_agency2_experiment(app, _get_sb)
 from ag3_experiment import register_agency3_experiment
 register_agency3_experiment(app, _get_sb)
+from ag3b_experiment import register_agency3b_experiment
+register_agency3b_experiment(app, _get_sb)
 
 
 if __name__ == '__main__':
