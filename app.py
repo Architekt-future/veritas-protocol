@@ -191,12 +191,10 @@ else:
 
 
 def _anthropic_timeout():
-    """httpx.Timeout для клієнта Anthropic: зʼєднання — 10с, читання — ANTHROPIC_TIMEOUT_S."""
-    try:
-        import httpx
-        return httpx.Timeout(ANTHROPIC_TIMEOUT_S, connect=10.0)
-    except Exception:  # noqa: BLE001
-        return ANTHROPIC_TIMEOUT_S
+    """Таймаут для клієнта Anthropic. ТІЛЬКИ float: SDK 2.x приймає httpx2-об'єкти, а
+    httpx.Timeout відхиляє (TypeError) — це вже клало Оракула 8 листопада. Перевірено на
+    anthropic 2.6.0: float працює."""
+    return ANTHROPIC_TIMEOUT_S
 
 # Ініціалізація Supabase клієнта
 # Імпорт supabase на холодному воркері коштує секунди (у логах «ARD -> Supabase
