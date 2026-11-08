@@ -174,7 +174,29 @@ ARD_MAX_TOKENS = 1000       # /api/ard
 # нормальний JSON з hint='llm_timeout'. Якщо у deploy.sh підняти gunicorn
 # --timeout, підніми і це значення (змінна середовища ANTHROPIC_TIMEOUT_S).
 import os as _os_cfg
-ANTHROPIC_TIMEOUT_S = float(_os_cfg.environ.get('ANTHROPIC_TIMEOUT_S', '24'))
+# v30.4.1: ефективний gunicorn --timeout. gunicorn.conf.py виставляє його в
+# post_fork як GUNICORN_EFFECTIVE_TIMEOUT. Якщо змінної нема (старий Start
+# Command з --timeout 30), вважаємо 30 і поводимось як у v30.4.
+GUNICORN_TIMEOUT_S = float(_os_cfg.environ.get('GUNICORN_EFFECTIVE_TIMEOUT')
+                           or _os_cfg.environ.get('GUNICORN_TIMEOUT') or 30)
+# Дефолт: при timeout<=30 лишаємо 24с (як було); інакше до 55с, але завжди
+# із запасом >=45с під підготовку промпту, RSS-матчинг, guard'и й запис у БД.
+_ANTHROPIC_DEFAULT_S = 24.0 if GUNICORN_TIMEOUT_S <= 30 else min(55.0, GUNICORN_TIMEOUT_S - 45.0)
+ANTHROPIC_TIMEOUT_S = float(_os_cfg.environ.get('ANTHROPIC_TIMEOUT_S', _ANTHROPIC_DEFAULT_S))
+if ANTHROPIC_TIMEOUT_S + 10 > GUNICORN_TIMEOUT_S:
+    print(f"⚠️  TIMEOUT MISCONFIG: ANTHROPIC_TIMEOUT_S={ANTHROPIC_TIMEOUT_S}s + запас 10с > "
+          f"gunicorn timeout={GUNICORN_TIMEOUT_S}s — воркер можуть вбити посеред виклику Haiku")
+else:
+    print(f"⏱️  timeouts: anthropic={ANTHROPIC_TIMEOUT_S}s < gunicorn={GUNICORN_TIMEOUT_S}s")
+
+
+def _anthropic_timeout():
+    """httpx.Timeout для клієнта Anthropic: зʼєднання — 10с, читання — ANTHROPIC_TIMEOUT_S."""
+    try:
+        import httpx
+        return httpx.Timeout(ANTHROPIC_TIMEOUT_S, connect=10.0)
+    except Exception:  # noqa: BLE001
+        return ANTHROPIC_TIMEOUT_S
 
 # Ініціалізація Supabase клієнта
 _sb_client = None
@@ -188,7 +210,11 @@ def _get_sb():
         url = os.environ.get('SUPABASE_URL', '')
         key = os.environ.get('SUPABASE_KEY', '')
         if url and key:
-            _sb_client = create_client(url, key)
+            try:
+                from supabase.lib.client_options import ClientOptions
+                _sb_client = create_client(url, key, options=ClientOptions(postgrest_client_timeout=15))
+            except Exception:  # стара/інша версія supabase-py — без опцій
+                _sb_client = create_client(url, key)
             print("✅ Supabase connected")
         else:
             print("⚠️  SUPABASE_URL or SUPABASE_KEY not set — logging disabled")
@@ -364,6 +390,14 @@ def log_witness(endpoint: str, raw_text: str, final_text: str,
         sb.table('witness_log').insert(entry).execute()
     except Exception as e:
         print(f"⚠️  log_witness error (non-fatal): {e}")
+
+
+# ── REQUEST LOG (v30.4.1) ───────────────────────────────────────────────────
+# Журнал кожного POST /api/*: рядок створюється ПЕРЕД роботою, закривається
+# після. Рядок у статусі 'started' = запит, який помер (kill воркера).
+# Таблиця: див. supabase/migrations/..._request_log.sql
+import request_log as _rl
+_rl.init(app, _get_sb, APP_VERSION)
 
 
 def compute_stats() -> dict:
@@ -1138,8 +1172,41 @@ def home():
             }
         })
 
+# v30.4.1: з gthread-воркером кілька запитів можуть іти паралельно (Haiku — це
+# очікування мережі, йому паралельність корисна). Але engine/детектори
+# історично працювали лише послідовно (sync-воркер), тому САМ аналіз
+# серіалізуємо замком; Oracle/Synthesis/ARD замком не обмежені.
+import functools as _functools
+_ANALYZE_LOCK = threading.Lock()
+ANALYZE_QUEUE_WAIT_S = float(_os_cfg.environ.get('ANALYZE_QUEUE_WAIT_S', '20'))
+
+
+def _serialize_analyze(fn):
+    @_functools.wraps(fn)
+    def _wrapped(*args, **kwargs):
+        if request.method != 'POST':
+            return fn(*args, **kwargs)
+        if not _ANALYZE_LOCK.acquire(timeout=ANALYZE_QUEUE_WAIT_S):
+            return jsonify({'error': 'Сервер зайнятий іншим аналізом. Повтори за кілька секунд.',
+                            'status': 'busy', 'hint': 'analysis_busy'}), 503
+        try:
+            return fn(*args, **kwargs)
+        finally:
+            _ANALYZE_LOCK.release()
+    return _wrapped
+
+
+def _analyze_deadline(req_t0: float) -> float:
+    """Скільки секунд лишилось на engine.analyze: бюджет воркера мінус те, що
+    вже витрачено на скрапінг/детектори до цього місця, мінус 10с на хвіст
+    (ARD, cohesion_v2, запис у БД — у логах це ~8-10с). Стеля 90с."""
+    return max(8.0, min(90.0, GUNICORN_TIMEOUT_S - (time.time() - req_t0) - 10.0))
+
+
 @app.route('/api/analyze', methods=['GET', 'POST'])
+@_serialize_analyze
 def analyze():
+    _req_t0 = time.time()
     try:
         # GET request = health check
         if request.method == 'GET':
@@ -1723,13 +1790,21 @@ def analyze():
 
         # Analyze text — з timeout guard щоб regex backtracking не вбивав воркер
         import concurrent.futures as _cf
-        _ANALYZE_TIMEOUT = 22  # секунд — gunicorn worker timeout = 30s, лишаємо буфер
+        # v30.4.1: (1) дедлайн рахується від ПОЧАТКУ запиту, а не фіксовані 22с
+        # (скрапінг+детектори до цього місця вже їли ~9с → разом >30с);
+        # (2) БЕЗ `with ThreadPoolExecutor`: його __exit__ = shutdown(wait=True)
+        # чекає завершення потоку, тож TimeoutError доходив до except лише
+        # коли analyze() і так закінчувався — guard нічого не обмежував.
+        _ANALYZE_TIMEOUT = _analyze_deadline(_req_t0)
+        _executor = _cf.ThreadPoolExecutor(max_workers=1)
         try:
-            with _cf.ThreadPoolExecutor(max_workers=1) as _executor:
-                _future = _executor.submit(engine.analyze, text_for_analysis)
-                result = _future.result(timeout=_ANALYZE_TIMEOUT)
+            _future = _executor.submit(engine.analyze, text_for_analysis)
+            result = _future.result(timeout=_ANALYZE_TIMEOUT)
+            _executor.shutdown(wait=False)
         except _cf.TimeoutError:
-            print(f'⏱️  engine.analyze() TIMEOUT після {_ANALYZE_TIMEOUT}с — повертаємо базовий результат')
+            _executor.shutdown(wait=False)   # потік дограє у фоні, але запит більше не чекає
+            _rl.note(phase='analyze_timeout')
+            print(f'⏱️  engine.analyze() TIMEOUT після {_ANALYZE_TIMEOUT:.0f}с — повертаємо базовий результат')
             return jsonify({
                 'error': 'Аналіз зайняв надто довго. Спробуйте коротший текст або повторіть запит.',
                 'status': 'timeout',
@@ -1860,6 +1935,7 @@ def analyze():
         import traceback
         print(f"❌ Error in analyze: {str(e)}")
         traceback.print_exc()
+        _rl.note_error(e)
         return jsonify({
             'error': str(e),
             'status': 'error'
@@ -2947,7 +3023,9 @@ def oracle():
             )
             system_rules = STATIC_WITNESS_RULES_UK
 
-        client = anthropic.Anthropic(api_key=api_key, timeout=ANTHROPIC_TIMEOUT_S, max_retries=0)
+        client = anthropic.Anthropic(api_key=api_key, timeout=_anthropic_timeout(), max_retries=0)
+        _rl.phase('llm')
+        _t_llm0 = time.time()
         message = client.messages.create(
             model="claude-haiku-4-5-20251001",
             max_tokens=WITNESS_MAX_TOKENS,
@@ -2955,6 +3033,7 @@ def oracle():
         )
 
         raw_oracle = message.content[0].text if message.content else ''
+        _rl.note_llm(message, _t_llm0, raw=raw_oracle, model='claude-haiku-4-5-20251001')
         _oracle_stop_reason = getattr(message, 'stop_reason', None)
         _oracle_usage = getattr(message, 'usage', None)
 
@@ -2986,6 +3065,7 @@ def oracle():
                 # поспіль саме на цьому тексті, причина ще не встановлена).
                 _oracle_json_parse_failed = True
                 _oracle_broken_raw = _clean_oracle
+                _rl.note(status='parse_fail', raw_text=_clean_oracle[:20000])
                 _oracle_json = {
                     'witness_verdict': 'РИТОРИКА',
                     'witness_text': 'Свідок тимчасово не зміг сформувати структуровану відповідь. Спробуй ще раз — це технічна помилка формату, не результат аналізу.',
@@ -3245,6 +3325,7 @@ def oracle():
 
     except Exception as e:
         import traceback; traceback.print_exc()
+        _rl.note_error(e)
         _is_timeout = 'timed out' in str(e).lower() or type(e).__name__ in ('APITimeoutError', 'Timeout')
         if _is_timeout:
             return jsonify({'error': 'Свідок не встиг відповісти (таймаут моделі). Спробуй ще раз.',
@@ -3497,13 +3578,16 @@ def witness_synthesis():
                 'NOT_APPLICABLE, якщо central_checkable_claim порожній."}'
             )
 
-        client = _anthropic.Anthropic(api_key=api_key, timeout=ANTHROPIC_TIMEOUT_S, max_retries=0)
+        client = _anthropic.Anthropic(api_key=api_key, timeout=_anthropic_timeout(), max_retries=0)
+        _rl.phase('llm')
+        _t_llm0 = time.time()
         msg = client.messages.create(
             model="claude-haiku-4-5-20251001",
             max_tokens=WITNESS_MAX_TOKENS,
             messages=[{"role": "user", "content": synth_prompt}]
         )
         raw = msg.content[0].text if msg.content else ''
+        _rl.note_llm(msg, _t_llm0, raw=raw, model='claude-haiku-4-5-20251001')
         _synth_stop_reason = getattr(msg, 'stop_reason', None)
         _synth_usage = getattr(msg, 'usage', None)
 
@@ -3519,6 +3603,7 @@ def witness_synthesis():
             try:
                 synth = _json.loads(_repaired)
             except _json.JSONDecodeError:
+                _rl.note(status='parse_fail', raw_text=clean[:20000])
                 synth = {
                     'witness_verdict': 'РИТОРИКА',
                     'witness_text': 'Свідок тимчасово не зміг сформувати структуровану відповідь. Спробуй ще раз — це технічна помилка формату, не результат аналізу.',
@@ -3718,6 +3803,7 @@ def witness_synthesis():
 
     except Exception as e:
         import traceback; traceback.print_exc()
+        _rl.note_error(e)
         if 'timed out' in str(e).lower() or type(e).__name__ in ('APITimeoutError', 'Timeout'):
             return jsonify({'error': 'Синтез не встиг (таймаут моделі).', 'hint': 'llm_timeout',
                             'witness_synthesis': None}), 504
@@ -3783,7 +3869,7 @@ def ard_check():
 
         try:
             import anthropic
-            client = anthropic.Anthropic(api_key=api_key, timeout=ANTHROPIC_TIMEOUT_S, max_retries=0)
+            client = anthropic.Anthropic(api_key=api_key, timeout=_anthropic_timeout(), max_retries=0)
         except ImportError:
             base_response['ard_witness'] = 'Пакет anthropic не встановлено.'
             return jsonify(base_response)
@@ -3864,6 +3950,8 @@ TEXT FOR ANALYSIS:
 
 Analyze through the ARD lens. Concrete and direct."""
 
+        _rl.phase('llm')
+        _t_llm0 = time.time()
         msg = client.messages.create(
             model='claude-haiku-4-5-20251001',
             max_tokens=ARD_MAX_TOKENS,
@@ -3872,6 +3960,7 @@ Analyze through the ARD lens. Concrete and direct."""
         )
 
         witness_text = msg.content[0].text if msg.content else ''
+        _rl.note_llm(msg, _t_llm0, raw=witness_text, model='claude-haiku-4-5-20251001')
         base_response['ard_witness'] = witness_text
         log_witness(
             endpoint='ard',
@@ -3890,6 +3979,7 @@ Analyze through the ARD lens. Concrete and direct."""
 
     except Exception as e:
         import traceback; traceback.print_exc()
+        _rl.note_error(e)
         if 'timed out' in str(e).lower() or type(e).__name__ in ('APITimeoutError', 'Timeout'):
             return jsonify({'error': 'АРД не встиг відповісти (таймаут моделі). Спробуй ще раз.',
                             'hint': 'llm_timeout', 'ard_verdict': 'ERROR'}), 504
