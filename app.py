@@ -199,6 +199,12 @@ def _anthropic_timeout():
         return ANTHROPIC_TIMEOUT_S
 
 # Ініціалізація Supabase клієнта
+# Імпорт supabase на холодному воркері коштує секунди (у логах «ARD -> Supabase
+# connected» = ~8с усередині запиту). Робимо його на старті процесу, а не під час запиту.
+try:
+    from supabase import create_client as _sb_create_client_warm  # noqa: F401
+except Exception:  # noqa: BLE001
+    pass
 _sb_client = None
 
 def _get_sb():
@@ -206,6 +212,7 @@ def _get_sb():
     if _sb_client is not None:
         return _sb_client
     try:
+        _t_sb0 = time.time()
         from supabase import create_client
         url = os.environ.get('SUPABASE_URL', '')
         key = os.environ.get('SUPABASE_KEY', '')
@@ -215,7 +222,7 @@ def _get_sb():
                 _sb_client = create_client(url, key, options=ClientOptions(postgrest_client_timeout=15))
             except Exception:  # стара/інша версія supabase-py — без опцій
                 _sb_client = create_client(url, key)
-            print("✅ Supabase connected")
+            print(f"✅ Supabase connected ({time.time() - _t_sb0:.1f}s)")
         else:
             print("⚠️  SUPABASE_URL or SUPABASE_KEY not set — logging disabled")
     except Exception as e:
@@ -1196,11 +1203,14 @@ def _serialize_analyze(fn):
     return _wrapped
 
 
+# Дедлайн engine.analyze. Це захист від regex-бектрекінгу, що висить НАЗАВЖДИ, а не
+# «бюджет воркера»: з gthread gunicorn не вбиває воркер за повільний запит. Реальний
+# аналіз на холодному воркері триває 12-25с (перший запит після старту найповільніший).
+ANALYZE_TIMEOUT_S = float(_os_cfg.environ.get('ANALYZE_TIMEOUT_S', '75'))
+
+
 def _analyze_deadline(req_t0: float) -> float:
-    """Скільки секунд лишилось на engine.analyze: бюджет воркера мінус те, що
-    вже витрачено на скрапінг/детектори до цього місця, мінус 10с на хвіст
-    (ARD, cohesion_v2, запис у БД — у логах це ~8-10с). Стеля 90с."""
-    return max(8.0, min(90.0, GUNICORN_TIMEOUT_S - (time.time() - req_t0) - 10.0))
+    return ANALYZE_TIMEOUT_S
 
 
 @app.route('/api/analyze', methods=['GET', 'POST'])
