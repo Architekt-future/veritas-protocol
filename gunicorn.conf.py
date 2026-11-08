@@ -15,6 +15,10 @@ threads = int(os.environ.get('GUNICORN_THREADS', '4'))
 
 # Має бути СУТТЄВО більшим за ANTHROPIC_TIMEOUT_S (див. app.py: дефолт 55с).
 timeout = int(os.environ.get('GUNICORN_TIMEOUT', '120'))
+# app.py звіряє ANTHROPIC_TIMEOUT_S з цим значенням. З --preload (так стартує deploy.sh)
+# app імпортується в master ДО fork, тож post_fork запізнюється — виставляємо тут,
+# на рівні модуля: конфіг читається раніше за імпорт застосунку.
+os.environ['GUNICORN_EFFECTIVE_TIMEOUT'] = str(timeout)
 graceful_timeout = 30
 keepalive = 5
 
@@ -27,8 +31,8 @@ loglevel = 'info'
 
 
 def post_fork(server, worker):
-    # app.py читає це при імпорті (до fork воно ще не відоме) і звіряє
-    # ANTHROPIC_TIMEOUT_S з реальним timeout — див. «TIMEOUT MISCONFIG» у логах.
+    # Якщо timeout передали прапорцем --timeout (він перекриває конфіг), виправляємо
+    # значення для воркера. Для master-імпорту (--preload) воно вже не встигне.
     os.environ['GUNICORN_EFFECTIVE_TIMEOUT'] = str(server.cfg.timeout)
 
 
