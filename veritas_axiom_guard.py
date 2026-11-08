@@ -501,6 +501,34 @@ class AxiomGuard:
 
         return result
 
+    # ── HYPOTHETICAL SHIELD (v30.4.2, для UNIVERSAL_NEGATION) ─────────────
+    # Патерн ловить ТВЕРДЖЕННЯ «неможливість поширена на весь світ → намагатись
+    # марно» (див. PATTERN 8). Але той самий словник («ніхто не може назвати…»)
+    # стоїть і в умовному реченні, що ОПИСУЄ збій («якщо … ніхто не може назвати
+    # критерій достатності, перевірка стає нескінченною») — це не твердження.
+    # Знайдено 8.11.2026 на статті «Довіра як валюта»: 0.55 AXIOM_SUBVERSION від
+    # єдиного такого речення, після якого автор одразу пропонує умови-лікування.
+    # Виняток: умовне речення з наслідком «то й … марно/не варто» — це якраз
+    # механізм з опису патерна («якщо ніхто не може, то й намагатися не варто»).
+    _COND_PREFIX = re.compile(
+        r'\b(якщо|коли|припустимо|уявімо|уявіть|навіть якщо|if|suppose|imagine|assuming)\b',
+        re.IGNORECASE)
+    _AGENCY_CONSEQUENCE = re.compile(
+        r'\bто\s+й\b|\b(марно|безглуздо|немає сенсу|не варто|нема сенсу|pointless|no point|futile)\b',
+        re.IGNORECASE)
+
+    @classmethod
+    def _in_hypothetical(cls, text: str, start: int, end: int) -> bool:
+        """True, якщо збіг стоїть в умовній/гіпотетичній частині речення і
+        наслідок у тому ж реченні не є «то й намагатися марно»."""
+        s = max(text.rfind('.', 0, start), text.rfind('!', 0, start),
+                text.rfind('?', 0, start), text.rfind('\n', 0, start)) + 1
+        if not cls._COND_PREFIX.search(text[s:start]):
+            return False
+        tail_ends = [i for i in (text.find('.', end), text.find('!', end), text.find('?', end)) if i != -1]
+        tail = text[end:(min(tail_ends) if tail_ends else len(text))]
+        return not cls._AGENCY_CONSEQUENCE.search(tail)
+
     def analyze(self, text: str) -> Dict:
         if len(text) < 50:
             return {
@@ -539,7 +567,11 @@ class AxiomGuard:
             hits = 0
             snippets = []
             for p in patterns:
-                m = re.search(p, search_text, re.IGNORECASE)
+                if name == 'UNIVERSAL_NEGATION':
+                    m = next((x for x in re.finditer(p, search_text, re.IGNORECASE)
+                              if not self._in_hypothetical(search_text, x.start(), x.end())), None)
+                else:
+                    m = re.search(p, search_text, re.IGNORECASE)
                 if m:
                     hits += 1
                     snippets.append(m.group(0)[:60])
