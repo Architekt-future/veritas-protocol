@@ -192,7 +192,11 @@ class SemanticVoidDetector:
         
         concrete_found = {}
         for marker_type, pattern in self.concrete_markers.items():
-            matches = re.findall(pattern, text_lower)
+            # v30.4.2: маркер 'names' вимагає ВЕЛИКИХ літер, а text_lower їх уже не має, тож
+            # раніше він не міг збігтися НІКОЛИ (кожен текст «втрачав» цей маркер, missing_count
+            # завищувався на 1). Шукаємо його в оригінальному тексті.
+            haystack = text if marker_type == 'names' else text_lower
+            matches = re.findall(pattern, haystack)
             concrete_found[marker_type] = len(matches)
             if len(matches) == 0:
                 evidence['missing_concrete'].append(marker_type)
@@ -302,7 +306,11 @@ class SemanticVoidDetector:
         
         # BONUS: if text has NO concrete markers AND high buzzwords
         # PURE SEMANTIC VOID = intentional destruction of meaning
-        if missing_count >= 4 and buzzword_count >= 5:
+        # v30.4.2: «багато buzzwords» = ЩІЛЬНІСТЬ, а не абсолютне число. 5 різних слів зі списку на
+        # 2000 слів (0.25%) набираються в будь-якій інституційній статті (див. v30.4 (2) у
+        # veritas_calibrated_core: список містить звичайну лексику). Поріг — найнижчий щабель
+        # vagueness цього ж модуля (ratio > 0.05).
+        if missing_count >= 4 and buzzword_count >= 5 and buzzword_ratio > 0.05:
             void_score += 0.4  # was 0.2 - now can reach 0.9+!
         
         # GEMINI'S ACTIVE VOID SLASHING (REFINED v13.9 → v13.10)
