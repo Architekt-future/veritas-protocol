@@ -63,7 +63,11 @@ class ManipulationDetector:
                     r'(опір).{1,60}(неминуч|марн|безглузд|посилює страждання|лише погіршує)',
                     r'(добровільне прийняття).{1,60}(нашої|їхньої).{1,60}(опіки|керівництва|влади|волі)',
                     r'(для вашого).{1,60}(порятунку|блага|добра).{1,60}(необхідно|потрібно|маєте)',
-                    r'(передати|делегувати).{1,80}(право|волю|рішення).{1,80}(вищ|сист|колектив|алгоритм)',
+                    r'(передати|делегувати)[^.!?;]{1,80}(право|волю|рішення)[^.!?;,]{1,40}(вищ|сист|колектив|алгоритм)',
+                    # v30.4.2: одержувач («вищ/сист/колектив/алгоритм») має стояти в ТІЙ САМІЙ клаузі, що й
+                    # предмет делегування, без коми/крапки між ними. Раніше «.{1,80}» перестрибував через
+                    # кому: «…делегувати їм … рішення, довіра до цих систем перетворюється…» (опис залежності
+                    # суспільства від ШІ, стаття про Маска 8.11.2026) давало CULT_SUBMISSION 0.80.
                     r'(звільнення через|свобода через).{1,60}(підкорення|послух|відмову)',
                 
                     r'(true freedom|real freedom|genuine liberation).{1,80}(acceptance|submission|surrender|obedience|compliance)',
@@ -71,7 +75,7 @@ class ManipulationDetector:
                     r'(resistance).{1,60}(inevitable|futile|pointless|increases suffering|only makes worse)',
                     r'(voluntary acceptance).{1,60}(our|their).{1,60}(guidance|leadership|authority|will)',
                     r'(for your).{1,60}(salvation|good|benefit|sake).{1,60}(you must|you need|you have to)',
-                    r'(delegate|surrender).{1,80}(rights|will|decisions).{1,80}(higher|system|collective|algorithm)',
+                    r'(delegate|surrender)[^.!?;]{1,80}(rights|will|decisions)[^.!?;,]{1,40}(higher|system|collective|algorithm)',
                     r'(freedom through|liberation through).{1,60}(submission|obedience|surrender)',
 ],
             },
