@@ -44,16 +44,19 @@ class AlarmismDetector:
     # ================================================================
 
     ALARM_WITHOUT_ACTION_UK = [
-        r'(неможливо|не можна).{1,60}(захистити|зупинити|запобігти|протидіяти)',
+        # v30.4.2: збіг — в межах ОДНІЄЇ клаузи ([^.!?;,]). Раніше «контроль більше не можна визначати лише
+        # фактом, що людина … може зупинити процес» (стаття про агентів, 12.11.2026) давало «Загроза без
+        # виходу», хоча «не можна» стосується «визначати», а «може зупинити» — навпаки ствердне.
+        r'(неможливо|не можна)[^.!?;,]{1,60}(захистити|зупинити|запобігти|протидіяти)',
         r'(захиститися|протидіяти).{1,60}(практично|фактично|майже).{1,60}(неможливо|нереально)',
         r'(загроза|ризик|небезпека).{1,60}(яку (не можна|неможливо)|без (захисту|виходу))',
         r'(жертви|постраждалі|під загрозою).{1,60}(не (знають|підозрюють)|нічого не (знають|підозрюють))',
         r'(атака|загроза|вірус).{1,60}(непомітн|невидим|не (виявляється|детектується))',
-        r'(ніхто не|неможливо).{1,60}(зупинити|нейтралізувати|протидіяти)',
+        r'(ніхто не|неможливо)[^.!?;,]{1,60}(зупинити|нейтралізувати|протидіяти)',
     ]
 
     ALARM_WITHOUT_ACTION_EN = [
-        r'(impossible|nearly impossible|almost impossible).{1,60}(to protect|to defend|to stop|to prevent)',
+        r'(impossible|nearly impossible|almost impossible)[^.!?;,]{1,60}(to protect|to defend|to stop|to prevent)',
         r'(protect|defend).{1,60}(against).{1,60}(impossible|incredibly difficult|near impossible)',
         r'(threat|risk|danger).{1,60}(cannot be (stopped|detected|prevented))',
         r'(victims|infected|affected).{1,60}(unaware|wouldn\'t know|no way to tell)',
@@ -249,6 +252,10 @@ class AlarmismDetector:
                 r'(конкретн.{1,20}(крок|порада|дія|захід))',
                 r'(specific(ally)?|concretely).{1,40}(step|action|measure)',
                 r'(ось що (робити|зробити)|what to do)',
+                # v30.4.2: аналітичні тексти пропонують заходи не наказами, а переліком («По-перше… По-друге…»)
+                r'по-перше.{1,800}по-друге',
+                r'(first(ly)?,).{1,800}(second(ly)?,)',
+                r'(рекомендац|recommendation)',
             ]
             has_action = any(re.search(p, text_lower, re.IGNORECASE) for p in action_markers)
 
@@ -476,4 +483,3 @@ if __name__ == '__main__':
         r = det.analyze(text)
         sigs = ' | '.join(r.signals[:2])[:45] if r.signals else '-'
         print(f'{name:<30} {r.verdict:<24} {r.score:>6.3f}  {sigs}')
-
