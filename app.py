@@ -1254,9 +1254,25 @@ def analyze():
                 import requests
                 from bs4 import BeautifulSoup
                 
-                headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36', 'Accept': 'text/html,application/xhtml+xml', 'Accept-Language': 'uk,en;q=0.9'}
-                response = requests.get(url, headers=headers, timeout=10)
-                response.raise_for_status()
+                # v30.5: UA оновлено з Chrome/121 (2024) на актуальний; Accept — як у браузера.
+                headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36', 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 'Accept-Language': 'uk,en;q=0.9'}
+                try:
+                    response = requests.get(url, headers=headers, timeout=10)
+                    response.raise_for_status()
+                except requests.exceptions.RequestException as _fetch_err:
+                    # v30.5: LinkedIn і подібні сайти віддають датацентровим IP 403/429/999, і прямий
+                    # запит одразу закінчувався 400 (12.11.2026 о ~20:11 UTC, request_log). Тепер, якщо
+                    # є JINA_API_KEY, підставляємо порожню сторінку: далі спрацює вже наявний Jina-fallback
+                    # (word_count < 80). Якщо ключа нема або Jina теж не віддала текст — як і раніше 400.
+                    _fst = getattr(getattr(_fetch_err, 'response', None), 'status_code', None)
+                    print(f'⚠️  Direct fetch failed ({_fst or type(_fetch_err).__name__}): {url[:90]}')
+                    _rl.note(hint=f'direct_fetch_{_fst or "error"}')
+                    import os as _os_ff
+                    if not _os_ff.environ.get('JINA_API_KEY'):
+                        raise
+                    class _EmptyPage:
+                        content = b'<html><body></body></html>'
+                    response = _EmptyPage()
                 
                 soup = BeautifulSoup(response.content, 'html.parser')
                 
@@ -1756,6 +1772,14 @@ def analyze():
                     }), 400
                     
             except Exception as e:
+                _est = getattr(getattr(e, 'response', None), 'status_code', None)
+                if _est in (401, 403, 429, 999):
+                    # v30.5: сайт відмовив у доступі — кажемо про це прямо і пропонуємо вставити текст
+                    return jsonify({
+                        'error': f'Сайт відмовив у доступі (HTTP {_est}) — автоматичне читання заблоковано. Скопіюйте текст статті вручну і вставте в поле нижче.',
+                        'status': 'scrape_blocked',
+                        'hint': 'scrape_forbidden'
+                    }), 400
                 return jsonify({
                     'error': f'Failed to scrape URL: {str(e)}',
                     'status': 'error'
