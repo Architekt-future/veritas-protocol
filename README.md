@@ -431,7 +431,7 @@ curl https://veritas-protocol.onrender.com/api/health
 | Змінна | За замовчуванням | Призначення |
 |---|---|---|
 | `ANTHROPIC_API_KEY` | — | Слово Свідка, Синтез, АРД |
-| `JINA_API_KEY` | — | fallback для JS-важких сайтів |
+| `JINA_API_KEY` | — | fallback для JS-важких сайтів і для сайтів, що відповідають 403 на прямий запит |
 | `SUPABASE_URL`, `SUPABASE_KEY` | — | логування; ключ має бути `service_role` (таблиці під RLS без політик) |
 | `ANTHROPIC_TIMEOUT_S` | 55 (24, якщо timeout gunicorn ≤ 30) | таймаут виклику Haiku. **Лише число:** SDK 2.x відхиляє `httpx.Timeout` |
 | `ANALYZE_TIMEOUT_S` | 75 | стеля для `engine.analyze` (захист від regex, що висить вічно) |
@@ -703,6 +703,7 @@ select * from request_log_summary order by day desc, kind;
 - **Таймаут Anthropic:** `ANTHROPIC_TIMEOUT_S` (55 з gunicorn 120; 24 за старого 30). Передається **числом**: SDK 2.x відхиляє `httpx.Timeout` з `TypeError`, і Оракул падав з 500 ще до мережі.
 - **Замок на `POST /api/analyze`:** з потоками запити стали паралельними, а детектори історично працювали лише послідовно. Чекання `ANALYZE_QUEUE_WAIT_S` → 503 `analysis_busy`.
 - **Імпорт `supabase` перенесено на старт процесу** (за логами, між `ARD` і `Supabase connected` було до 8 с усередині запиту); у логу тепер `Supabase connected (…s)`. Клієнт має таймаут 15 с, щоб логування не могло підвісити запит.
+- **Скрапінг:** LinkedIn із 12.11.2026 (~20:11 UTC, за `request_log`) відповідає 403 на прямий запит із Render, і `/api/analyze` одразу повертав 400. Тепер User-Agent оновлено з Chrome/121 до Chrome/155; якщо прямий запит упав (`RequestException`) і є `JINA_API_KEY`, спрацьовує наявний Jina-fallback; 401/403/429/999 повертають зрозуміле повідомлення (`status: scrape_blocked`, `hint: scrape_forbidden`) замість `Failed to scrape URL: 403 Client Error…`. Перевірено на змодельованих відповідях (403 без ключа, 403 + Jina зі статтею / з 403 / з login-wall, 200, помилка мережі); з LinkedIn і Jina з пісочниці не перевірялось.
 - Нові відповіді 503 `analysis_timeout` і 503 `analysis_busy`; у стартовому логу з'явилось попередження `TIMEOUT MISCONFIG`, якщо таймаути не вкладаються.
 
 ### Журнал запитів (`request_log.py` + міграція)
@@ -735,6 +736,7 @@ select * from request_log_summary order by day desc, kind;
 - **Той самий клас дефектів ще не закритий:** 358 із 472 шаблонів `veritas_manipulation_detector` і 288 із 318 шаблонів ARD мають необмежений `.{n,m}`; 10 шаблонів ARD містять «без» без меж слова; `EUPHEMISTIC_RECONTEXTUALIZATION` має голе `(а|але)`.
 - `claim_gap` сприймає слово «Пророцтво» із заголовка розділу як твердження автора (0.9) і не розпізнає «Джерело: …» як доказ.
 - `laundered_claim`: згадка імені зі списку не дорівнює цитуванню; UI в такому разі пише «Текст цитує сторону активного конфлікту». Ім'я з відмінковою формою («Путіна») не збігається з `\bпутін\b`.
+- **LinkedIn може блокувати і Jina:** якщо Reader віддає login-wall, відповідь 400 `js_protected`; запасний шлях лишається вставити текст вручну.
 - Промпт Оракула для алармізму («Поясни що конкретно перебільшено») припускає, що перебільшення є.
 - Фронтенд-банер АРД «ентропія низька … саме це робить його небезпечнішим» перетворює відсутність сигналів на підозру (текст у `index.html`, не в `app.py`).
 
