@@ -1,5 +1,13 @@
 """
-Veritas Protocol - Flask API v30.4
+Veritas Protocol - Flask API v30.5
+V30.5 (13.11.2026): (1) інфраструктура: gthread-воркер (gunicorn.conf.py), дедлайни
+  Anthropic/аналізу незалежні від gunicorn, аналіз серіалізовано замком, журнал кожного
+  POST /api/* у Supabase (request_log.py + міграція), httpx.Timeout -> float (SDK 2.x);
+  (2) хибні спрацьовування детекторів, знайдені на реальних статтях: HIDDEN_FALSE_DILEMMA,
+  CULT_SUBMISSION, UNIVERSAL_NEGATION, void-бонус і маркер names, шаблон «змовних
+  авторитетів» (absurdity), AM в АРД, laundered_claim (лексикон + «Ключові слова»),
+  alarmism (межі клаузи + маркери «є дії»). УВАГА для експериментів: змінилися значення
+  void/absurdity/manipulation, тож прогони під v30.4 і v30.5 НЕ порівнювати без версії.
 V30.4 (01.10.2026): детектори й ядро: (1) high-entropy-without-module-signals -> WARNING
   "ВИСОКА СТРУКТУРНА СКЛАДНІСТЬ" замість CRITICAL; (2) void-бустер лише за void>=0.15;
   (3) GASLIGHTING лише в адресованій читачеві формі; дистанційний SEMANTIC_CONFLICT x0.4;
@@ -53,11 +61,11 @@ import sys
 import os
 
 # CRITICAL: Clear module cache to force reload
-print("🔄 Veritas v30.4 - Clearing module cache...")
+print("🔄 Veritas v30.5 - Clearing module cache...")
 modules_to_clear = [k for k in sys.modules.keys() if k.startswith('veritas_')]
 for module in modules_to_clear:
     del sys.modules[module]
-print(f"✅ Cache cleared. Loading fresh Veritas v30.4 modules...")
+print(f"✅ Cache cleared. Loading fresh Veritas v30.5 modules...")
 
 from flask import Flask, request, jsonify, send_file, has_request_context
 from flask_cors import CORS
@@ -162,7 +170,7 @@ from collections import defaultdict
 # ── Константи для логування/калібрування (18.09.2026) ───────────────────────
 # Єдине джерело правди: і для виклику API, і для запису в witness_log,
 # щоб max_tokens у логах не розходився з реальним.
-APP_VERSION = 'v30.4'
+APP_VERSION = 'v30.5'
 WITNESS_MAX_TOKENS = 1200   # /api/oracle та /api/synthesis
 ARD_MAX_TOKENS = 1000       # /api/ard
 
@@ -174,7 +182,7 @@ ARD_MAX_TOKENS = 1000       # /api/ard
 # нормальний JSON з hint='llm_timeout'. Якщо у deploy.sh підняти gunicorn
 # --timeout, підніми і це значення (змінна середовища ANTHROPIC_TIMEOUT_S).
 import os as _os_cfg
-# v30.4.1: ефективний gunicorn --timeout. gunicorn.conf.py виставляє його в
+# v30.5: ефективний gunicorn --timeout. gunicorn.conf.py виставляє його в
 # post_fork як GUNICORN_EFFECTIVE_TIMEOUT. Якщо змінної нема (старий Start
 # Command з --timeout 30), вважаємо 30 і поводимось як у v30.4.
 GUNICORN_TIMEOUT_S = float(_os_cfg.environ.get('GUNICORN_EFFECTIVE_TIMEOUT')
@@ -397,7 +405,7 @@ def log_witness(endpoint: str, raw_text: str, final_text: str,
         print(f"⚠️  log_witness error (non-fatal): {e}")
 
 
-# ── REQUEST LOG (v30.4.1) ───────────────────────────────────────────────────
+# ── REQUEST LOG (v30.5) ───────────────────────────────────────────────────
 # Журнал кожного POST /api/*: рядок створюється ПЕРЕД роботою, закривається
 # після. Рядок у статусі 'started' = запит, який помер (kill воркера).
 # Таблиця: див. supabase/migrations/..._request_log.sql
@@ -1167,7 +1175,7 @@ def home():
     except:
         return jsonify({
             'status': 'online',
-            'version': 'v30.4',
+            'version': 'v30.5',
             'message': 'Veritas Protocol API is running (index.html not found)',
             'features': {
                 'pattern_boost': engine.pattern_boost_engine is not None,
@@ -1177,7 +1185,7 @@ def home():
             }
         })
 
-# v30.4.1: з gthread-воркером кілька запитів можуть іти паралельно (Haiku — це
+# v30.5: з gthread-воркером кілька запитів можуть іти паралельно (Haiku — це
 # очікування мережі, йому паралельність корисна). Але engine/детектори
 # історично працювали лише послідовно (sync-воркер), тому САМ аналіз
 # серіалізуємо замком; Oracle/Synthesis/ARD замком не обмежені.
@@ -1220,7 +1228,7 @@ def analyze():
         if request.method == 'GET':
             return jsonify({
                 'status': 'online',
-                'version': 'v30.4',
+                'version': 'v30.5',
                 'modules': {
                     'pattern_boost':         engine.pattern_boost_engine is not None,
                     'void_detector':         engine.void_detector is not None,
@@ -1798,7 +1806,7 @@ def analyze():
 
         # Analyze text — з timeout guard щоб regex backtracking не вбивав воркер
         import concurrent.futures as _cf
-        # v30.4.1: (1) дедлайн рахується від ПОЧАТКУ запиту, а не фіксовані 22с
+        # v30.5: (1) дедлайн рахується від ПОЧАТКУ запиту, а не фіксовані 22с
         # (скрапінг+детектори до цього місця вже їли ~9с → разом >30с);
         # (2) БЕЗ `with ThreadPoolExecutor`: його __exit__ = shutdown(wait=True)
         # чекає завершення потоку, тож TimeoutError доходив до except лише
@@ -1987,7 +1995,7 @@ def stats_reset():
 def health():
     return jsonify({
         'status': 'healthy',
-        'version': 'v30.4'
+        'version': 'v30.5'
     })
 
 
