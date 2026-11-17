@@ -32,7 +32,11 @@ class PseudoscienceDetector:
                 'min_hits': 1,
                 'patterns': [
                     # Future-dated sensors or reports presented as current facts
-                    r'(сенсор|датчик|система|звіт|дані).{1,40}(veritas|lac|orbit|quantum).{1,40}(202[6-9]|20[3-9]\d)',
+                    # v30.6: ГАТОВАНІ ДАТОЮ патерни (група yr/mon). Раніше роки 2026–2029 були зашиті як
+                    # «майбутнє»; у листопаді 2026 це зробило «FABRICATED_REALITY» з бібліографічного
+                    # рядка «…Threod Systems, 15 November 2026» («systems» + англ. місяць + 2026).
+                    # Тепер збіг рахується лише якщо названа дата СТРОГО ПІЗНІША за сьогодні.
+                    r'(сенсор|датчик|система|звіт|дані).{1,40}(veritas|lac|orbit|quantum).{1,40}(?P<yr>20[2-9]\d)',
                     # ФІКС v20.6.1: голі "місяць + рік" (без жодного слова
                     # про звіт/сенсор/дані поруч) спрацьовували на абсолютно
                     # рутинному звороті "станом на вересень 2026 року" —
@@ -41,10 +45,10 @@ class PseudoscienceDetector:
                     # сенсор/вимірювання/результат) в межах 60 символів ДО
                     # згадки місяця+року — той самий принцип, що вже є в
                     # патерні вище, просто ширший діапазон дат.
-                    r'(звіт|дані|результат|вимірюванн\w*|сенсор|датчик|система|джерел\w*).{1,60}'
-                    r'(березень|квітень|травень|червень|липень|серпень|вересень|жовтень|листопад|грудень)\s+202[6-9]',
-                    r'(report|data|measurement\w*|sensor|system|source\w*).{1,60}'
-                    r'(january|february|march|april|may|june|july|august|september|october|november|december)\s+202[6-9]',
+                    r'\b(звіт|дані|результат|вимірюванн\w*|сенсор|датчик|система|джерел\w*).{1,60}'
+                    r'(?P<mon>січень|лютий|березень|квітень|травень|червень|липень|серпень|вересень|жовтень|листопад|грудень)\s+(?P<yr>20[2-9]\d)',
+                    r'\b(report|data|measurement\w*|sensor|systems?|source\w*)\b.{1,60}'
+                    r'(?P<mon>january|february|march|april|may|june|july|august|september|october|november|december)\s+(?P<yr>20[2-9]\d)',
                     # Verification completed before it started
                     r'верифікац.{1,60}(завершен|виконан|підтвердж).{1,60}до того.{1,60}(як|коли).{1,60}(почал|розпочал|стартувал)',
                     r'(перевірено|підтверджено|встановлено).{1,60}до того.{1,40}(як|коли)',
@@ -244,7 +248,30 @@ class PseudoscienceDetector:
     # MAIN ANALYSIS
     # ================================================================
 
-    def analyze(self, text: str) -> Dict:
+    _MONTHS = {
+        'січень': 1, 'лютий': 2, 'березень': 3, 'квітень': 4, 'травень': 5, 'червень': 6,
+        'липень': 7, 'серпень': 8, 'вересень': 9, 'жовтень': 10, 'листопад': 11, 'грудень': 12,
+        'january': 1, 'february': 2, 'march': 3, 'april': 4, 'may': 5, 'june': 6, 'july': 7,
+        'august': 8, 'september': 9, 'october': 10, 'november': 11, 'december': 12,
+    }
+
+    @classmethod
+    def _first_future_match(cls, pattern: str, text_lower: str, today):
+        """Перший збіг патерна з іменованою групою yr, чия дата СТРОГО пізніша за `today`
+        (місяць+рік — порівняння на рівні місяця; лише рік — рік > поточного)."""
+        for m in re.finditer(pattern, text_lower, re.IGNORECASE | re.DOTALL):
+            yr = int(m.group('yr'))
+            mon = cls._MONTHS.get(m.groupdict().get('mon', '') or '', None)
+            if mon is None:
+                if yr > today.year:
+                    return m
+            elif (yr, mon) > (today.year, today.month):
+                return m
+        return None
+
+    def analyze(self, text: str, today=None) -> Dict:
+        import datetime as _dt
+        today = today or _dt.date.today()
         text_lower = text.lower()
 
         # Check for educational/fictional context — reduce sensitivity
@@ -268,7 +295,10 @@ class PseudoscienceDetector:
             hits = 0
             snippets = []
             for pattern in ps['patterns']:
-                m = re.search(pattern, text_lower, re.IGNORECASE | re.DOTALL)
+                if '(?P<yr>' in pattern:
+                    m = self._first_future_match(pattern, text_lower, today)
+                else:
+                    m = re.search(pattern, text_lower, re.IGNORECASE | re.DOTALL)
                 if m:
                     hits += 1
                     snippets.append(m.group(0)[:80].strip())
