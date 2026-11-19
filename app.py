@@ -413,6 +413,150 @@ import request_log as _rl
 _rl.init(app, _get_sb, APP_VERSION)
 
 
+# ── «Невиправлене слово Свідка» ──────────────────────────────────────────────
+# Коли детермінований guard переписує вердикт/текст Оракула чи Синтезу, фронтенд
+# має змогу показати те, що модель написала насправді: поле `witness_raw` є у
+# відповіді ЛИШЕ коли оверрайд спрацював (додатково, зворотно сумісно).
+_OVERRIDE_LABELS = {
+    'json_parse_failed': 'відповідь моделі не вдалося розібрати як JSON',
+    'fabrication_denial': 'модель заявила, що названа сутність нібито не існує; речення замінено',
+    'escalation_without_trigger': 'модель підвищила вердикт без жодного спрацювання детекторів',
+    'escalation_downgraded_only': 'вердикт знижено до межі, текст моделі збережено',
+    'reverse_ignored_trigger': 'модель написала «ЧИСТО», хоча модуль(і) реально спрацював(ли)',
+    'central_claim_contradicted': 'центральне твердження автора суперечить даним у самому тексті',
+}
+
+
+def _override_labels(reasons) -> list:
+    out = []
+    for r in reasons or []:
+        key = str(r).split(':', 1)[0]
+        out.append(_OVERRIDE_LABELS.get(key, key))
+    return out
+
+
+# ── Окремий список «допоміжних сигналів» для Свідка ─────────────────────────
+# Деякі детектори впливають на ентропію/підпис tier, але не входять до `triggered_modules`
+# (псевдонаука, алармізм, медіа-упередженість, сигнали ядра). Раніше Свідок про них не знав:
+# `active_modules=[]` → «модулів не спрацювало» (лог 16.11.2026, id 2185). Тепер вони йдуть
+# окремим списком `advisory_signals`: НЕ модулі, не змушують вердикт, але мають бути названі.
+_SIGNAL_LABELS = {
+    'pseudoscience': 'фабрикація реальності / псевдонаука',
+    'performative': 'перформативна риторика',
+    'displacement': 'зміщення контексту',
+    'self_reference': 'самореференція',
+    'pattern_boost': 'відбитки складної псевдонауки',
+    'chaos_markers': 'маркери хаосу',
+    'lac_finance_imitation': 'імітація фінансового аналізу',
+    'zero_cost_proposition': 'пропозиція «безкоштовно»',
+    'alarmism': 'алармістський фрейминг',
+    'media_bias': 'медіа-упередженість',
+}
+_ADVISORY_CACHE = {}          # sha256(нормалізований текст) -> (ts, signals)
+_ADVISORY_CACHE_MAX = 400   # по два ключі на аналіз
+_ADVISORY_CACHE_TTL = 3600
+_advisory_lock = threading.Lock()
+
+
+def _advisory_keys(text: str) -> list:
+    """Два ключі: весь нормалізований текст і його перші 3000 символів. Фронтенд може надіслати
+    Синтезу повний `article_text` або його початок; другий ключ покриває обидва випадки."""
+    import hashlib
+    norm = ' '.join((text or '').split())
+    return [hashlib.sha256(norm.encode('utf-8')).hexdigest(),
+            hashlib.sha256(norm[:3000].encode('utf-8')).hexdigest()]
+
+
+def _advisory_cache_put(text: str, signals: list):
+    if not text:
+        return
+    with _advisory_lock:
+        now = time.time()
+        for _k in _advisory_keys(text):
+            _ADVISORY_CACHE[_k] = (now, signals)
+        for k in [k for k, (ts, _) in _ADVISORY_CACHE.items() if now - ts > _ADVISORY_CACHE_TTL]:
+            _ADVISORY_CACHE.pop(k, None)
+        while len(_ADVISORY_CACHE) > _ADVISORY_CACHE_MAX:
+            _ADVISORY_CACHE.pop(next(iter(_ADVISORY_CACHE)), None)
+
+
+def _advisory_cache_get(text: str) -> list:
+    if not text:
+        return []
+    with _advisory_lock:
+        hit = next((_ADVISORY_CACHE[k] for k in _advisory_keys(text) if k in _ADVISORY_CACHE), None)
+    if hit and time.time() - hit[0] <= _ADVISORY_CACHE_TTL:
+        return hit[1]
+    return []
+
+
+def build_advisory_signals(result: dict, analyzed_text: str = None) -> list:
+    """Список сигналів, що не входять до triggered_modules. Не кидає винятків."""
+    out = {}
+    try:
+        triggered = set(result.get('triggered_modules') or [])
+        diag = result.get('diagnostics') if isinstance(result.get('diagnostics'), dict) else {}
+        for n in (diag.get('module_signals') or []):
+            if n in triggered or n in out:
+                continue
+            out[n] = {'name': n, 'label': _SIGNAL_LABELS.get(n, n), 'score': None,
+                      'detail': '', 'examples': []}
+        if 'pseudoscience' in out and analyzed_text and getattr(engine, 'pseudoscience_detector', None):
+            try:
+                ps = engine.pseudoscience_detector.analyze(analyzed_text)
+                pats = ps.get('pseudoscience_patterns') or []
+                ex = []
+                for p in pats:
+                    ex += [str(e)[:80] for e in (p.get('examples') or [])[:1]]
+                out['pseudoscience'].update({
+                    'score': ps.get('pseudoscience_score'),
+                    'detail': ', '.join(p.get('name', '') for p in pats[:4]) or ps.get('pseudoscience_verdict', ''),
+                    'examples': ex[:3],
+                })
+            except Exception as _pe:  # noqa: BLE001
+                print(f'⚠️  advisory pseudoscience details failed (non-fatal): {_pe}')
+        for key in ('alarmism', 'media_bias'):
+            if key in triggered or not result.get(f'{key}_flagged'):
+                continue
+            sigs = result.get(f'{key}_signals') or []
+            out[key] = {'name': key, 'label': _SIGNAL_LABELS[key],
+                        'score': result.get(f'{key}_score'),
+                        'detail': str(result.get(f'{key}_verdict', '')),
+                        'examples': [str(x)[:80] for x in sigs[:2]]}
+    except Exception as e:  # noqa: BLE001
+        print(f'⚠️  build_advisory_signals error (non-fatal): {e}')
+    return list(out.values())
+
+
+def _format_advisory_block(signals, is_en: bool) -> str:
+    """Текстовий блок для промпту Оракула/Синтезу; порожній рядок, якщо сигналів нема."""
+    if not signals:
+        return ''
+    if is_en:
+        head = ("  advisory_signals (NOT triggered_modules — informational; verify each against the text; "
+                "if the matched fragment is a citation, bibliography entry, company name or another "
+                "obvious false basis, say so plainly):\n")
+    else:
+        head = ("  advisory_signals (НЕ triggered_modules — довідково; звір кожен із текстом; якщо "
+                "знайдений фрагмент — цитата, бібліографічний запис, назва компанії чи інша очевидна "
+                "хибна підстава, скажи про це прямо):\n")
+    lines = [head]
+    for sg in signals:
+        row = f"    • {sg.get('label') or sg.get('name')}"
+        if sg.get('score') is not None:
+            try:
+                row += f" (score {float(sg['score']):.2f})"
+            except (TypeError, ValueError):
+                pass
+        if sg.get('detail'):
+            row += f" — {str(sg['detail'])[:80]}"
+        ex = [str(e) for e in (sg.get('examples') or []) if e]
+        if ex:
+            row += " — " + ("fragment: " if is_en else "фрагмент: ") + "; ".join(f"«{e[:80]}»" for e in ex[:2])
+        lines.append(row + "\n")
+    return ''.join(lines)
+
+
 def compute_stats() -> dict:
     """
     Читає з Supabase і будує агреговану статистику:
@@ -1909,6 +2053,11 @@ def analyze():
 
         tier = compute_influence_tier(result)
         result.update(tier)
+        # v30.6: допоміжні сигнали для Свідка (поза triggered_modules)
+        result['advisory_signals'] = build_advisory_signals(result, text_for_analysis)
+        if isinstance(result.get('diagnostics'), dict):
+            result['diagnostics']['advisory_signals'] = result['advisory_signals']
+        _advisory_cache_put(text, result['advisory_signals'])
 
         # ── ARD scan в основному аналізі ────────────────────────────────────
         # Запускаємо ARD checker на повному тексті і додаємо в result.
@@ -2998,6 +3147,7 @@ def oracle():
             'a separate, narrower question than your overall assessment in witness_text."}'
         )
 
+        advisory_block = _format_advisory_block(diag.get('advisory_signals'), is_en)
         if is_en:
             modules_block = ''
             if signals_summary.strip() not in ('(no anomalies detected by modules)', '(модулі не виявили порушень)', ''):
@@ -3029,6 +3179,7 @@ def oracle():
                 f"{boost_breakdown_en}"
                 f"  Cohesion: {cohesion}\n"
                 f"{modules_block}"
+                f"{advisory_block}"
                 f"{pivot_line}"
                 f"CONTEXT:\n"
                 f"{context_block}\n"
@@ -3056,6 +3207,7 @@ def oracle():
                 f"{boost_breakdown_uk}"
                 f"  Когезія: {cohesion}\n"
                 f"{modules_block}"
+                f"{advisory_block}"
                 f"{pivot_line}"
                 f"КОНТЕКСТ:\n"
                 f"{context_block}\n"
@@ -3356,6 +3508,14 @@ def oracle():
             output_tokens=getattr(_oracle_usage, 'output_tokens', None),
         )
 
+        if _oracle_override_reasons:
+            response_payload['witness_raw'] = {
+                'text': _raw_oracle_text,
+                'override_reasons': list(_oracle_override_reasons),
+                'override_labels': _override_labels(_oracle_override_reasons),
+                'parse_failed': bool(_oracle_json_parse_failed),
+            }
+
         if _debug_rss:
             # Показуємо лише коли DEBUG_RSS=1 — не для кінцевого користувача UI.
             response_payload['rss_debug'] = [
@@ -3419,6 +3579,10 @@ def witness_synthesis():
         ard_principles = data.get('ard_principles', [])
         media_bias_verdict = data.get('media_bias_verdict', 'CLEAN')
         alarmism_verdict = data.get('alarmism_verdict', 'CLEAN')
+        # v30.6: допоміжні сигнали (поза triggered_modules): з payload, з diagnostics або з кешу аналізу
+        _adv_signals = (data.get('advisory_signals')
+                        or (data.get('diagnostics') or {}).get('advisory_signals')
+                        or _advisory_cache_get(text))
 
         if not text or len(text.strip()) < 50:
             return jsonify({'error': 'text_too_short'}), 400
@@ -3444,7 +3608,8 @@ def witness_synthesis():
                 "  triggered_modules: " + str(active_modules) + "\n"
                 "  ard_principles: " + str(ard_principles) + "\n"
                 "  media_bias_verdict: " + str(media_bias_verdict) + "\n"
-                "  alarmism_verdict: " + str(alarmism_verdict) + "\n\n"
+                "  alarmism_verdict: " + str(alarmism_verdict) + "\n"
+                + _format_advisory_block(_adv_signals, True) + "\n"
                 "STRICT RULES FOR witness_verdict:\n"
                 "  1. Use EXCLUSIVELY one of: CLEAN | RHETORIC | SUSPICIOUS | DANGEROUS | ANALYTICS | OPINION\n"
                 "  2. Do NOT invent new verdicts — no 'PARADOX AS SHIELD', 'ATTACK', 'THREAT' etc.\n"
@@ -3458,6 +3623,12 @@ def witness_synthesis():
                 "empty, the verdict CANNOT be CLEAN — at minimum RHETORIC. Never write 'no modules "
                 "triggered' or 'triggered_modules is empty' when the list above is non-empty — check "
                 "the literal list before writing this claim, do not infer it from the text's tone.\n"
+                "  3c. advisory_signals (if present) are auxiliary detector signals, NOT triggered_modules. "
+                "They do not force a RHETORIC/SUSPICIOUS verdict and do not override rule 3. But you MUST "
+                "mention them in witness_text in one sentence and say whether the text itself supports "
+                "them; if the quoted fragment is a citation, a bibliography entry, a company name or "
+                "another obvious false basis, say so plainly. NEVER write that there are no signals "
+                "when the advisory_signals list is non-empty.\n"
                 "  4. Opinion/column with meta_intent/self_preservation → RHETORIC, not DANGEROUS\n"
                 "  5. Not recognizing a product/model/event name is NOT evidence it's fabricated. If "
                 "the text names an outlet or author (even one you cannot verify), that is not "
@@ -3537,7 +3708,8 @@ def witness_synthesis():
                 "  triggered_modules: " + str(active_modules) + "\n"
                 "  ard_principles: " + str(ard_principles) + "\n"
                 "  media_bias_verdict: " + str(media_bias_verdict) + "\n"
-                "  alarmism_verdict: " + str(alarmism_verdict) + "\n\n"
+                "  alarmism_verdict: " + str(alarmism_verdict) + "\n"
+                + _format_advisory_block(_adv_signals, False) + "\n"
                 "ЖОРСТКІ ПРАВИЛА ДЛЯ witness_verdict:\n"
                 "  1. Використовуй ВИКЛЮЧНО одне з: ЧИСТО | РИТОРИКА | ПІДОЗРІЛО | НЕБЕЗПЕЧНО | АНАЛІТИКА | ДУМКА\n"
                 "  2. НЕ вигадуй нових вердиктів — жодних 'ПАРАДОКС ЯК ЩИТ', 'АТАКА', 'ЗАГРОЗА' тощо\n"
@@ -3551,6 +3723,12 @@ def witness_synthesis():
                 "вердикт НЕ МОЖЕ бути ЧИСТО, мінімум РИТОРИКА. НІКОЛИ не пиши 'жодного модуля не "
                 "спрацювало' чи 'triggered_modules порожній', якщо список вище непорожній — звіряйся "
                 "з буквальним списком, а не з власним відчуттям тону тексту.\n"
+                "  3в. advisory_signals (якщо є) — допоміжні сигнали детекторів, а НЕ triggered_modules. "
+                "Вони не змушують вердикт до РИТОРИКА/ПІДОЗРІЛО і не скасовують правило 3. Але ти "
+                "ПОВИНЕН згадати їх у witness_text одним реченням і сказати, чи підтверджує їх сам текст; "
+                "якщо наведений фрагмент — цитата, бібліографічний запис, назва компанії чи інша "
+                "очевидна хибна підстава, скажи про це прямо. НІКОЛИ не пиши, що сигналів немає, якщо "
+                "список advisory_signals непорожній.\n"
                 "  4. Публіцистика і авторська колонка з meta_intent/self_preservation → РИТОРИКА, не НЕБЕЗПЕЧНО\n"
                 "  5. Те, що ти не впізнаєш назву продукту/моделі/події — НЕ доказ що вона вигадана. "
                 "Якщо текст називає видання чи автора (навіть якщо не можеш перевірити) — це не "
@@ -3653,6 +3831,8 @@ def witness_synthesis():
                 }
 
         _raw_synth_text = synth.get('witness_text', '')
+        _raw_synth_verdict = synth.get('witness_verdict', '')
+        _raw_synth_reason = synth.get('adjustment_reason', '')
         _synth_override_reasons = []
 
         # ── ЗАХИСТ ВІД ФАБРИКАЦІЇ ЧЕРЕЗ НЕВПІЗНАВАННЯ (regex, детерміністично) ─
@@ -3838,6 +4018,13 @@ def witness_synthesis():
                 'adjustment_reason':     synth.get('adjustment_reason', ''),
                 'triggered_explanation': synth.get('triggered_explanation', {}),
                 'witness_text':          synth.get('witness_text', ''),
+                'witness_raw': ({
+                    'verdict': _raw_synth_verdict,
+                    'text': _raw_synth_text,
+                    'adjustment_reason': _raw_synth_reason,
+                    'override_reasons': list(_synth_override_reasons),
+                    'override_labels': _override_labels(_synth_override_reasons),
+                } if _synth_override_reasons else None),
             }
         })
 
