@@ -395,6 +395,21 @@
         }
         .footer a { color: #00d4ff; text-decoration: none; }
         .footer a:hover { text-decoration: underline; }
+    
+        /* v30.6: «невиправлене слово Свідка» */
+        .raw-witness-toggle {
+            background: none; border: 1px dashed rgba(160,160,220,0.35); color: #8f9bd0;
+            font-family: inherit; font-size: 0.72em; letter-spacing: 1px; padding: 4px 10px;
+            border-radius: 3px; cursor: pointer;
+        }
+        .raw-witness-toggle:hover { color: #c8d0ff; border-color: rgba(200,208,255,0.6); }
+        .raw-witness-body {
+            margin-top: 8px; padding: 8px 12px; border-left: 2px solid rgba(255,190,90,0.55);
+            background: rgba(60,45,20,0.25); border-radius: 3px; font-size: 0.78em; line-height: 1.7;
+            color: #cdbb94;
+        }
+        .raw-witness-body .rw-meta { color: #a8946a; font-size: 0.92em; margin-bottom: 6px; }
+        .raw-witness-body .rw-text { white-space: pre-wrap; font-family: 'Courier New', monospace; color: #d9cfae; }
     </style>
 </head>
 <body>
@@ -459,6 +474,10 @@
                         border-left:2px solid rgba(100,160,255,0.6); border-radius:4px;">
                         <div style="font-size:8px; letter-spacing:3px; color:#446688; margin-bottom:6px;">👁 СВІДОК СИНТЕЗ</div>
                         <div id="witnessSynthesisReason" style="font-size:0.78em; color:#88aacc; line-height:1.7;"></div>
+                        <div id="synthRawWrap" style="display:none; margin-top:8px;">
+                            <button id="synthRawToggle" type="button" class="raw-witness-toggle" onclick="toggleRawWitness('synth')"></button>
+                            <div id="synthRawBody" class="raw-witness-body" style="display:none;"></div>
+                        </div>
                         <div id="witnessSynthesisModules" style="margin-top:6px; font-size:0.75em; color:#667799; line-height:1.6;"></div>
                         <div id="witnessAlternativeReadings" style="display:none; margin-top:8px; padding:6px 10px; background:rgba(30,50,30,0.4); border-left:2px solid rgba(100,200,100,0.4); border-radius:3px;">
                             <div style="font-size:8px; letter-spacing:2px; color:#446644; margin-bottom:4px;">↻ АЛЬТЕРНАТИВНІ ЧИТАННЯ</div>
@@ -809,6 +828,10 @@
                 white-space: pre-wrap;
                 display:none;
             "></div>
+            <div id="oracleRawWrap" style="display:none; margin-top:10px;">
+                <button id="oracleRawToggle" type="button" class="raw-witness-toggle" onclick="toggleRawWitness('oracle')"></button>
+                <div id="oracleRawBody" class="raw-witness-body" style="display:none;"></div>
+            </div>
 
             <div id="oracleError" style="display:none; color:#ff6666; font-size:0.78em; padding:8px 0;"></div>
 
@@ -938,6 +961,13 @@ const STRINGS = {
         ard_loading_2: '⚖️ АРД АНАЛІЗ...',
         ard_loading_3: '👁 СВІДОК АРД ГОВОРИТЬ...',
         oracle_btn_retry: '↺ СЛОВО СВІДКА ЗНОВУ',
+        raw_witness_show: 'Показати невиправлене слово Свідка',
+        raw_witness_hide: 'Сховати невиправлене слово',
+        raw_witness_caption: 'Так модель написала до автоматичної корекції:',
+        raw_witness_why: 'Чому скориговано',
+        raw_witness_verdict_was: 'Вердикт моделі',
+        raw_witness_verdict_now: 'показано',
+        raw_witness_parse_failed: 'Відповідь моделі не вдалося розібрати як JSON; нижче — сирий вивід.',
         oracle_btn_thinking: '⟳ СВІДОК ДУМАЄ...',
         oracle_header: 'СЛОВО СВІДКА',
         oracle_footer: 'VERITAS WITNESS v0.1 · АНАЛІЗ ПАТЕРНУ',
@@ -1055,6 +1085,13 @@ const STRINGS = {
         ard_loading_2: '⚖️ ARD ANALYSIS...',
         ard_loading_3: '👁 ARD WITNESS SPEAKS...',
         oracle_btn_retry: '↺ WITNESS WORD AGAIN',
+        raw_witness_show: 'Show the uncorrected Witness text',
+        raw_witness_hide: 'Hide the uncorrected text',
+        raw_witness_caption: 'What the model wrote before the automatic correction:',
+        raw_witness_why: 'Why it was corrected',
+        raw_witness_verdict_was: 'Model verdict',
+        raw_witness_verdict_now: 'shown',
+        raw_witness_parse_failed: 'The model reply could not be parsed as JSON; the raw output is shown below.',
         oracle_btn_thinking: '⟳ WITNESS THINKING...',
         oracle_header: 'WITNESS WORD',
         oracle_footer: 'VERITAS WITNESS v0.1 · PATTERN ANALYSIS',
@@ -1522,6 +1559,60 @@ function t(key) {
     return (STRINGS[currentLang] && STRINGS[currentLang][key]) || (STRINGS['uk'] && STRINGS['uk'][key]) || key;
 }
 
+// ── v30.6: «невиправлене слово Свідка» ─────────────────────────────────────────
+// Бекенд додає `witness_raw` ЛИШЕ коли детермінований оверрайд змінив відповідь моделі.
+// kind: 'oracle' | 'synth'. raw: {text, verdict?, adjustment_reason?, override_labels[], parse_failed?}.
+// shownVerdict — вердикт, який бачить користувач (для підпису «було → показано»).
+function _rawWitnessLabel(open) {
+    return (open ? '▾ ' : '▸ ') + t(open ? 'raw_witness_hide' : 'raw_witness_show');
+}
+function rawWitnessUI(kind, raw, shownVerdict) {
+    const wrap = document.getElementById(kind + 'RawWrap');
+    const btn  = document.getElementById(kind + 'RawToggle');
+    const body = document.getElementById(kind + 'RawBody');
+    if (!wrap || !btn || !body) return;
+    body.style.display = 'none';
+    while (body.firstChild) body.removeChild(body.firstChild);
+    btn.dataset.open = '0';
+    if (!raw || (!raw.text && !raw.verdict)) { wrap.style.display = 'none'; return; }
+
+    const meta = document.createElement('div');
+    meta.className = 'rw-meta';
+    const parts = [t('raw_witness_caption')];
+    const labels = (raw.override_labels && raw.override_labels.length) ? raw.override_labels : (raw.override_reasons || []);
+    if (labels.length) parts.push(t('raw_witness_why') + ': ' + labels.join('; ') + '.');
+    // «було → показано»: перше слово тексту Оракула, або поле verdict у Синтезу
+    const rawVerdict = (raw.verdict || (raw.text || '').split('\n')[0] || '').trim();
+    const nowVerdict = (shownVerdict || '').toString().split('\n')[0].trim();
+    // вердикт — це одне слово ВЕЛИКИМИ літерами; при parse_failed перший рядок — не вердикт
+    const looksLikeVerdict = /^[A-ZА-ЯІЇЄҐ_ \-]{3,32}$/.test(rawVerdict);
+    if (!raw.parse_failed && looksLikeVerdict && nowVerdict && rawVerdict !== nowVerdict) {
+        parts.push(t('raw_witness_verdict_was') + ': ' + rawVerdict + ' → ' + t('raw_witness_verdict_now') + ': ' + nowVerdict + '.');
+    }
+    if (raw.parse_failed) parts.push(t('raw_witness_parse_failed'));
+    meta.textContent = parts.join(' ');
+    body.appendChild(meta);
+
+    const txt = document.createElement('div');
+    txt.className = 'rw-text';
+    let rawText = raw.text || '';
+    if (kind === 'synth' && raw.adjustment_reason) rawText += (rawText ? '\n\n' : '') + raw.adjustment_reason;
+    txt.textContent = rawText;
+    body.appendChild(txt);
+
+    btn.textContent = _rawWitnessLabel(false);
+    wrap.style.display = 'block';
+}
+function toggleRawWitness(kind) {
+    const btn  = document.getElementById(kind + 'RawToggle');
+    const body = document.getElementById(kind + 'RawBody');
+    if (!btn || !body) return;
+    const open = btn.dataset.open !== '1';
+    btn.dataset.open = open ? '1' : '0';
+    body.style.display = open ? 'block' : 'none';
+    btn.textContent = _rawWitnessLabel(open);
+}
+
 function setLang(lang) {
     currentLang = lang;
     document.querySelectorAll('.lang-btn').forEach(b => {
@@ -1779,6 +1870,7 @@ async function callWitnessSynthesis(data) {
                 ard_principles:     data.ard_principles || [],
                 media_bias_verdict: data.media_bias_verdict || 'CLEAN',
                 alarmism_verdict:   data.alarmism_verdict || 'CLEAN',
+                advisory_signals:   data.advisory_signals || [],
             })
         });
 
@@ -1812,6 +1904,7 @@ async function callWitnessSynthesis(data) {
 
         if (synthBlock) synthBlock.style.display = 'block';
         if (synthReason) synthReason.textContent = synth.adjustment_reason || '';
+        rawWitnessUI('synth', synth.witness_raw, synth.witness_verdict);
 
         if (synthModules && synth.triggered_explanation) {
             var lines = '';
@@ -2083,6 +2176,7 @@ function renderResults(data) {
         if (synthReason) {
             synthReason.textContent = synth.adjustment_reason || '';
         }
+        rawWitnessUI('synth', synth.witness_raw, synth.witness_verdict);
 
         if (synthModules && synth.triggered_explanation) {
             var modLines = '';
@@ -2729,6 +2823,7 @@ function clearAll() {
     if (pivPan) pivPan.style.display = 'none';
     const synthBlockClear = document.getElementById('witnessSynthesisBlock');
     if (synthBlockClear) synthBlockClear.style.display = 'none';
+    rawWitnessUI('synth', null);
     var altClear = document.getElementById('witnessAlternativeReadings');
     if (altClear) altClear.style.display = 'none';
     const synthInfoClear = document.getElementById('entropySynthesisInfo');
@@ -2769,6 +2864,7 @@ async function consultOracle() {
     errEl.style.display = 'none';
     footer.style.display = 'none';
     textEl.textContent = '';
+    rawWitnessUI('oracle', null);
 
     // Loading phase animation
     const phases = [t('oracle_loading_1'), t('oracle_loading_2'), t('oracle_loading_3')];
@@ -2811,6 +2907,7 @@ async function consultOracle() {
 
         textEl.textContent = result.witness_text || (currentLang === 'uk' ? 'Свідок мовчить.' : 'The Witness is silent.');
         textEl.style.display = 'block';
+        rawWitnessUI('oracle', result.witness_raw, result.witness_text);
         footer.style.display = 'block';
         btn.disabled = false;
         btn.innerHTML = '<span id="i18n-oracle_btn">' + t('oracle_btn_retry') + '</span>';
