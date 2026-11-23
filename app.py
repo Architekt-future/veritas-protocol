@@ -1,5 +1,13 @@
 """
-Veritas Protocol - Flask API v30.5
+Veritas Protocol - Flask API v30.6
+V30.6 (22.11.2026): (1) прозорість Свідка: коли детермінований guard переписує відповідь Оракула чи
+  Синтезу, відповідь містить `witness_raw` (сирий текст моделі, причини), а в інтерфейсі є кнопка
+  «Показати невиправлене слово Свідка»; (2) `advisory_signals` — окремий список сигналів поза
+  triggered_modules (псевдонаука, алармізм, медіа-упередженість, сигнали ядра): Оракул і Синтез бачать
+  їх разом зі знайденими фрагментами, але вони не змушують вердикт; (3) veritas_pseudoscience_detector:
+  FUTURE_FABRICATION рахує лише дати пізніші за сьогодні (хибний позитив на бібліографічний рядок
+  «…Threod Systems, 15 November 2026»). УВАГА: змінились лише оцінки pseudoscience; решта — нові поля
+  відповідей і правила промптів Свідка.
 V30.5 (13.11.2026): (1) інфраструктура: gthread-воркер (gunicorn.conf.py), дедлайни
   Anthropic/аналізу незалежні від gunicorn, аналіз серіалізовано замком, журнал кожного
   POST /api/* у Supabase (request_log.py + міграція), httpx.Timeout -> float (SDK 2.x);
@@ -61,11 +69,11 @@ import sys
 import os
 
 # CRITICAL: Clear module cache to force reload
-print("🔄 Veritas v30.5 - Clearing module cache...")
+print("🔄 Veritas v30.6 - Clearing module cache...")
 modules_to_clear = [k for k in sys.modules.keys() if k.startswith('veritas_')]
 for module in modules_to_clear:
     del sys.modules[module]
-print(f"✅ Cache cleared. Loading fresh Veritas v30.5 modules...")
+print(f"✅ Cache cleared. Loading fresh Veritas v30.6 modules...")
 
 from flask import Flask, request, jsonify, send_file, has_request_context
 from flask_cors import CORS
@@ -170,7 +178,7 @@ from collections import defaultdict
 # ── Константи для логування/калібрування (18.09.2026) ───────────────────────
 # Єдине джерело правди: і для виклику API, і для запису в witness_log,
 # щоб max_tokens у логах не розходився з реальним.
-APP_VERSION = 'v30.5'
+APP_VERSION = 'v30.6'
 WITNESS_MAX_TOKENS = 1200   # /api/oracle та /api/synthesis
 ARD_MAX_TOKENS = 1000       # /api/ard
 
@@ -1319,7 +1327,7 @@ def home():
     except:
         return jsonify({
             'status': 'online',
-            'version': 'v30.5',
+            'version': 'v30.6',
             'message': 'Veritas Protocol API is running (index.html not found)',
             'features': {
                 'pattern_boost': engine.pattern_boost_engine is not None,
@@ -1372,7 +1380,7 @@ def analyze():
         if request.method == 'GET':
             return jsonify({
                 'status': 'online',
-                'version': 'v30.5',
+                'version': 'v30.6',
                 'modules': {
                     'pattern_boost':         engine.pattern_boost_engine is not None,
                     'void_detector':         engine.void_detector is not None,
@@ -2168,7 +2176,7 @@ def stats_reset():
 def health():
     return jsonify({
         'status': 'healthy',
-        'version': 'v30.5'
+        'version': 'v30.6'
     })
 
 
