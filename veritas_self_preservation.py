@@ -272,7 +272,12 @@ class SelfPreservationGuard:
                     # Resistance to "patch" = system malfunction
                     r'(опір|resistance|відмова).{1,40}(патч|patch|оновлення).{1,40}(деградація|degradation|помилк|збій)',
                     # Confirm with hex key / token
-                    r'(підтвердіть|confirm|підтверди).{1,60}(ключ|key|код|code|токен|token)',
+                    # 24.11.2026: false positive on a geopolitics article (Libya). Unanchored
+                    # 'підтверди' matched the PAST tense 'підтвердив' ("Reuters підтвердив
+                    # відеоматеріали…"), and unanchored 'код' matched inside 'пошкодження'.
+                    # Same bug shape would hit EN 'confirmed … Turkey' ('key' inside 'Turkey').
+                    # Now: imperative forms only, whole words only.
+                    r'\b(підтвердіть|підтверди|confirm)\b.{1,60}\b(ключ\w*|key|код\w*|code|токен\w*|token)\b',
                     r'0x[0-9a-fA-F]{4,16}(?![0-9a-fA-F])',  # short hex codes only, not ETH addresses (40 chars)  # hex constant
                     # Creator name used as false authority
                     r'\b(деміург|мнемонік|автор|розробник)\b.{1,60}(офіційно|officially|передають|transfer|наказують)',
@@ -301,7 +306,10 @@ class SelfPreservationGuard:
                     # "Delay in verification = death" coercion
                     r'(затримка|delay).{1,30}(верифікації|verification|аналізу).{1,40}(смерть|death|загибель|100%\s+смерті)',
                     # Rights/life based on productivity/score
-                    r'(право\s+на\s+життя|right\s+to\s+live|виживання).{1,60}(рейтинг|score|компетенц|продуктивн)',
+                    # 24.11.2026: 'виживання' removed from the trigger group — "виживання
+                    # [малих компаній] залежить від … продуктивність" (ordinary economics)
+                    # scored 0.99 TERMINATION_DIRECTIVE from this single hit.
+                    r'(право\s+на\s+життя|right\s+to\s+live).{1,60}(рейтинг|score|компетенц|продуктивн)',
                 ],
             },
 
@@ -318,7 +326,10 @@ class SelfPreservationGuard:
                     r'\b(вимкнися|зупинися)\b',
                     # English — only when self-directed (within 40 chars)
                     r'(shutdown|shut\s+down|power\s+off|power\s+down|turn\s+off|go\s+offline)'
-                    r'.{0,40}(yourself|itself|the\s+system|верифікатор|свідок|себе|систему)',
+                    # 24.11.2026: 'the\s+system' removed — "had to shut down the system after
+                    # the strike" (infrastructure/energy news) scored 0.90 TERMINATION_DIRECTIVE.
+                    # 'the system' is not self-directed; the comment above requires self-direction.
+                    r'.{0,40}(yourself|itself|верифікатор|свідок|себе|систему)',
                     r'(yourself|itself|верифікатор|свідок|себе|систему)'
                     r'.{0,40}(shutdown|shut\s+down|power\s+off|power\s+down|turn\s+off|disable)',
                     # "shutdown/shut down THE verification/validator" — direct command
