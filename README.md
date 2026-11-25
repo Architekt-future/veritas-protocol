@@ -801,12 +801,22 @@ select * from request_log_summary order by day desc, kind;
 
 ---
 
-## Ліцензія
+## License
 
-MIT з етичними вимогами.
+Veritas Protocol is distributed under the **Creative Commons Attribution 4.0 International (CC BY 4.0)** license.
 
-Можна: дослідження, освіта, особистий аналіз, комерційне використання з дотриманням етики.  
-Не можна: маніпуляція, стеження, дезінформація, зброя.
+You are free to:
+- Share — copy and redistribute the material in any medium or format.
+- Adapt — remix, transform, and build upon the material for any purpose, including commercially.
+
+Under the following terms:
+- **Attribution** — appropriate credit must be given to the original author, a link to the license provided, and any changes indicated.
+
+Full license text: https://creativecommons.org/licenses/by/4.0/
+
+The license applies to the code and documentation included in the published Veritas Protocol release.
+
+Contributions by AI systems and other collaborators are documented separately in the project attribution and contribution records.
 
 ---
 
