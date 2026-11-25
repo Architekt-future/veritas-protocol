@@ -1,42 +1,27 @@
-Veritas Protocol: Multi-Tier License Agreement (VT-MLA-2026)
-1. Визначення та Об'єкт Ліцензування
-Veritas Protocol (надалі — Протокол) — це інтелектуальна власність, що являє собою сукупність алгоритмів рекурсивного логічного аналізу, методів детермінації інформаційної ентропії та архітектури «Свідок» (The Witness).
-Ліцензіар — автор та правовласник архітектури (Дмитро Холодняк).
-Ліцензіат — будь-яка фізична або юридична особа, що використовує Протокол.
+# Creative Commons Attribution 4.0 International (CC BY 4.0)
 
-2. Типи Ліцензій та Умови Доступу
-2.1. Громадська ліцензія (Public/Non-Profit Tier)
-Надається на безоплатній основі для наступних категорій:
+**Copyright © 2026 Dmytro Kholodniak**
 
-Персональне використання: Приватні особи для некомерційного аналізу даних.
+Veritas Protocol, including its source code and documentation, is distributed under the Creative Commons Attribution 4.0 International License (CC BY 4.0).
 
-Академічний сектор: Навчальні заклади та науково-дослідні інститути (за умови обов’язкового цитування DOI).
+You are free to:
 
-Інформаційна верифікація: Незалежні медіа та Fact-checking організації, що мають статус неприбуткових.
+- **Share** — copy and redistribute the material in any medium or format for any purpose, including commercially.
+- **Adapt** — remix, transform, and build upon the material for any purpose, including commercially.
 
-2.2. Комерційна ліцензія (Enterprise/Commercial Tier)
-Вимагає укладання окремого договору та сплати ліцензійних відрахувань (Royalty) у випадках:
+Under the following terms:
 
-Інтеграції Протоколу в комерційні програмні продукти (SaaS, PaaS, API-сервіси).
+- **Attribution** — You must give appropriate credit to the original author, provide a link to the license, and indicate if changes were made. You may do so in any reasonable manner, but not in any way that suggests the author endorses you or your use.
 
-Використання Протоколу для внутрішнього аудиту корпоративних ШІ-систем та датасетів.
+The license does not impose additional restrictions on the rights granted to others under its terms.
 
-Впровадження архітектури «Свідок» у системи прийняття рішень (Decision Support Systems) у фінансовому, оборонному та державному секторах.
+**Full license text:**
 
-3. Субстратна Агностичність та Масштабованість
-Дана Ліцензія поширюється на будь-яку реалізацію Протоколу, незалежно від обчислювального субстрату (кремнієва архітектура, хмарні обчислення, нейроморфні системи або інтеграція в LLM-агенти). Будь-яка система, що використовує методи рекурсивного аналізу Veritas, вважається Veritas-Derived і підпадає під дію цієї угоди.
+https://creativecommons.org/licenses/by/4.0/legalcode
 
-4. Етичні Обмеження та Термінація
-Ліцензіар залишає за собою право в односторонньому порядку анулювати комерційну ліцензію у разі виявлення наступних зловживань:
+**Project repository:**  
+https://github.com/Architekt-future/veritas-protocol
 
-Використання Протоколу для маскування логічних помилок або свідомої дезінформації.
+**Author:** Dmytro Kholodniak
 
-Застосування алгоритмів для обмеження свободи доступу до верифікованої інформації.
-
-Спроби патентування похідних технологій, що базуються на фундаментальних аксіомах Протоколу, без згоди Правоможця.
-
-5. Відмова від Гарантій та Обмеження Відповідальності
-Протокол надається за принципом «як є» (as is). Ліцензіар не несе відповідальності за наслідки, спричинені виявленням істини (truth-finding process), включаючи репутаційні втрати Ліцензіата або третіх осіб внаслідок викриття логічних маніпуляцій.
-
-6. Юридична чинність
-Ця угода регулюється нормами міжнародного права у сфері інтелектуальної власності. Початок використання коду, API або архітектурних принципів Veritas Protocol є автоматичним акцептом умов даної Ліцензії.
+AI system contributions and collaborative research activities are documented separately in the project's attribution, acknowledgments, and contribution records. This attribution does not imply that AI systems are recognized as legal authors or copyright holders under applicable law.
